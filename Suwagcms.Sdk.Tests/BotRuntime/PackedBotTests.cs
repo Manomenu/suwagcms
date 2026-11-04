@@ -36,8 +36,7 @@ public sealed class PackedBotTests
     [Trait("criterion", "AC-bot-runtime-sdk-1")]
     public async Task A_bot_built_on_the_packed_package_takes_a_version_without_a_restart_and_reports_it()
     {
-        // Why: packing and publishing cost about 10 s, over the quick gate's budget on every turn. CI always runs this,
-        // and on a machine it runs again whenever the SDK or this test's bot changes.
+        // Why: packing and publishing cost about 10 s, over the quick gate's budget; CI always runs this, a machine when the SDK changes.
         var passed = RepositoryFiles.Path($".artifacts/packed-bot-{InputsHash()}");
         if (Environment.GetEnvironmentVariable("CI") is null && File.Exists(passed))
         {
