@@ -15,4 +15,5 @@ source; the artifact is its published copy. Maintained by `vdoc.py register`, so
 | Global facts | [2026-11-04-global-facts.html](2026-11-04-global-facts.html) | <https://claude.ai/artifact/9XsyCsooYGybDcauyEDAG8> | 2026-11-04 |
 | Knowledge bases | [2026-11-04-knowledge-bases.html](2026-11-04-knowledge-bases.html) | <https://claude.ai/artifact/NtDyrmzfjXsrJv4aiUuJQm> | 2026-11-04 |
 | Loop guard | [2026-11-04-loop-guard.html](2026-11-04-loop-guard.html) | <https://claude.ai/artifact/LmVyR6zhsUWriRUwqpeNHV> | 2026-11-04 |
+| Procedure model | [2026-11-04-procedure-model.html](2026-11-04-procedure-model.html) | <https://claude.ai/artifact/VX1dqzYcvB6FLqybWUwEJ2> | 2026-11-04 |
 | Definition validator | [2026-11-04-sdk-validator.html](2026-11-04-sdk-validator.html) | <https://claude.ai/artifact/FRCtaxRZRBhkZFCPmGhEnK> | 2026-11-04 |
