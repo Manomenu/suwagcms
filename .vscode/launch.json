@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "server",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/Suwagcms.Server/Suwagcms.Server.csproj"
+        },
+        {
+            "name": "attach to a running server",
+            "type": "coreclr",
+            "request": "attach",
+            "processId": "${command:pickProcess}"
+        },
+        {
+            "name": "web (vite dev)",
+            "type": "node-terminal",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/Suwagcms.Web",
+            "command": "pnpm dev"
+        }
+    ]
+}

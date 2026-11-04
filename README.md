@@ -1,0 +1,471 @@
+# suwagcms
+
+An agent-first CMS for agent systems. People and coding agents manage a bot's knowledge bases, procedures, actions and
+facts here, and the CMS refuses any change that would leave the bot inconsistent.
+
+> **Status: design.** Nothing is built yet. This README describes the target state. [Suwchatbot](https://github.com/Manomenu/suwchatbot) is the
+> first bot to integrate, and SmartRouter (an example kept in the Suwchatbot repository) is a source of lessons.
+> The owner's choices are under [Decisions](#decisions).
+
+## What it does
+
+- Register several bots in one CMS and switch between their profiles.
+- Create knowledge bases and write articles, each with a guide telling the LLM how to talk about it.
+- Build procedures from blocks in a visual creator.
+- Define actions the procedures can run.
+- Manage facts, global and local.
+- Browse everything and see what uses what.
+- Turn the availability of procedures, articles and actions on and off.
+- See which version a bot has, push the latest one to it, or push an older one to roll back.
+
+## Bots and profiles
+
+One CMS holds several registered bots, each with its own profile, and the user switches between them. All resources
+belong to one bot. References work across that bot's knowledge bases and never between bots.
+
+At registration a bot declares what it supports:
+
+| Declared              | What the CMS does with it                                       |
+| :-------------------- | :-------------------------------------------------------------- |
+| format version        | validates and builds versions for that format                   |
+| blocks it can run     | offers only those in the creator; refuses any others in a version |
+| actions in its code   | shows them as `code` actions, without anyone retyping them       |
+
+## Resources
+
+| Resource       | Fields                                                                                           | Required                                                 |
+| :------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
+| **Article**    | `id`, `title`, `content`, `llmGuide`, `description`, `language`, availability                    | all; `language` is `pl` or `en` and defaults to `en`     |
+| **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`, availability             | all except `localFacts`; `whenStalled` if it collects    |
+| **Action**     | `id`, `description`, `parameters`, `results`, implementation, availability                       | all except `parameters` and `results`                    |
+| **Global fact**| `name`, `type` and its constraints, `description`, `writableBy`                                  | all; `writableBy` defaults to `set`                      |
+| **Local fact** | as a global fact, but it lives inside one procedure                                              | as above                                                 |
+
+Three fields do different jobs and only `content` is for the customer:
+
+| Article field    | Who reads it                 | What it is for                                               |
+| :--------------- | :--------------------------- | :----------------------------------------------------------- |
+| `content`        | the customer, through the LLM| what is true                                                 |
+| `llmGuide`       | the LLM, with the article    | how to talk about it: tone, what to ask first, what not to say |
+| `description`    | the bot's search             | what the article answers, the text it searches by            |
+
+Each field's tooltip in the CMS says what the field is used for.
+
+`language` is chosen in the web and set through the CLI and the plugin like any other field. Two articles in different
+languages are separate articles: the CMS does not link them as translations.
+
+### Facts
+
+| Type   | Constraints              |
+| :----- | :----------------------- |
+| `enum` | `values`, at least two   |
+| `int`  | `min`, `max`             |
+| `text` | `maxLength`, above 0     |
+
+`writableBy` says who may write the fact. Each level includes the ones above it:
+
+| `writableBy`      | Who writes the fact                                         | Can a `collect` step use it? |
+| :---------------- | :---------------------------------------------------------- | :--------------------------- |
+| `assign`          | only the procedure itself; the model never sees the fact    | no                           |
+| `set` (default)   | also the model, once, while the fact is empty               | yes                          |
+| `correct`         | also the model, when the customer corrects a known value    | yes                          |
+
+Global facts live for the whole conversation and may have dotted names (`customer.city`). Local facts are gone when
+their procedure ends, have no dots in their names, and are invisible to other procedures.
+
+### Actions
+
+An action is a named piece of work a procedure runs without waiting for the customer, such as checking an address in
+another system. As in Rasa CALM, a procedure runs it from a step and then branches on facts.
+
+| Rasa action type             | Here                                                                 |
+| :--------------------------- | :------------------------------------------------------------------- |
+| Response (`utter_…`)         | not an action: the `say` block                                       |
+| Custom action                | an **Action** defined in the CMS                                     |
+| Default (built-in) action    | the bot's own behaviour, shown read-only                             |
+
+The CMS holds the action's contract. The work happens in one of two places:
+
+| Implementation | Who edits what                                                                                  |
+| :------------- | :---------------------------------------------------------------------------------------------- |
+| `http`         | the whole action is defined in the CMS: URL, method and references to secrets, never their values |
+| `code`         | written in the bot and declared at registration; the CMS shows it read-only and controls its availability |
+
+Parameters and results are typed like facts, and the procedure's step maps them to facts. An action therefore never
+names a fact itself, so one action can serve many procedures and can also fill local facts. The target fact of a
+result is written by the action, so it can be `writableBy: assign`.
+
+### Procedures
+
+The creator draws a procedure as a graph of steps. Each step holds one block and says where to go next.
+
+| Block     | What it does                                      |
+| :-------- | :------------------------------------------------ |
+| `listen`  | waits for the next message                        |
+| `collect` | asks until the listed facts are known             |
+| `say`     | sends a fixed text                                |
+| `assign`  | overwrites facts with values the author chose     |
+| `start`   | starts another procedure                          |
+| `inform`  | passes on articles and facts to the customer      |
+| `action`  | runs an action, maps parameters and results       |
+
+The creator offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
+no unreachable steps, and `whenStalled` when the procedure collects.
+
+```yaml
+checkAddress:
+  action: checkServiceability
+  with: { address: customer.address }
+  results: { serviceable: isServiceable }
+  onFailure: tellItFailed
+  next:
+    - when: { isServiceable: { oneOf: [yes] } }
+      to: offerPlan
+    - to: sayNotServiceable
+```
+
+## How resources reference each other
+
+```mermaid
+flowchart LR
+  P[Procedure] -->|inform, instruction context| A[Article]
+  A -->|link in content or guide| A
+  A -->|link in guide| P
+  P -->|start| P
+  P -->|action step| X[Action]
+  P -->|collect, assign, when, inform, action mapping| G[Global fact]
+  P -->|contains| L[Local fact]
+```
+
+| From → to                   | Blocks deleting the target | Can form a loop | Loop check |
+| :-------------------------- | :------------------------- | :-------------- | :--------- |
+| Article → article           | yes                        | yes             | refused    |
+| Article → procedure         | yes                        | yes             | refused    |
+| Procedure → article         | yes                        | yes             | refused    |
+| Procedure → procedure       | yes                        | yes             | refused    |
+| Procedure → global fact     | yes                        | no              | none needed |
+| Procedure → action          | yes                        | no              | none needed |
+| Procedure's step → local fact | yes, inside the procedure | no             | none needed |
+
+Facts and actions point at nothing, so they can never be part of a loop. Articles and procedures can point at each
+other, so the check covers both together: `evacuation guide → evacuation procedure → evacuation guide` is refused.
+
+### Rules
+
+1. **A referenced resource cannot be deleted.** The refusal lists every referrer, with a link to each.
+2. **A reference that closes a loop is refused when it is added**, including a resource pointing at itself. The
+   message shows the path: `pricing → discounts → pricing`. So the graph never has a loop, there is always a resource
+   nobody references, and everything can be removed in some order.
+3. **Loops between steps are fine.** They are how a procedure repeats (`conversation` returns to its own `listen`).
+   Rule 2 is about references between resources.
+4. **Deleting a procedure deletes its local facts** and removes its outgoing references.
+5. **`conversation` cannot be deleted and cannot be the target of `start`:** the format requires it as the base of
+   every conversation.
+6. **Rules are checked on the server, in one transaction, for every client.** Two people each adding half of a loop at
+   the same moment must not both succeed.
+
+### Links inside text
+
+SmartRouter refers to articles by title in free text, so nothing notices when one is renamed. Here, a link to another
+article in `content` or `llmGuide`, or to a procedure in `llmGuide`, is inserted from a picker, shown as a chip, and
+stored by `id`. Plain text naming a resource is not a reference and is not protected.
+
+### Edits can break referrers too
+
+Protecting deletes is not enough, so an edit is refused when a referrer would stop being valid:
+
+| Edit                                                        | Refused when                                     |
+| :---------------------------------------------------------- | :----------------------------------------------- |
+| Remove an `enum` value                                      | a `when` or `assign` uses it                     |
+| Change a fact's type                                        | any procedure uses the fact                      |
+| Narrow an `int` range or `maxLength`                        | an `assign` or a condition falls outside it      |
+| Set `writableBy: assign`                                    | a `collect` step names the fact                  |
+| Add a global fact with a local fact's name                  | always: inside the procedure the name is ambiguous |
+| Name a global fact `<procedureId>.<anything>`               | always: that is how a local fact is named outside |
+| Remove or retype an action's parameter or result            | a procedure's step maps it                       |
+
+Renaming an `id` is a single operation that updates every structured link and reference with it.
+
+### Availability is not deletion
+
+Turning a resource off changes whether it can be found, never whether it exists, so it cannot break a reference.
+
+| Off            | Effect                                                                        |
+| :------------- | :---------------------------------------------------------------------------- |
+| **Article**    | left out of search; a procedure naming it explicitly still gets it            |
+| **Procedure**  | the model cannot start it, even from an article's guide; conversations already in it finish |
+| **Action**     | a step running it takes `onFailure`, which makes it a usable emergency switch |
+
+The screen lists what uses the resource before it is turned off. Facts have no availability.
+
+Availability is a live setting, not part of a version. It takes effect at once, without a push, including for
+conversations still on an older version.
+
+## From editing to the bot
+
+The bot does not read the CMS live. It runs the version pushed to it, so what is saved in the CMS reaches customers only
+after a push.
+
+```mermaid
+flowchart LR
+  E[Edit in web, CLI or plugin] --> V{Integrity rules}
+  V -->|refused, with the fix| E
+  V -->|saved| W[Working state]
+  W --> C{Full bot validation}
+  C -->|mistakes listed| E
+  C -->|create version| R[Immutable version]
+  R -->|push| B[Bot]
+```
+
+Each bot's page shows which version it has and offers the push:
+
+```text
+Bot has: v12            Latest: v14
+                        [ Push v14 ]   other version: [ v13 v ]
+```
+
+- **Creating a version and pushing it are separate steps.** "Create version" validates the whole working state and
+  freezes it, so unfinished work is not sent by accident, and a version can wait until someone has checked it.
+- **Pushing the latest version is the main button.** An older one is chosen in a select, and pushing it is the rollback.
+- **The version shown is the one the bot reports**, not the last one the CMS tried to send. A failed push is shown as
+  failed, and the bot keeps what it had.
+- **A push is validated against what the bot declares now**, so an old version using a block the bot no longer runs is
+  refused.
+- **A rollback changes only the bot.** The working state and the latest version stay as they are, even if the old
+  version holds resources deleted since.
+- **The working state is always referentially sound**, but it may be unfinished. A procedure can be incomplete while
+  someone builds it. A version cannot.
+- **The CMS builds no search index.** Through the SDK, the bot's code takes the articles of the version it loaded. It
+  trains its own index from them, or passes them on to an external search system and uses that.
+- **A conversation finishes on the version it started on.** The bot keeps an old version until its last conversation
+  ends, so a push never changes a procedure under a customer.
+
+## Validation and the SDK
+
+The CMS owns the definition format and its rules. The rules are one .NET library, published in the SDK, so they cannot
+drift apart between the places that use them:
+
+```mermaid
+flowchart TD
+  S[SDK: format and validator] --> C[CMS server, on every save and push]
+  S --> B[.NET bot, when it loads a version]
+  S --> A[Coding agent, locally and offline]
+  N[Bot outside .NET] -->|validate endpoint| C
+```
+
+The validator takes a bot's whole definition and what the bot declared, and returns every mistake with its fix. It
+needs no database or network. The format of a version is the public contract between the CMS and any bot.
+
+The SDK is published on nuget.org as `Suwagcms.Sdk`, so any bot can use it.
+
+## Stack
+
+Built from the [`solid-dotnet-app-tpl`](https://github.com/Manomenu/solid-dotnet-app-tpl) template: .NET 10 with ASP.NET
+Core minimal APIs and PostgreSQL on the server, React 19 with shadcn/ui and Tailwind on the web, and one gate that
+decides when a change is done.
+
+## Agent-first
+
+A coding agent is a first-class editor, not an afterthought. The CMS ships with a CLI and a Claude Code plugin, built
+the way [Suwageval](https://github.com/Manomenu/suwalski-agent-eval) builds its own.
+
+```mermaid
+flowchart LR
+  W[Person in the browser] --> Web[Web app]
+  T[Terminal or CI] --> Cli[suwagcms CLI]
+  CC[Claude Code] --> Pl[Plugin] --> Cli
+  Web --> Api[HTTP API]
+  Cli --> Api
+  Api --> V[Same validators]
+```
+
+**Anything the web can do, the CLI and the plugin can do too.** The CLI may do more than the web, never less.
+
+The CMS is the single source of truth, so nobody edits a local copy. For work that spans many resources the CLI has:
+
+| Command             | What it does                                                                                  |
+| :------------------ | :-------------------------------------------------------------------------------------------- |
+| `suwagcms apply`    | applies a file of changes all or nothing, so the order of changes inside it does not matter; a dry run only reports what would break |
+| `suwagcms export`   | writes a version to files for reading and searching; changes to those files do nothing        |
+| `suwagcms diff`     | compares two versions                                                                         |
+
+| Part              | What it is                                                                                  |
+| :---------------- | :------------------------------------------------------------------------------------------ |
+| HTTP API          | the one interface of the server; the web and the CLI both use it, and there is no MCP endpoint |
+| `suwagcms` CLI    | a .NET tool with a command for every web action, including `suwagcms push` to a bot, `--json` for agents and `--open` to show the matching web page |
+| Claude Code plugin| installed from this repository's marketplace; drives the CLI, with a main skill listing every command and a separate skill for work that takes judgment or confirmation |
+
+A web action, its CLI command and its line in the plugin arrive in the same change. The gate fails for a server route
+that has no CLI command.
+
+Behaviour shared by all of them:
+
+- Every refusal says what is wrong and how to fix it: `'collect' of step 'ask' names fact 'x', which only an assign step
+  may write. Remove it from collect, or give the fact 'writableBy: set'.`
+- All mistakes are reported at once, so one pass fixes a whole batch.
+- "What uses this?" and "what would this change break?" can be asked without changing anything (dry run).
+- An agent may push a version itself; validation, history and rollback are the safeguards.
+- Once identity arrives, every change and push records who made it, a person or an agent, and each resource has a full
+  history. Until then the CMS runs only inside a trusted network.
+
+## Screens
+
+| Screen          | Main job                                                                                 |
+| :-------------- | :--------------------------------------------------------------------------------------- |
+| Bots            | Register a bot, see what it declared, switch the active profile                          |
+| Knowledge bases | Articles with search and filters; editor with content, guide and description side by side |
+| Procedures      | List with availability; visual creator with a live list of mistakes                     |
+| Actions         | Contract, implementation, which procedures use it, a test run                            |
+| Facts           | Name, type, values, description, `writableBy`, which procedures use it                   |
+| Any resource    | "Used by" and "Uses" panels; delete is disabled with the reason when it is referenced    |
+| Versions        | Which version the bot has, what changed in each, create version, validation result, push, rollback |
+
+## What it borrows
+
+| Source         | Taken                                                                                       | Left out, and why                                                                                     |
+| :------------- | :------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- |
+| **Rasa CALM**  | Required descriptions; deterministic steps; action step then branch on facts; slots an LLM cannot fill (`controlled`, here `assign`); `id` plus `description` as what the model reads | Actions reading and writing any slot directly: explicit mapping lets the CMS check references          |
+| **ElevenAgents** | Visual graph of nodes; a tool node with success and failure routes; tool results mapped to variables; secrets kept out of prompts; one document reused in many places | LLM-evaluated transitions: a procedure's rules are deterministic on purpose. Force delete that detaches a document from the agents using it: here a reference always blocks |
+| **SmartRouter** | `llmGuide`, an embedded description per article, availability toggle on tools, its TODO's reference checks and "who uses it" view | References by title; procedures disguised as articles                                                  |
+
+Rasa concepts in this project's terms:
+
+| Rasa                               | Suwchatbot                     |
+| :--------------------------------- | :----------------------------- |
+| flow                               | procedure                      |
+| slot                               | fact                           |
+| `from_llm` mapping                 | `writableBy: set` or `correct` |
+| `controlled` mapping               | `writableBy: assign`           |
+| `set_slots`                        | `assign`                       |
+| `persisted_slots`                  | a global fact                  |
+| reset when the flow ends           | a local fact                   |
+| `call`                             | `start`                        |
+| flow guard `if`                    | availability (on or off only)  |
+
+## Integration with the bot
+
+| The bot                                                     | The CMS                                              |
+| :---------------------------------------------------------- | :--------------------------------------------------- |
+| loads a pushed version without a restart and reports which it has | pushes versions and shows which one the bot has |
+| runs all blocks, including `action`, from the version       | delivers procedures, facts and actions in the version |
+| takes articles through the SDK for its own or external search, and reads them by `id` | delivers articles in the version; builds no index |
+| lets action results write `assign` facts                    | checks each action's mapping to facts                |
+| validates a version with the SDK when it loads it           | validates with the same library before pushing       |
+| declares its format version, blocks and code actions        | offers and checks only what the bot declared         |
+| keeps old versions until their last conversation ends       | keeps every version for rollback                     |
+| applies availability changes at once                        | sends availability changes outside versions          |
+
+## Decisions
+
+| Question                                                          | Decision                                                                 |
+| :---------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| What happens to a conversation when a push changes its procedure? | It finishes on the version it started on                                |
+| What is the CMS built with?                                       | The `solid-dotnet-app-tpl` template                                      |
+| Where does validation live?                                       | In one library in the SDK, used by the CMS, bots and agents              |
+| Where is the SDK published?                                       | On nuget.org                                                             |
+| Who builds the search index?                                      | The bot, from data the SDK gives it, or an external search system        |
+| Does the CMS know who is asking?                                  | Not at first: it stays in a trusted network until `cms-identity`         |
+| How are bots and knowledge bases organised?                       | One CMS with several bot profiles; references only within one bot        |
+| Do bots declare what they support?                                | Yes: format version, blocks and actions in code                          |
+| Can an article reference a procedure?                             | Yes, with a link from the picker in its guide                            |
+| What language is an article in?                                   | Its own `language`: `pl` or `en`, `en` by default; no linked translations |
+| How do agents work with the CMS?                                  | Through a CLI and a Claude Code plugin with the same abilities as the web |
+| Who may push a version to a bot?                                  | People and agents                                                        |
+| How does a bot get its definition?                                | It runs a pushed version; pushing an older one is the rollback           |
+| How is a version made?                                            | With a separate "Create version" step before the push                    |
+| Can resources be edited as local files?                           | No: `apply` for batches, `export` and `diff` only for reading            |
+| Can a resource in use be turned off?                              | Yes, with the "used by" list shown first                                 |
+| When does turning off take effect?                                | At once, without a push                                                  |
+
+## Sources
+
+- Suwchatbot, branch master: Suwchatbot.Engine/Facts, Suwchatbot.Engine/Loading and the procedure building blocks spec;
+  branch feature/global-facts-collection
+- SmartRouter: TODO.md, SmartRouter.Core/Connectors/CmsConnector, SmartRouter.Core/Dialogue
+- Suwageval: AGENTS.md, docs/front-doors.md and its Claude Code plugin
+- Rasa: [flows](https://rasa.com/docs/reference/primitives/flows/), [flow steps](https://rasa.com/docs/reference/primitives/flow-steps/),
+  [actions](https://rasa.com/docs/reference/primitives/actions/), [custom actions](https://rasa.com/docs/reference/primitives/custom-actions/),
+  [slots](https://rasa.com/docs/reference/primitives/slots)
+- ElevenAgents: [workflows](https://elevenlabs.io/docs/agents-platform/customization/agent-workflows),
+  [knowledge base](https://elevenlabs.io/docs/eleven-agents/customization/knowledge-base),
+  [dynamic variables](https://elevenlabs.io/docs/eleven-agents/customization/personalization/dynamic-variables),
+  [deleting a document](https://elevenlabs.io/docs/api-reference/knowledge-base/delete)
+
+## The application skeleton
+
+An ASP.NET Core minimal-API server (Npgsql, Dapper, hand-written SQL, grate migrations), a React 19 + shadcn/ui + Tailwind
+web app with types generated from the server's OpenAPI document, and a Notes feature as the pattern end to end.
+
+## What the gate guarantees
+
+`bash Suwagcms.Gate/scripts/check.sh` (`--quick` while working, within a 20-second budget) fails on: any compiler or analyzer warning, banned
+APIs, a layer used against its order, dead types and packages, vague names, stray comments, `dynamic`, unpinned
+images, a stale API contract or generated types, an acceptance criterion without a guardrail, an unresolvable compose file. The full list, each with its fix:
+[docs/architecture.md, "What the gate forbids"](docs/architecture.md#what-the-gate-forbids).
+Browser tests run separately (`scripts/.internal/e2e.sh`), and `just up` starts the container stack and
+smoke-tests it.
+
+## The API contract
+
+`Suwagcms.Server/openapi.json` is generated from the endpoints and committed: the contract on the boundary.
+`just api-types` regenerates it with the web types (`openapi.d.ts`, whose first line names the contract's
+sha256), `just api-diff` compares it with `master` and fails on a change that breaks a consumer (oasdiff), and CI
+runs that comparison on every pull request. An app in another repository that adapts to a new version of this
+contract tags its tests with `contract <name>@<version>` instead of a criterion id; `just contracts` lists them.
+
+## Spec ↔ guardrails sync
+
+Development is spec-driven, and the gate keeps the code and the specs from drifting apart. A spec in
+`docs/visual/spec/` (written with the suwagent `/suwagent:visual-spec` skill) says what to build and
+why; its acceptance criteria are the contract:
+
+1. **Every criterion has an id**, `AC-<feature>-<n>`, at the start of its item in the spec's
+   acceptance section. `vdoc.py ids` of the suwagent plugin assigns them and never reuses a number;
+   an id stays with its criterion for good.
+2. **Outside the spec, a criterion lives only as a guardrail** that names its id: a test, a lint rule,
+   a build rule. Not as a checklist or a QA note. A criterion that no automated check can prove is
+   reworded into plain description or dropped from the spec (the agent asks the owner which).
+3. **The full gate checks the link both ways** (`check.sh`, not `--quick`, so an agent can stop and ask
+   about a criterion mid-work):
+
+| The gate fails when | What to do |
+| --- | --- |
+| a criterion has no guardrail | name its id in a test or rule that fails when the criterion breaks |
+| a guardrail names an id no spec defines | restore the criterion, or delete or rename the id |
+| an id stands where nothing is checked (production code, a config no tool reads) | move it to the guardrail that proves the criterion |
+| a spec has no acceptance section, a criterion without an id or with two, an id defined twice | fix the spec (`vdoc.py ids` numbers new criteria) |
+
+```text
+$ just criteria AC-notes-1
+AC-notes-1       server test (xunit)          Suwagcms.Server.Tests/Notes/NoteEndpointsTests.cs:14
+AC-notes-1       e2e test (playwright)        Suwagcms.Web/src/notes/NotesScreen.e2e.ts:4
+```
+
+Where each kind of guardrail lives and how it names the id (the kinds are `Suwagcms.Gate/criteria.json`):
+
+| Kind | Where | How it names the id |
+| --- | --- | --- |
+| `server test (xunit)` | `Suwagcms.Server.Tests/<Feature>/` | `[Trait("criterion", "AC-notes-1")]` on the test |
+| `architecture test (xunit)` | `Suwagcms.Gate/`: the repository guards | the same `Trait` |
+| `web test (vitest)` | `Suwagcms.Web/src/**/*.test.ts(x)` | in the title: `it("AC-notes-1: a blank note is refused", …)` |
+| `e2e test (playwright)` | `Suwagcms.Web/src/**/*.e2e.ts` | in the title: `test("AC-notes-1: …", …)` |
+| `lint (eslint)` | `Suwagcms.Web/eslint.config.js` | a comment `// AC-notes-1` on the line above the rule |
+| `type check (tsc)` | `Suwagcms.Web/tsconfig*.json` | a comment `// AC-notes-1` above the option |
+| `lint (.NET analyzer)` | `.editorconfig` | `# AC-notes-1` on its own line above `dotnet_diagnostic.….severity = error` |
+| `banned API` | `BannedSymbols.txt` | in the message, so it shows in the build error: `P:System.DateTime.Now;AC-notes-1 use TimeProvider` |
+| `build rule` | `Directory.Build.props` | an XML comment `<!-- AC-notes-1 -->` above the property |
+
+**How it runs.** The check is `vdoc.py criteria` of the
+[suwagent plugin](https://github.com/Manomenu/suwalski-agent-plugin). `Suwagcms.Gate/scripts/criteria.sh`
+downloads it at the commit and SHA-256 it pins (into `~/.cache/suwagent/`), the same on a laptop and in
+CI, and runs it with `Suwagcms.Gate/criteria.json`. `just criteria-update` moves the pin to the plugin's newest
+version; without a network the step is a SKIP locally and a failure in CI. Agents cannot edit the gate,
+the hooks or the lint configs (a Claude Code hook refuses it); to change them with an agent, start it
+with `ALLOW_GATE_EDIT=1 claude`.
+
+What it cannot see: whether a guardrail would really fail when the behaviour breaks.
+`/suwagent:visual-guardrails` checks that before a merge.
+
+## Requirements and commands
+
+See [docs/development.md](docs/development.md). Rules for contributors and agents: [AGENTS.md](AGENTS.md).

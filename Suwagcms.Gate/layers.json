@@ -1,0 +1,8 @@
+{
+  "serverLayers": ["Api", "Notes | Health", "Database"],
+  "projects": {
+    "Suwagcms.Server": { "references": [], "internalsVisibleTo": ["Suwagcms.Gate", "Suwagcms.Server.Tests"] },
+    "Suwagcms.Server.Tests": { "references": ["Suwagcms.Server"], "internalsVisibleTo": [] },
+    "Suwagcms.Gate": { "references": ["Suwagcms.Server"], "internalsVisibleTo": [] }
+  }
+}

@@ -1,0 +1,107 @@
+# Entry point for humans: `just` lists every recipe, grouped. Logic longer than a line or
+# two lives in scripts/.internal/, which is also what CI and agents call directly.
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# The local PostgreSQL — `just db` lists its recipes (.just/db.just)
+mod db '.just/db.just'
+
+[private]
+default:
+    @just --list --unsorted
+
+# HTTP API on :6330, rebuilt on every change — needs `just db up`; its JSON log is also written to .artifacts/logs/server.jsonl
+[group('run')]
+server *args:
+    mkdir -p .artifacts/logs
+    dotnet watch --quiet --project Suwagcms.Server run {{ args }} 2>&1 | tee .artifacts/logs/server.jsonl
+
+# Why did it fail? The last warnings and errors of the newest server log, one line each (--all, --trace <id>, --compose, -n N)
+[group('run')]
+[positional-arguments]
+logs *args:
+    @./scripts/.internal/logs.sh "$@"
+
+# Which guardrails keep each acceptance criterion of the specs true: id, kind, file:line (or one: just criteria AC-<feature>-<n>)
+[group('run')]
+[positional-arguments]
+criteria *args:
+    @./Suwagcms.Gate/scripts/criteria.sh "$@"
+
+# Move the pinned vdoc.py of the acceptance criteria check to the suwagent plugin's newest master
+[group('run')]
+criteria-update:
+    @./Suwagcms.Gate/scripts/criteria.sh --update
+
+# Web UI on :3330, proxies /api to the server — run `just server` alongside
+[group('run')]
+web *args:
+    cd Suwagcms.Web && { [ -d node_modules ] || pnpm install; } && pnpm dev {{ args }}
+
+# Build and start the whole stack with its own PostgreSQL on http://127.0.0.1:8220 (WEB_PORT in .env); waits until every service is healthy
+[group('infra')]
+up:
+    docker compose --profile db up -d --build --wait
+    ./scripts/.internal/smoke.sh http://127.0.0.1:${WEB_PORT:-8220}
+
+# Stop the stack (images and the database volume stay)
+[group('infra')]
+down:
+    docker compose --profile db down --remove-orphans
+
+# Regenerate the API contract (Suwagcms.Server/openapi.json) and the web app's types from it (after changing a record the API sends or receives)
+[group('dev')]
+api-types:
+    @./scripts/.internal/api-types.sh
+
+# Does the API contract break its consumers? Compares openapi.json with master (or the given ref) with oasdiff
+[group('dev')]
+api-diff *args:
+    @./scripts/.internal/api-diff.sh {{ args }}
+
+# Which tests adapt this app to another repository's contract, and to which version (or one: just contracts rabaty@v2)
+[group('dev')]
+[positional-arguments]
+contracts *args:
+    @./scripts/.internal/contracts.sh "$@"
+
+# Browser tests (Playwright) against a real server and an empty database of their own; not part of `just check`
+[group('maintenance')]
+e2e *args:
+    @./scripts/.internal/e2e.sh {{ args }}
+
+# The whole gate: build with analyzers, csharpier, tests, shellcheck, gitleaks (the same CI runs)
+[group('maintenance')]
+check:
+    @./Suwagcms.Gate/scripts/check.sh
+
+# The quick gate: build with analyzers, csharpier, server tests (what the Claude Code Stop hook runs)
+[group('maintenance')]
+check-quick:
+    @./Suwagcms.Gate/scripts/check.sh --quick
+
+# Format the code: CSharpier for C#, Prettier for the web app
+[group('maintenance')]
+fmt:
+    dotnet tool restore >/dev/null && dotnet csharpier format .
+    cd Suwagcms.Web && pnpm exec prettier --write --log-level warn .
+
+# Mutation testing of the server code changed since master (Stryker.NET): a surviving mutant is a test that is too weak
+[group('maintenance')]
+mutate:
+    @./scripts/.internal/db.sh up >/dev/null
+    dotnet tool restore >/dev/null
+    cd Suwagcms.Server.Tests && dotnet tool run dotnet-stryker
+
+# Pack the dotnet new template as a NuGet package into .artifacts/nupkg
+[group('dev')]
+pack-template:
+    dotnet pack pack/Solid.DotnetApp.Template.csproj -o .artifacts/nupkg
+
+# Install tools and packages from the lockfiles, and enable the git hooks
+[group('maintenance')]
+sync:
+    git config core.hooksPath .githooks
+    dotnet tool restore
+    dotnet restore Suwagcms.slnx
+    cd Suwagcms.Web && pnpm install --frozen-lockfile

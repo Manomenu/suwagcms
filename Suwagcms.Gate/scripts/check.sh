@@ -1,0 +1,223 @@
+#!/usr/bin/env bash
+# The quality gate. CI runs exactly this script; humans run `just check`, hooks run `--quick`.
+#   check.sh --quick   build with analyzers, csharpier, server tests against the real database, tsc, eslint, vitest
+#   check.sh           quick, plus prettier, knip, API contract and types up to date, acceptance criteria guarded, shellcheck and gitleaks
+# The quick gate has a time budget, CHECK_QUICK_LIMIT seconds (default 20): the Stop hook runs it after every turn of an
+# agent, and a gate that takes minutes gets switched off. Above the budget it fails and says so: move the slow step to the
+# full gate or make it faster; raise the budget only on a machine that is slow across the board.
+# Acceptance criteria are not in --quick: the Stop hook runs it after every turn, and a criterion written into
+# a spec before its guardrail (or one the owner must first decide on) would block the agent from stopping to ask.
+# Quiet: a green gate prints one line. Otherwise it lists only the failed and skipped steps (passed ones are counted),
+# after the tail of each failed log: whoever reads it, often an agent's context, pays only for what needs fixing.
+# A step that cannot run
+# (a tool is missing) is SKIP, never PASS; with CI set a SKIP fails the gate, locally the report ends with
+# "NOT VERIFIED: <steps>". Exit code is non-zero on any failure.
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+# shellcheck source=scripts/.internal/checkout-env.sh
+source "$ROOT/scripts/.internal/checkout-env.sh"
+
+QUICK=0
+case "${1:-}" in
+    "") ;;
+    --quick) QUICK=1 ;;
+    *)
+        echo "usage: check.sh [--quick]" >&2
+        exit 2
+        ;;
+esac
+
+LOGS="$(mktemp -d)"
+trap 'rm -rf "$LOGS"' EXIT
+FAILURE_LINES=25
+ORDER=()
+declare -A NAME
+declare -A SKIPPED
+declare -A LIMIT
+QUICK_LIMIT="${CHECK_QUICK_LIMIT:-20}"
+case "$QUICK_LIMIT" in
+    '' | *[!0-9]*)
+        echo "check.sh: CHECK_QUICK_LIMIT must be a whole number of seconds, not '$QUICK_LIMIT'" >&2
+        exit 2
+        ;;
+esac
+
+declare_step() { ORDER+=("$1"); NAME["$1"]="$2"; LIMIT["$1"]="$3"; }
+
+# run_step KEY FUNCTION — output goes to a log, the result is "status seconds". Always returns 0:
+# a failed step is reported at the end and does not stop the group it runs in. Every step has a hard
+# ceiling (LIMIT[key] seconds, CHECK_STEP_LIMIT overrides all of them); a step that exceeds it is killed and fails
+# as "hung or too slow". Without `timeout` on the machine there is no ceiling.
+run_step() {
+    local key="$1" function="$2" start status=0
+    start=$SECONDS
+    if command -v timeout >/dev/null 2>&1; then
+        timeout -k 10 "${CHECK_STEP_LIMIT:-${LIMIT[$key]}}" bash -c "$function" >"$LOGS/$key.log" 2>&1 || status=$?
+        if [ "$status" -eq 124 ]; then
+            echo "hung or too slow: $function exceeded ${CHECK_STEP_LIMIT:-${LIMIT[$key]}} s and was killed" >>"$LOGS/$key.log"
+        fi
+    else
+        bash -c "$function" >"$LOGS/$key.log" 2>&1 || status=$?
+    fi
+    echo "$status $((SECONDS - start))" >"$LOGS/$key.result"
+}
+
+build_server() { (cd "$ROOT" && dotnet build Suwagcms.slnx --nologo -v quiet); }
+
+format_server() { (cd "$ROOT" && dotnet tool restore >/dev/null && dotnet csharpier check .); }
+
+local_database() { "$ROOT/scripts/.internal/db.sh" up >/dev/null; }
+
+test_server() { (cd "$ROOT" && dotnet test --solution Suwagcms.slnx --no-build --no-progress); }
+
+shell_scripts() { (cd "$ROOT" && { find scripts Suwagcms.Gate/scripts -name "*.sh"; echo .githooks/pre-commit; } | xargs shellcheck -S warning); }
+
+web_typecheck() { cd "$ROOT/Suwagcms.Web" && pnpm exec tsc --noEmit -p tsconfig.app.json && pnpm exec tsc --noEmit -p tsconfig.node.json; }
+
+web_eslint() { cd "$ROOT/Suwagcms.Web" && pnpm exec eslint . --max-warnings 0; }
+
+web_vitest() { cd "$ROOT/Suwagcms.Web" && pnpm exec vitest run; }
+
+web_prettier() { cd "$ROOT/Suwagcms.Web" && pnpm exec prettier --check .; }
+
+web_knip() { cd "$ROOT/Suwagcms.Web" && pnpm exec knip; }
+
+api_types() { "$ROOT/scripts/.internal/api-types.sh" --check; }
+
+acceptance_criteria() { "$ROOT/Suwagcms.Gate/scripts/criteria.sh"; }
+
+compose_files() {
+    cd "$ROOT"
+    docker compose config --quiet
+    docker compose --profile db config --quiet
+}
+
+secrets_in_git() {
+    cd "$ROOT"
+    if git rev-parse --verify HEAD >/dev/null 2>&1; then
+        gitleaks git . --no-banner --redact --log-level warn
+    fi
+    gitleaks dir . --no-banner --redact --log-level warn --max-target-megabytes 1
+}
+
+export ROOT
+export -f build_server format_server local_database test_server shell_scripts secrets_in_git web_typecheck web_eslint web_vitest web_prettier web_knip api_types acceptance_criteria compose_files
+declare_step build "build server (compiler, analyzers, banned APIs, NuGet audit)" 300
+declare_step format "format server (csharpier check)" 120
+if [ -z "${CI:-}" ]; then declare_step postgres "postgres for tests (db.sh up)" 120; fi
+declare_step test "test server (xunit, repository guards, real PostgreSQL)" 600
+declare_step tsc "typecheck Suwagcms.Web (tsc: app, e2e tests, config)" 120
+declare_step eslint "lint Suwagcms.Web (eslint strict + import contracts)" 180
+declare_step vitest "test Suwagcms.Web (vitest)" 180
+if [ "$QUICK" -eq 0 ]; then
+    declare_step compose "compose stack resolves, with and without the db profile (docker compose config)" 120
+    declare_step prettier "format Suwagcms.Web (prettier --check)" 120
+    declare_step knip "dead code Suwagcms.Web (knip)" 180
+    declare_step apitypes "API contract and types up to date (api-types.sh --check)" 300
+    declare_step criteria "acceptance criteria guarded (criteria.sh)" 60
+    declare_step shellcheck "shell scripts (shellcheck)" 120
+    declare_step gitleaks "secrets in git (gitleaks)" 300
+    docker compose version >/dev/null 2>&1 || SKIPPED[compose]="docker compose not installed"
+    command -v shellcheck >/dev/null 2>&1 || SKIPPED[shellcheck]="shellcheck not installed"
+    command -v gitleaks >/dev/null 2>&1 || SKIPPED[gitleaks]="gitleaks not installed"
+    if ! command -v python3 >/dev/null 2>&1; then
+        SKIPPED[criteria]="python3 not installed"
+    else
+        fetched=0
+        "$ROOT/Suwagcms.Gate/scripts/criteria.sh" --fetch >/dev/null 2>&1 || fetched=$?
+        # Why: only a missing download is a SKIP; a checksum mismatch runs the step, which fails and says why
+        if [ "$fetched" -eq 3 ]; then SKIPPED[criteria]="the pinned vdoc.py cannot be downloaded (no network?)"; fi
+    fi
+fi
+
+if command -v pnpm >/dev/null 2>&1; then
+    [ -d "$ROOT/Suwagcms.Web/node_modules" ] || (cd "$ROOT/Suwagcms.Web" && pnpm install --frozen-lockfile --silent)
+else
+    for key in tsc eslint vitest prettier knip apitypes; do
+        if [ -n "${LIMIT[$key]+x}" ]; then SKIPPED[$key]="pnpm not installed"; fi
+    done
+fi
+
+GATE_START=$SECONDS
+PIDS=()
+(
+    run_step build build_server
+    if [ -z "${CI:-}" ]; then run_step postgres local_database; fi
+    run_step test test_server
+    if [ "$QUICK" -eq 0 ] && [ -z "${SKIPPED[apitypes]+x}" ]; then run_step apitypes api_types; fi
+) &
+PIDS+=($!)
+launch() {
+    local key="$1"
+    if [ -z "${SKIPPED[$key]+x}" ]; then
+        run_step "$key" "$2" &
+        PIDS+=($!)
+    fi
+}
+launch format format_server
+launch tsc web_typecheck
+launch eslint web_eslint
+launch vitest web_vitest
+if [ "$QUICK" -eq 0 ]; then
+    launch prettier web_prettier
+    launch knip web_knip
+    launch criteria acceptance_criteria
+    launch compose compose_files
+    launch shellcheck shell_scripts
+    launch gitleaks secrets_in_git
+fi
+for pid in "${PIDS[@]}"; do wait "$pid" || true; done
+TOTAL=$((SECONDS - GATE_START))
+# Why: the budget is decided before the summary, so a green run over budget never prints PASS
+OVER_BUDGET=0
+if [ "$QUICK" -eq 1 ] && [ "$TOTAL" -gt "$QUICK_LIMIT" ]; then OVER_BUDGET=1; fi
+
+FAILED=0
+PASSED=0
+NOT_VERIFIED=()
+REPORT=()
+FAILURES=()
+for key in "${ORDER[@]}"; do
+    if [ -n "${SKIPPED[$key]+x}" ]; then
+        if [ -n "${CI:-}" ]; then
+            REPORT+=("FAIL        ${NAME[$key]} — ${SKIPPED[$key]} (CI: a skipped step fails)")
+            FAILED=1
+        else
+            REPORT+=("SKIP        ${NAME[$key]} — ${SKIPPED[$key]}")
+            NOT_VERIFIED+=("$key")
+        fi
+        continue
+    fi
+    read -r status secs <"$LOGS/$key.result"
+    if [ "$status" -eq 0 ]; then
+        PASSED=$((PASSED + 1))
+    else
+        REPORT+=("$(printf 'FAIL %4ss  %s' "$secs" "${NAME[$key]}")")
+        FAILURES+=("${NAME[$key]}" "$LOGS/$key.log")
+        FAILED=1
+    fi
+done
+if [ "$OVER_BUDGET" -eq 1 ]; then
+    REPORT+=("FAIL ${TOTAL}s  the quick gate is over its budget of ${QUICK_LIMIT}s: move the slow step to the full gate or speed it up; a first run after a reboot or on a fresh checkout may exceed it once; a machine that is slow across the board runs with CHECK_QUICK_LIMIT=<seconds>")
+    FAILED=1
+fi
+
+for ((i = 0; i < ${#FAILURES[@]}; i += 2)); do
+    echo
+    echo "==================== failed: ${FAILURES[i]} (last $FAILURE_LINES lines) ===================="
+    tail -n "$FAILURE_LINES" "${FAILURES[i + 1]}"
+done
+
+if [ ${#REPORT[@]} -eq 0 ]; then
+    echo "PASS check.sh${1:+ $1}: all $PASSED steps in ${TOTAL}s"
+else
+    echo
+    for line in "${REPORT[@]}"; do
+        echo "  $line"
+    done
+    echo "  $PASSED passed, total ${TOTAL}s"
+fi
+if [ ${#NOT_VERIFIED[@]} -gt 0 ]; then
+    echo "NOT VERIFIED: ${NOT_VERIFIED[*]}"
+fi
+exit "$FAILED"

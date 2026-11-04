@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/Suwagcms.Server/">
+    <Project Path="Suwagcms.Server/Suwagcms.Server.csproj" />
+    <Project Path="Suwagcms.Server.Tests/Suwagcms.Server.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Suwagcms.Gate/">
+    <Project Path="Suwagcms.Gate/Suwagcms.Gate.csproj" />
+  </Folder>
+</Solution>

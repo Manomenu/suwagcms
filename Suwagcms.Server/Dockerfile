@@ -1,0 +1,16 @@
+# Build context is the repo root: docker build -f Suwagcms.Server/Dockerfile -t suwagcms-server:local .
+FROM mcr.microsoft.com/dotnet/sdk:10.0.400-alpine3.23 AS build
+WORKDIR /src
+COPY .editorconfig global.json nuget.config Directory.Build.props Directory.Build.rsp Directory.Packages.props BannedSymbols.txt ./
+COPY Suwagcms.Server/Suwagcms.Server.csproj Suwagcms.Server/packages.lock.json Suwagcms.Server/
+RUN dotnet restore Suwagcms.Server/Suwagcms.Server.csproj --locked-mode
+COPY Suwagcms.Server/ Suwagcms.Server/
+RUN dotnet publish Suwagcms.Server/Suwagcms.Server.csproj -c Release --no-restore -o /out
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.12-alpine3.23
+WORKDIR /app
+COPY --from=build /out ./
+ENV ASPNETCORE_URLS=http://+:6330
+USER app
+EXPOSE 6330
+ENTRYPOINT ["dotnet", "Suwagcms.Server.dll"]
