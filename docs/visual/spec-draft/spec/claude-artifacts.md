@@ -18,3 +18,4 @@ source; the artifact is its published copy. Maintained by `vdoc.py register`, so
 | Procedure creator | [2026-11-04-procedure-creator.html](2026-11-04-procedure-creator.html) | <https://claude.ai/artifact/GeUJ5vyk5S8WqKZx4vAQV8> | 2026-11-04 |
 | Procedure model | [2026-11-04-procedure-model.html](2026-11-04-procedure-model.html) | <https://claude.ai/artifact/VX1dqzYcvB6FLqybWUwEJ2> | 2026-11-04 |
 | Definition validator | [2026-11-04-sdk-validator.html](2026-11-04-sdk-validator.html) | <https://claude.ai/artifact/FRCtaxRZRBhkZFCPmGhEnK> | 2026-11-04 |
+| Creating a version | [2026-11-04-version-create.html](2026-11-04-version-create.html) | <https://claude.ai/artifact/EuamQ3jfNpJbxxHGUys2jA> | 2026-11-04 |
