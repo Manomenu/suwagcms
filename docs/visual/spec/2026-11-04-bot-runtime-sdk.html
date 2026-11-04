@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-bot-runtime-sdk.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-bot-runtime-sdk.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>SDK in the bot</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 29 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>sdk-validator</code></span>
@@ -384,7 +384,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><b>2</b><span>routes on the bot</span></div>
     <div><b>16</b><span>criteria</span></div>
     <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -460,7 +459,7 @@ flowchart TB
   <h3>Edge cases</h3>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a version whose bot id is not this bot's</td><td>refused: without a key, this at least stops a mistyped address from loading another bot's definition</td></tr>
+    <tr><td>a version whose bot id is not this bot's</td><td>refused like any other invalid document: without a key, this at least stops a mistyped address from loading another bot's definition</td></tr>
     <tr><td>a <code>formatVersion</code> this SDK does not read</td><td>refused, naming the versions it reads</td></tr>
     <tr><td>a document that does not match its digest</td><td>refused; state unchanged</td></tr>
     <tr><td>the same number and document sent again</td><td>succeeds and changes nothing, so a push can be repeated safely</td></tr>
@@ -479,7 +478,7 @@ flowchart TB
   <p>This is the public contract between the CMS and any bot; the version document itself is described in <code>version-create</code>. The shapes of the state answer and of a refusal are published with the format's JSON schema.</p>
   <table>
     <tr><th>Route</th><th>Does</th><th>Answers</th></tr>
-    <tr><td><code>GET /suwagcms/state</code></td><td>says what the bot has, from the store, so every instance gives the same answer</td><td>bot id, current version or none, versions held, versions in use</td></tr>
+    <tr><td><code>GET /suwagcms/state</code></td><td>says what the bot has, from the store, so every instance gives the same answer</td><td>bot id, current version or none, versions held, versions in use, and the reason when the store cannot be read</td></tr>
     <tr><td><code>PUT /suwagcms/versions/{number}</code></td><td>takes a version document and its digest; safe to repeat</td><td>the state, or a refusal with every mistake</td></tr>
   </table>
 </section>
@@ -492,6 +491,10 @@ flowchart TB
     <li>The bot's own code reports versions in use, because only the bot knows when a conversation is over, and an expiry rule in the SDK would end conversations it knows nothing about.</li>
     <li>A bot validates a version itself even though the CMS already did: the same library at both ends costs little, and a bot never runs something it has not checked.</li>
     <li>The “current” version is the last one accepted, not the highest number, so a rollback needs no special path.</li>
+    <li>The bot's code reports the versions in use for the whole bot, not per instance: a bot with several instances already keeps its conversations in a shared place and answers in one query, and the SDK needs no way to notice instances that went away.</li>
+    <li>A document with another bot's id is an ordinary refusal, like any other invalid document; the bot gives its id when it sets the SDK up.</li>
+    <li>The version document is one JSON object: <code>formatVersion</code>, <code>bot</code>, <code>number</code>, <code>digest</code> and the lists of the definition. The digest is the SHA-256 (lower-case hex) of the document in canonical form: UTF-8 without white space, object members sorted by name, the <code>digest</code> member left out. Same number and same digest is the same document; an identical document sent again for a version that is not current changes nothing, so a rollback to a held version needs its own path in <code>version-rollback</code>.</li>
+    <li>Refusals answer 422 (invalid document), 409 (the number holds another document) or 503 (the store failed), as Problem Details with the mistakes in <code>mistakes</code>.</li>
   </ul>
 </section>
 
@@ -536,17 +539,6 @@ flowchart TB
   <div class="callout assumption"><p>Reports of versions in use are assumed to cover all of a bot's instances, for example from its shared conversation store. A per-instance report would let one instance remove a version another still needs.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>How does a bot with several instances report the versions in use?</legend>
-      <p class="why">The owner chose a shared store, and removal must not take a version that another instance's conversation still needs. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="whole"><span><b>The bot's code reports for the whole bot</b><small>a bot with several instances already keeps conversations in a shared place, so it can answer in one query, and the SDK stays simple</small></span></label>
-      <label><input type="radio" value="instance"><span><b>Each instance reports its own, and the SDK adds them up in the store</b><small>a bot's code knows less, but the SDK then needs to notice instances that have gone away</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

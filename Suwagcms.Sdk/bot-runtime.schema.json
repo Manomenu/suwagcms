@@ -1,0 +1,184 @@
+{
+  "state": {
+    "type": "object",
+    "properties": {
+      "bot": {
+        "type": "string"
+      },
+      "current": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "held": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "inUse": {
+        "type": "array",
+        "items": {
+          "type": "integer"
+        }
+      },
+      "storeError": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "bot",
+      "current",
+      "held",
+      "inUse",
+      "storeError"
+    ]
+  },
+  "refusal": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "status": {
+        "type": "integer"
+      },
+      "detail": {
+        "type": "string"
+      },
+      "mistakes": {
+        "type": "array",
+        "items": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "stage": {
+              "enum": [
+                "Save",
+                "Version"
+              ]
+            },
+            "resource": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "Definition",
+                    "GlobalFact",
+                    "KnowledgeBase",
+                    "Article",
+                    "Action",
+                    "Procedure"
+                  ]
+                },
+                "id": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ]
+            },
+            "path": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "fix": {
+              "type": "string"
+            },
+            "related": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "resource": {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "enum": [
+                          "Definition",
+                          "GlobalFact",
+                          "KnowledgeBase",
+                          "Article",
+                          "Action",
+                          "Procedure"
+                        ]
+                      },
+                      "id": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "id"
+                    ]
+                  },
+                  "location": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "resource",
+                  "location"
+                ]
+              }
+            }
+          },
+          "required": [
+            "code",
+            "stage",
+            "resource",
+            "path",
+            "message",
+            "fix",
+            "related"
+          ]
+        }
+      }
+    },
+    "required": [
+      "title",
+      "status",
+      "detail",
+      "mistakes"
+    ]
+  },
+  "versionEnvelope": {
+    "type": "object",
+    "properties": {
+      "formatVersion": {
+        "type": "integer"
+      },
+      "bot": {
+        "type": "string"
+      },
+      "number": {
+        "type": "integer"
+      },
+      "digest": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "formatVersion",
+      "bot",
+      "number",
+      "digest"
+    ]
+  }
+}

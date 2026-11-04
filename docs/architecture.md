@@ -9,7 +9,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `Suwagcms.Server/` — the HTTP API (ASP.NET Core minimal APIs, Npgsql, Dapper with hand-written SQL). One folder and namespace per feature: `Api/` wires the routes, `Health/` checks the database, `Database/` is the pool and the grate migrations.
 - `Suwagcms.Server/Database/Migrations/up/` — numbered SQL migrations, applied at start-up by grate and never edited afterwards.
 - `Suwagcms.Server.Tests/` — xUnit v3 tests against a real PostgreSQL. Mirrors the server's folders; `Commands/` ties every route to a CLI command; `Characterization/` holds behaviour recorded before changing legacy code.
-- `Suwagcms.Sdk/` — the SDK of a .NET bot, packed as the NuGet package `Suwagcms.Sdk` (`net9.0;net10.0`): the definition format (`Format/`), the validator (`Validation/`), the format's JSON schema (`just sdk-schema`). `Suwagcms.Contracts` references it.
+- `Suwagcms.Sdk/` — the SDK of a .NET bot, a NuGet package (`net9.0;net10.0`): the definition format (`Format/`), the validator (`Validation/`), the bot runtime (`BotRuntime/`: routes, version store), JSON schemas (`just sdk-schema`). Contracts references it.
 - `Suwagcms.Sdk.Tests/` — xUnit v3 plain tests of the SDK, no database.
 - `Suwagcms.Contracts/` — the records the API sends and receives, shared by the server and the CLI. Empty so far; references the SDK.
 - `Suwagcms.Cli/` — the `suwagcms` command, packed as a .NET tool (System.CommandLine; `just cli-install`). So far `status` and `server`; one folder per feature, options and exit codes shared; references the contracts.
