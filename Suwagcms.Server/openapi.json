@@ -23,10 +23,99 @@
           }
         }
       }
+    },
+    "/api/bots": {
+      "get": {
+        "tags": [
+          "BotEndpoints"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Bot"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "BotEndpoints"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterBot"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Bot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Bot": {
+        "required": [
+          "id",
+          "name",
+          "address"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        },
+        "description": "A registered bot: the id that sits in addresses and commands, the name people see, and where the CMS reaches it."
+      },
       "HealthStatus": {
         "required": [
           "status"
@@ -37,12 +126,151 @@
             "type": "string"
           }
         }
+      },
+      "Mistake": {
+        "required": [
+          "code",
+          "stage",
+          "resource",
+          "path",
+          "message",
+          "fix",
+          "related"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ValidationStage"
+          },
+          "resource": {
+            "$ref": "#/components/schemas/ResourceRef"
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "string"
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedResource"
+            }
+          }
+        }
+      },
+      "Refusal": {
+        "required": [
+          "title",
+          "status",
+          "detail",
+          "mistakes"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "The Problem Details of a refused change: every mistake at once, each with its fix."
+      },
+      "RegisterBot": {
+        "required": [
+          "id",
+          "name",
+          "address"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          }
+        },
+        "description": "What registering a bot takes. Registering never contacts the address."
+      },
+      "RelatedResource": {
+        "required": [
+          "resource",
+          "location"
+        ],
+        "type": "object",
+        "properties": {
+          "resource": {
+            "$ref": "#/components/schemas/ResourceRef"
+          },
+          "location": {
+            "type": "string"
+          }
+        }
+      },
+      "ResourceKind": {
+        "enum": [
+          "Definition",
+          "GlobalFact",
+          "KnowledgeBase",
+          "Article",
+          "Action",
+          "Procedure"
+        ]
+      },
+      "ResourceRef": {
+        "required": [
+          "kind",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "ValidationStage": {
+        "enum": [
+          "Save",
+          "Version"
+        ]
       }
     }
   },
   "tags": [
     {
       "name": "HealthEndpoints"
+    },
+    {
+      "name": "BotEndpoints"
     }
   ]
 }

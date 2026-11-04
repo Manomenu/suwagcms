@@ -7,7 +7,7 @@ public sealed class MainSkillContentTests
     [
         ("how to install the CLI", "Install", ["dotnet tool install -g Suwagcms.Cli"]),
         ("how to pick the server", "Server and bot", ["--server", "SUWAGCMS_URL", "suwagcms server <url>"]),
-        ("how to pick the bot", "Server and bot", ["--bot", "SUWAGCMS_BOT", "suwagcms use <name>"]),
+        ("how to pick the bot", "Server and bot", ["--bot", "SUWAGCMS_BOT", "suwagcms use <id>"]),
         ("to use --json", "Output", ["--json", "one JSON document"]),
         ("how to read a refusal", "Refusals", ["Exit code `1`", "mistakes", "fix"]),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),

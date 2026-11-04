@@ -53,6 +53,17 @@ public sealed class CommandListTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-12")]
+    public void The_main_skill_has_a_line_for_bots_add_bots_list_and_use()
+    {
+        var listed = CommandList.Listed(MainSkill());
+
+        Assert.Contains("bots add", listed);
+        Assert.Contains("bots list", listed);
+        Assert.Contains("use", listed);
+    }
+
+    [Fact]
     public void The_main_skill_lists_at_least_the_commands_the_cli_has_today()
     {
         Assert.Contains("status", CommandList.Listed(MainSkill()));

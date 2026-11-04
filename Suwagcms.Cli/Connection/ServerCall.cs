@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace Suwagcms.Cli.Connection;
@@ -7,10 +8,27 @@ internal static class ServerCall
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
-    public static async Task<ServerAnswer> GetAsync(
+    public static Task<ServerAnswer> GetAsync(CliEnvironment environment, Uri address, string path, CancellationToken cancellationToken) =>
+        SendAsync(environment, address, (http, cancellation) => http.GetAsync(new Uri(address, path), cancellation), cancellationToken);
+
+    public static Task<ServerAnswer> PostAsync<T>(
         CliEnvironment environment,
         Uri address,
         string path,
+        T body,
+        CancellationToken cancellationToken
+    ) =>
+        SendAsync(
+            environment,
+            address,
+            (http, cancellation) => http.PostAsJsonAsync(new Uri(address, path), body, cancellation),
+            cancellationToken
+        );
+
+    private static async Task<ServerAnswer> SendAsync(
+        CliEnvironment environment,
+        Uri address,
+        Func<HttpClient, CancellationToken, Task<HttpResponseMessage>> send,
         CancellationToken cancellationToken
     )
     {
@@ -19,7 +37,7 @@ internal static class ServerCall
         var http = environment.Http ?? owned;
         try
         {
-            using var response = await http.GetAsync(new Uri(address, path), cancellationToken);
+            using var response = await send(http, cancellationToken);
             return await AnswerAsync(address, response, cancellationToken);
         }
         catch (HttpRequestException)
@@ -41,12 +59,12 @@ internal static class ServerCall
     {
         if (response.IsSuccessStatusCode)
         {
-            return ServerAnswer.Done;
+            return ServerAnswer.Succeeded(await ReadJsonAsync(response, cancellationToken));
         }
         var body = await ReadJsonAsync(response, cancellationToken);
         if (
             (int)response.StatusCode is >= 400 and < 500
-            && body is { } problem
+            && body is { ValueKind: JsonValueKind.Object } problem
             && problem.TryGetProperty("mistakes", out var mistakes)
             && mistakes.ValueKind == JsonValueKind.Array
             && mistakes.GetArrayLength() > 0
@@ -55,7 +73,9 @@ internal static class ServerCall
             return ServerAnswer.Refused([.. mistakes.EnumerateArray().Select(mistake => mistake.Clone())]);
         }
         var detail =
-            body is { } found && found.TryGetProperty("detail", out var text) && text.ValueKind == JsonValueKind.String
+            body is { ValueKind: JsonValueKind.Object } found
+            && found.TryGetProperty("detail", out var text)
+            && text.ValueKind == JsonValueKind.String
                 ? $" {text.GetString()}"
                 : "";
         return ServerAnswer.Failed(
@@ -70,7 +90,7 @@ internal static class ServerCall
         try
         {
             using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
-            return document.RootElement.ValueKind == JsonValueKind.Object ? document.RootElement.Clone() : null;
+            return document.RootElement.Clone();
         }
         catch (JsonException)
         {

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-bot-profiles.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-bot-profiles.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Bot profiles</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 4 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>cli-foundation</code></span>
@@ -383,7 +383,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>12</b><span>criteria</span></div>
     <div><b>2</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -403,7 +403,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Asking the bot what it supports: <code>bot-declaration</code>. Registering does not contact the bot, so a bot can be registered before it runs.</li>
       <li>Showing which version a bot has: <code>version-push</code>.</li>
-      <li>Changing a bot's address or name, and deleting a bot: see Open questions.</li>
+      <li>Changing a bot's address or name, and deleting a bot: see Decisions.</li>
       <li>Login, and who may see which bot: the CMS has no identity yet and runs only inside a trusted network.</li>
     </ul></div>
   </div>
@@ -478,6 +478,10 @@ No bot 'rzeczoznawka'. Bots: rzeczoznawca, sklep.</div>
     <li>The active profile is kept by the client: a server-side “current bot” would let one agent switch the bot under another person's hands.</li>
     <li>Registering never contacts the bot, because the first cut has nothing to ask it; a bot can be registered before it is deployed.</li>
     <li>A bot's <code>id</code> does not change: it sits in addresses and agents' scripts, and a rename belongs to no approved feature.</li>
+    <li>The first cut ends on register, list and switch: changing a bot's address or name and deleting a bot stay out. A bot that moves needs a change in the database until the first real bot moves; deleting waits until one is retired, because it removes every resource of the bot.</li>
+    <li><code>suwagcms use</code> without an id says which bot is in use and where the choice came from. It is the first command that needs a bot, so the rules of "which bot" and of the two refusals (none chosen: exit 2; no such bot: exit 1) are proven on a real command until the commands of later features need a bot.</li>
+    <li>Refusals use Problem Details with a <code>mistakes</code> list, like every refusal of the CMS: a duplicate id answers 409, any other mistake of a registration 422.</li>
+    <li>The bot's routes have no key until <code>cms-identity</code>, so the <code>bot</code> table holds only id, name, address and the creation time.</li>
   </ul>
 </section>
 
@@ -511,20 +515,9 @@ No bot 'rzeczoznawka'. Bots: rzeczoznawca, sklep.</div>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p>Without identity, anyone who can reach the CMS can register a bot and point it anywhere. README accepts this: until <code>cms-identity</code>, the CMS and the bots' routes run only inside a trusted network.</p></div>
-  <div class="callout warn"><p>A registered bot cannot yet change its address. A bot that moves leaves its profile pointing at the old place, which matters only once real bots are deployed. See the question below.</p></div>
+  <div class="callout warn"><p>A registered bot cannot yet change its address. A bot that moves leaves its profile pointing at the old place, which matters only once real bots are deployed. Editing and deleting stay out of the first cut (see Decisions).</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should the first cut let an owner change a bot's address or name, or delete a bot?</legend>
-      <p class="why">The approved scope is register, list and switch. Without editing, a bot that moves needs a change in the database. This spec stays inside the approved scope.</p>
-      <label data-recommended><input type="radio" value="later"><span><b>Leave it out for now</b><small>the first cut ends on one test bot; add editing when the first real bot moves, deleting when one is retired</small></span></label>
-      <label><input type="radio" value="edit"><span><b>Add changing the address and name now</b><small>small, and avoids a database change on the first move; deleting stays out because it removes every resource</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

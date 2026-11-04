@@ -1,5 +1,5 @@
 {
-  "serverLayers": ["Api", "Health", "Database"],
+  "serverLayers": ["Api", "Bots", "Health", "Database"],
   "projects": {
     "Suwagcms.Sdk": { "references": [], "internalsVisibleTo": ["Suwagcms.Sdk.Tests"] },
     "Suwagcms.Sdk.Tests": { "references": ["Suwagcms.Sdk"], "internalsVisibleTo": [] },

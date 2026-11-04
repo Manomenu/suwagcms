@@ -6,6 +6,10 @@ internal static class SavedAddress
 
     public static string? Read(string folder)
     {
+        if (!Path.IsPathRooted(folder))
+        {
+            return null;
+        }
         var path = Path.Combine(folder, FileName);
         return File.Exists(path) ? File.ReadAllText(path).Trim() : null;
     }
