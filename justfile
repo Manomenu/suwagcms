@@ -98,6 +98,13 @@ mutate:
 pack-template:
     dotnet pack pack/Solid.DotnetApp.Template.csproj -o .artifacts/nupkg
 
+# Pack the CLI and install (or update) it as the global `suwagcms` command
+[group('dev')]
+cli-install:
+    dotnet pack Suwagcms.Cli -c Release -o .artifacts/nupkg
+    dotnet tool uninstall --global Suwagcms.Cli || true
+    dotnet tool install --global --add-source .artifacts/nupkg Suwagcms.Cli
+
 # Install tools and packages from the lockfiles, and enable the git hooks
 [group('maintenance')]
 sync:

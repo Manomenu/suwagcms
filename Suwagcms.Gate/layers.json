@@ -1,7 +1,12 @@
 {
-  "serverLayers": ["Api", "Notes | Health", "Database"],
+  "serverLayers": ["Api", "Health", "Database"],
   "projects": {
-    "Suwagcms.Server": { "references": [], "internalsVisibleTo": ["Suwagcms.Gate", "Suwagcms.Server.Tests"] },
+    "Suwagcms.Sdk": { "references": [], "internalsVisibleTo": [] },
+    "Suwagcms.Sdk.Tests": { "references": ["Suwagcms.Sdk"], "internalsVisibleTo": [] },
+    "Suwagcms.Contracts": { "references": ["Suwagcms.Sdk"], "internalsVisibleTo": [] },
+    "Suwagcms.Cli": { "references": ["Suwagcms.Contracts"], "internalsVisibleTo": ["Suwagcms.Cli.Tests"] },
+    "Suwagcms.Cli.Tests": { "references": ["Suwagcms.Cli"], "internalsVisibleTo": [] },
+    "Suwagcms.Server": { "references": ["Suwagcms.Contracts"], "internalsVisibleTo": ["Suwagcms.Gate", "Suwagcms.Server.Tests"] },
     "Suwagcms.Server.Tests": { "references": ["Suwagcms.Server"], "internalsVisibleTo": [] },
     "Suwagcms.Gate": { "references": ["Suwagcms.Server"], "internalsVisibleTo": [] }
   }

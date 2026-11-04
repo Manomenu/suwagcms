@@ -456,12 +456,22 @@
           "xunit.v3.runner.common": "[4.0.2]"
         }
       },
+      "suwagcms.contracts": {
+        "type": "Project",
+        "dependencies": {
+          "Suwagcms.Sdk": "[0.0.0-local, )"
+        }
+      },
+      "suwagcms.sdk": {
+        "type": "Project"
+      },
       "suwagcms.server": {
         "type": "Project",
         "dependencies": {
           "Dapper": "[2.1.89, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.12, )",
           "Npgsql": "[10.0.3, )",
+          "Suwagcms.Contracts": "[1.0.0, )",
           "grate.postgresql": "[2.1.6, )"
         }
       },

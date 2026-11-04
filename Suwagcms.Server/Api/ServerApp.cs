@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Reflection;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Health;
-using Suwagcms.Server.Notes;
 
 namespace Suwagcms.Server.Api;
 
@@ -15,7 +14,6 @@ internal static class ServerApp
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddDatabase(builder.Configuration, migrateOnStart: !WritingOpenApiDocument);
-        builder.Services.AddSingleton<NoteStore>();
         builder.Services.AddProblemDetails(options =>
             options.CustomizeProblemDetails = context =>
                 context.ProblemDetails.Extensions["traceId"] = Activity.Current?.TraceId.ToString() ?? context.HttpContext.TraceIdentifier
@@ -28,7 +26,6 @@ internal static class ServerApp
 
         var api = app.MapGroup("/api");
         api.MapHealth();
-        api.MapNotes();
         return app;
     }
 }

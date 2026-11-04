@@ -397,7 +397,7 @@ Rasa concepts in this project's terms:
 ## The application skeleton
 
 An ASP.NET Core minimal-API server (Npgsql, Dapper, hand-written SQL, grate migrations), a React 19 + shadcn/ui + Tailwind
-web app with types generated from the server's OpenAPI document, and a Notes feature as the pattern end to end.
+web app with types generated from the server's OpenAPI document.
 
 ## What the gate guarantees
 
@@ -439,9 +439,9 @@ why; its acceptance criteria are the contract:
 | a spec has no acceptance section, a criterion without an id or with two, an id defined twice | fix the spec (`vdoc.py ids` numbers new criteria) |
 
 ```text
-$ just criteria AC-notes-1
-AC-notes-1       server test (xunit)          Suwagcms.Server.Tests/Notes/NoteEndpointsTests.cs:14
-AC-notes-1       e2e test (playwright)        Suwagcms.Web/src/notes/NotesScreen.e2e.ts:4
+$ just criteria AC-orders-1
+AC-orders-1      server test (xunit)          Suwagcms.Server.Tests/Orders/OrderEndpointsTests.cs:14
+AC-orders-1      e2e test (playwright)        Suwagcms.Web/src/orders/OrdersScreen.e2e.ts:4
 ```
 
 Where each kind of guardrail lives and how it names the id (the kinds are `Suwagcms.Gate/criteria.json`):
