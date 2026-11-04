@@ -13,6 +13,7 @@
 **/logs/
 .claude/worktrees/
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
 scratchpad/
 CLAUDE.local.md
 **/output/grate-internal*/
