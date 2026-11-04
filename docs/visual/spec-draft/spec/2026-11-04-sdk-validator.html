@@ -382,7 +382,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>12</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>3</b><span>criteria after other features</span></div>
     <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
@@ -499,12 +499,14 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ul>
     <li><b>after <code>bot-declaration</code>:</b> given what a bot declares, the validator also reports what that bot cannot run.</li>
     <li><b>after <code>bot-declaration</code>:</b> a bot outside .NET can validate a definition through a validate endpoint of the CMS, with a matching <code>suwagcms validate</code> command, and gets the same mistakes as the library.</li>
+    <li><b>after <code>articles</code>:</b> a test on the gate saves a change to a bot with 5000 articles and fails above a time limit, which the first measurement sets.</li>
   </ul>
 </section>
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p>Each save validates the whole definition, which may grow slow with a large knowledge base. The architecture plan measures this at 5000 articles once articles exist; the spec promises no time limit until a measurement gives one.</p></div>
+  <div class="callout risk"><p>Each save validates the whole definition, which may grow slow with a large knowledge base. A test at 5000 articles guards it once articles exist (see “Criteria after other features”). If it proves too slow, unchanged articles can be checked without parsing their text, and as a last step an index of references may return, never as the source of truth.</p></div>
+  <div class="callout risk"><p>Format 1 becomes public quickly, and a change of meaning after that needs a new <code>formatVersion</code> and a conversion of the working state. <code>bot-runtime-sdk</code> tries the contract on a running bot before the package reaches nuget.org.</p></div>
   <div class="callout assumption"><p>Testing the stage separation needs a rule of the <code>Version</code> stage, and the first real ones arrive with <code>procedure-model</code>. Until then the test may use a rule of its own.</p></div>
 </section>
 
