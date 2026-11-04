@@ -380,8 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The mapping lives in the step, never in the action, so one action serves many procedures and the CMS can check every mapping against the types on both sides.</p>
   </div>
   <div class="stats">
-    <div><b>15</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>14</b><span>criteria</span></div>
+    <div><b>3</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -504,7 +504,6 @@ flowchart TD
     <li><code>AC-action-block-11</code> At the <code>Version</code> stage the validator reports a step with no <code>action</code> filled in, a parameter not mapped and a missing <code>onFailure</code>; a procedure with only these is saved, and the answer lists them with the CLI exiting 0.</li>
     <li><code>AC-action-block-12</code> A step reached only through <code>onFailure</code> is not reported as unreachable.</li>
     <li><code>AC-action-block-13</code> The mapping rules give the same mistakes from the server, the CLI and the validator offline.</li>
-    <li><code>AC-action-block-14</code> The “Uses” panel and <code>suwagcms usage</code> of a procedure list the action and each fact a step maps, with the field holding each.</li>
     <li><code>AC-action-block-15</code> The lines of <code>suwagcms procedures</code> in the plugin's main skill give the format of the <code>action</code> block.</li>
   </ul>
 </section>
@@ -512,6 +511,7 @@ flowchart TD
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
+    <li><b>after <code>delete-guard</code>:</b> the “Uses” panel and <code>suwagcms usage</code> of a procedure list the action and each fact a step maps, with the field holding each.</li>
     <li><b>after <code>local-facts</code>:</b> a result can fill a local fact and a parameter can take its value from one, by the same rules of reference and type.</li>
     <li><b>after <code>procedure-creator</code>:</b> the form of an <code>action</code> step offers the bot's actions, then a row per parameter and result offering only the facts that fit, and a failure edge drawn to a step; the mistakes show in the live list.</li>
   </ul>
@@ -520,7 +520,6 @@ flowchart TD
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p><b>Strict types may annoy.</b> A fact of up to 500 characters cannot feed a parameter of up to 200, even if real values are short. The fix is a change of one number with a clear message, and the alternative is failures in conversations.</p></div>
   <div class="callout warn"><p><b>This block changes reachability in <code>procedure-model</code>.</b> That rule has to follow <code>onFailure</code> too, and the criterion above guards it.</p></div>
-  <div class="callout assumption"><p>The “Uses” panel and <code>suwagcms usage</code> come from <code>delete-guard</code>, which belongs to the first cut and is expected to exist by then. Its “used by” side for actions is an item in <code>http-actions</code>.</p></div>
 </section>
 
 <!-- CONTENT END -->
