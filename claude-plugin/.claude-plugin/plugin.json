@@ -1,0 +1,16 @@
+{
+  "name": "suwagcms",
+  "displayName": "Suwagcms",
+  "description": "Edit a bot's definition in Suwagcms from Claude Code through the suwagcms CLI: the main skill lists every command, tells the agent to use --json and how to read a refusal.",
+  "author": {
+    "name": "Piotr Gugnowski"
+  },
+  "homepage": "https://github.com/Manomenu/suwagcms",
+  "repository": "https://github.com/Manomenu/suwagcms",
+  "license": "MIT",
+  "keywords": [
+    "cms",
+    "bots",
+    "cli"
+  ]
+}

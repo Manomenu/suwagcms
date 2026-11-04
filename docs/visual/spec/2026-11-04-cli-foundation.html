@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-cli-foundation.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-cli-foundation.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>The suwagcms command</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 2 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> nothing</span>
@@ -384,7 +384,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><b>11</b><span>criteria</span></div>
     <div><b>4</b><span>exit codes</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -468,6 +468,10 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <li>A refusal (1) and a failure to reach the server (3) have different codes, because an agent fixes the first and retries the second; a mistake's fix would not help with a server that is down.</li>
     <li><code>--open</code> without a browser still succeeds and prints the address, so the same command works on a server without a screen.</li>
     <li><code>status</code> is the first command because every later feature needs a working connection, and it gives this feature something to prove its options on.</li>
+    <li>The CLI tool is published on nuget.org by hand, like the SDK: <code>dotnet tool install -g Suwagcms.Cli</code> works anywhere, and one release habit covers both. The plugin tells an agent to install it that way.</li>
+    <li>The address is that of the web app, which serves the API under <code>/api</code>; the local default is the development web app, <code>http://localhost:3330</code>. <code>suwagcms server &lt;url&gt;</code> saves an address in the user's settings folder.</li>
+    <li><code>status --open</code> opens the web app at the address without asking the server. <code>--json</code> and <code>--open</code> together are a wrong use (exit 2), as is <code>--open</code> on a command with no page, such as <code>server</code>.</li>
+    <li>A refusal is a client error whose Problem Details body has a non-empty <code>mistakes</code> list; any other failure answer is exit 3. A usage mistake with <code>--json</code> is also one document, holding the error and the usage.</li>
   </ul>
 </section>
 
@@ -498,20 +502,9 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout assumption"><p>The default address is that of the development setup, and the plan picks its port. The scenarios above use <code>3240</code> only as an example.</p></div>
+  <div class="callout assumption"><p>The default address is that of the development setup (<code>3330</code>, the web app). The scenarios above use <code>3240</code> only as an example.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Where is the CLI tool published?</legend>
-      <p class="why">README publishes the SDK on nuget.org and says only that the CLI is a .NET tool. It decides how the plugin tells an agent to install it. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="nuget"><span><b>nuget.org, published by hand like the SDK</b><small><code>dotnet tool install -g</code> works anywhere, and one release habit covers both</small></span></label>
-      <label><input type="radio" value="repo"><span><b>Built from this repository</b><small>nothing to publish, but only people with a checkout can install it</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

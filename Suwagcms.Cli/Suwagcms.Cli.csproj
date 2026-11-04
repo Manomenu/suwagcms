@@ -23,5 +23,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Suwagcms.Cli.Tests" />
+    <!-- The server's tests ask the command tree which commands exist, to tie every route to one. -->
+    <InternalsVisibleTo Include="Suwagcms.Server.Tests" />
   </ItemGroup>
 </Project>

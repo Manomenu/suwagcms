@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../Suwagcms.Server/Suwagcms.Server.csproj" />
+    <!-- Aliased: the CLI has a top-level Program of its own, like the server. -->
+    <ProjectReference Include="../Suwagcms.Cli/Suwagcms.Cli.csproj" Aliases="Cli" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-claude-plugin.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-claude-plugin.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Claude Code plugin</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 3 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>cli-foundation</code></span>
@@ -445,6 +445,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ul>
     <li>No session hook in the first cut: Suwageval's hook fires on a file in the agent's repository, and suwagcms has no such file, so a hook would add text to every session of every project.</li>
     <li>The skill names commands and does not repeat rules: a rule copied there would drift from the validator, and the refusal already says what is wrong and how to fix it.</li>
+    <li>The list is the bullets of the skill's <code>Commands</code> section, each starting with the command in code (<code>suwagcms server &lt;url&gt;</code> names <code>server</code>). Every command that runs needs a line; a command that only groups others does not.</li>
+    <li>The skill tells the agent to install the CLI with <code>dotnet tool install -g Suwagcms.Cli</code>, as cli-foundation publishes it on nuget.org. It states how the bot is picked (<code>--bot</code>, <code>SUWAGCMS_BOT</code>, <code>suwagcms use</code>) from the start, as bot-profiles builds them; until then it says that no command needs a bot yet.</li>
   </ul>
 </section>
 
