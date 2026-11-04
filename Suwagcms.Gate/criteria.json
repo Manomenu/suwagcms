@@ -3,6 +3,8 @@
   "prose": ["docs/**", "**/*.md"],
   "kinds": [
     { "kind": "server test (xunit)", "paths": ["Suwagcms.Server.Tests/*/**/*.cs"], "how": "[Trait(\"criterion\", \"<id>\")] on the test" },
+    { "kind": "sdk test (xunit)", "paths": ["Suwagcms.Sdk.Tests/*/**/*.cs"], "how": "[Trait(\"criterion\", \"<id>\")] on the test" },
+    { "kind": "cli test (xunit)", "paths": ["Suwagcms.Cli.Tests/*/**/*.cs"], "how": "[Trait(\"criterion\", \"<id>\")] on the test" },
     { "kind": "architecture test (xunit)", "paths": ["Suwagcms.Gate/**/*.cs"], "how": "[Trait(\"criterion\", \"<id>\")] on the test" },
     { "kind": "e2e test (playwright)", "paths": ["Suwagcms.Web/src/**/*.e2e.ts"], "how": "the id in the title: test(\"<id>: …\")" },
     { "kind": "web test (vitest)", "paths": ["Suwagcms.Web/src/**/*.test.ts", "Suwagcms.Web/src/**/*.test.tsx"], "how": "the id in the title: it(\"<id>: …\")" },

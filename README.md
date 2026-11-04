@@ -449,6 +449,8 @@ Where each kind of guardrail lives and how it names the id (the kinds are `Suwag
 | Kind | Where | How it names the id |
 | --- | --- | --- |
 | `server test (xunit)` | `Suwagcms.Server.Tests/<Feature>/` | `[Trait("criterion", "AC-notes-1")]` on the test |
+| `sdk test (xunit)` | `Suwagcms.Sdk.Tests/<Feature>/` | the same `Trait` |
+| `cli test (xunit)` | `Suwagcms.Cli.Tests/<Feature>/` | the same `Trait` |
 | `architecture test (xunit)` | `Suwagcms.Gate/`: the repository guards | the same `Trait` |
 | `web test (vitest)` | `Suwagcms.Web/src/**/*.test.ts(x)` | in the title: `it("AC-notes-1: a blank note is refused", …)` |
 | `e2e test (playwright)` | `Suwagcms.Web/src/**/*.e2e.ts` | in the title: `test("AC-notes-1: …", …)` |
