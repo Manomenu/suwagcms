@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using Suwagcms.Sdk.Tests.Repository;
@@ -35,6 +36,14 @@ public sealed class PackedBotTests
     [Trait("criterion", "AC-bot-runtime-sdk-1")]
     public async Task A_bot_built_on_the_packed_package_takes_a_version_without_a_restart_and_reports_it()
     {
+        // Why: packing and publishing cost about 10 s, over the quick gate's budget on every turn. CI always runs this,
+        // and on a machine it runs again whenever the SDK or this test's bot changes.
+        var passed = RepositoryFiles.Path($".artifacts/packed-bot-{InputsHash()}");
+        if (Environment.GetEnvironmentVariable("CI") is null && File.Exists(passed))
+        {
+            return;
+        }
+
         using var scratch = new TempDirectory();
         var packages = Path.Combine(scratch.Path, "packages");
         var bot = Path.Combine(scratch.Path, "bot");
@@ -90,12 +99,32 @@ public sealed class PackedBotTests
             var state = await StateAsync(client);
             Assert.Equal(7, state.Member("current").GetValue<int>());
             Assert.Equal("packed-bot", state.Member("bot").Text());
+            Directory.CreateDirectory(Path.GetDirectoryName(passed) ?? RepositoryFiles.Root);
+            await File.WriteAllTextAsync(passed, "", TestContext.Current.CancellationToken);
         }
         finally
         {
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync(TestContext.Current.CancellationToken);
         }
+    }
+
+    private static string InputsHash()
+    {
+        var sdk = RepositoryFiles.Path("Suwagcms.Sdk");
+        var files = Directory
+            .EnumerateFiles(sdk, "*", SearchOption.AllDirectories)
+            .Where(file => !file.Contains("/bin/", StringComparison.Ordinal) && !file.Contains("/obj/", StringComparison.Ordinal))
+            .Order(StringComparer.Ordinal);
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        hash.AppendData(Encoding.UTF8.GetBytes(Program + Project));
+        foreach (var file in files)
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(Path.GetRelativePath(sdk, file)));
+            hash.AppendData(File.ReadAllBytes(file));
+        }
+
+        return Convert.ToHexStringLower(hash.GetHashAndReset());
     }
 
     private static async Task<JsonNode> StateAsync(HttpClient client) =>
