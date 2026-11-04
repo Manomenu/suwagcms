@@ -73,7 +73,17 @@ it cannot be combined with `--json`. It only works from a shell that can reach t
 - `suwagcms facts add <name> --type enum|int|text --description <text> [--values a b | --min n --max n | --max-length n] [--writable-by assign|set|correct]` - add a fact. An enum needs two or more values, an int both bounds, a text a maximum length above 0; `--writable-by` is `set` when left out.
 - `suwagcms facts edit <name> [options of add] [--if-revision n]` - change a fact: only the options given change. Without `--if-revision` the edit applies to the revision it just read and a change made meanwhile is refused with the current revision.
 - `suwagcms facts delete <name> [--if-revision n]` - delete a fact; it does not check yet whether a procedure uses it.
+- `suwagcms kb list` - list the knowledge bases of the bot (the groups its articles are in); prints nothing when there are none; `--open` opens the Knowledge bases screen in the web app.
+- `suwagcms kb show <id>` - show one knowledge base with its revision.
+- `suwagcms kb add <id> --title <text>` - add a knowledge base. The id is camelCase and never changes; the title is unique within the bot, ignoring case and surrounding spaces.
+- `suwagcms kb rename <id> --title <text> [--if-revision n]` - change the title of a knowledge base; its id stays.
+- `suwagcms kb delete <id> [--if-revision n]` - delete a knowledge base; refused while articles are in it, with the articles listed.
+- `suwagcms articles list [--kb <id>] [--language pl|en] [--text <text>]` - list the articles of the bot, filtered, with the language of each; `--text` matches the title, id and description, ignoring case, never the content; `--open` opens the Articles screen in the web app.
+- `suwagcms articles show <id>` - show one article in full with its revision; `--json` gives `content` and `llmGuide` exactly as stored.
+- `suwagcms articles add <id> --kb <id> [--language pl|en] --title <text> --content <text>|--content-file <file> --guide <text>|--guide-file <file> --description <text>` - add an article. All but `--language` are required: an article is in `en` unless `--language pl` says otherwise, and any other value is refused. `content` is what is true, in Markdown, and the customer reads it through the model; `llmGuide` is how the model should talk about it, in Markdown; `description` is plain text for the bot's search ("what does it answer"), never shown to the customer. A file may be `-` for stdin (one of the two). Texts are stored exactly as written. The id is camelCase, never changes and is unique across all the bases of the bot.
+- `suwagcms articles edit <id> [options of add] [--if-revision n]` - change an article: only the options given change (so `en` never overwrites `pl`, unless `--language en` is given); `--kb` moves it to another base. Without `--if-revision` the edit applies to the revision it just read and a change made meanwhile is refused with the current revision.
+- `suwagcms articles delete <id> [--if-revision n]` - delete an article; it does not check yet whether anything refers to it.
 
-`facts add`, `facts edit` and `facts delete` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
+`facts add`, `facts edit`, `facts delete`, `kb add`, `kb rename`, `kb delete`, `articles add`, `articles edit` and `articles delete` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.

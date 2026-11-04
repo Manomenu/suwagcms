@@ -60,7 +60,7 @@ public sealed class ValidateJsonTests
     public void Json_mistakes_from_several_kinds_come_back_together()
     {
         const string json =
-            "{\"formatVersion\":1,\"actions\":[{\"id\":\"x\"},{\"id\":\"x\"}],\"knowledgeBases\":[{\"id\":\"k\"},{\"id\":\"k\"}]}";
+            "{\"formatVersion\":1,\"actions\":[{\"id\":\"x\"},{\"id\":\"x\"}],\"knowledgeBases\":[{\"id\":\"k\",\"title\":\"One\"},{\"id\":\"k\",\"title\":\"Two\"}]}";
 
         var mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Save);
 

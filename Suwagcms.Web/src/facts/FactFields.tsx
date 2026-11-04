@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 
 import type { Mistake } from "@/api/client";
+import { Field as DesignField } from "@/design/field";
 import { Input } from "@/design/input";
-import { Label } from "@/design/label";
 
 import { fieldOf, type FactForm, type FieldName } from "./factForm";
 
 const SELECT = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 
-/** One field with the mistakes its path names written beneath it; the field is marked invalid for assistive technology. */
+/** One field of the fact form with the mistakes its path names written beneath it. */
 function Field({
     field,
     label,
@@ -20,25 +20,11 @@ function Field({
     mistakes: Mistake[];
     children: (props: object) => ReactNode;
 }) {
-    const own = mistakes.filter((mistake) => fieldOf(mistake) === field);
+    const errors = mistakes.filter((mistake) => fieldOf(mistake) === field).map((mistake) => `${mistake.message} ${mistake.fix}`);
     return (
-        <div data-field={field} className="flex flex-col gap-2">
-            <Label htmlFor={`fact-${field}`}>{label}</Label>
-            {children({
-                id: `fact-${field}`,
-                "aria-invalid": own.length > 0 || undefined,
-                "aria-describedby": own.length > 0 ? `fact-${field}-mistakes` : undefined,
-            })}
-            {own.length > 0 && (
-                <ul id={`fact-${field}-mistakes`} className="list-disc pl-4 text-sm text-destructive">
-                    {own.map((mistake) => (
-                        <li key={`${mistake.code}:${mistake.path}`}>
-                            {mistake.message} {mistake.fix}
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+        <DesignField prefix="fact" name={field} label={label} errors={errors}>
+            {children}
+        </DesignField>
     );
 }
 

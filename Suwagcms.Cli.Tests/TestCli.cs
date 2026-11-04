@@ -11,7 +11,8 @@ internal static class TestCli
         StubServer? server = null,
         Dictionary<string, string>? variables = null,
         string? settingsFolder = null,
-        Action<Uri>? openBrowser = null
+        Action<Uri>? openBrowser = null,
+        byte[]? stdin = null
     )
     {
         using var output = new StringWriter();
@@ -22,7 +23,8 @@ internal static class TestCli
             name => variables is not null && variables.TryGetValue(name, out var value) ? value : null,
             settingsFolder ?? FreshSettingsFolder(),
             http,
-            openBrowser
+            openBrowser,
+            stdin is null ? null : () => new MemoryStream(stdin)
         );
 
         var exitCode = await CliApp.Run(args, new InvocationConfiguration { Output = output, Error = error }, environment);

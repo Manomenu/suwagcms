@@ -15,7 +15,14 @@ internal sealed class Report(TextWriter output, TextWriter error, bool json)
 
     public async Task<int> DoneAsync<T>(T document, string text)
     {
-        await output.WriteLineAsync(json ? JsonSerializer.Serialize(document, Options) : text);
+        if (json)
+        {
+            await output.WriteLineAsync(JsonSerializer.Serialize(document, Options));
+        }
+        else if (text.Length > 0)
+        {
+            await output.WriteLineAsync(text);
+        }
         return ExitCodes.Done;
     }
 

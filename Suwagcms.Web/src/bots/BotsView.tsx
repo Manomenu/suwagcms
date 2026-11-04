@@ -100,6 +100,15 @@ export function BotsView({
                             <Link href={`~${profilePath(bot.id)}/facts`} className="text-sm text-primary underline underline-offset-4">
                                 Facts
                             </Link>
+                            <Link
+                                href={`~${profilePath(bot.id)}/knowledge-bases`}
+                                className="text-sm text-primary underline underline-offset-4"
+                            >
+                                Knowledge bases
+                            </Link>
+                            <Link href={`~${profilePath(bot.id)}/articles`} className="text-sm text-primary underline underline-offset-4">
+                                Articles
+                            </Link>
                         </li>
                     ))}
                 </ul>

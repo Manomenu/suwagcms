@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-knowledge-bases.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-articles.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Knowledge bases</title>
+<title>Articles</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Knowledge bases</h1>
+  <h1>Articles</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 8 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>bot-profiles</code></span>
+    <span><b>Feature:</b> 9 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>sdk-validator</code>, <code>knowledge-bases</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -377,78 +377,97 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A knowledge base is a named group of articles within one bot. People and agents create one, rename it and delete it, in the web, the CLI and the plugin.</p>
-    <p>A base has an <code>id</code> and a <code>title</code> and nothing else: it only groups. References work across all the knowledge bases of a bot, so moving an article between bases breaks nothing.</p>
+    <p>An article lives in one knowledge base and has a title and three texts with different jobs: <code>content</code> says what is true, <code>llmGuide</code> tells the model how to talk about it, and <code>description</code> is what the bot's search reads. Each field's tooltip says so.</p>
+    <p>People and agents create, find, edit and delete articles in the web, the CLI and the plugin. <code>content</code> and <code>llmGuide</code> are Markdown, stored exactly as written.</p>
   </div>
   <div class="stats">
-    <div><b>8</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>3</b><span>texts with separate jobs</span></div>
+    <div><b>16</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>A bot's articles need a home before any can be written. An owner of a valuation bot separates “Offer” from “Procedures for valuers” to find things and to work on them apart. README decides that resources belong to one bot and that references never cross between bots, so a base is a grouping inside a bot and never a boundary.</p>
+  <p>SmartRouter showed the value of a guide per article and of an embedded description, and also what mixing them costs: an author who cannot tell which text reaches the customer writes search keywords into the answer. It also keeps content as HTML, which is hard for an agent to edit and has to be converted for the model. The CMS has no articles yet, and every later feature (links, guards, versions) needs them.</p>
 </section>
 
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>Create, rename, list and delete the knowledge bases of one bot, through every door.</li>
-      <li>Titles a person can tell apart.</li>
+      <li>Create, read, find, edit and delete articles of one bot, through every door.</li>
+      <li>An author sees at a glance who reads each field.</li>
+      <li>What an agent or a person writes comes back unchanged.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Articles: <code>articles</code>.</li>
-      <li>Changing a base's <code>id</code>: <code>resource-rename</code>. “Rename” here changes the title.</li>
-      <li>A base that bots search separately, or settings per base: nothing asks for them.</li>
-      <li>Availability: articles have it; a base has none.</li>
+      <li>The <code>language</code> field: <code>article-language</code>.</li>
+      <li>Links to other articles and chips in the editor: <code>article-links</code>.</li>
+      <li>Blocking the delete of an article something refers to: <code>delete-guard</code>.</li>
+      <li>Turning an article off: <code>availability</code>.</li>
+      <li>Semantic search and building an index: the bot does that (README). The search here finds articles for their authors.</li>
     </ul></div>
   </div>
 </section>
 
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent sets up two bases</h3>
-  <div class="term"><span class="dim">$</span> suwagcms kb add oferta --title "Offer"
-<span class="dim">$</span> suwagcms kb add dlaRzeczoznawcow --title "For valuers"
-<span class="dim">$</span> suwagcms kb list
-  dlaRzeczoznawcow  For valuers
-  oferta            Offer</div>
-  <h3>2. Marta renames one in the web</h3>
+  <h3>1. Marta writes an article in the web</h3>
   <ol class="steps">
-    <li><p>She changes the title “Offer” to “Our offer”. The base keeps the <code>id</code> <code>oferta</code>, so anything that points at it still does.</p></li>
+    <li><p>In the base <code>oferta</code> she creates <code>cennik</code>, title “Price list”.</p></li>
+    <li><p>The editor shows <code>content</code>, <code>llmGuide</code> and <code>description</code> side by side. Hovering a label explains the field: on <code>description</code>, <span class="wf-muted">“The bot's search reads this: say what the article answers. The customer never sees it.”</span></p></li>
+    <li><p>She saves and the article appears in the list.</p></li>
   </ol>
-  <h3>3. A duplicate title</h3>
+  <h3>2. An agent saves long content from a file</h3>
+  <div class="term"><span class="dim">$</span> suwagcms articles add cennik --kb oferta --title "Price list" \
+    --content-file cennik.md --guide-file cennik.guide.md \
+    --description "What a valuation costs and what affects the price"
+<span class="dim">$</span> suwagcms articles show cennik --json | jq -r .content | diff - cennik.md
+<span class="dim"># no difference</span></div>
+  <h3>3. A missing guide</h3>
+  <div class="term">Refused, 1 mistake:
+  article.llmGuide.missing  'cennik' has no llmGuide. Say how the model should talk about it: tone, what to ask first, what not to say.</div>
+  <h3>4. Finding an article</h3>
   <ol class="steps">
-    <li><p>She tries to create another “Our offer” and is refused: <span class="wf-muted">“The title 'Our offer' is used by knowledge base 'oferta'. Choose another title.”</span></p></li>
+    <li><p>With 400 articles, Marta picks the base <code>oferta</code> and types <code>rabat</code>. The list narrows to articles with that text in the title, <code>id</code> or <code>description</code>.</p></li>
   </ol>
 </section>
 
 <section data-role="behaviour">
   <h2>Behaviour</h2>
   <table>
-    <tr><th>Field</th><th>Rule</th></tr>
-    <tr><td><code>id</code></td><td>required; camelCase; unique within the bot; fixed once created</td></tr>
-    <tr><td><code>title</code></td><td>required, not blank; unique within the bot, ignoring case and surrounding spaces</td></tr>
+    <tr><th>Field</th><th>Rule</th><th>Who reads it</th></tr>
+    <tr><td><code>id</code></td><td>required; camelCase; unique across all the bot's articles, not only its base; fixed once created</td><td>references, commands</td></tr>
+    <tr><td><code>knowledgeBase</code></td><td>required; a base of this bot; changing it moves the article</td><td>authors</td></tr>
+    <tr><td><code>title</code></td><td>required, not blank</td><td>authors, the model</td></tr>
+    <tr><td><code>content</code></td><td>required, not blank; Markdown</td><td>the customer, through the model</td></tr>
+    <tr><td><code>llmGuide</code></td><td>required, not blank; Markdown</td><td>the model, with the article</td></tr>
+    <tr><td><code>description</code></td><td>required, not blank; plain text</td><td>the bot's search</td></tr>
   </table>
-  <p>A save of a base behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes: all mistakes at once, a refused save leaves no trace, <code>--dry-run</code> answers without changing anything, and an edit based on an old revision is refused.</p>
+  <p>A save of an article behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes: all mistakes at once, a refused save leaves no trace, <code>--dry-run</code> answers without changing anything, and an edit based on an old revision is refused.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a bot with no bases</td><td>the screen offers to create the first; <code>suwagcms kb list</code> prints nothing and exits 0, and <code>--json</code> gives an empty list</td></tr>
-    <tr><td>deleting an empty base</td><td>it is gone</td></tr>
-    <tr><td>the same <code>id</code> or title in another bot</td><td>allowed: bots are separate</td></tr>
+    <tr><td>text stored and read back</td><td>identical, byte for byte; the CMS neither cleans nor reformats Markdown</td></tr>
+    <tr><td><code>content</code> or <code>llmGuide</code> over 200,000 characters</td><td>refused with the limit and the length (see Decisions)</td></tr>
+    <tr><td>a stale edit in the web</td><td>refused; the typed text stays in the editor</td></tr>
+    <tr><td>leaving the editor with unsaved changes</td><td>the web asks first</td></tr>
+    <tr><td><code>--content-file</code> is <code>-</code></td><td>the CLI reads from stdin</td></tr>
+    <tr><td>a CLI edit</td><td>only the options given change</td></tr>
+    <tr><td>moving an article to a base that does not exist</td><td>refused, listing the bases</td></tr>
   </table>
+  <p>The list, in the web and with <code>suwagcms articles list</code>, filters by knowledge base and by text. Text matches the title, <code>id</code> and <code>description</code>, ignoring case. It is a plain filter for authors, not the bot's search.</p>
 </section>
 
 <section data-role="ui">
-  <h2>Screen</h2>
-  <div class="wire after"><span class="wf-label">Knowledge bases of rzeczoznawca</span>
-    <div class="wf-bar"><b>Knowledge bases</b><span class="wf-grow"></span><span class="wf-btn primary">New knowledge base</span></div>
+  <h2>Screens</h2>
+  <div class="wire after"><span class="wf-label">Article editor</span>
+    <div class="wf-bar"><b>cennik</b><span class="wf-input">Price list</span><span class="wf-input">oferta ▾</span><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
     <div class="wf-body">
-      <div class="wf-card wf-row"><b class="wf-grow">Our offer</b><code>oferta</code><span class="wf-btn">Rename</span><span class="wf-btn">Delete</span></div>
-      <div class="wf-card wf-row"><b class="wf-grow">For valuers</b><code>dlaRzeczoznawcow</code><span class="wf-btn">Rename</span><span class="wf-btn">Delete</span></div>
+      <div class="wf-row">
+        <div class="wf-card wf-grow"><b>content ⓘ</b><p class="wf-muted">What is true. The customer reads it, through the model.</p><div class="wf-line"></div><div class="wf-line"></div></div>
+        <div class="wf-card wf-grow"><b>llmGuide ⓘ</b><p class="wf-muted">How to talk about it. Only the model reads it.</p><div class="wf-line"></div></div>
+        <div class="wf-card wf-grow"><b>description ⓘ</b><p class="wf-muted">What it answers. Only the search reads it.</p><div class="wf-line"></div></div>
+      </div>
     </div>
   </div>
 </section>
@@ -456,32 +475,41 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>Titles are unique within a bot: two bases with one title would be impossible to tell apart in a filter or a picker, and the refusal costs one rename.</li>
-    <li>README's resource table has no row for a knowledge base, so its fields come from the format sketch in the architecture plan: <code>id</code> and <code>title</code>.</li>
+    <li><code>content</code> and <code>llmGuide</code> are Markdown (owner's decision): an agent edits them as text and the model gets something readable.</li>
+    <li>All fields are required on every save, because README requires them. Unfinished work is allowed for a procedure, whose steps are built one at a time, and not for an article, which an author can always finish before saving.</li>
+    <li>An article's <code>id</code> is unique across the bot and not per base, because references work across its knowledge bases and moving an article must not break them.</li>
+    <li><code>content</code> and <code>llmGuide</code> may each be 200,000 characters at most (the recommended answer to the open question, accepted): every save validates the whole definition and every article travels in the version, so one enormous article slows every save and every push; 200,000 is far above any article a model should read at once and low enough to stop a pasted dump. The length is counted in UTF-16 code units, the way .NET counts a string.</li>
+    <li>The list's text filter does not read <code>content</code>: it is a way to find an article you know, and scanning every article's text is not needed for that.</li>
   </ul>
 </section>
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-knowledge-bases-1</code> A base created in the web or with <code>suwagcms kb add</code> appears in both the web list and <code>suwagcms kb list</code>.</li>
-    <li><code>AC-knowledge-bases-2</code> A base's title changes in the web and with <code>suwagcms kb rename</code>, and its <code>id</code> stays the same.</li>
-    <li><code>AC-knowledge-bases-3</code> An empty base can be deleted in the web and with <code>suwagcms kb delete</code>, and is gone from both.</li>
-    <li><code>AC-knowledge-bases-4</code> A missing or non-camelCase <code>id</code>, an <code>id</code> the bot already has, a blank title, and a title another base of the bot has (ignoring case and surrounding spaces) are each refused with a mistake and a fix.</li>
-    <li><code>AC-knowledge-bases-5</code> The same <code>id</code> and title can exist in two bots, and a base of one bot is not listed for the other.</li>
-    <li><code>AC-knowledge-bases-6</code> A rename or delete based on an old revision is refused, and <code>--dry-run</code> on an add, rename or delete changes nothing.</li>
-    <li><code>AC-knowledge-bases-7</code> A bot with no bases shows a screen offering to create the first one, and <code>suwagcms kb list --json</code> returns an empty list with exit 0.</li>
-    <li><code>AC-knowledge-bases-8</code> Each <code>suwagcms kb</code> command has its line in the plugin's main skill.</li>
+    <li><code>AC-articles-1</code> An article created in the web or with <code>suwagcms articles add</code> appears in both the web list and <code>suwagcms articles list</code>, in its knowledge base.</li>
+    <li><code>AC-articles-2</code> A missing or blank <code>title</code>, <code>content</code>, <code>llmGuide</code> or <code>description</code> is refused, all reported at once with their fixes, and nothing is saved.</li>
+    <li><code>AC-articles-3</code> An <code>id</code> that is not camelCase, an <code>id</code> another article of the bot has, even in another base, and a knowledge base the bot does not have are each refused with a mistake and a fix.</li>
+    <li><code>AC-articles-4</code> <code>content</code> and <code>llmGuide</code> read back byte for byte as written, for a text with Markdown, non-ASCII letters and trailing newlines.</li>
+    <li><code>AC-articles-5</code> The CLI takes <code>content</code> and <code>llmGuide</code> from a file or from stdin as well as from an option.</li>
+    <li><code>AC-articles-6</code> An edit changes the fields given, in the web and with <code>suwagcms articles edit</code>; changing <code>knowledgeBase</code> moves the article.</li>
+    <li><code>AC-articles-7</code> An edit or delete based on an old revision is refused; in the web the typed text stays in the editor. <code>--dry-run</code> on an add, edit or delete changes nothing.</li>
+    <li><code>AC-articles-8</code> An article with no references can be deleted in the web and with <code>suwagcms articles delete</code>, and is gone from both.</li>
+    <li><code>AC-articles-9</code> The tooltip of <code>content</code>, <code>llmGuide</code> and <code>description</code> in the web says who reads the field and what it is for.</li>
+    <li><code>AC-articles-10</code> The editor shows <code>content</code>, <code>llmGuide</code> and <code>description</code> at the same time.</li>
+    <li><code>AC-articles-11</code> The list filters by knowledge base and by text in the title, <code>id</code> or <code>description</code>, ignoring case, with the same results in the web and the CLI.</li>
+    <li><code>AC-articles-12</code> <code>content</code> or <code>llmGuide</code> over the limit is refused with a mistake giving the limit and the length.</li>
+    <li><code>AC-articles-13</code> Leaving the editor with unsaved changes asks before discarding them.</li>
+    <li><code>AC-articles-14</code> Each <code>suwagcms articles</code> command has its line in the plugin's main skill.</li>
+    <li><code>AC-articles-15</code> An article of one bot is not visible from the profile of another bot, and two bots can each have an article with the same id.</li>
+    <li><code>AC-articles-16</code> A test on the gate saves a change to a bot with 5000 articles and fails above a time limit: 1000 ms, about five times the first measurement of 204 ms.</li>
   </ul>
 </section>
 
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>articles</code>:</b> a base with articles cannot be deleted, and the refusal lists them.</li>
-  </ul>
+<section data-role="risks">
+  <h2>Risks and assumptions</h2>
+  <div class="callout assumption"><p>The side-by-side editor is for a desktop screen, like the rest of the CMS. On a narrow screen the three fields may stack; no criterion depends on it.</p></div>
 </section>
+
 <!-- CONTENT END -->
 </main>
 </div>

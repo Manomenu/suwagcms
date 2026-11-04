@@ -1,11 +1,13 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Suwagcms.Server.Articles;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Facts;
 using Suwagcms.Server.Health;
+using Suwagcms.Server.KnowledgeBases;
 
 namespace Suwagcms.Server.Api;
 
@@ -34,7 +36,9 @@ internal static class ServerApp
         var api = app.MapGroup("/api");
         api.MapHealth();
         api.MapBots();
+        api.MapArticles();
         api.MapFacts();
+        api.MapKnowledgeBases();
         return app;
     }
 }

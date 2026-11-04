@@ -1,6 +1,8 @@
 using System.CommandLine;
 using System.Text.Json;
+using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
+using Suwagcms.Cli.Editing;
 using Suwagcms.Cli.Output;
 using Suwagcms.Contracts;
 
@@ -8,6 +10,8 @@ namespace Suwagcms.Cli.Facts;
 
 internal static class FactsCommand
 {
+    public const string Collection = "facts";
+
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
@@ -20,24 +24,14 @@ internal static class FactsCommand
             CreateDelete(options, environment),
         };
 
-    // Why: shared by the commands that only read, so that --open and --json keep one rule.
-    private static void RefuseOpenWithJson(Command command, GlobalOptions options) =>
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Json) && result.GetValue(options.Open))
-            {
-                result.AddError("--json and --open cannot be used together: one prints the data, the other opens the page.");
-            }
-        });
-
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)
     {
         var command = new Command("list", "List the global facts of the bot (or --open the Facts screen in the web app).");
-        RefuseOpenWithJson(command, options);
+        EditOptions.RefuseOpenWithJson(command, options);
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
-                var (target, exit) = await FactTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
                 if (target is null)
                 {
                     return exit;
@@ -46,7 +40,7 @@ internal static class FactsCommand
                 {
                     return await Open(target, parsed);
                 }
-                var answer = await ServerCall.GetAsync(environment, target.Address, target.FactsPath, cancellationToken);
+                var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)
                 {
                     return await target.FailedAsync(answer, cancellationToken);
@@ -62,11 +56,11 @@ internal static class FactsCommand
     {
         var name = new Argument<string>("name") { Description = "The fact's name, like customer.city." };
         var command = new Command("show", "Show one global fact with its revision (or --open the Facts screen in the web app).") { name };
-        RefuseOpenWithJson(command, options);
+        EditOptions.RefuseOpenWithJson(command, options);
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
-                var (target, exit) = await FactTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
                 if (target is null)
                 {
                     return exit;
@@ -78,7 +72,7 @@ internal static class FactsCommand
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    target.FactPath(parsed.GetRequiredValue(name)),
+                    target.ItemPath(Collection, parsed.GetRequiredValue(name)),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
@@ -95,25 +89,19 @@ internal static class FactsCommand
     private static Command CreateDelete(GlobalOptions options, CliEnvironment environment)
     {
         var name = new Argument<string>("name") { Description = "The fact's name, like customer.city." };
-        var ifRevision = FactSaveCommands.IfRevisionOption();
-        var dryRun = FactSaveCommands.DryRunOption();
+        var ifRevision = EditOptions.IfRevision();
+        var dryRun = EditOptions.DryRun();
         var command = new Command("delete", "Delete a global fact. Nothing checks yet whether a procedure uses it.")
         {
             name,
             ifRevision,
             dryRun,
         };
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Open))
-            {
-                result.AddError("`suwagcms facts delete` has no web page to open: drop --open.");
-            }
-        });
+        EditOptions.RefuseOpen(command, options, "facts delete");
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
-                var (target, exit) = await FactTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
                 if (target is null)
                 {
                     return exit;
@@ -123,7 +111,7 @@ internal static class FactsCommand
                 var answer = await ServerCall.DeleteAsync(
                     environment,
                     target.Address,
-                    target.FactPath(factName) + FactSaveCommands.Query(dry, parsed.GetValue(ifRevision)),
+                    target.ItemPath(Collection, factName) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
@@ -139,9 +127,9 @@ internal static class FactsCommand
         return command;
     }
 
-    private static Task<int> Open(FactTarget target, ParseResult parsed) =>
+    private static Task<int> Open(BotTarget target, ParseResult parsed) =>
         WebPage.ShowAsync(
-            target.Page,
+            target.PageOf(FactsCommand.Collection),
             parsed.InvocationConfiguration.Output,
             parsed.InvocationConfiguration.Error,
             target.Machine.OpenBrowser

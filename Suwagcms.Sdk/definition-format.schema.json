@@ -66,6 +66,9 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "title": {
+            "type": "string"
           }
         },
         "required": [
@@ -79,6 +82,24 @@
         "type": "object",
         "properties": {
           "id": {
+            "type": "string"
+          },
+          "knowledgeBase": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "llmGuide": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           }
         },

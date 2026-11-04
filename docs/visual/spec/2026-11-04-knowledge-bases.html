@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-article-language.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-knowledge-bases.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Article language</title>
+<title>Knowledge bases</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Article language</h1>
+  <h1>Knowledge bases</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 36 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>articles</code></span>
+    <span><b>Feature:</b> 8 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>bot-profiles</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -377,101 +377,107 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>Every article has a <code>language</code>, <code>pl</code> or <code>en</code>, and it is <code>en</code> unless someone says otherwise. It is chosen in the web and set through the CLI and the plugin like any other field; any other value is refused.</p>
-    <p>Two articles in different languages are simply two articles: the CMS does not link them as translations.</p>
+    <p>A knowledge base is a named group of articles within one bot. People and agents create one, rename it and delete it, in the web, the CLI and the plugin.</p>
+    <p>A base has an <code>id</code> and a <code>title</code> and nothing else: it only groups. References work across all the knowledge bases of a bot, so moving an article between bases breaks nothing.</p>
   </div>
   <div class="stats">
-    <div><b>2</b><span>languages</span></div>
     <div><b>9</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>A bot serving Polish and English customers has to know which language each article is in, to search the right ones and to answer in the right way. Without the field, that knowledge ends up in a title or an id, where nothing can check or filter it. README decides the shape: a required field with two values and a default, and no linked translations.</p>
+  <p>A bot's articles need a home before any can be written. An owner of a valuation bot separates “Offer” from “Procedures for valuers” to find things and to work on them apart. README decides that resources belong to one bot and that references never cross between bots, so a base is a grouping inside a bot and never a boundary.</p>
 </section>
 
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>Each article has exactly one known language.</li>
-      <li>Set it through every door; filter by it when finding articles.</li>
+      <li>Create, rename, list and delete the knowledge bases of one bot, through every door.</li>
+      <li>Titles a person can tell apart.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Linking translations of one article: README rules it out.</li>
-      <li>Detecting the language of a text: the field says what the author says, and the CMS does not compare it with the text.</li>
-      <li>Other languages: a new value is a later change of the format.</li>
-      <li>A language for procedures, facts or a bot.</li>
+      <li>Articles: <code>articles</code>.</li>
+      <li>Changing a base's <code>id</code>: <code>resource-rename</code>. “Rename” here changes the title.</li>
+      <li>A base that bots search separately, or settings per base: nothing asks for them.</li>
+      <li>Availability: articles have it; a base has none.</li>
     </ul></div>
   </div>
 </section>
 
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. A Polish article</h3>
-  <div class="term"><span class="dim">$</span> suwagcms articles add cennik --kb oferta --language pl --title "Cennik" …
-<span class="dim">$</span> suwagcms articles list --language pl
-  cennik  Cennik  pl  oferta</div>
-  <h3>2. No language given</h3>
+  <h3>1. An agent sets up two bases</h3>
+  <div class="term"><span class="dim">$</span> suwagcms kb add oferta --title "Offer"
+<span class="dim">$</span> suwagcms kb add dlaRzeczoznawcow --title "For valuers"
+<span class="dim">$</span> suwagcms kb list
+  dlaRzeczoznawcow  For valuers
+  oferta            Offer</div>
+  <h3>2. Marta renames one in the web</h3>
   <ol class="steps">
-    <li><p>An agent adds <code>pricing</code> without <code>--language</code>. The article has <code>en</code>. In the web, the select starts on <code>en</code> for a new article.</p></li>
+    <li><p>She changes the title “Offer” to “Our offer”. The base keeps the <code>id</code> <code>oferta</code>, so anything that points at it still does.</p></li>
   </ol>
-  <h3>3. An unknown language</h3>
-  <div class="term"><span class="dim">$</span> suwagcms articles edit cennik --language de
-Refused, 1 mistake:
-  article.language.unknown  'cennik' has language 'de'. Use one of: pl, en.</div>
-  <h3>4. The same subject in two languages</h3>
+  <h3>3. A duplicate title</h3>
   <ol class="steps">
-    <li><p>Marta writes <code>cennik</code> in <code>pl</code> and <code>pricing</code> in <code>en</code>. They are two ordinary articles: editing one changes nothing in the other, and each can be deleted on its own.</p></li>
+    <li><p>She tries to create another “Our offer” and is refused: <span class="wf-muted">“The title 'Our offer' is used by knowledge base 'oferta'. Choose another title.”</span></p></li>
   </ol>
 </section>
 
 <section data-role="behaviour">
   <h2>Behaviour</h2>
   <table>
-    <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>an article is created without a language</td><td>it has <code>en</code></td></tr>
-    <tr><td>an article is edited without giving a language</td><td>it keeps the one it has; <code>en</code> does not overwrite <code>pl</code></td></tr>
-    <tr><td>any value other than <code>pl</code> or <code>en</code>, including <code>PL</code> and blank</td><td>refused with a mistake listing the two</td></tr>
-    <tr><td>a list filtered by language</td><td>only articles in that language, the same in the web and the CLI; combined with the other filters</td></tr>
+    <tr><th>Field</th><th>Rule</th></tr>
+    <tr><td><code>id</code></td><td>required; camelCase; unique within the bot; fixed once created</td></tr>
+    <tr><td><code>title</code></td><td>required, not blank; unique within the bot, ignoring case and surrounding spaces</td></tr>
   </table>
-  <p>The value is checked by the same validator as every other rule, so a definition with another language fails offline and on the server alike. The editor's select has a tooltip saying what the field is for, like the other fields of an article.</p>
+  <p>A save of a base behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes: all mistakes at once, a refused save leaves no trace, <code>--dry-run</code> answers without changing anything, and an edit based on an old revision is refused.</p>
+  <table>
+    <tr><th>Situation</th><th>Result</th></tr>
+    <tr><td>a bot with no bases</td><td>the screen offers to create the first; <code>suwagcms kb list</code> prints nothing and exits 0, and <code>--json</code> gives an empty list</td></tr>
+    <tr><td>deleting an empty base</td><td>it is gone</td></tr>
+    <tr><td>deleting a base that has articles</td><td>refused, listing the articles; move or delete them first</td></tr>
+    <tr><td>the same <code>id</code> or title in another bot</td><td>allowed: bots are separate</td></tr>
+  </table>
+</section>
+
+<section data-role="ui">
+  <h2>Screen</h2>
+  <div class="wire after"><span class="wf-label">Knowledge bases of rzeczoznawca</span>
+    <div class="wf-bar"><b>Knowledge bases</b><span class="wf-grow"></span><span class="wf-btn primary">New knowledge base</span></div>
+    <div class="wf-body">
+      <div class="wf-card wf-row"><b class="wf-grow">Our offer</b><code>oferta</code><span class="wf-btn">Rename</span><span class="wf-btn">Delete</span></div>
+      <div class="wf-card wf-row"><b class="wf-grow">For valuers</b><code>dlaRzeczoznawcow</code><span class="wf-btn">Rename</span><span class="wf-btn">Delete</span></div>
+    </div>
+  </div>
 </section>
 
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>The value must match exactly, in lowercase: accepting <code>PL</code> would need a rule for which spelling gets stored, and the refusal costs one retry.</li>
-    <li>The default exists when an article is created, not when it is read: every stored article has its own value, so a later change of the default touches no article.</li>
+    <li>Titles are unique within a bot: two bases with one title would be impossible to tell apart in a filter or a picker, and the refusal costs one rename.</li>
+    <li>README's resource table has no row for a knowledge base, so its fields come from the format sketch in the architecture plan: <code>id</code> and <code>title</code>.</li>
+    <li>Renaming has its own command, <code>suwagcms kb rename</code>, because a base has only a title to change; the other resources use <code>edit</code>. Like every edit, it applies to the revision it just read, and <code>--if-revision</code> overrides that.</li>
+    <li>A repeated title is reported for every base that has it, each naming the others: a saved definition never holds one, so the base being saved is always among them.</li>
   </ul>
 </section>
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-article-language-1</code> An article created through the API or the CLI without a language has <code>en</code>, and reading it back shows <code>en</code>.</li>
-    <li><code>AC-article-language-2</code> In the web, the language of a new article is chosen in a select offering <code>pl</code> and <code>en</code>, starting on <code>en</code>, and the saved value is shown in the list and the editor.</li>
-    <li><code>AC-article-language-3</code> <code>suwagcms articles add</code> and <code>suwagcms articles edit</code> set the language with <code>--language</code>.</li>
-    <li><code>AC-article-language-4</code> Any value other than <code>pl</code> or <code>en</code>, including <code>PL</code> and blank, is refused with a mistake listing both, in the validator on its own and on the server.</li>
-    <li><code>AC-article-language-5</code> Editing an article without giving a language keeps its language.</li>
-    <li><code>AC-article-language-6</code> The article list filters by language, together with the other filters, with the same results in the web and with <code>suwagcms articles list --language</code>.</li>
-    <li><code>AC-article-language-7</code> Two articles in different languages can share a title, and editing or deleting one changes nothing in the other.</li>
-    <li><code>AC-article-language-8</code> The tooltip of the language select says what the field is for.</li>
-    <li><code>AC-article-language-9</code> The plugin's main skill mentions <code>--language</code> on the lines for adding, editing and listing articles.</li>
+    <li><code>AC-knowledge-bases-1</code> A base created in the web or with <code>suwagcms kb add</code> appears in both the web list and <code>suwagcms kb list</code>.</li>
+    <li><code>AC-knowledge-bases-2</code> A base's title changes in the web and with <code>suwagcms kb rename</code>, and its <code>id</code> stays the same.</li>
+    <li><code>AC-knowledge-bases-3</code> An empty base can be deleted in the web and with <code>suwagcms kb delete</code>, and is gone from both.</li>
+    <li><code>AC-knowledge-bases-4</code> A missing or non-camelCase <code>id</code>, an <code>id</code> the bot already has, a blank title, and a title another base of the bot has (ignoring case and surrounding spaces) are each refused with a mistake and a fix.</li>
+    <li><code>AC-knowledge-bases-5</code> The same <code>id</code> and title can exist in two bots, and a base of one bot is not listed for the other.</li>
+    <li><code>AC-knowledge-bases-6</code> A rename or delete based on an old revision is refused, and <code>--dry-run</code> on an add, rename or delete changes nothing.</li>
+    <li><code>AC-knowledge-bases-7</code> A bot with no bases shows a screen offering to create the first one, and <code>suwagcms kb list --json</code> returns an empty list with exit 0.</li>
+    <li><code>AC-knowledge-bases-8</code> Each <code>suwagcms kb</code> command has its line in the plugin's main skill.</li>
+    <li><code>AC-knowledge-bases-9</code> A base with articles cannot be deleted, and the refusal lists them.</li>
   </ul>
 </section>
 
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>version-create</code>:</b> a version gives the bot each article's language.</li>
-    <li><b>after <code>version-diff</code>:</b> a comparison of versions shows a change of language.</li>
-    <li><b>after <code>batch-apply</code>:</b> a file of changes can set the language, and <code>en</code> applies without it.</li>
-  </ul>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

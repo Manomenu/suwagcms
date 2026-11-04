@@ -1,21 +1,20 @@
 using System.CommandLine;
 using System.Text.Json;
-using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Output;
 
-namespace Suwagcms.Cli.Facts;
+namespace Suwagcms.Cli.Bots;
 
-// Why: every facts command starts the same way: the output asked for, the server address, and the bot, which a fact belongs to.
-internal sealed record FactTarget(BotCommandRun Run, Uri Address, string Bot, CliEnvironment Machine)
+// Why: every command on a bot's resources starts the same way: the output asked for, the server address, and the bot, which a resource belongs to.
+internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, CliEnvironment Machine)
 {
-    public string FactsPath => $"api/bots/{Uri.EscapeDataString(Bot)}/facts";
+    public string CollectionPath(string collection) => $"api/bots/{Uri.EscapeDataString(Bot)}/{collection}";
 
-    public string FactPath(string name) => $"{FactsPath}/{Uri.EscapeDataString(name)}";
+    public string ItemPath(string collection, string id) => $"{CollectionPath(collection)}/{Uri.EscapeDataString(id)}";
 
-    public Uri Page => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/facts");
+    public Uri PageOf(string collection) => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/{collection}");
 
-    public static async Task<(FactTarget? Target, int ExitCode)> ResolveAsync(
+    public static async Task<(BotTarget? Target, int ExitCode)> ResolveAsync(
         ParseResult parsed,
         GlobalOptions options,
         CliEnvironment environment,
@@ -35,7 +34,7 @@ internal sealed record FactTarget(BotCommandRun Run, Uri Address, string Bot, Cl
                 $"No bot is chosen. Choose one with --bot <id>, the {ChosenBot.Variable} variable or `suwagcms use <id>`. {await BotsLineAsync(environment, address, cancellationToken)}";
             return (null, await run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(text), text));
         }
-        return (new FactTarget(run, address, chosen.Id, environment), ExitCodes.Done);
+        return (new BotTarget(run, address, chosen.Id, environment), ExitCodes.Done);
     }
 
     // Why: a refusal for an unknown bot says which bots exist, as `suwagcms use` does, so the next command is right.

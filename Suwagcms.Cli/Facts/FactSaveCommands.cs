@@ -1,7 +1,9 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text.Json;
+using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
+using Suwagcms.Cli.Editing;
 using Suwagcms.Contracts;
 
 namespace Suwagcms.Cli.Facts;
@@ -19,30 +21,6 @@ internal static class FactSaveCommands
         Option<int?> Max,
         Option<int?> MaxLength
     );
-
-    public static Option<int?> IfRevisionOption() =>
-        new("--if-revision")
-        {
-            Description =
-                "Apply only if the fact is still at this revision (see `facts show`); refused with the current revision otherwise.",
-        };
-
-    public static Option<bool> DryRunOption() =>
-        new("--dry-run") { Description = "Answer as the real command would, with the same refusals, and change nothing." };
-
-    public static string Query(bool dryRun, int? ifRevision)
-    {
-        var parts = new List<string>();
-        if (ifRevision is { } revision)
-        {
-            parts.Add(string.Create(CultureInfo.InvariantCulture, $"ifRevision={revision}"));
-        }
-        if (dryRun)
-        {
-            parts.Add("dryRun=true");
-        }
-        return parts.Count == 0 ? "" : "?" + string.Join('&', parts);
-    }
 
     // Why: the options are left optional so that a missing one reaches the server, which reports every mistake at once.
     private static Fields FieldOptions() =>
@@ -67,15 +45,15 @@ internal static class FactSaveCommands
             Description = "The fact's name: camelCase words, which may be joined by dots (customer.city).",
         };
         var fields = FieldOptions();
-        var dryRun = DryRunOption();
+        var dryRun = EditOptions.DryRun();
         var command = new Command("add", "Add a global fact to the bot.") { name };
         AddFields(command, fields);
         command.Options.Add(dryRun);
-        RefuseOpen(command, options, "add");
+        EditOptions.RefuseOpen(command, options, "facts add");
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
-                var (target, exit) = await FactTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
                 if (target is null)
                 {
                     return exit;
@@ -94,7 +72,7 @@ internal static class FactSaveCommands
                 var answer = await ServerCall.PutAsync(
                     environment,
                     target.Address,
-                    target.FactPath(factName) + Query(dry, 0),
+                    target.ItemPath(FactsCommand.Collection, factName) + EditOptions.Query(dry, 0),
                     body,
                     cancellationToken
                 );
@@ -108,13 +86,13 @@ internal static class FactSaveCommands
     {
         var name = new Argument<string>("name") { Description = "The fact's name, like customer.city. It does not change." };
         var fields = FieldOptions();
-        var ifRevision = IfRevisionOption();
-        var dryRun = DryRunOption();
+        var ifRevision = EditOptions.IfRevision();
+        var dryRun = EditOptions.DryRun();
         var command = new Command("edit", "Change a global fact: only the options you give change, the other fields stay.") { name };
         AddFields(command, fields);
         command.Options.Add(ifRevision);
         command.Options.Add(dryRun);
-        RefuseOpen(command, options, "edit");
+        EditOptions.RefuseOpen(command, options, "facts edit");
         command.Validators.Add(result =>
         {
             if (
@@ -135,13 +113,18 @@ internal static class FactSaveCommands
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
-                var (target, exit) = await FactTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
                 if (target is null)
                 {
                     return exit;
                 }
                 var factName = parsed.GetRequiredValue(name);
-                var read = await ServerCall.GetAsync(environment, target.Address, target.FactPath(factName), cancellationToken);
+                var read = await ServerCall.GetAsync(
+                    environment,
+                    target.Address,
+                    target.ItemPath(FactsCommand.Collection, factName),
+                    cancellationToken
+                );
                 if (read.ExitCode != ExitCodes.Done)
                 {
                     return await target.FailedAsync(read, cancellationToken);
@@ -173,7 +156,8 @@ internal static class FactSaveCommands
                 var answer = await ServerCall.PutAsync(
                     environment,
                     target.Address,
-                    target.FactPath(factName) + Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
+                    target.ItemPath(FactsCommand.Collection, factName)
+                        + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
                     body,
                     cancellationToken
                 );
@@ -198,17 +182,8 @@ internal static class FactSaveCommands
         command.Options.Add(fields.MaxLength);
     }
 
-    private static void RefuseOpen(Command command, GlobalOptions options, string word) =>
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Open))
-            {
-                result.AddError($"`suwagcms facts {word}` has no web page to open: drop --open.");
-            }
-        });
-
     private static async Task<int> ReportSavedAsync(
-        FactTarget target,
+        BotTarget target,
         ServerAnswer answer,
         bool dry,
         string word,
