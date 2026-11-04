@@ -1,6 +1,6 @@
 namespace Suwagcms.Contracts;
 
-/// <summary>A global fact of a bot as the API shows it: the format's fields, and the revision to send back to guard an edit.</summary>
+/// <summary>A global fact of a bot as the API shows it: the format's fields, the revision to send back to guard an edit, and the procedures that use it.</summary>
 public sealed record Fact(
     string Name,
     string Type,
@@ -10,5 +10,6 @@ public sealed record Fact(
     int? Min,
     int? Max,
     int? MaxLength,
-    int Revision
+    int Revision,
+    IReadOnlyList<string> UsedBy
 );

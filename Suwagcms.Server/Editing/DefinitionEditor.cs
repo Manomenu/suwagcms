@@ -25,8 +25,9 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
             return unmet;
         }
         var after = Applied(changes, before);
-        var mistakes = DefinitionValidator.Validate(ResourceKinds.Assemble(after.Values), ValidationStage.Save);
-        if (mistakes.Count > 0)
+        // Why: one pass at the Version stage finds both kinds, since it runs every Save rule too; only the Save ones refuse.
+        var found = DefinitionValidator.Validate(ResourceKinds.Assemble(after.Values), ValidationStage.Version);
+        if (found.Where(mistake => mistake.Stage == ValidationStage.Save).ToList() is { Count: > 0 } mistakes)
         {
             return new EditResult.Refused(mistakes);
         }
@@ -70,7 +71,7 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         {
             await transaction.CommitAsync(cancellationToken);
         }
-        return new EditResult.Saved(revisions, !dryRun);
+        return new EditResult.Saved(revisions, !dryRun, found);
     }
 
     // Why: expected revisions are checked against the state found under the lock, before any change is applied, so a stale edit loses to no mistake.

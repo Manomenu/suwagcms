@@ -69,11 +69,49 @@ it cannot be combined with `--json`. It only works from a shell that can reach t
 - `suwagcms bots add <id> --name <name> --address <url>` - register a bot; it never contacts the address, so a bot can be registered before it runs.
 - `suwagcms use [<id>]` - store the bot later commands work on, or say which bot is in use.
 - `suwagcms facts list` - list the global facts of the bot; `--open` opens the Facts screen in the web app.
-- `suwagcms facts show <name>` - show one fact with its revision.
+- `suwagcms facts show <name>` - show one fact with its revision and the procedures that use it.
 - `suwagcms facts add <name> --type enum|int|text --description <text> [--values a b | --min n --max n | --max-length n] [--writable-by assign|set|correct]` - add a fact. An enum needs two or more values, an int both bounds, a text a maximum length above 0; `--writable-by` is `set` when left out.
 - `suwagcms facts edit <name> [options of add] [--if-revision n]` - change a fact: only the options given change. Without `--if-revision` the edit applies to the revision it just read and a change made meanwhile is refused with the current revision.
-- `suwagcms facts delete <name> [--if-revision n]` - delete a fact; it does not check yet whether a procedure uses it.
+- `suwagcms facts delete <name> [--if-revision n]` - delete a fact; it does not check yet whether a procedure uses it (`facts show` tells you).
 
-`facts add`, `facts edit` and `facts delete` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
+- `suwagcms procedures list` - list the procedures of the bot with what still stops each from becoming a version, and what stops the bot as a whole (no `conversation`); `--open` opens the Procedures screen in the web app.
+- `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`.
+- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused.
+- `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
+- `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
+
+`facts add`, `facts edit`, `facts delete`, `procedures add`, `procedures edit` and `procedures delete` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
+
+## Procedure file
+
+A procedure is a graph of steps; the file holds one whole procedure in YAML or JSON (the same structure). `id` is one camelCase word,
+`description` is required, step names are camelCase. The procedure called `conversation` is the base of every conversation: a version
+needs it, and a new bot has none, so write it. The smallest one:
+
+```yaml
+id: conversation
+description: The base of every conversation.
+firstStep: wait
+steps:
+  wait:
+    listen:
+    next: answer
+  answer:
+    say: Hello, how can I help?
+    next: wait
+```
+
+- A step holds exactly one block: `listen` (wait for the next message), `collect: [fact, ...]` (ask until the facts are known),
+  `say: text` (send a fixed text), `assign: { fact: value }` (overwrite facts with values you chose). `collect` cannot name a fact
+  with `writableBy: assign`; every fact named must exist (`suwagcms facts list`) and a value must fit the fact's type.
+- `next` is a step's id, or a list of rules `{ when, to }` tried from the top; the last rule has no `when` and is the default.
+  A step without `next` ends the procedure. Steps may loop back (a `conversation` returns to its own `listen`).
+- `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)
+  or `known: true|false` (any fact).
+- `whenStalled: { instruction: text }` is required when a step collects.
+- Two stages: a mistake that makes the procedure unsound is refused (a step or fact that does not exist, an unwritable collect, a value the
+  fact cannot take, a missing description); what only makes it unfinished (no `firstStep`, a step with no block, an unreachable step, rules
+  without a default, a missing `whenStalled`, no `conversation`) is saved and listed after each save, so build a procedure step by step.
+

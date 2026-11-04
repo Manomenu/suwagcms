@@ -13,6 +13,7 @@ internal static class Documents
             ["bot"] = bot,
             ["number"] = number,
             ["facts"] = new JsonArray(Fact(label)),
+            ["procedures"] = new JsonArray(Conversation()),
         };
         return Sign(document);
     }
@@ -24,6 +25,16 @@ internal static class Documents
             ["type"] = "text",
             ["description"] = "A fact for the tests",
             ["maxLength"] = 10,
+        };
+
+    // Why: a version needs the base procedure, so every document the tests push carries the smallest one.
+    public static JsonObject Conversation() =>
+        new()
+        {
+            ["id"] = "conversation",
+            ["description"] = "The base of every conversation",
+            ["firstStep"] = "hello",
+            ["steps"] = new JsonObject { ["hello"] = new JsonObject { ["say"] = "Hello" } },
         };
 
     public static JsonObject Sign(JsonObject document)

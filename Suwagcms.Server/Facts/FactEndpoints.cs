@@ -34,7 +34,9 @@ internal static class FactEndpoints
         CancellationToken cancellationToken
     ) =>
         await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
-            ? TypedResults.Ok(stored.Where(item => item.Target.Kind == ResourceKind.GlobalFact).Select(FactMapping.Show).ToList())
+            ? TypedResults.Ok(
+                stored.Where(item => item.Target.Kind == ResourceKind.GlobalFact).Select(item => FactMapping.Show(item, stored)).ToList()
+            )
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The facts were not listed.");
 
     private static async Task<Results<Ok<Fact>, ProblemHttpResult>> Get(
@@ -50,7 +52,7 @@ internal static class FactEndpoints
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The fact was not shown.");
         }
         return stored.SingleOrDefault(item => item.Target == target) is { } found
-            ? TypedResults.Ok(FactMapping.Show(found))
+            ? TypedResults.Ok(FactMapping.Show(found, stored))
             : EditProblems.For(new EditResult.Missing(target), bot, "The fact was not shown.");
     }
 
@@ -59,6 +61,7 @@ internal static class FactEndpoints
         string name,
         HttpRequest request,
         DefinitionEditor editor,
+        Pool pool,
         CancellationToken cancellationToken,
         bool dryRun = false,
         int? ifRevision = null
@@ -76,9 +79,13 @@ internal static class FactEndpoints
             dryRun,
             cancellationToken
         );
-        return result is EditResult.Saved saved
-            ? TypedResults.Ok(FactMapping.Show(FactMapping.ToRecord(name, body), saved.Revisions[target]))
-            : EditProblems.For(result, bot, Title);
+        if (result is not EditResult.Saved saved)
+        {
+            return EditProblems.For(result, bot, Title);
+        }
+        // Why: a save leaves the procedures untouched, so who uses the fact is read after it, outside the lock.
+        var all = await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [];
+        return TypedResults.Ok(FactMapping.Show(FactMapping.ToRecord(name, body), saved.Revisions[target], all));
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> Delete(

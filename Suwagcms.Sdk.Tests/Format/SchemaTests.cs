@@ -42,10 +42,29 @@ public sealed class SchemaTests
         }
     }
 
+    // Why: next is a step's id or a list of rules, which the exporter cannot see through the converter, so the schema says so itself.
+    private static readonly JsonSchemaExporterOptions ExporterOptions = new()
+    {
+        TransformSchemaNode = (context, node) =>
+            context.TypeInfo.Type == typeof(NextSteps)
+                ? new JsonObject
+                {
+                    ["oneOf"] = new JsonArray(
+                        new JsonObject { ["type"] = "string" },
+                        JsonNode.Parse(
+                            JsonSchemaExporter.GetJsonSchemaAsNode(DefinitionFormat.Options, typeof(List<Transition>)).ToJsonString()
+                        )
+                    ),
+                }
+                : node,
+    };
+
     private static JsonNode Schema()
     {
         // Why: the exporter's own nodes are lazily typed; a parsed copy is plain JsonObject and JsonArray all the way down.
-        var schema = JsonNode.Parse(JsonSchemaExporter.GetJsonSchemaAsNode(DefinitionFormat.Options, typeof(BotDefinition)).ToJsonString());
+        var schema = JsonNode.Parse(
+            JsonSchemaExporter.GetJsonSchemaAsNode(DefinitionFormat.Options, typeof(BotDefinition), ExporterOptions).ToJsonString()
+        );
         WithoutNull(schema);
         return schema ?? throw new InvalidOperationException("The exporter returned no schema.");
     }

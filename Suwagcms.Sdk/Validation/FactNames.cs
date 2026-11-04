@@ -10,6 +10,11 @@ internal static partial class FactNames
     [GeneratedRegex("[^a-zA-Z0-9]+", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Separators();
 
+    public static bool IsWord(string name) => CamelCasePattern().IsMatch(name);
+
+    // Why: a procedure id and a step name are one camelCase word, with no dots.
+    public static string SuggestWord(string name) => ToCamelCase(name.Replace('.', ' '));
+
     public static bool IsValid(string name) => name.Split('.').All(segment => CamelCasePattern().IsMatch(segment));
 
     // Why: a refusal names the fix, so it proposes the nearest valid name instead of only saying the name is wrong.

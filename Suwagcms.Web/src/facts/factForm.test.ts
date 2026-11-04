@@ -19,6 +19,7 @@ const kind: Fact = {
     max: null,
     maxLength: null,
     revision: 4,
+    usedBy: [],
 };
 
 describe("emptyForm", () => {

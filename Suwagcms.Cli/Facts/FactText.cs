@@ -44,6 +44,7 @@ internal static class FactText
             $"  type:        {Constraint(fact)}",
             $"  writableBy:  {fact.WritableBy}",
             $"  description: {fact.Description}",
+            fact.UsedBy is { Count: > 0 } ? $"  used by:     {string.Join(", ", fact.UsedBy)}" : "  used by:     no procedure",
             string.Create(CultureInfo.InvariantCulture, $"  revision:    {fact.Revision}")
         );
     }

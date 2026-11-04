@@ -13,6 +13,15 @@ internal static class Samples
             MaxLength = 80,
         };
 
+    public static Procedure Procedure(string id) =>
+        new()
+        {
+            Id = id,
+            Description = "A procedure for the tests",
+            FirstStep = "hello",
+            Steps = new Dictionary<string, ProcedureStep> { ["hello"] = new() { Say = "Hello" } },
+        };
+
     public static BotDefinition Empty { get; } = new() { FormatVersion = 1 };
 
     public static BotDefinition Valid { get; } =
@@ -23,7 +32,7 @@ internal static class Samples
             KnowledgeBases = [new KnowledgeBase { Id = "faq" }],
             Articles = [new Article { Id = "pricing" }],
             Actions = [new BotAction { Id = "sendOffer" }],
-            Procedures = [new Procedure { Id = "quote" }],
+            Procedures = [Procedure("conversation"), Procedure("quote")],
         };
 
     public static BotDefinition WithDuplicatesInTwoKinds { get; } =
@@ -31,6 +40,6 @@ internal static class Samples
         {
             FormatVersion = 1,
             Facts = [CityFact, CityFact],
-            Procedures = [new Procedure { Id = "quote" }, new Procedure { Id = "other" }, new Procedure { Id = "quote" }],
+            Procedures = [Procedure("conversation"), Procedure("quote"), Procedure("other"), Procedure("quote")],
         };
 }

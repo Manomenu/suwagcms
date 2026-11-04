@@ -39,7 +39,7 @@ public sealed class DefinitionValidatorTests
     public void A_definition_without_mistakes_returns_an_empty_list(ValidationStage stage)
     {
         Assert.Empty(DefinitionValidator.Validate(Samples.Valid, stage));
-        Assert.Empty(DefinitionValidator.Validate(Samples.Empty, stage));
+        Assert.Empty(DefinitionValidator.Validate(Samples.Empty, ValidationStage.Save));
     }
 
     [Fact]
@@ -49,7 +49,13 @@ public sealed class DefinitionValidatorTests
         var shuffled = new BotDefinition
         {
             FormatVersion = 1,
-            Procedures = [new Procedure { Id = "quote" }, new Procedure { Id = "other" }, new Procedure { Id = "quote" }],
+            Procedures =
+            [
+                Samples.Procedure("conversation"),
+                Samples.Procedure("quote"),
+                Samples.Procedure("other"),
+                Samples.Procedure("quote"),
+            ],
             Facts = [Samples.CityFact, Samples.CityFact],
         };
 
