@@ -456,6 +456,13 @@
           "xunit.v3.runner.common": "[4.0.2]"
         }
       },
+      "suwagcms.cli": {
+        "type": "Project",
+        "dependencies": {
+          "Suwagcms.Contracts": "[1.0.0, )",
+          "System.CommandLine": "[2.0.13, )"
+        }
+      },
       "suwagcms.contracts": {
         "type": "Project",
         "dependencies": {
@@ -512,6 +519,12 @@
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0"
         }
+      },
+      "System.CommandLine": {
+        "type": "CentralTransitive",
+        "requested": "[2.0.13, )",
+        "resolved": "2.0.13",
+        "contentHash": "TIO2lMV+sSP7WW7pD/oCRHD9ENWY+jqwXmYzgks3R46cEdDzwjQOAhsiBn+M3EegfGjgTpa2h+eIrcU+AM2k6A=="
       }
     }
   }
