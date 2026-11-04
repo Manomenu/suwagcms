@@ -3,7 +3,7 @@ import { Field } from "@/design/field";
 import { Input } from "@/design/input";
 import { Textarea } from "@/design/textarea";
 
-import type { KnowledgeBase } from "./api";
+import { LANGUAGES, type KnowledgeBase } from "./api";
 import { HINTS, fieldOf, type ArticleForm, type FieldName } from "./articleForm";
 
 const SELECT = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
@@ -26,7 +26,7 @@ export function ArticleFields({
         mistakes.filter((mistake) => fieldOf(mistake) === field).map((mistake) => `${mistake.message} ${mistake.fix}`);
     return (
         <>
-            <div className="grid gap-3 md:grid-cols-3">
+            <div className="grid gap-3 md:grid-cols-4">
                 <Field prefix="article" name="id" label="Id" errors={errorsOf("id")}>
                     {(props) => (
                         <Input
@@ -68,6 +68,24 @@ export function ArticleFields({
                             {bases.map((base) => (
                                 <option key={base.id} value={base.id}>
                                     {base.title}
+                                </option>
+                            ))}
+                        </select>
+                    )}
+                </Field>
+                <Field prefix="article" name="language" label="Language" hint={HINTS.language} errors={errorsOf("language")}>
+                    {(props) => (
+                        <select
+                            {...props}
+                            className={SELECT}
+                            value={form.language}
+                            onChange={(event) => {
+                                onChange({ language: event.currentTarget.value });
+                            }}
+                        >
+                            {LANGUAGES.map((language) => (
+                                <option key={language} value={language}>
+                                    {language}
                                 </option>
                             ))}
                         </select>

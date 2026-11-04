@@ -15,6 +15,7 @@ internal static class ArticleSaveCommands
 
     private sealed record Fields(
         Option<string?> KnowledgeBase,
+        Option<string?> Language,
         Option<string?> Title,
         TextInput Content,
         TextInput Guide,
@@ -25,6 +26,10 @@ internal static class ArticleSaveCommands
     private static Fields FieldOptions() =>
         new(
             new Option<string?>("--kb") { Description = "The id of the knowledge base the article is in; changing it moves the article." },
+            new Option<string?>("--language")
+            {
+                Description = "pl or en. A new article has en when this is left out; an edit keeps the language the article has.",
+            },
             new Option<string?>("--title") { Description = "The article's title." },
             TextInput.Create(
                 "content",
@@ -47,6 +52,7 @@ internal static class ArticleSaveCommands
     private static void AddFields(Command command, Fields fields)
     {
         command.Options.Add(fields.KnowledgeBase);
+        command.Options.Add(fields.Language);
         command.Options.Add(fields.Title);
         fields.Content.AddTo(command);
         fields.Guide.AddTo(command);
@@ -111,6 +117,7 @@ internal static class ArticleSaveCommands
                 }
                 var body = new SaveArticle(
                     parsed.GetValue(fields.KnowledgeBase),
+                    parsed.GetValue(fields.Language),
                     parsed.GetValue(fields.Title),
                     content,
                     guide,
@@ -146,6 +153,7 @@ internal static class ArticleSaveCommands
         {
             if (
                 result.GetValue(fields.KnowledgeBase) is null
+                && result.GetValue(fields.Language) is null
                 && result.GetValue(fields.Title) is null
                 && result.GetValue(fields.Description) is null
                 && !fields.Content.Given(result)
@@ -153,7 +161,7 @@ internal static class ArticleSaveCommands
             )
             {
                 result.AddError(
-                    "Nothing to change: give at least one of --kb, --title, --content, --content-file, --guide, --guide-file, --description."
+                    "Nothing to change: give at least one of --kb, --language, --title, --content, --content-file, --guide, --guide-file, --description."
                 );
             }
         });
@@ -181,6 +189,7 @@ internal static class ArticleSaveCommands
                 var current = read.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
                 var body = new SaveArticle(
                     parsed.GetValue(fields.KnowledgeBase) ?? current.KnowledgeBase,
+                    parsed.GetValue(fields.Language) ?? current.Language,
                     parsed.GetValue(fields.Title) ?? current.Title,
                     content ?? current.Content,
                     guide ?? current.LlmGuide,
@@ -216,10 +225,10 @@ internal static class ArticleSaveCommands
         var article = answer.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
         var past = word == "add" ? "Added" : "Edited";
         var text = dry
-            ? $"Would {word} '{article.Id}' ({article.Title}, in {article.KnowledgeBase}). Nothing was changed."
+            ? $"Would {word} '{article.Id}' ({article.Title}, {article.Language}, in {article.KnowledgeBase}). Nothing was changed."
             : string.Create(
                 CultureInfo.InvariantCulture,
-                $"{past} '{article.Id}' ({article.Title}, in {article.KnowledgeBase}), revision {article.Revision}."
+                $"{past} '{article.Id}' ({article.Title}, {article.Language}, in {article.KnowledgeBase}), revision {article.Revision}."
             );
         return await target.Run.Report.DoneAsync(new ArticleSavedDocument(target.Bot, article, dry), text);
     }

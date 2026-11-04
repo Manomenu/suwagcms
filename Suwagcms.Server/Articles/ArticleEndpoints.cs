@@ -33,13 +33,15 @@ internal static class ArticleEndpoints
         Pool pool,
         CancellationToken cancellationToken,
         string? knowledgeBase = null,
-        string? text = null
+        string? text = null,
+        string? language = null
     ) =>
         await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
             ? TypedResults.Ok(
                 stored
                     .Where(item =>
-                        item.Target.Kind == ResourceKind.Article && ArticleMapping.Matches((Article)item.Record, knowledgeBase, text)
+                        item.Target.Kind == ResourceKind.Article
+                        && ArticleMapping.Matches((Article)item.Record, knowledgeBase, text, language)
                     )
                     .Select(ArticleMapping.Show)
                     .ToList()
@@ -68,6 +70,7 @@ internal static class ArticleEndpoints
         string id,
         HttpRequest request,
         DefinitionEditor editor,
+        Pool pool,
         CancellationToken cancellationToken,
         bool dryRun = false,
         int? ifRevision = null
@@ -79,8 +82,13 @@ internal static class ArticleEndpoints
         {
             return EditProblems.For(new EditResult.Refused(unreadable), bot, Title);
         }
-        var record = ArticleMapping.ToRecord(id, body);
-        var result = await editor.ApplyAsync(bot, [new Put(target, record, ifRevision)], dryRun, cancellationToken);
+        // Why: a save without a language keeps the one the article has, so the revision read is the one the save is checked against; a new article has en.
+        var current = body.Language is null
+            ? (await ResourceStore.ReadAsync(pool, bot, cancellationToken))?.SingleOrDefault(item => item.Target == target)
+            : null;
+        var record = ArticleMapping.ToRecord(id, body, current is null ? ArticleLanguages.English : ((Article)current.Record).Language);
+        var expected = ifRevision ?? (body.Language is null ? current?.Revision ?? 0 : null);
+        var result = await editor.ApplyAsync(bot, [new Put(target, record, expected)], dryRun, cancellationToken);
         return result is EditResult.Saved saved
             ? TypedResults.Ok(ArticleMapping.Show(record, saved.Revisions[target]))
             : EditProblems.For(result, bot, Title);

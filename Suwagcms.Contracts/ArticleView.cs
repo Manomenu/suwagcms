@@ -4,6 +4,7 @@ namespace Suwagcms.Contracts;
 public sealed record ArticleView(
     string Id,
     string KnowledgeBase,
+    string Language,
     string Title,
     string Content,
     string LlmGuide,

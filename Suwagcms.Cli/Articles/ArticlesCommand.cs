@@ -26,6 +26,7 @@ internal static class ArticlesCommand
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)
     {
         var knowledgeBase = new Option<string?>("--kb") { Description = "Only the articles of this knowledge base." };
+        var language = new Option<string?>("--language") { Description = "Only the articles in this language: pl or en." };
         var text = new Option<string?>("--text")
         {
             Description = "Only the articles with this text in the title, id or description, ignoring case. The content is not read.",
@@ -33,6 +34,7 @@ internal static class ArticlesCommand
         var command = new Command("list", "List the articles of the bot, filtered (or --open the Articles screen in the web app).")
         {
             knowledgeBase,
+            language,
             text,
         };
         EditOptions.RefuseOpenWithJson(command, options);
@@ -51,7 +53,8 @@ internal static class ArticlesCommand
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    target.CollectionPath(Collection) + Query(parsed.GetValue(knowledgeBase), parsed.GetValue(text)),
+                    target.CollectionPath(Collection)
+                        + Query(parsed.GetValue(knowledgeBase), parsed.GetValue(language), parsed.GetValue(text)),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
@@ -65,12 +68,16 @@ internal static class ArticlesCommand
         return command;
     }
 
-    private static string Query(string? knowledgeBase, string? text)
+    private static string Query(string? knowledgeBase, string? language, string? text)
     {
         var parts = new List<string>();
         if (knowledgeBase is not null)
         {
             parts.Add($"knowledgeBase={Uri.EscapeDataString(knowledgeBase)}");
+        }
+        if (language is not null)
+        {
+            parts.Add($"language={Uri.EscapeDataString(language)}");
         }
         if (text is not null)
         {

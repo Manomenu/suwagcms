@@ -26,12 +26,12 @@ public sealed class ArticleEndpointsTests(TestDatabase database) : IDisposable
         var api = await NewBot();
 
         Assert.Equal(HttpStatusCode.OK, (await api.Add("priceList", ArticleApi.Body())).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await api.Add("valuerGuide", ArticleApi.Body("forValuers", "Guide"))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await api.Add("valuerGuide", ArticleApi.Body("forValuers", title: "Guide"))).StatusCode);
 
         Assert.Equal(["priceList", "valuerGuide"], (await api.List()).Select(article => article.Id));
         Assert.Equal(["priceList"], (await api.List("?knowledgeBase=offer")).Select(article => article.Id));
         Assert.Equal(
-            "priceList|offer|Price list|What a valuation costs.|Ask which kind of property first.|What a valuation costs and what affects the price|1",
+            "priceList|offer|en|Price list|What a valuation costs.|Ask which kind of property first.|What a valuation costs and what affects the price|1",
             ArticleApi.Describe(await ArticleApi.ViewOf(await api.Get("priceList")))
         );
     }
@@ -82,7 +82,7 @@ public sealed class ArticleEndpointsTests(TestDatabase database) : IDisposable
         var api = await NewBot();
         await api.Add("priceList", ArticleApi.Body(title: "First"));
 
-        var response = await api.Add("priceList", ArticleApi.Body("forValuers", "Second"));
+        var response = await api.Add("priceList", ArticleApi.Body("forValuers", title: "Second"));
         var mistake = Assert.Single(await FactApi.MistakesOf(response));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
@@ -138,7 +138,11 @@ public sealed class ArticleEndpointsTests(TestDatabase database) : IDisposable
         var api = await NewBot();
         await api.Add("priceList", ArticleApi.Body());
 
-        var response = await api.Put("priceList", ArticleApi.Body("forValuers", "New title", "New content"), "?ifRevision=1");
+        var response = await api.Put(
+            "priceList",
+            ArticleApi.Body("forValuers", title: "New title", content: "New content"),
+            "?ifRevision=1"
+        );
 
         var saved = await ArticleApi.ViewOf(response);
         Assert.Equal(("forValuers", "New title", "New content", 2), (saved.KnowledgeBase, saved.Title, saved.Content, saved.Revision));
@@ -215,7 +219,7 @@ public sealed class ArticleEndpointsTests(TestDatabase database) : IDisposable
         await api.Add("rabatPolicy", ArticleApi.Body(title: "Policy", description: "Rules"));
         await api.Add("titled", ArticleApi.Body(title: "Rabat for students", description: "Students"));
         await api.Add("inContent", ArticleApi.Body(title: "Other", content: "A rabat is a discount.", description: "Unrelated"));
-        await api.Add("elsewhere", ArticleApi.Body("forValuers", "Rabat in another base", description: "Rabat"));
+        await api.Add("elsewhere", ArticleApi.Body("forValuers", title: "Rabat in another base", description: "Rabat"));
 
         Assert.Equal(["discounts", "elsewhere", "rabatPolicy", "titled"], (await api.List("?text=rabat")).Select(article => article.Id));
         Assert.Equal(

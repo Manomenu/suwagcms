@@ -21,6 +21,7 @@ public static class MistakeCodes
     public const string KnowledgeBaseTitleRepeated = "knowledgeBase.title.repeated";
     public const string ArticleIdInvalid = "article.id.invalid";
     public const string ArticleKnowledgeBaseUnknown = "article.knowledgeBase.unknown";
+    public const string ArticleLanguageUnknown = "article.language.unknown";
     public const string ArticleTitleMissing = "article.title.missing";
     public const string ArticleContentMissing = "article.content.missing";
     public const string ArticleLlmGuideMissing = "article.llmGuide.missing";

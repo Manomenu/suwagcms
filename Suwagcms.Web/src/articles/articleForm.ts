@@ -2,12 +2,13 @@ import type { Mistake } from "@/api/client";
 
 import type { Article, SaveArticle } from "./api";
 
-export type FieldName = "id" | "knowledgeBase" | "title" | "content" | "llmGuide" | "description";
+export type FieldName = "id" | "knowledgeBase" | "language" | "title" | "content" | "llmGuide" | "description";
 
 /** What the person typed, so that a refusal never loses a keystroke. */
 export interface ArticleForm {
     id: string;
     knowledgeBase: string;
+    language: string;
     title: string;
     content: string;
     llmGuide: string;
@@ -16,21 +17,24 @@ export interface ArticleForm {
 
 /** Who reads each text and what it is for: the label's tooltip. */
 export const HINTS = {
+    language:
+        "The language the article is written in, pl or en. The bot uses it to pick the right articles and to answer in the right way.",
     content: "What is true. The customer reads it, through the model.",
     llmGuide: "How the model should talk about it: tone, what to ask first, what not to say. Only the model reads it.",
     description: "The bot's search reads this: say what the article answers. The customer never sees it.",
 } as const;
 
-const FIELDS: readonly FieldName[] = ["id", "knowledgeBase", "title", "content", "llmGuide", "description"];
+const FIELDS: readonly FieldName[] = ["id", "knowledgeBase", "language", "title", "content", "llmGuide", "description"];
 
 export function emptyForm(knowledgeBase: string): ArticleForm {
-    return { id: "", knowledgeBase, title: "", content: "", llmGuide: "", description: "" };
+    return { id: "", knowledgeBase, language: "en", title: "", content: "", llmGuide: "", description: "" };
 }
 
 export function formOf(article: Article): ArticleForm {
     return {
         id: article.id,
         knowledgeBase: article.knowledgeBase,
+        language: article.language,
         title: article.title,
         content: article.content,
         llmGuide: article.llmGuide,
@@ -42,6 +46,7 @@ export function formOf(article: Article): ArticleForm {
 export function bodyOf(form: ArticleForm): SaveArticle {
     return {
         knowledgeBase: form.knowledgeBase,
+        language: form.language,
         title: form.title,
         content: form.content,
         llmGuide: form.llmGuide,

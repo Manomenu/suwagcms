@@ -10,13 +10,16 @@ internal static class ArticleText
         ArgumentNullException.ThrowIfNull(articles);
         if (articles.Count == 0)
         {
-            return "No articles found. Add one: suwagcms articles add <id> --kb <base> --title <text> --content-file <file> --guide-file <file> --description <text>";
+            return "No articles found. Add one: suwagcms articles add <id> --kb <base> [--language pl|en] --title <text> --content-file <file> --guide-file <file> --description <text>";
         }
         var idWidth = articles.Max(article => article.Id.Length);
         var titleWidth = articles.Max(article => article.Title.Length);
+        var languageWidth = articles.Max(article => article.Language.Length);
         return string.Join(
             Environment.NewLine,
-            articles.Select(article => $"{article.Id.PadRight(idWidth)}  {article.Title.PadRight(titleWidth)}  {article.KnowledgeBase}")
+            articles.Select(article =>
+                $"{article.Id.PadRight(idWidth)}  {article.Title.PadRight(titleWidth)}  {article.Language.PadRight(languageWidth)}  {article.KnowledgeBase}"
+            )
         );
     }
 
@@ -27,6 +30,7 @@ internal static class ArticleText
             Environment.NewLine,
             article.Id,
             $"  knowledge base: {article.KnowledgeBase}",
+            $"  language:       {article.Language}",
             $"  title:          {article.Title}",
             $"  description:    {article.Description}",
             string.Create(CultureInfo.InvariantCulture, $"  revision:       {article.Revision}"),

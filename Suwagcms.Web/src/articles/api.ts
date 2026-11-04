@@ -8,6 +8,7 @@ export type KnowledgeBase = components["schemas"]["KnowledgeBaseView"];
 
 export interface Filters {
     knowledgeBase: string;
+    language: string;
     text: string;
 }
 
@@ -18,6 +19,7 @@ function botPath(bot: string): string {
 export function fetchArticles(bot: string, filters: Filters, signal: AbortSignal): Promise<Article[]> {
     const query = new URLSearchParams();
     if (filters.knowledgeBase !== "") query.set("knowledgeBase", filters.knowledgeBase);
+    if (filters.language !== "") query.set("language", filters.language);
     if (filters.text.trim() !== "") query.set("text", filters.text);
     const suffix = query.size === 0 ? "" : `?${query.toString()}`;
     return request<Article[]>(`${botPath(bot)}/articles${suffix}`, { signal });
@@ -26,6 +28,9 @@ export function fetchArticles(bot: string, filters: Filters, signal: AbortSignal
 export function fetchArticle(bot: string, id: string, signal: AbortSignal): Promise<Article> {
     return request<Article>(`${botPath(bot)}/articles/${encodeURIComponent(id)}`, { signal });
 }
+
+/** The languages an article can be in; the server refuses any other. */
+export const LANGUAGES = ["pl", "en"] as const;
 
 /** The bases an article can be put in. */
 export function fetchKnowledgeBases(bot: string, signal: AbortSignal): Promise<KnowledgeBase[]> {

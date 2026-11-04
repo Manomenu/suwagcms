@@ -23,11 +23,12 @@ async function addArticle(
     request: APIRequestContext,
     bot: string,
     id: string,
-    extra: { knowledgeBase?: string; title?: string; description?: string; content?: string } = {},
+    extra: { knowledgeBase?: string; language?: string; title?: string; description?: string; content?: string } = {},
 ): Promise<void> {
     const response = await request.put(`/api/bots/${bot}/articles/${id}?ifRevision=0`, {
         data: {
             knowledgeBase: extra.knowledgeBase ?? "offer",
+            language: extra.language ?? null,
             title: extra.title ?? "Price list",
             content: extra.content ?? "What a valuation costs.",
             llmGuide: "Ask which kind of property first.",
@@ -227,4 +228,85 @@ test("AC-articles-15: the articles screen of one bot shows nothing of another bo
 
     await expect(page.getByText("No articles yet.")).toBeVisible();
     await expect(page.getByText("Of the first")).toHaveCount(0);
+});
+
+test("AC-article-language-2: a new article starts on en, the language chosen is saved and shown in the list and the editor", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+    await expect(page.locator('[data-field="language"] select')).toHaveValue("en");
+    await expect(page.locator('[data-field="language"] select').locator("option")).toHaveText(["pl", "en"]);
+    await fill(page, "cennik", "Cennik");
+
+    await page.locator('[data-field="language"] select').selectOption("pl");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+
+    const row = page.getByRole("listitem").filter({ hasText: "cennik" });
+    await expect(row).toContainText("cennik · forValuers · pl");
+    expect(await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()).toMatchObject({ language: "pl" });
+    await row.getByRole("button", { name: "Edit" }).click();
+    await expect(page.locator('[data-field="language"] select')).toHaveValue("pl");
+});
+
+test("AC-article-language-2: an article added without choosing keeps en", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+    await fill(page, "pricing", "Pricing");
+
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+
+    await expect(page.getByRole("listitem").filter({ hasText: "pricing" })).toContainText("pricing · forValuers · en");
+});
+
+test("AC-article-language-8: the label of the language select carries a tooltip saying what the field is for", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+
+    await expect(page.locator('[data-field="language"] label')).toHaveAttribute("title", /language the article is written in/);
+});
+
+test("AC-article-language-6: the list filters by language together with the other filters, the same as the API does", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { language: "pl", title: "Cennik", description: "Ile kosztuje wycena" });
+    await addArticle(request, bot, "pricing", { title: "Pricing", description: "What a valuation costs" });
+    await addArticle(request, bot, "cennikBiegly", {
+        knowledgeBase: "forValuers",
+        language: "pl",
+        title: "Cennik",
+        description: "Ile kosztuje",
+    });
+    await page.goto(`/bots/${bot}/articles`);
+    await expect(page.getByRole("listitem")).toHaveCount(3);
+
+    await page.getByLabel("Language", { exact: true }).selectOption("pl");
+    await expect(page.getByRole("listitem")).toHaveCount(2);
+    await page.getByLabel("Knowledge base", { exact: true }).selectOption("offer");
+
+    await expect(page.getByRole("listitem")).toHaveCount(1);
+    await expect(page.getByRole("listitem")).toContainText("cennik · offer · pl");
+    const api = await request.get(`/api/bots/${bot}/articles?language=pl&knowledgeBase=offer`);
+    expect(((await api.json()) as { id: string }[]).map((article) => article.id)).toEqual(["cennik"]);
+});
+
+test("AC-article-language-7: two articles in different languages with one title are two ordinary articles", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { language: "pl", title: "Cennik" });
+    await addArticle(request, bot, "pricing", { language: "en", title: "Cennik" });
+    await page.goto(`/bots/${bot}/articles`);
+
+    await page.getByRole("listitem").filter({ hasText: "pricing" }).getByRole("button", { name: "Delete" }).click();
+
+    await expect(page.getByRole("listitem")).toHaveCount(1);
+    await expect(page.getByRole("listitem")).toContainText("cennik · offer · pl");
 });

@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
 
-import type { Article, Filters, KnowledgeBase } from "./api";
+import { LANGUAGES, type Article, type Filters, type KnowledgeBase } from "./api";
 
 const SELECT = "h-9 rounded-md border border-input bg-background px-2 text-sm";
 
@@ -32,7 +32,7 @@ export function ArticlesView({
     onDelete: (article: Article) => void;
     onLeave: (event: React.MouseEvent) => void;
 }) {
-    const filtered = filters.knowledgeBase !== "" || filters.text.trim() !== "";
+    const filtered = filters.knowledgeBase !== "" || filters.language !== "" || filters.text.trim() !== "";
     return (
         <main className="mx-auto flex max-w-5xl flex-col gap-4 p-4">
             <header className="flex items-center gap-2">
@@ -78,6 +78,21 @@ export function ArticlesView({
                         </option>
                     ))}
                 </select>
+                <select
+                    aria-label="Language"
+                    className={SELECT}
+                    value={filters.language}
+                    onChange={(event) => {
+                        onFilters({ ...filters, language: event.currentTarget.value });
+                    }}
+                >
+                    <option value="">All languages</option>
+                    {LANGUAGES.map((language) => (
+                        <option key={language} value={language}>
+                            {language}
+                        </option>
+                    ))}
+                </select>
                 <Input
                     aria-label="Search"
                     placeholder="Search the title, id and description"
@@ -98,7 +113,7 @@ export function ArticlesView({
                             <div className="flex flex-1 flex-col gap-1">
                                 <span className="font-medium">{article.title}</span>
                                 <span className="text-sm text-muted-foreground">
-                                    {article.id} · {article.knowledgeBase}
+                                    {article.id} · {article.knowledgeBase} · {article.language}
                                 </span>
                                 <span className="text-sm">{article.description}</span>
                             </div>

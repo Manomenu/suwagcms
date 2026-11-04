@@ -8,6 +8,7 @@ internal static class ArticleRules
     public static IReadOnlyList<Rule> All { get; } =
     [
         For(MistakeCodes.ArticleIdInvalid, Id),
+        For(MistakeCodes.ArticleLanguageUnknown, Language),
         For(
             MistakeCodes.ArticleTitleMissing,
             article => Blank(article, MistakeCodes.ArticleTitleMissing, "title", article.Title, "Say what the article is about.")
@@ -69,6 +70,23 @@ internal static class ArticleRules
                 "id",
                 $"'{article.Id}' is not an article id: it is camelCase, like priceList.",
                 $"Rename the article to '{ResourceIds.Suggest(article.Id)}'."
+            );
+        }
+    }
+
+    // Why: the value must match exactly, in lowercase: accepting PL would need a rule for which spelling gets stored.
+    private static IEnumerable<Mistake> Language(Article article)
+    {
+        if (!ArticleLanguages.All.Contains(article.Language, StringComparer.Ordinal))
+        {
+            yield return Make(
+                MistakeCodes.ArticleLanguageUnknown,
+                article,
+                "language",
+                string.IsNullOrWhiteSpace(article.Language)
+                    ? $"'{article.Id}' has no language."
+                    : $"'{article.Id}' has language '{article.Language}'.",
+                $"Use one of: {string.Join(", ", ArticleLanguages.All)}."
             );
         }
     }

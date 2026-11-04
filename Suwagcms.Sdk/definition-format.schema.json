@@ -87,6 +87,9 @@
           "knowledgeBase": {
             "type": "string"
           },
+          "language": {
+            "type": "string"
+          },
           "title": {
             "type": "string"
           },

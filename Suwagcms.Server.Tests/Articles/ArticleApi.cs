@@ -48,16 +48,17 @@ internal sealed class ArticleApi(HttpClient client, string bot)
     // Why: JSON text is built by the serializer, so a text with quotes, newlines or non-ASCII letters is sent as written.
     public static string Body(
         string knowledgeBase = "offer",
+        string? language = null,
         string title = "Price list",
         string content = "What a valuation costs.",
         string llmGuide = "Ask which kind of property first.",
         string description = "What a valuation costs and what affects the price"
-    ) => JsonSerializer.Serialize(new SaveArticle(knowledgeBase, title, content, llmGuide, description), Web);
+    ) => JsonSerializer.Serialize(new SaveArticle(knowledgeBase, language, title, content, llmGuide, description), Web);
 
     public static async Task<ArticleView> ViewOf(HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<ArticleView>(TestContext.Current.CancellationToken)
         ?? throw new InvalidOperationException("no article in the answer");
 
     public static string Describe(ArticleView view) =>
-        $"{view.Id}|{view.KnowledgeBase}|{view.Title}|{view.Content}|{view.LlmGuide}|{view.Description}|{view.Revision}";
+        $"{view.Id}|{view.KnowledgeBase}|{view.Language}|{view.Title}|{view.Content}|{view.LlmGuide}|{view.Description}|{view.Revision}";
 }

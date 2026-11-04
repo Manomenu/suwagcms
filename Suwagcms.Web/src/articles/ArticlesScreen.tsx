@@ -23,7 +23,7 @@ type Open = { kind: "add" } | { kind: "edit"; article: Article } | null;
 export function ArticlesScreen({ bot }: { bot: string }) {
     const [articles, setArticles] = useState<Article[] | null>(null);
     const [bases, setBases] = useState<KnowledgeBase[] | null>(null);
-    const [filters, setFilters] = useState<Filters>({ knowledgeBase: "", text: "" });
+    const [filters, setFilters] = useState<Filters>({ knowledgeBase: "", language: "", text: "" });
     const [failure, setFailure] = useState<string | null>(null);
     const [open, setOpen] = useState<Open>(null);
     const [dirty, setDirty] = useState(false);
