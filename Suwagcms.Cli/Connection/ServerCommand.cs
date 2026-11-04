@@ -30,6 +30,14 @@ internal static class ServerCommand
                 parsed.InvocationConfiguration.Error,
                 parsed.GetValue(options.Json)
             );
+            if (!environment.CanSaveSettings)
+            {
+                return await report.FailedAsync(
+                    ExitCodes.Misused,
+                    new FailureDocument(CliEnvironment.CannotSave),
+                    CliEnvironment.CannotSave
+                );
+            }
             var display = ServerAddress.Display(
                 ServerAddress.Parse(parsed.GetRequiredValue(url), "The address").Address
                     ?? throw new InvalidOperationException("the validator let a bad address through")

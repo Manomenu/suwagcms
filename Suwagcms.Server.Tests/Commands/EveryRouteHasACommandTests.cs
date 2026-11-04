@@ -22,7 +22,12 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
     }
 
     // Why: words as typed after `suwagcms`; a new route is added here in the change that adds it, with its command.
-    private static readonly Dictionary<string, Coverage> Routes = new() { ["GET /api/health"] = Coverage.Cli("status") };
+    private static readonly Dictionary<string, Coverage> Routes = new()
+    {
+        ["GET /api/health"] = Coverage.Cli("status"),
+        ["GET /api/bots"] = Coverage.Cli("bots list"),
+        ["POST /api/bots"] = Coverage.Cli("bots add"),
+    };
 
     public void Dispose() => app.Dispose();
 

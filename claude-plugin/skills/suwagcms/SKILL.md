@@ -26,8 +26,11 @@ The server's address is the first one set of: `--server <url>` on a command, the
 with `suwagcms server <url>`, else `http://localhost:3330` (the web app of a laptop running `just web`). `suwagcms status` says
 which address it used and whether the server answers.
 
-The bot a command works on is the first one set of: `--bot <name>` on a command, the `SUWAGCMS_BOT` variable, the bot stored
-with `suwagcms use <name>`. None of the commands below needs a bot yet; those that do take it this way.
+The bot a command works on is the first one set of: `--bot <id>` on a command, the `SUWAGCMS_BOT` variable, the bot stored
+with `suwagcms use <id>`. The choice belongs to the client: the server keeps no active bot, so another agent or a browser tab
+working on a different bot does not change yours. A command that needs a bot and finds none exits `2` and lists the bots; a bot
+that does not exist exits `1` and lists the bots that do. `suwagcms use` alone says which bot is in use and where it came from.
+A bot's id (lowercase letters, digits and hyphens) is the name used everywhere and never changes.
 
 ## Output
 
@@ -62,5 +65,8 @@ it cannot be combined with `--json`. It only works from a shell that can reach t
 
 - `suwagcms status` - say which server address is used and whether the server answers; `--open` opens the web app.
 - `suwagcms server <url>` - save the server address that later commands use.
+- `suwagcms bots list` - list the registered bots, marking the one in use with `*`; `--open` opens the list in the web app.
+- `suwagcms bots add <id> --name <name> --address <url>` - register a bot; it never contacts the address, so a bot can be registered before it runs.
+- `suwagcms use [<id>]` - store the bot later commands work on, or say which bot is in use.
 
-Every command takes `--json`, `--open` and `--server`; `suwagcms <command> --help` lists the rest.
+Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.

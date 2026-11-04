@@ -2,9 +2,11 @@ using System.Text.Json;
 
 namespace Suwagcms.Cli.Connection;
 
-internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<JsonElement> Mistakes)
+internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<JsonElement> Mistakes, JsonElement? Body = null)
 {
     public static ServerAnswer Done { get; } = new(ExitCodes.Done, "", []);
+
+    public static ServerAnswer Succeeded(JsonElement? body) => new(ExitCodes.Done, "", [], body);
 
     public static ServerAnswer Failed(string message) => new(ExitCodes.Unreachable, message, []);
 
