@@ -20,7 +20,7 @@ public sealed class VersionTests
     public void The_project_packs_as_a_tool_whose_command_is_suwagcms()
     {
         var properties = XDocument
-            .Load(CliProject())
+            .Load(Path.Combine(RepositoryRoot.Path, "Suwagcms.Cli", "Suwagcms.Cli.csproj"))
             .Descendants("PropertyGroup")
             .Elements()
             .ToDictionary(element => element.Name.LocalName, element => element.Value);
@@ -28,18 +28,5 @@ public sealed class VersionTests
         Assert.Equal("true", properties["PackAsTool"]);
         Assert.Equal("suwagcms", properties["ToolCommandName"]);
         Assert.Equal("suwagcms", properties["AssemblyName"]);
-    }
-
-    private static string CliProject()
-    {
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var project = Path.Combine(directory.FullName, "Suwagcms.Cli", "Suwagcms.Cli.csproj");
-            if (File.Exists(project))
-            {
-                return project;
-            }
-        }
-        throw new InvalidOperationException("Suwagcms.Cli.csproj was not found above the test output");
     }
 }

@@ -1,0 +1,14 @@
+{
+  "name": "suwagcms",
+  "description": "Suwagcms for Claude Code: drive the suwagcms CLI to edit what a bot knows and does.",
+  "owner": {
+    "name": "Piotr Gugnowski"
+  },
+  "plugins": [
+    {
+      "name": "suwagcms",
+      "source": "./claude-plugin",
+      "description": "Drive the suwagcms CLI from Claude Code: the main skill lists every command and how to read what the server answers."
+    }
+  ]
+}
