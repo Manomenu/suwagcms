@@ -5,6 +5,7 @@ source; the artifact is its published copy. Maintained by `vdoc.py register`, so
 
 | Document | File | Artifact | Updated |
 | :- | :- | :- | :- |
+| Articles | [2026-11-04-articles.html](2026-11-04-articles.html) | <https://claude.ai/artifact/3kufpewPjk4iMsj2mdGcmK> | 2026-11-04 |
 | Bot profiles | [2026-11-04-bot-profiles.html](2026-11-04-bot-profiles.html) | <https://claude.ai/artifact/7fRe9iC4tuqWJ78A2nexYr> | 2026-11-04 |
 | Claude Code plugin | [2026-11-04-claude-plugin.html](2026-11-04-claude-plugin.html) | <https://claude.ai/artifact/KVjVKUaYjSMRBquejPMR9f> | 2026-11-04 |
 | The suwagcms command | [2026-11-04-cli-foundation.html](2026-11-04-cli-foundation.html) | <https://claude.ai/artifact/PzN48ojceEEWxVUqBtneHP> | 2026-11-04 |
