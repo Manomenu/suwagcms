@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-sdk-validator.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-sdk-validator.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Definition validator</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 5 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> nothing</span>
@@ -383,7 +383,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>12</b><span>criteria</span></div>
     <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -445,7 +444,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><code>formatVersion</code> missing, or one this SDK does not know</td><td>Save</td><td>one mistake naming the versions it reads; no other rule runs, because the rest of the document cannot be trusted</td></tr>
     <tr><td>two resources of one kind with the same id</td><td>Save</td><td>a mistake naming the id, with both places as its related items</td></tr>
     <tr><td>the document is not valid JSON, or a field has the wrong type</td><td>Save</td><td>mistakes with the path to the problem; the validator never throws for bad input</td></tr>
-    <tr><td>a field the format does not know</td><td>none</td><td>ignored, so a bot on an older SDK can load a version with a newer optional field (assumption, see Open questions)</td></tr>
+    <tr><td>a field the format does not know</td><td>none</td><td>ignored, so a bot on an older SDK can load a version with a newer optional field (see Decisions)</td></tr>
     <tr><td>a definition with no resources</td><td>none</td><td>passes: nothing is wrong with it yet</td></tr>
   </table>
 </section>
@@ -471,6 +470,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ul>
     <li>The validator always takes the whole definition, not a changed part: references cross resources, and one input shape keeps the offline and server answers identical.</li>
     <li>All mistakes come back at once instead of the first one, because agents pay for every round trip.</li>
+    <li>The validator ignores a field the format does not know, so adding an optional field never breaks a bot on an older SDK. A typo in an optional field is caught where people and agents write, by the server's own refusal of unknown fields on a save, which <code>global-facts</code> specifies.</li>
+    <li>A mistake about the document as a whole (not valid JSON, a wrong <code>formatVersion</code>) names the resource kind <code>Definition</code> with an empty id, so every mistake has a resource; its path is the place in the document.</li>
     <li>This spec covers the library only. The server's refusal is specified where the first resource is saved, because without a resource it could not be observed.</li>
   </ul>
 </section>
@@ -510,17 +511,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="callout assumption"><p>Testing the stage separation needs a rule of the <code>Version</code> stage, and the first real ones arrive with <code>procedure-model</code>. Until then the test may use a rule of its own.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What does the validator do with a field the format does not know?</legend>
-      <p class="why">Adding an optional field must not break a bot on an older SDK, but a typo in an optional field then passes unnoticed. This spec assumes the recommended answer; the server's own refusal of unknown fields on a save is in <code>global-facts</code>.</p>
-      <label data-recommended><input type="radio" value="ignore"><span><b>Ignore it in the validator, refuse it on the server's save</b><small>old bots keep loading newer versions, and typos are still caught where people and agents write</small></span></label>
-      <label><input type="radio" value="strict"><span><b>Report it everywhere</b><small>catches every typo, but any new field then needs a new format version</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

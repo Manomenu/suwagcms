@@ -9,7 +9,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `Suwagcms.Server/` — the HTTP API (ASP.NET Core minimal APIs, Npgsql, Dapper with hand-written SQL). One folder and namespace per feature: `Api/` wires the routes, `Health/` checks the database, `Database/` is the pool and the grate migrations.
 - `Suwagcms.Server/Database/Migrations/up/` — numbered SQL migrations, applied at start-up by grate and never edited afterwards.
 - `Suwagcms.Server.Tests/` — xUnit v3 tests against a real PostgreSQL. Mirrors the server's folders; `Characterization/` holds behaviour recorded before changing legacy code.
-- `Suwagcms.Sdk/` — the SDK of a .NET bot, packed as the NuGet package `Suwagcms.Sdk` (`net9.0;net10.0`, with the ASP.NET Core shared framework). Empty so far; `Suwagcms.Contracts` references it.
+- `Suwagcms.Sdk/` — the SDK of a .NET bot, packed as the NuGet package `Suwagcms.Sdk` (`net9.0;net10.0`): the definition format (`Format/`), the validator (`Validation/`), the format's JSON schema (`just sdk-schema`). `Suwagcms.Contracts` references it.
 - `Suwagcms.Sdk.Tests/` — xUnit v3 plain tests of the SDK, no database.
 - `Suwagcms.Contracts/` — the records the API sends and receives, shared by the server and the CLI. Empty so far; references the SDK.
 - `Suwagcms.Cli/` — the `suwagcms` command, packed as a .NET tool (System.CommandLine; `just cli-install`). So far only `--version`; references the contracts.
@@ -23,7 +23,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `.vscode/` — the editor's glue, shared: recommended extensions, formatter per language, file nesting, debug launch, tasks that call `scripts/.internal`. No style rules (they live in `.editorconfig` and the formatters' configs, so Rider agrees).
 - `.githooks/` — `pre-commit` runs gitleaks on what is being committed; `just sync` enables it.
 - `docs/` — documentation for people working on the repo: this map, `development.md`, the specs in `visual/spec/` (their acceptance criteria live as guardrails, see AGENTS.md), decisions above one feature in `adr/`.
-- `scripts/` — `scripts/.internal/` holds the everyday tools the gate and `just` run: `db.sh`, `checkout-env.sh`, `api-types.sh`, `api-diff.sh`, `contracts.sh`, `e2e.sh`, `smoke.sh`, `logs.sh`.
+- `scripts/` — `scripts/.internal/` holds the everyday tools the gate and `just` run: `db.sh`, `checkout-env.sh`, `api-types.sh`, `api-diff.sh`, `sdk-schema.sh`, `contracts.sh`, `e2e.sh`, `smoke.sh`, `logs.sh`.
 - `.claude/` — the committed Claude Code settings: a Stop hook that runs the quick gate, a PreToolUse hook that protects migrations, generated files, and the gate with the lint configs (`ALLOW_GATE_EDIT=1 claude` lifts the last).
 - `.config/` — `dotnet-tools.json`: the pinned CSharpier.
 - `.just/` — modules of the `justfile` (`just db`).

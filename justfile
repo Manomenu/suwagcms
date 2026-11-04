@@ -93,6 +93,11 @@ mutate:
     dotnet tool restore >/dev/null
     cd Suwagcms.Server.Tests && dotnet tool run dotnet-stryker
 
+# Regenerate Suwagcms.Sdk/definition-format.schema.json after changing a record of the definition format
+[group('dev')]
+sdk-schema:
+    @./scripts/.internal/sdk-schema.sh
+
 # Pack the dotnet new template as a NuGet package into .artifacts/nupkg
 [group('dev')]
 pack-template:
