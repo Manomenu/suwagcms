@@ -899,6 +899,265 @@
           }
         }
       }
+    },
+    "/api/bots/{bot}/procedures": {
+      "get": {
+        "tags": [
+          "ProcedureEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedureList"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/procedures/{id}": {
+      "get": {
+        "tags": [
+          "ProcedureEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedureDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ProcedureEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveProcedure"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcedureDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ProcedureEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -978,7 +1237,8 @@
           "min",
           "max",
           "maxLength",
-          "revision"
+          "revision",
+          "usedBy"
         ],
         "type": "object",
         "properties": {
@@ -1037,9 +1297,15 @@
               "string"
             ],
             "format": "int32"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
-        "description": "A global fact of a bot as the API shows it: the format's fields, and the revision to send back to guard an edit."
+        "description": "A global fact of a bot as the API shows it: the format's fields, the revision to send back to guard an edit, and the procedures that use it."
       },
       "HealthStatus": {
         "required": [
@@ -1076,6 +1342,9 @@
           }
         },
         "description": "A knowledge base of a bot as the API shows it: its id and title, and the revision to send back to guard an edit."
+      },
+      "ListenArguments": {
+        "type": "object"
       },
       "Mistake": {
         "required": [
@@ -1114,6 +1383,169 @@
             }
           }
         }
+      },
+      "NextSteps": { },
+      "ProcedureDetail": {
+        "required": [
+          "id",
+          "description",
+          "firstStep",
+          "steps",
+          "whenStalled",
+          "revision",
+          "notReady"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "firstStep": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "steps": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProcedureStep"
+            }
+          },
+          "whenStalled": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StallInstruction"
+              }
+            ]
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notReady": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "A procedure as the API shows it: the format's fields, the revision to send back to guard an edit, and what still stops it from becoming a version."
+      },
+      "ProcedureList": {
+        "required": [
+          "procedures",
+          "botNotReady"
+        ],
+        "type": "object",
+        "properties": {
+          "procedures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcedureSummary"
+            }
+          },
+          "botNotReady": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "A bot's procedures, and the mistakes that stop a version but belong to no procedure, such as having no conversation."
+      },
+      "ProcedureStep": {
+        "type": "object",
+        "properties": {
+          "listen": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ListenArguments"
+              }
+            ]
+          },
+          "collect": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "say": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "assign": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "next": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/NextSteps"
+              }
+            ]
+          }
+        }
+      },
+      "ProcedureSummary": {
+        "required": [
+          "id",
+          "description",
+          "revision",
+          "notReady"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "notReady": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "One line of a bot's procedures: how many mistakes still stop this procedure from becoming a version."
       },
       "Refusal": {
         "required": [
@@ -1341,6 +1773,57 @@
         },
         "description": "What saving a knowledge base takes: its title; the id comes from the address. A title left out is refused by the server."
       },
+      "SaveProcedure": {
+        "required": [
+          "description",
+          "firstStep",
+          "steps",
+          "whenStalled"
+        ],
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "firstStep": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "steps": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProcedureStep"
+            }
+          },
+          "whenStalled": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StallInstruction"
+              }
+            ]
+          }
+        },
+        "description": "What saving a procedure takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once."
+      },
+      "StallInstruction": {
+        "type": "object",
+        "properties": {
+          "instruction": {
+            "type": "string"
+          }
+        }
+      },
       "ValidationStage": {
         "enum": [
           "Save",
@@ -1364,6 +1847,9 @@
     },
     {
       "name": "KnowledgeBaseEndpoints"
+    },
+    {
+      "name": "ProcedureEndpoints"
     }
   ]
 }

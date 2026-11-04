@@ -129,6 +129,125 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "firstStep": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "steps": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "listen": {
+                  "type": "object"
+                },
+                "collect": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "say": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "assign": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "next": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "when": {
+                            "type": "object",
+                            "additionalProperties": {
+                              "type": "object",
+                              "properties": {
+                                "oneOf": {
+                                  "type": [
+                                    "array",
+                                    "null"
+                                  ],
+                                  "items": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ]
+                                  }
+                                },
+                                "range": {
+                                  "type": "object",
+                                  "properties": {
+                                    "min": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    },
+                                    "max": {
+                                      "type": [
+                                        "integer",
+                                        "null"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "known": {
+                                  "type": [
+                                    "boolean",
+                                    "null"
+                                  ]
+                                }
+                              }
+                            }
+                          },
+                          "to": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "whenStalled": {
+            "type": "object",
+            "properties": {
+              "instruction": {
+                "type": "string"
+              }
+            }
           }
         },
         "required": [

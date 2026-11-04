@@ -1,0 +1,34 @@
+using Suwagcms.Sdk.Format;
+
+namespace Suwagcms.Sdk.Validation;
+
+internal static class ProcedureMistake
+{
+    // Why: one rule per code, so a code that never fires is found by the test that every rule has a mistake.
+    public static Rule For(string code, ValidationStage stage, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
+        new(
+            code,
+            stage,
+            definition => definition.Procedures.SelectMany(procedure => check(definition, procedure).Where(mistake => mistake.Code == code))
+        );
+
+    public static Mistake Make(
+        Procedure procedure,
+        string code,
+        ValidationStage stage,
+        string path,
+        string message,
+        string fix,
+        IReadOnlyList<RelatedResource>? related = null
+    ) => new(code, stage, new ResourceRef(ResourceKind.Procedure, procedure.Id), path, message, fix, related ?? []);
+
+    public static string StepList(Procedure procedure) =>
+        procedure.Steps.Count == 0
+            ? $"'{procedure.Id}' has no steps yet: add one under steps."
+            : $"Steps of '{procedure.Id}': {string.Join(", ", procedure.Steps.Keys.Order(StringComparer.Ordinal))}.";
+
+    public static bool Given(string? text) => !string.IsNullOrWhiteSpace(text);
+
+    public static string? ExistingFirstStep(Procedure procedure) =>
+        procedure.FirstStep is { } first && Given(first) && procedure.Steps.ContainsKey(first) ? first : null;
+}

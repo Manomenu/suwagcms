@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Procedure model</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 13 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>sdk-validator</code>, <code>global-facts</code></span>
@@ -383,8 +383,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>4</b><span>blocks</span></div>
     <div><b>3</b><span>condition kinds</span></div>
-    <div><b>15</b><span>criteria</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>16</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -521,6 +520,7 @@ whenStalled:
     <li>Every save reports <code>Version</code> mistakes without refusing, so an author or an agent learns of them while working, not at the moment of creating a version.</li>
     <li>A bot gets no automatic <code>conversation</code>: creating one would decide the bot's base behaviour for its author, and the version check makes the need loud.</li>
     <li>The CLI replaces a procedure from a whole file rather than editing a step at a time: a procedure is one structure, and an agent reasons about it whole.</li>
+    <li>A new bot gets no <code>conversation</code> procedure by itself (the open question's recommended answer, accepted): nothing runs that nobody decided, and the plugin's skill can show the smallest one.</li>
     <li>Names and rules follow Suwchatbot's reader, except that a mistake gives a path instead of a file, line and column, because here no file exists.</li>
   </ul>
 </section>
@@ -543,6 +543,7 @@ whenStalled:
     <li><code>AC-procedure-model-13</code> <code>--dry-run</code> on a save gives the same answer and changes nothing, and a stale edit based on an old revision is refused.</li>
     <li><code>AC-procedure-model-14</code> The web lists a bot's procedures with their description and how many mistakes stop a version.</li>
     <li><code>AC-procedure-model-15</code> Each <code>suwagcms procedures</code> command has its line in the plugin's main skill, which gives the file format.</li>
+    <li><code>AC-procedure-model-16</code> The view of a fact shows the procedures that use it, in the web and in <code>suwagcms facts show</code>.</li>
   </ul>
 </section>
 
@@ -552,17 +553,6 @@ whenStalled:
   <div class="callout assumption"><p>Which rules count as <code>Save</code> and which as <code>Version</code> extends the examples in the architecture plan; the sorting of empty blocks and of a blank <code>say</code> is this spec's own, so that a person can add a step before filling it in.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should a new bot get a <code>conversation</code> procedure automatically?</legend>
-      <p class="why">A version needs one, so every bot's first version requires it. An automatic one saves a step but puts behaviour into a bot that nobody wrote. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="author"><span><b>No: the author writes it, and the version check asks for it</b><small>nothing runs that nobody decided; the plugin's skill can show the smallest one</small></span></label>
-      <label><input type="radio" value="auto"><span><b>Yes: registering a bot creates a minimal one</b><small>a first version is one step closer, but it adds a hidden starting point</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

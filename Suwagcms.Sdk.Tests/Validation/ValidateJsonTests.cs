@@ -45,8 +45,8 @@ public sealed class ValidateJsonTests
         const string duplicated =
             "{\"formatVersion\":1,\"future\":1,\"facts\":[{\"name\":\"a\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3,\"colour\":1},{\"name\":\"a\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3}]}";
 
-        Assert.Empty(DefinitionValidator.ValidateJson(clean, ValidationStage.Version));
-        var mistake = Assert.Single(DefinitionValidator.ValidateJson(duplicated, ValidationStage.Version));
+        Assert.Empty(DefinitionValidator.ValidateJson(clean, ValidationStage.Save));
+        var mistake = Assert.Single(DefinitionValidator.ValidateJson(duplicated, ValidationStage.Save));
         Assert.Equal(new ResourceRef(ResourceKind.GlobalFact, "a"), mistake.Resource);
     }
 

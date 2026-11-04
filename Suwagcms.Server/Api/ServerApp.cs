@@ -8,6 +8,7 @@ using Suwagcms.Server.Editing;
 using Suwagcms.Server.Facts;
 using Suwagcms.Server.Health;
 using Suwagcms.Server.KnowledgeBases;
+using Suwagcms.Server.Procedures;
 
 namespace Suwagcms.Server.Api;
 
@@ -39,6 +40,7 @@ internal static class ServerApp
         api.MapArticles();
         api.MapFacts();
         api.MapKnowledgeBases();
+        api.MapProcedures();
         return app;
     }
 }

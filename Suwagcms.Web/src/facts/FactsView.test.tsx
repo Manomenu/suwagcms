@@ -20,6 +20,7 @@ const facts: Fact[] = [
         max: null,
         maxLength: 80,
         revision: 1,
+        usedBy: [],
     },
     {
         name: "order.kind",
@@ -31,6 +32,7 @@ const facts: Fact[] = [
         max: null,
         maxLength: null,
         revision: 1,
+        usedBy: ["conversation", "orderValuation"],
     },
     {
         name: "order.floors",
@@ -42,6 +44,7 @@ const facts: Fact[] = [
         max: 40,
         maxLength: null,
         revision: 1,
+        usedBy: [],
     },
 ];
 
@@ -77,6 +80,13 @@ describe("FactsView", () => {
         expect(html).toMatch(/text, up to 80 · set/);
         expect(html).toMatch(/enum: house, flat · correct/);
         expect(html).toMatch(/int, 1 to 40 · assign/);
+    });
+
+    it("AC-procedure-model-16: a fact names the procedures that use it, and one no procedure uses says nothing", () => {
+        const html = view(facts);
+
+        expect(html).toContain("Used by: conversation, orderValuation");
+        expect(html.match(/Used by:/g)).toHaveLength(1);
     });
 
     it("AC-global-facts-8: each fact has a delete button and an edit button", () => {

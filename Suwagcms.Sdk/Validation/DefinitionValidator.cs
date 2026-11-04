@@ -9,7 +9,15 @@ public static class DefinitionValidator
     private static readonly string[] ListNames = ["facts", "knowledgeBases", "articles", "actions", "procedures"];
 
     internal static IReadOnlyList<Rule> Rules { get; } =
-    [DuplicateIdRule.Rule, .. FactRules.All, .. KnowledgeBaseRules.All, .. ArticleRules.All];
+    [
+        DuplicateIdRule.Rule,
+        .. FactRules.All,
+        .. KnowledgeBaseRules.All,
+        .. ArticleRules.All,
+        .. ProcedureShapeRules.All,
+        .. ProcedureFactRules.All,
+        .. ProcedureVersionRules.All,
+    ];
 
     public static IReadOnlyList<Mistake> Validate(BotDefinition definition, ValidationStage stage)
     {

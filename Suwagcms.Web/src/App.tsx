@@ -4,6 +4,7 @@ import { ArticlesScreen } from "./articles/ArticlesScreen";
 import { BotsRoutes } from "./bots/BotsRoutes";
 import { FactsScreen } from "./facts/FactsScreen";
 import { KnowledgeBasesScreen } from "./knowledge-bases/KnowledgeBasesScreen";
+import { ProceduresScreen } from "./procedures/ProceduresScreen";
 
 /** Puts the page together from features. */
 export function App() {
@@ -13,6 +14,9 @@ export function App() {
             <Route path="/bots/:id/facts">{(params) => <FactsScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
             <Route path="/bots/:id/knowledge-bases">
                 {(params) => <KnowledgeBasesScreen key={params.id} bot={decodeURIComponent(params.id)} />}
+            </Route>
+            <Route path="/bots/:id/procedures">
+                {(params) => <ProceduresScreen key={params.id} bot={decodeURIComponent(params.id)} />}
             </Route>
             <Route path="/bots" nest>
                 <BotsRoutes />

@@ -22,8 +22,9 @@ public sealed class MistakeShapeTests
         "{\"formatVersion\":3}",
         "{\"formatVersion\":1,\"facts\":[1]}",
         "{\"formatVersion\":1,\"articles\":[{\"id\":\"a\"},{\"id\":\"a\"}]}",
-        "{\"formatVersion\":1,\"actions\":[{\"id\":\"a\"},{\"id\":\"a\"}],\"procedures\":[{\"id\":\"p\"},{\"id\":\"p\"}],\"knowledgeBases\":[{\"id\":\"k\"},{\"id\":\"k\"}],\"facts\":[{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3},{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3}]}",
+        "{\"formatVersion\":1,\"actions\":[{\"id\":\"a\"},{\"id\":\"a\"}],\"procedures\":[{\"id\":\"p\",\"description\":\"d\"},{\"id\":\"p\",\"description\":\"d\"}],\"knowledgeBases\":[{\"id\":\"k\"},{\"id\":\"k\"}],\"facts\":[{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3},{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3}]}",
         "{\"formatVersion\":1,\"facts\":[{\"name\":\"Bad Name\",\"type\":\"blob\",\"description\":\" \",\"writableBy\":\"nobody\",\"values\":[\"a\"],\"min\":1},{\"name\":\"w\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3,\"values\":[\"a\"]}]}",
+        ProcedureSamples.EveryMistake,
         "{\"formatVersion\":1,\"facts\":[{\"name\":\"kind\",\"type\":\"enum\",\"description\":\"d\",\"values\":[\"a\",\" \",\"a\",\"a\"]},{\"name\":\"count\",\"type\":\"int\",\"description\":\"d\",\"min\":5},{\"name\":\"range\",\"type\":\"int\",\"description\":\"d\",\"min\":5,\"max\":1},{\"name\":\"single\",\"type\":\"enum\",\"description\":\"d\",\"values\":[\"a\"]},{\"name\":\"note\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":0}]}",
     ];
 

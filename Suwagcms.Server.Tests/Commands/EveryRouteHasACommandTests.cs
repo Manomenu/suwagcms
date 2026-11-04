@@ -39,6 +39,10 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["GET /api/bots/{bot}/articles/{id}"] = Coverage.Cli("articles show"),
         ["PUT /api/bots/{bot}/articles/{id}"] = Coverage.Cli("articles add"),
         ["DELETE /api/bots/{bot}/articles/{id}"] = Coverage.Cli("articles delete"),
+        ["GET /api/bots/{bot}/procedures"] = Coverage.Cli("procedures list"),
+        ["GET /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures show"),
+        ["PUT /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures add"),
+        ["DELETE /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures delete"),
     };
 
     public void Dispose() => app.Dispose();

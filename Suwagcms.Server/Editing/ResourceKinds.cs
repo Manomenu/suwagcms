@@ -20,7 +20,8 @@ internal static class ResourceKinds
             ResourceKind.GlobalFact => typeof(GlobalFact),
             ResourceKind.KnowledgeBase => typeof(KnowledgeBase),
             ResourceKind.Article => typeof(Article),
-            ResourceKind.Definition or ResourceKind.Action or ResourceKind.Procedure => throw new InvalidOperationException(
+            ResourceKind.Procedure => typeof(Procedure),
+            ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
@@ -32,7 +33,8 @@ internal static class ResourceKinds
             ResourceKind.GlobalFact => "fact",
             ResourceKind.KnowledgeBase => "knowledge base",
             ResourceKind.Article => "article",
-            ResourceKind.Definition or ResourceKind.Action or ResourceKind.Procedure => throw new InvalidOperationException(
+            ResourceKind.Procedure => "procedure",
+            ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
@@ -50,6 +52,7 @@ internal static class ResourceKinds
                 .. all.Where(item => item.Target.Kind == ResourceKind.KnowledgeBase).Select(item => (KnowledgeBase)item.Record),
             ],
             Articles = [.. all.Where(item => item.Target.Kind == ResourceKind.Article).Select(item => (Article)item.Record)],
+            Procedures = [.. all.Where(item => item.Target.Kind == ResourceKind.Procedure).Select(item => (Procedure)item.Record)],
         };
     }
 

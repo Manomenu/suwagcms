@@ -46,6 +46,9 @@ export function FactsView({
                                     {constraintOf(fact)} · {fact.writableBy}
                                 </span>
                                 <span className="text-sm">{fact.description}</span>
+                                {fact.usedBy.length > 0 && (
+                                    <span className="text-sm text-muted-foreground">Used by: {fact.usedBy.join(", ")}</span>
+                                )}
                             </div>
                             <Button
                                 variant="outline"
