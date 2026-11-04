@@ -8,7 +8,7 @@ public sealed class ArticleScaleTests(TestDatabase database) : IDisposable
 {
     private const int Articles = 5000;
 
-    // Why: the first measurement was 204 ms for the slowest of three saves, so the limit is 1000 ms: about five times that, enough for a loaded machine and too little for a rule that is slow per pair of articles.
+    // Why: the first measurement was about 200 ms, so the limit is 1000 ms: too little for a rule that is slow per pair of articles.
     private const int LimitMilliseconds = 1000;
 
     private readonly TestApp app = new();
@@ -39,19 +39,20 @@ public sealed class ArticleScaleTests(TestDatabase database) : IDisposable
         }
         Assert.Equal(HttpStatusCode.OK, (await api.Put("article1", ArticleApi.Body(title: "Warm up"))).StatusCode);
 
-        var slowest = TimeSpan.Zero;
-        for (var run = 0; run < 3; run++)
+        // Why: load on the machine only ever adds time, so the fastest of several saves is what the code itself costs.
+        var fastest = TimeSpan.MaxValue;
+        for (var run = 0; run < 5; run++)
         {
             var started = Stopwatch.GetTimestamp();
             var response = await api.Put("article1", ArticleApi.Body(title: $"Run {run}"));
             var elapsed = Stopwatch.GetElapsedTime(started);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            slowest = elapsed > slowest ? elapsed : slowest;
+            fastest = elapsed < fastest ? elapsed : fastest;
         }
 
         Assert.True(
-            slowest.TotalMilliseconds < LimitMilliseconds,
-            $"A save to a bot with {Articles} articles took {slowest.TotalMilliseconds:F0} ms; the limit is {LimitMilliseconds} ms."
+            fastest.TotalMilliseconds < LimitMilliseconds,
+            $"A save to a bot with {Articles} articles took {fastest.TotalMilliseconds:F0} ms at its fastest; the limit is {LimitMilliseconds} ms."
         );
     }
 }

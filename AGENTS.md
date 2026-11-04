@@ -26,7 +26,7 @@ this file is the one to edit. Setup: [docs/development.md](docs/development.md).
 
 - KISS and YAGNI first: the repo grows only when a real need shows up; one developer maintains it after hours. When in doubt, leave it out, and say in the change what was left out and why.
 - Plan a change by listing what it makes obsolete, and delete that first, in the same change.
-- Added logic with rules → `just mutate`; surviving mutants → stronger tests.
+- `just mutate` runs only when a person asks for it: an agent never runs it and never proposes it.
 - Correction or a new rule? Make the mistake impossible or loud first: a type → a lint → a test → a hook. Add a sentence here only for what none of these can check.
 - A guard's message states the fix. Never weaken a guard to make a change pass: fix the change.
 
