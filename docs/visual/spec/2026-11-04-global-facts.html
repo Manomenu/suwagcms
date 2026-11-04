@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Global facts</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 7 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>bot-profiles</code>, <code>sdk-validator</code></span>
@@ -384,7 +384,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><b>3</b><span>fact types</span></div>
     <div><b>14</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -495,6 +494,7 @@ flowchart LR
   <ul>
     <li>The rules for every save are specified here and not in <code>sdk-validator</code>: that library has no server and no resource, so its refusal could not be observed there. Later resource specs refer to this section instead of repeating it.</li>
     <li>The server refuses unknown fields on a save while the validator ignores them: bots must load newer versions, but a person or an agent writing today should hear about a typo.</li>
+    <li>An <code>int</code> fact needs both bounds, <code>min</code> and <code>max</code>: the same as Suwchatbot, so a definition means the same in both, and the model cannot write an absurd value. A number with no natural upper limit gets a generous bound chosen by its author.</li>
     <li>A CLI edit does not need a revision by default, because the command is a single short step; a script that read a fact earlier can guard itself with <code>--if-revision</code>.</li>
   </ul>
 </section>
@@ -532,17 +532,6 @@ flowchart LR
   <div class="callout warn"><p>Until <code>edit-guard</code> exists, an edit can change a fact a procedure already uses, such as its type. Saved procedures would then fail the next save check, which is loud rather than silent, but the refusal comes on the wrong edit. This window is known and accepted by the build order.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Must an <code>int</code> fact have both bounds?</legend>
-      <p class="why">README lists <code>min</code> and <code>max</code> as its constraints, and Suwchatbot requires both. A number with no natural upper limit then needs an invented one. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="both"><span><b>Yes, both</b><small>the same as Suwchatbot, so a definition means the same in both; the model cannot write an absurd value</small></span></label>
-      <label><input type="radio" value="either"><span><b>Either bound may be left out</b><small>friendlier for open-ended numbers, but the format's rule then differs from the first bot's reader</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

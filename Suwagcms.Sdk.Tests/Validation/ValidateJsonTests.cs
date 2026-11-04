@@ -40,8 +40,10 @@ public sealed class ValidateJsonTests
     [Trait("criterion", "AC-sdk-validator-10")]
     public void An_unknown_field_is_ignored_and_the_known_fields_are_still_checked()
     {
-        const string clean = "{\"formatVersion\":1,\"future\":{\"x\":1},\"facts\":[{\"name\":\"a\",\"colour\":\"red\"}]}";
-        const string duplicated = "{\"formatVersion\":1,\"future\":1,\"facts\":[{\"name\":\"a\",\"colour\":1},{\"name\":\"a\"}]}";
+        const string clean =
+            "{\"formatVersion\":1,\"future\":{\"x\":1},\"facts\":[{\"name\":\"a\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3,\"colour\":\"red\"}]}";
+        const string duplicated =
+            "{\"formatVersion\":1,\"future\":1,\"facts\":[{\"name\":\"a\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3,\"colour\":1},{\"name\":\"a\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3}]}";
 
         Assert.Empty(DefinitionValidator.ValidateJson(clean, ValidationStage.Version));
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(duplicated, ValidationStage.Version));

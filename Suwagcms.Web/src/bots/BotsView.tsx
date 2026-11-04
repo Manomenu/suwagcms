@@ -97,6 +97,9 @@ export function BotsView({
                                 {bot.name}
                             </Link>
                             <span className="text-sm text-muted-foreground">{bot.address}</span>
+                            <Link href={`~${profilePath(bot.id)}/facts`} className="text-sm text-primary underline underline-offset-4">
+                                Facts
+                            </Link>
                         </li>
                     ))}
                 </ul>

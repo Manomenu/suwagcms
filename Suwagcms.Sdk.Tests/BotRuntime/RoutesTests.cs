@@ -30,12 +30,7 @@ public sealed class RoutesTests
         await using var bot = await BotHost.StartAsync(Stores.Create(kind, directory));
         await bot.PutAsync(1, Documents.Make(1));
         var bad = Documents.Make(2);
-        bad["facts"] = new JsonArray(
-            new JsonObject { ["name"] = "x" },
-            new JsonObject { ["name"] = "x" },
-            new JsonObject { ["name"] = "y" },
-            new JsonObject { ["name"] = "y" }
-        );
+        bad["facts"] = new JsonArray(Documents.Fact("x"), Documents.Fact("x"), Documents.Fact("y"), Documents.Fact("y"));
         Documents.Sign(bad);
 
         var (status, body) = await bot.PutAsync(2, bad);
@@ -79,7 +74,7 @@ public sealed class RoutesTests
                 Documents.Sign(document);
                 break;
             case "digest":
-                document["facts"] = new JsonArray(new JsonObject { ["name"] = "changed after signing" });
+                document["facts"] = new JsonArray(Documents.Fact("changed after signing"));
                 break;
             default:
                 document["number"] = 3;

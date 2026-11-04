@@ -14,7 +14,9 @@ public sealed class MistakeShapeTests
         "{\"formatVersion\":3}",
         "{\"formatVersion\":1,\"facts\":[1]}",
         "{\"formatVersion\":1,\"articles\":[{\"id\":\"a\"},{\"id\":\"a\"}]}",
-        "{\"formatVersion\":1,\"actions\":[{\"id\":\"a\"},{\"id\":\"a\"}],\"procedures\":[{\"id\":\"p\"},{\"id\":\"p\"}],\"knowledgeBases\":[{\"id\":\"k\"},{\"id\":\"k\"}],\"facts\":[{\"name\":\"f\"},{\"name\":\"f\"}]}",
+        "{\"formatVersion\":1,\"actions\":[{\"id\":\"a\"},{\"id\":\"a\"}],\"procedures\":[{\"id\":\"p\"},{\"id\":\"p\"}],\"knowledgeBases\":[{\"id\":\"k\"},{\"id\":\"k\"}],\"facts\":[{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3},{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3}]}",
+        "{\"formatVersion\":1,\"facts\":[{\"name\":\"Bad Name\",\"type\":\"blob\",\"description\":\" \",\"writableBy\":\"nobody\",\"values\":[\"a\"],\"min\":1},{\"name\":\"w\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3,\"values\":[\"a\"]}]}",
+        "{\"formatVersion\":1,\"facts\":[{\"name\":\"kind\",\"type\":\"enum\",\"description\":\"d\",\"values\":[\"a\",\" \",\"a\",\"a\"]},{\"name\":\"count\",\"type\":\"int\",\"description\":\"d\",\"min\":5},{\"name\":\"range\",\"type\":\"int\",\"description\":\"d\",\"min\":5,\"max\":1},{\"name\":\"single\",\"type\":\"enum\",\"description\":\"d\",\"values\":[\"a\"]},{\"name\":\"note\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":0}]}",
     ];
 
     [Fact]
@@ -22,12 +24,12 @@ public sealed class MistakeShapeTests
     public void Every_mistake_of_every_rule_is_complete()
     {
         var mistakes = BadDocuments.SelectMany(json => DefinitionValidator.ValidateJson(json, ValidationStage.Version)).ToList();
-        var rulesSeen = DefinitionValidator.Rules.Select(rule => rule.Code).Order(StringComparer.Ordinal);
+        var rulesSeen = DefinitionValidator.Rules.Select(rule => rule.Code).ToList();
 
         Assert.All(mistakes, AssertComplete);
         Assert.Equal(
-            [MistakeCodes.FormatInvalid, MistakeCodes.FormatVersion, MistakeCodes.DuplicateId],
-            mistakes.Select(mistake => mistake.Code).Distinct(StringComparer.Ordinal)
+            [.. rulesSeen.Append(MistakeCodes.FormatInvalid).Append(MistakeCodes.FormatVersion).Order(StringComparer.Ordinal)],
+            mistakes.Select(mistake => mistake.Code).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
         );
         Assert.All(rulesSeen, code => Assert.Contains(mistakes, mistake => mistake.Code == code));
     }

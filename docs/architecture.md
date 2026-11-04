@@ -6,7 +6,7 @@ One line per top-level path (at most 300 characters each). `RepositoryLayoutTest
 lines: a new top-level folder needs its line here, a deleted one loses it.
 
 - `Suwagcms.slnx` — the .NET solution: the server, the SDK, the contracts, the CLI and their tests.
-- `Suwagcms.Server/` — the HTTP API (ASP.NET Core minimal APIs, Npgsql, Dapper with hand-written SQL). One folder and namespace per feature: `Api/` wires the routes, `Health/` checks the database, `Database/` is the pool and the grate migrations.
+- `Suwagcms.Server/` — the HTTP API (ASP.NET Core minimal APIs, Npgsql, Dapper with hand-written SQL). One folder and namespace per feature: `Api/` wires the routes, `Health/` checks the database, `Database/` is the pool and the migrations, `Editing/` the one write path of every resource.
 - `Suwagcms.Server/Database/Migrations/up/` — numbered SQL migrations, applied at start-up by grate and never edited afterwards.
 - `Suwagcms.Server.Tests/` — xUnit v3 tests against a real PostgreSQL. Mirrors the server's folders; `Commands/` ties every route to a CLI command; `Characterization/` holds behaviour recorded before changing legacy code.
 - `Suwagcms.Sdk/` — the SDK of a .NET bot, a NuGet package (`net9.0;net10.0`): the definition format (`Format/`), the validator (`Validation/`), the bot runtime (`BotRuntime/`: routes, version store), JSON schemas (`just sdk-schema`). Contracts references it.

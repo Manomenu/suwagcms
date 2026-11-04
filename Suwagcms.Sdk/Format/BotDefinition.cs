@@ -2,6 +2,8 @@ namespace Suwagcms.Sdk.Format;
 
 public sealed record BotDefinition
 {
+    public const int CurrentFormatVersion = DefinitionFormat.Version;
+
     public required int FormatVersion { get; init; }
 
     public IReadOnlyList<GlobalFact> Facts { get; init; } = [];
