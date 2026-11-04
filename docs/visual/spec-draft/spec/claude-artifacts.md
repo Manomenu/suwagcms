@@ -9,6 +9,7 @@ source; the artifact is its published copy. Maintained by `vdoc.py register`, so
 | Links between articles | [2026-11-04-article-links.html](2026-11-04-article-links.html) | <https://claude.ai/artifact/TRJN6hrTJdKKWXTSbgJQcX> | 2026-11-04 |
 | Articles | [2026-11-04-articles.html](2026-11-04-articles.html) | <https://claude.ai/artifact/3kufpewPjk4iMsj2mdGcmK> | 2026-11-04 |
 | Bot profiles | [2026-11-04-bot-profiles.html](2026-11-04-bot-profiles.html) | <https://claude.ai/artifact/7fRe9iC4tuqWJ78A2nexYr> | 2026-11-04 |
+| SDK in the bot | [2026-11-04-bot-runtime-sdk.html](2026-11-04-bot-runtime-sdk.html) | <https://claude.ai/artifact/CjqqoRbWgYTHgpQHUixyae> | 2026-11-04 |
 | Claude Code plugin | [2026-11-04-claude-plugin.html](2026-11-04-claude-plugin.html) | <https://claude.ai/artifact/KVjVKUaYjSMRBquejPMR9f> | 2026-11-04 |
 | The suwagcms command | [2026-11-04-cli-foundation.html](2026-11-04-cli-foundation.html) | <https://claude.ai/artifact/PzN48ojceEEWxVUqBtneHP> | 2026-11-04 |
 | Delete guard | [2026-11-04-delete-guard.html](2026-11-04-delete-guard.html) | <https://claude.ai/artifact/5sicCiEvX64S6ZJ7vKgmbJ> | 2026-11-04 |
