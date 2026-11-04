@@ -23,7 +23,7 @@ facts here, and the CMS refuses any change that would leave the bot inconsistent
 One CMS holds several registered bots, each with its own profile, and the user switches between them. All resources
 belong to one bot. References work across that bot's knowledge bases and never between bots.
 
-At registration a bot declares what it supports:
+After registration the CMS asks the bot what it supports:
 
 | Declared              | What the CMS does with it                                       |
 | :-------------------- | :-------------------------------------------------------------- |
@@ -35,9 +35,9 @@ At registration a bot declares what it supports:
 
 | Resource       | Fields                                                                                           | Required                                                 |
 | :------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
-| **Article**    | `id`, `title`, `content`, `llmGuide`, `description`, `language`, availability                    | all; `language` is `pl` or `en` and defaults to `en`     |
-| **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`, availability             | all except `localFacts`; `whenStalled` if it collects    |
-| **Action**     | `id`, `description`, `parameters`, `results`, implementation, availability                       | all except `parameters` and `results`                    |
+| **Article**    | `id`, `title`, `content`, `llmGuide`, `description`, `language`                                  | all; `language` is `pl` or `en` and defaults to `en`     |
+| **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`                            | all except `localFacts`; `whenStalled` if it collects    |
+| **Action**     | `id`, `description`, `parameters`, `results`, implementation                                      | all except `parameters` and `results`                    |
 | **Global fact**| `name`, `type` and its constraints, `description`, `writableBy`                                  | all; `writableBy` defaults to `set`                      |
 | **Local fact** | as a global fact, but it lives inside one procedure                                              | as above                                                 |
 
@@ -66,7 +66,7 @@ languages are separate articles: the CMS does not link them as translations.
 
 | `writableBy`      | Who writes the fact                                         | Can a `collect` step use it? |
 | :---------------- | :---------------------------------------------------------- | :--------------------------- |
-| `assign`          | only the procedure itself; the model never sees the fact    | no                           |
+| `assign`          | only the procedure itself: `assign` steps and action results | no                           |
 | `set` (default)   | also the model, once, while the fact is empty               | yes                          |
 | `correct`         | also the model, when the customer corrects a known value    | yes                          |
 
@@ -305,8 +305,8 @@ Behaviour shared by all of them:
 - All mistakes are reported at once, so one pass fixes a whole batch.
 - "What uses this?" and "what would this change break?" can be asked without changing anything (dry run).
 - An agent may push a version itself; validation, history and rollback are the safeguards.
-- Once identity arrives, every change and push records who made it, a person or an agent, and each resource has a full
-  history. Until then the CMS and the bots' routes for it run only inside a trusted network.
+- Each resource has a full history of what changed and when; once identity arrives it also records who, a person or an
+  agent. Until then the CMS and the bots' routes for it run only inside a trusted network.
 
 ## Screens
 
