@@ -104,3 +104,19 @@ test("AC-knowledge-bases-5: the screen of one bot shows nothing of another bot's
     await expect(page.getByText("oferta", { exact: true })).toBeVisible();
     await expect(page.getByText("Only here")).toHaveCount(0);
 });
+
+test("AC-knowledge-bases-9: a base with articles is not deleted, and the screen lists the articles", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addBase(request, bot, "oferta", "Offer");
+    const article = await request.put(`/api/bots/${bot}/articles/priceList?ifRevision=0`, {
+        data: { knowledgeBase: "oferta", title: "Price list", content: "c", llmGuide: "g", description: "d" },
+    });
+    expect(article.status()).toBe(200);
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+
+    await page.getByRole("listitem").filter({ hasText: "oferta" }).getByRole("button", { name: "Delete" }).click();
+
+    await expect(page.getByRole("alert")).toContainText("'priceList' is in the knowledge base 'oferta'");
+    await expect(page.getByRole("listitem").filter({ hasText: "oferta" })).toBeVisible();
+    expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(200);
+});

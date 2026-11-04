@@ -106,6 +106,9 @@ export function BotsView({
                             >
                                 Knowledge bases
                             </Link>
+                            <Link href={`~${profilePath(bot.id)}/articles`} className="text-sm text-primary underline underline-offset-4">
+                                Articles
+                            </Link>
                         </li>
                     ))}
                 </ul>

@@ -24,10 +24,10 @@ export function Field({
     const id = `${prefix}-${name}`;
     return (
         <div data-field={name} className="flex flex-col gap-2">
-            <Label htmlFor={id}>
+            <Label htmlFor={id} title={hint} className={hint === undefined ? undefined : "cursor-help"}>
                 {label}
                 {hint !== undefined && (
-                    <span title={hint} aria-hidden="true" className="cursor-help text-muted-foreground">
+                    <span aria-hidden="true" className="text-muted-foreground">
                         ⓘ
                     </span>
                 )}

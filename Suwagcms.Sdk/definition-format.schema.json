@@ -83,6 +83,21 @@
         "properties": {
           "id": {
             "type": "string"
+          },
+          "knowledgeBase": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "llmGuide": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
           }
         },
         "required": [

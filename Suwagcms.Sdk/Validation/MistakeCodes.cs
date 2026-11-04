@@ -19,6 +19,14 @@ public static class MistakeCodes
     public const string KnowledgeBaseIdInvalid = "knowledgeBase.id.invalid";
     public const string KnowledgeBaseTitleMissing = "knowledgeBase.title.missing";
     public const string KnowledgeBaseTitleRepeated = "knowledgeBase.title.repeated";
+    public const string ArticleIdInvalid = "article.id.invalid";
+    public const string ArticleKnowledgeBaseUnknown = "article.knowledgeBase.unknown";
+    public const string ArticleTitleMissing = "article.title.missing";
+    public const string ArticleContentMissing = "article.content.missing";
+    public const string ArticleLlmGuideMissing = "article.llmGuide.missing";
+    public const string ArticleDescriptionMissing = "article.description.missing";
+    public const string ArticleContentTooLong = "article.content.tooLong";
+    public const string ArticleLlmGuideTooLong = "article.llmGuide.tooLong";
     public const string VersionBot = "version.bot";
     public const string VersionNumber = "version.number";
     public const string VersionDigest = "version.digest";

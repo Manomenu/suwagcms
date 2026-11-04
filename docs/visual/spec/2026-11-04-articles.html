@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Articles</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 9 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>sdk-validator</code>, <code>knowledge-bases</code></span>
@@ -382,8 +382,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>3</b><span>texts with separate jobs</span></div>
-    <div><b>14</b><span>criteria</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>16</b><span>criteria</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -448,7 +448,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
     <tr><td>text stored and read back</td><td>identical, byte for byte; the CMS neither cleans nor reformats Markdown</td></tr>
-    <tr><td><code>content</code> or <code>llmGuide</code> over 200,000 characters</td><td>refused with the limit and the length (assumption, see Open questions)</td></tr>
+    <tr><td><code>content</code> or <code>llmGuide</code> over 200,000 characters</td><td>refused with the limit and the length (see Decisions)</td></tr>
     <tr><td>a stale edit in the web</td><td>refused; the typed text stays in the editor</td></tr>
     <tr><td>leaving the editor with unsaved changes</td><td>the web asks first</td></tr>
     <tr><td><code>--content-file</code> is <code>-</code></td><td>the CLI reads from stdin</td></tr>
@@ -478,6 +478,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>content</code> and <code>llmGuide</code> are Markdown (owner's decision): an agent edits them as text and the model gets something readable.</li>
     <li>All fields are required on every save, because README requires them. Unfinished work is allowed for a procedure, whose steps are built one at a time, and not for an article, which an author can always finish before saving.</li>
     <li>An article's <code>id</code> is unique across the bot and not per base, because references work across its knowledge bases and moving an article must not break them.</li>
+    <li><code>content</code> and <code>llmGuide</code> may each be 200,000 characters at most (the recommended answer to the open question, accepted): every save validates the whole definition and every article travels in the version, so one enormous article slows every save and every push; 200,000 is far above any article a model should read at once and low enough to stop a pasted dump. The length is counted in UTF-16 code units, the way .NET counts a string.</li>
     <li>The list's text filter does not read <code>content</code>: it is a way to find an article you know, and scanning every article's text is not needed for that.</li>
   </ul>
 </section>
@@ -499,6 +500,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-articles-12</code> <code>content</code> or <code>llmGuide</code> over the limit is refused with a mistake giving the limit and the length.</li>
     <li><code>AC-articles-13</code> Leaving the editor with unsaved changes asks before discarding them.</li>
     <li><code>AC-articles-14</code> Each <code>suwagcms articles</code> command has its line in the plugin's main skill.</li>
+    <li><code>AC-articles-15</code> An article of one bot is not visible from the profile of another bot, and two bots can each have an article with the same id.</li>
+    <li><code>AC-articles-16</code> A test on the gate saves a change to a bot with 5000 articles and fails above a time limit: 1000 ms, about five times the first measurement of 204 ms.</li>
   </ul>
 </section>
 
@@ -507,17 +510,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="callout assumption"><p>The side-by-side editor is for a desktop screen, like the rest of the CMS. On a narrow screen the three fields may stack; no criterion depends on it.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>How long may <code>content</code> and <code>llmGuide</code> be?</legend>
-      <p class="why">Every save validates the whole definition, and every article travels in the version, so one enormous article slows every save and every push. No source sets a limit; this spec assumes the recommended one.</p>
-      <label data-recommended><input type="radio" value="200k"><span><b>200,000 characters each</b><small>far above any article a model should read at once, and low enough to stop a pasted dump</small></span></label>
-      <label><input type="radio" value="none"><span><b>No limit of its own</b><small>only the server's request limit applies, with a less useful message</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

@@ -1,0 +1,230 @@
+// A person works on the articles of one bot in the browser; the bot is in the address, and a refusal or a stale edit keeps what was typed.
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+
+function freshId(): string {
+    return `art-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+async function newBot(request: APIRequestContext): Promise<string> {
+    const id = freshId();
+    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
+    expect(response.status()).toBe(201);
+    for (const [base, title] of [
+        ["offer", "Offer"],
+        ["forValuers", "For valuers"],
+    ]) {
+        const created = await request.put(`/api/bots/${id}/knowledge-bases/${base}?ifRevision=0`, { data: { title } });
+        expect(created.status()).toBe(200);
+    }
+    return id;
+}
+
+async function addArticle(
+    request: APIRequestContext,
+    bot: string,
+    id: string,
+    extra: { knowledgeBase?: string; title?: string; description?: string; content?: string } = {},
+): Promise<void> {
+    const response = await request.put(`/api/bots/${bot}/articles/${id}?ifRevision=0`, {
+        data: {
+            knowledgeBase: extra.knowledgeBase ?? "offer",
+            title: extra.title ?? "Price list",
+            content: extra.content ?? "What a valuation costs.",
+            llmGuide: "Ask which kind of property first.",
+            description: extra.description ?? "What a valuation costs",
+        },
+    });
+    expect(response.status()).toBe(200);
+}
+
+async function fill(page: Page, id: string, title: string): Promise<void> {
+    await page.getByLabel("Id", { exact: true }).fill(id);
+    await page.getByLabel("Title", { exact: true }).fill(title);
+    await page.getByLabel(/^content/).fill("What a valuation costs.\n");
+    await page.getByLabel(/^llmGuide/).fill("Ask which kind of property first.");
+    await page.getByLabel(/^description/).fill("What a valuation costs and what affects the price");
+}
+
+test("AC-articles-1: an article created in the web is listed in its base and is in the API, and AC-articles-10: the editor shows the three texts at once", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+    for (const label of [/^content/, /^llmGuide/, /^description/]) {
+        await expect(page.getByLabel(label)).toBeVisible();
+    }
+
+    await fill(page, "priceList", "Price list");
+    await page.locator('[data-field="knowledgeBase"] select').selectOption("forValuers");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+
+    const row = page.getByRole("listitem").filter({ hasText: "priceList" });
+    await expect(row).toContainText("Price list");
+    await expect(row).toContainText("priceList · forValuers");
+    const listed = await request.get(`/api/bots/${bot}/articles?knowledgeBase=forValuers`);
+    expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs.\n" }]);
+});
+
+test("AC-articles-9: the label of content, llmGuide and description carries a tooltip saying who reads it", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+
+    await expect(page.locator('[data-field="content"] label')).toHaveAttribute("title", /customer reads it, through the model/);
+    await expect(page.locator('[data-field="llmGuide"] label')).toHaveAttribute("title", /Only the model reads it/);
+    await expect(page.locator('[data-field="description"] label')).toHaveAttribute("title", /search reads this.*customer never sees it/);
+});
+
+test("AC-articles-2: a bad article shows every mistake beside its field and keeps what was typed", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByLabel("Id", { exact: true }).fill("cennik");
+    await page.getByLabel("Title", { exact: true }).fill("Price list");
+
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+
+    for (const field of ["content", "llmGuide", "description"]) {
+        await expect(page.locator(`[data-field="${field}"]`)).toContainText(`'cennik' has no ${field}.`);
+    }
+    await expect(page.getByLabel("Title", { exact: true })).toHaveValue("Price list");
+    expect((await (await request.get(`/api/bots/${bot}/articles`)).json()) as unknown[]).toEqual([]);
+});
+
+test("AC-articles-3: an id another article has, even in another base, is refused beside the id", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "priceList", { knowledgeBase: "forValuers" });
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+
+    await fill(page, "priceList", "Another");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+
+    await expect(page.locator('[data-field="id"]')).toContainText("already exists");
+    await expect(page.getByLabel("Title", { exact: true })).toHaveValue("Another");
+});
+
+test("AC-articles-6: an edit in the web changes the article and a new base moves it", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "priceList");
+    await page.goto(`/bots/${bot}/articles`);
+
+    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByLabel("Title", { exact: true }).fill("New title");
+    await page.locator('[data-field="knowledgeBase"] select').selectOption("forValuers");
+    await page.getByRole("button", { name: "Save" }).click();
+
+    const row = page.getByRole("listitem").filter({ hasText: "priceList" });
+    await expect(row).toContainText("New title");
+    await expect(row).toContainText("priceList · forValuers");
+});
+
+test("AC-articles-7: saving an edit of an article that changed meanwhile is refused with the current revision and keeps what was typed", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "priceList", { description: "First" });
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByLabel(/^description/).fill("Marta's text");
+    const other = await request.put(`/api/bots/${bot}/articles/priceList?ifRevision=1`, {
+        data: {
+            knowledgeBase: "offer",
+            title: "Price list",
+            content: "c",
+            llmGuide: "g",
+            description: "The agent's text",
+        },
+    });
+    expect(other.status()).toBe(200);
+
+    await page.getByRole("button", { name: "Save" }).click();
+
+    await expect(page.getByRole("alert")).toContainText("it is now revision 2");
+    await expect(page.getByLabel(/^description/)).toHaveValue("Marta's text");
+    await page.getByRole("button", { name: "Reload the article" }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: "priceList" })).toContainText("The agent's text");
+    await expect(page.getByLabel(/^description/)).toHaveValue("Marta's text");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: "priceList" })).toContainText("Marta's text");
+});
+
+test("AC-articles-8: an article deleted in the web is gone from the list and from the API", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "priceList");
+    await page.goto(`/bots/${bot}/articles`);
+
+    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Delete" }).click();
+
+    await expect(page.getByText("No articles yet.")).toBeVisible();
+    expect((await request.get(`/api/bots/${bot}/articles/priceList`)).status()).toBe(404);
+});
+
+test("AC-articles-11: the list filters by base and by text, the same as the API does", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "discounts", { title: "Prices", description: "Is there a RABAT" });
+    await addArticle(request, bot, "other", { title: "Other", description: "Unrelated", content: "A rabat is a discount." });
+    await addArticle(request, bot, "elsewhere", { knowledgeBase: "forValuers", title: "Rabat", description: "Rabat" });
+    await page.goto(`/bots/${bot}/articles`);
+    await expect(page.getByRole("listitem")).toHaveCount(3);
+
+    await page.getByLabel("Search").fill("rabat");
+    await expect(page.getByRole("listitem")).toHaveCount(2);
+    await page.getByLabel("Knowledge base", { exact: true }).selectOption("offer");
+
+    await expect(page.getByRole("listitem")).toHaveCount(1);
+    await expect(page.getByRole("listitem")).toContainText("discounts");
+    const api = await request.get(`/api/bots/${bot}/articles?knowledgeBase=offer&text=rabat`);
+    expect(((await api.json()) as { id: string }[]).map((article) => article.id)).toEqual(["discounts"]);
+});
+
+test("AC-articles-13: leaving the editor with unsaved changes asks before discarding them", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByLabel("Title", { exact: true }).fill("Unsaved");
+    const questions: string[] = [];
+    let accept = false;
+    page.on("dialog", (dialog) => {
+        questions.push(dialog.message());
+        if (accept) void dialog.accept();
+        else void dialog.dismiss();
+    });
+
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByLabel("Title", { exact: true })).toHaveValue("Unsaved");
+    await page.getByRole("link", { name: "Bots" }).click();
+    await expect(page).toHaveURL(`/bots/${bot}/articles`);
+    accept = true;
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    await expect(page.getByLabel("Title", { exact: true })).toHaveCount(0);
+    expect(questions).toEqual(Array(3).fill("Discard the changes you have not saved?"));
+});
+
+test("AC-articles-13: closing an untouched editor asks nothing", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+    page.on("dialog", () => {
+        throw new Error("no question was expected");
+    });
+
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    await expect(page.getByLabel("Title", { exact: true })).toHaveCount(0);
+});
+
+test("AC-articles-15: the articles screen of one bot shows nothing of another bot's articles", async ({ page, request }) => {
+    const first = await newBot(request);
+    const second = await newBot(request);
+    await addArticle(request, first, "priceList", { title: "Of the first" });
+
+    await page.goto(`/bots/${second}/articles`);
+
+    await expect(page.getByText("No articles yet.")).toBeVisible();
+    await expect(page.getByText("Of the first")).toHaveCount(0);
+});

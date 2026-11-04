@@ -106,7 +106,8 @@ public sealed class DefinitionValidatorTests
                     FormatVersion = 1,
                     Articles = [new Article { Id = "pricing" }, new Article { Id = "faq" }, new Article { Id = "pricing" }],
                 },
-                ValidationStage.Save
+                ValidationStage.Save,
+                [DuplicateIdRuleFor()]
             )
         );
 

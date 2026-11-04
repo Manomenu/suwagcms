@@ -1,3 +1,4 @@
+using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.Validation;
@@ -7,6 +8,12 @@ public sealed class MistakeShapeTests
     private static readonly string[] BadDocuments =
     [
         "{\"formatVersion\":1,\"knowledgeBases\":[{\"id\":\"Bad Id\",\"title\":\" \"},{\"id\":\"a\",\"title\":\"Offer\"},{\"id\":\"b\",\"title\":\" offer \"}]}",
+        "{\"formatVersion\":1,\"articles\":[{\"id\":\"Bad Id\",\"knowledgeBase\":\"nope\"}]}",
+        "{\"formatVersion\":1,\"knowledgeBases\":[{\"id\":\"k\",\"title\":\"T\"}],\"articles\":[{\"id\":\"long\",\"knowledgeBase\":\"k\",\"title\":\"T\",\"content\":\""
+            + new string('x', Article.MaxTextLength + 1)
+            + "\",\"llmGuide\":\""
+            + new string('x', Article.MaxTextLength + 1)
+            + "\",\"description\":\"D\"}]}",
         "",
         "{ not json",
         "[]",

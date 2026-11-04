@@ -1,10 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Suwagcms.Cli;
 
 internal sealed record CliEnvironment(
     Func<string, string?> Variable,
     string SettingsFolder,
     HttpClient? Http = null,
-    Action<Uri>? OpenBrowser = null
+    Action<Uri>? OpenBrowser = null,
+    Func<Stream>? Stdin = null
 )
 {
     public const string CannotSave =
@@ -19,6 +22,18 @@ internal sealed record CliEnvironment(
             Environment.SpecialFolder.ApplicationData,
             Environment.SpecialFolderOption.DoNotVerify
         );
-        return new(Environment.GetEnvironmentVariable, applicationData.Length == 0 ? "" : Path.Combine(applicationData, "suwagcms"));
+        return new(
+            Environment.GetEnvironmentVariable,
+            applicationData.Length == 0 ? "" : Path.Combine(applicationData, "suwagcms"),
+            Stdin: StandardInput
+        );
     }
+
+    // Why: the CLI's answers go through its streams, but a text piped into a command has no other way in than the process's standard input.
+    [SuppressMessage(
+        "ApiDesign",
+        "RS0030:Do not use banned APIs",
+        Justification = "The only place that reads the process's standard input."
+    )]
+    private static Stream StandardInput() => Console.OpenStandardInput();
 }
