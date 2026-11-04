@@ -306,7 +306,7 @@ Behaviour shared by all of them:
 - "What uses this?" and "what would this change break?" can be asked without changing anything (dry run).
 - An agent may push a version itself; validation, history and rollback are the safeguards.
 - Once identity arrives, every change and push records who made it, a person or an agent, and each resource has a full
-  history. Until then the CMS runs only inside a trusted network.
+  history. Until then the CMS and the bots' routes for it run only inside a trusted network.
 
 ## Screens
 
@@ -370,6 +370,9 @@ Rasa concepts in this project's terms:
 | Can an article reference a procedure?                             | Yes, with a link from the picker in its guide                            |
 | What language is an article in?                                   | Its own `language`: `pl` or `en`, `en` by default; no linked translations |
 | How do agents work with the CMS?                                  | Through a CLI and a Claude Code plugin with the same abilities as the web |
+| What format is article content in?                                | Markdown, with links written as cms:// addresses                         |
+| Can a bot run in several instances?                               | Yes, through a version store shared by its instances                     |
+| Are the bot's routes protected?                                   | Not at first: trusted network only; a key arrives with `cms-identity`    |
 | Who may push a version to a bot?                                  | People and agents                                                        |
 | How does a bot get its definition?                                | It runs a pushed version; pushing an older one is the rollback           |
 | How is a version made?                                            | With a separate "Create version" step before the push                    |
