@@ -517,7 +517,7 @@ implementation:
     <li>The bot runs actions, not the CMS (README), so saving, showing or versioning an action never calls its URL.</li>
     <li>The SDK runs an HTTP action rather than leaving that to each bot's engine: the definition is a public format, and without one runner two bots could send the same action differently. The engine still decides when to run it and what to do next.</li>
     <li>Results come only from the top level of the answer, which keeps the format small; see Open questions.</li>
-    <li>Secrets go in headers only: they do not end up in URLs, and that is where the services we know of expect them.</li>
+    <li>Secrets go in headers only, because URLs end up in logs; a service that wants a secret in its URL sits behind a code action.</li>
     <li>Any answer outside 2xx is a failure, with no status mapping per action, as ElevenLabs' tool node routes on success or failure only.</li>
     <li>Parameter and result descriptions are required, like those of facts, because a later reader of a mapping has nothing else to go on.</li>
   </ul>
