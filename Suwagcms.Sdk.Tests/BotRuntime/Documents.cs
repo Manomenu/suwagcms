@@ -12,10 +12,19 @@ internal static class Documents
             ["formatVersion"] = 1,
             ["bot"] = bot,
             ["number"] = number,
-            ["facts"] = new JsonArray(new JsonObject { ["name"] = label }),
+            ["facts"] = new JsonArray(Fact(label)),
         };
         return Sign(document);
     }
+
+    public static JsonObject Fact(string name) =>
+        new()
+        {
+            ["name"] = name,
+            ["type"] = "text",
+            ["description"] = "A fact for the tests",
+            ["maxLength"] = 10,
+        };
 
     public static JsonObject Sign(JsonObject document)
     {

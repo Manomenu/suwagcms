@@ -3,6 +3,8 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
+using Suwagcms.Server.Editing;
+using Suwagcms.Server.Facts;
 using Suwagcms.Server.Health;
 
 namespace Suwagcms.Server.Api;
@@ -21,6 +23,8 @@ internal static class ServerApp
                 context.ProblemDetails.Extensions["traceId"] = Activity.Current?.TraceId.ToString() ?? context.HttpContext.TraceIdentifier
         );
         builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton<DefinitionEditor>();
         builder.Services.AddOpenApi();
 
         var app = builder.Build();
@@ -30,6 +34,7 @@ internal static class ServerApp
         var api = app.MapGroup("/api");
         api.MapHealth();
         api.MapBots();
+        api.MapFacts();
         return app;
     }
 }

@@ -68,5 +68,12 @@ it cannot be combined with `--json`. It only works from a shell that can reach t
 - `suwagcms bots list` - list the registered bots, marking the one in use with `*`; `--open` opens the list in the web app.
 - `suwagcms bots add <id> --name <name> --address <url>` - register a bot; it never contacts the address, so a bot can be registered before it runs.
 - `suwagcms use [<id>]` - store the bot later commands work on, or say which bot is in use.
+- `suwagcms facts list` - list the global facts of the bot; `--open` opens the Facts screen in the web app.
+- `suwagcms facts show <name>` - show one fact with its revision.
+- `suwagcms facts add <name> --type enum|int|text --description <text> [--values a b | --min n --max n | --max-length n] [--writable-by assign|set|correct]` - add a fact. An enum needs two or more values, an int both bounds, a text a maximum length above 0; `--writable-by` is `set` when left out.
+- `suwagcms facts edit <name> [options of add] [--if-revision n]` - change a fact: only the options given change. Without `--if-revision` the edit applies to the revision it just read and a change made meanwhile is refused with the current revision.
+- `suwagcms facts delete <name> [--if-revision n]` - delete a fact; it does not check yet whether a procedure uses it.
+
+`facts add`, `facts edit` and `facts delete` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.

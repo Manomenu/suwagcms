@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
+using Suwagcms.Cli.Facts;
 using Suwagcms.Cli.Output;
 using Suwagcms.Cli.Status;
 
@@ -25,6 +26,7 @@ internal static class CliApp
             ServerCommand.Create(options, environment),
             BotsCommand.Create(options, environment),
             UseCommand.Create(options, environment),
+            FactsCommand.Create(options, environment),
         };
         options.AddTo(root);
         return root;

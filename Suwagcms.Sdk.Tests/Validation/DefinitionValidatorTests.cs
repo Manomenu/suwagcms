@@ -50,7 +50,7 @@ public sealed class DefinitionValidatorTests
         {
             FormatVersion = 1,
             Procedures = [new Procedure { Id = "quote" }, new Procedure { Id = "other" }, new Procedure { Id = "quote" }],
-            Facts = [new GlobalFact { Name = "customer.city" }, new GlobalFact { Name = "customer.city" }],
+            Facts = [Samples.CityFact, Samples.CityFact],
         };
 
         var first = DefinitionValidator.Validate(Samples.WithDuplicatesInTwoKinds, ValidationStage.Version);

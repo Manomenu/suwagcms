@@ -11,10 +11,51 @@
         "properties": {
           "name": {
             "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "writableBy": {
+            "type": "string"
+          },
+          "values": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "min": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "max": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "maxLength": {
+            "type": [
+              "integer",
+              "null"
+            ]
           }
         },
         "required": [
-          "name"
+          "name",
+          "type",
+          "description"
         ]
       }
     },

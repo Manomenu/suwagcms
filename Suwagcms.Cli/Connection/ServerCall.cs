@@ -25,6 +25,27 @@ internal static class ServerCall
             cancellationToken
         );
 
+    public static Task<ServerAnswer> PutAsync<T>(
+        CliEnvironment environment,
+        Uri address,
+        string path,
+        T body,
+        CancellationToken cancellationToken
+    ) =>
+        SendAsync(
+            environment,
+            address,
+            (http, cancellation) => http.PutAsJsonAsync(new Uri(address, path), body, cancellation),
+            cancellationToken
+        );
+
+    public static Task<ServerAnswer> DeleteAsync(
+        CliEnvironment environment,
+        Uri address,
+        string path,
+        CancellationToken cancellationToken
+    ) => SendAsync(environment, address, (http, cancellation) => http.DeleteAsync(new Uri(address, path), cancellation), cancellationToken);
+
     private static async Task<ServerAnswer> SendAsync(
         CliEnvironment environment,
         Uri address,

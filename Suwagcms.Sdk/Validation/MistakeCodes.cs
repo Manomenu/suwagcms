@@ -5,6 +5,17 @@ public static class MistakeCodes
     public const string FormatVersion = "format.version";
     public const string FormatInvalid = "format.invalid";
     public const string DuplicateId = "resource.duplicateId";
+    public const string FactNameInvalid = "fact.name.invalid";
+    public const string FactTypeInvalid = "fact.type.invalid";
+    public const string FactDescriptionMissing = "fact.description.missing";
+    public const string FactWritableByInvalid = "fact.writableBy.invalid";
+    public const string FactEnumTooFewValues = "fact.enum.tooFewValues";
+    public const string FactEnumValueBlank = "fact.enum.valueBlank";
+    public const string FactEnumValueRepeated = "fact.enum.valueRepeated";
+    public const string FactIntBoundMissing = "fact.int.boundMissing";
+    public const string FactIntRangeInverted = "fact.int.rangeInverted";
+    public const string FactTextMaxLengthInvalid = "fact.text.maxLengthInvalid";
+    public const string FactConstraintForeign = "fact.constraint.foreign";
     public const string VersionBot = "version.bot";
     public const string VersionNumber = "version.number";
     public const string VersionDigest = "version.digest";
