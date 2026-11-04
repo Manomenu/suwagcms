@@ -26,6 +26,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <None Include="README.md" Pack="true" PackagePath="/" />
     <None Include="definition-format.schema.json" Pack="true" PackagePath="/" />
+    <None Include="bot-runtime.schema.json" Pack="true" PackagePath="/" />
     <InternalsVisibleTo Include="Suwagcms.Sdk.Tests" />
   </ItemGroup>
 </Project>
