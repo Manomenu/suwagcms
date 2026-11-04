@@ -384,7 +384,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><b>2</b><span>routes on the bot</span></div>
     <div><b>16</b><span>criteria</span></div>
     <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -544,12 +544,6 @@ flowchart TB
       <p class="why">The owner chose a shared store, and removal must not take a version that another instance's conversation still needs. This spec assumes the recommended answer.</p>
       <label data-recommended><input type="radio" value="whole"><span><b>The bot's code reports for the whole bot</b><small>a bot with several instances already keeps conversations in a shared place, so it can answer in one query, and the SDK stays simple</small></span></label>
       <label><input type="radio" value="instance"><span><b>Each instance reports its own, and the SDK adds them up in the store</b><small>a bot's code knows less, but the SDK then needs to notice instances that have gone away</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Does a bot state its own id to the SDK?</legend>
-      <p class="why">No source asks for this. It is a low-cost safety net while the routes have no key: a mistyped address in the CMS cannot load another bot's definition. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="yes"><span><b>Yes, and a version for another bot is refused</b><small>one setting in the bot, and a whole class of mistake gets a clear refusal</small></span></label>
-      <label><input type="radio" value="no"><span><b>No</b><small>one setting less; the first sign of the mistake is a bot answering from another bot's knowledge</small></span></label>
     </fieldset>
   </form>
 </section>
