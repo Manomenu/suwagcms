@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Knowledge bases</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 8 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>bot-profiles</code></span>
@@ -458,6 +458,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ul>
     <li>Titles are unique within a bot: two bases with one title would be impossible to tell apart in a filter or a picker, and the refusal costs one rename.</li>
     <li>README's resource table has no row for a knowledge base, so its fields come from the format sketch in the architecture plan: <code>id</code> and <code>title</code>.</li>
+    <li>Renaming has its own command, <code>suwagcms kb rename</code>, because a base has only a title to change; the other resources use <code>edit</code>. Like every edit, it applies to the revision it just read, and <code>--if-revision</code> overrides that.</li>
+    <li>A repeated title is reported for every base that has it, each naming the others: a saved definition never holds one, so the base being saved is always among them.</li>
   </ul>
 </section>
 

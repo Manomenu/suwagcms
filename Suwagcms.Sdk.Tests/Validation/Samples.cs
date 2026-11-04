@@ -13,6 +13,8 @@ internal static class Samples
             MaxLength = 80,
         };
 
+    public static KnowledgeBase Faq { get; } = new() { Id = "faq", Title = "Questions" };
+
     public static BotDefinition Empty { get; } = new() { FormatVersion = 1 };
 
     public static BotDefinition Valid { get; } =
@@ -20,7 +22,7 @@ internal static class Samples
         {
             FormatVersion = 1,
             Facts = [CityFact],
-            KnowledgeBases = [new KnowledgeBase { Id = "faq" }],
+            KnowledgeBases = [Faq],
             Articles = [new Article { Id = "pricing" }],
             Actions = [new BotAction { Id = "sendOffer" }],
             Procedures = [new Procedure { Id = "quote" }],

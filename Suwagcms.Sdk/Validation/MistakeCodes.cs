@@ -16,6 +16,9 @@ public static class MistakeCodes
     public const string FactIntRangeInverted = "fact.int.rangeInverted";
     public const string FactTextMaxLengthInvalid = "fact.text.maxLengthInvalid";
     public const string FactConstraintForeign = "fact.constraint.foreign";
+    public const string KnowledgeBaseIdInvalid = "knowledgeBase.id.invalid";
+    public const string KnowledgeBaseTitleMissing = "knowledgeBase.title.missing";
+    public const string KnowledgeBaseTitleRepeated = "knowledgeBase.title.repeated";
     public const string VersionBot = "version.bot";
     public const string VersionNumber = "version.number";
     public const string VersionDigest = "version.digest";

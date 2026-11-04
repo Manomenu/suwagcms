@@ -6,6 +6,7 @@ public sealed class MistakeShapeTests
 {
     private static readonly string[] BadDocuments =
     [
+        "{\"formatVersion\":1,\"knowledgeBases\":[{\"id\":\"Bad Id\",\"title\":\" \"},{\"id\":\"a\",\"title\":\"Offer\"},{\"id\":\"b\",\"title\":\" offer \"}]}",
         "",
         "{ not json",
         "[]",

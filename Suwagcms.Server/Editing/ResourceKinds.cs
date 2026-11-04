@@ -18,13 +18,9 @@ internal static class ResourceKinds
         kind switch
         {
             ResourceKind.GlobalFact => typeof(GlobalFact),
-            ResourceKind.Definition
-            or ResourceKind.KnowledgeBase
-            or ResourceKind.Article
-            or ResourceKind.Action
-            or ResourceKind.Procedure => throw new InvalidOperationException(
-                $"{kind} resources are not stored yet: add the kind to ResourceKinds."
-            ),
+            ResourceKind.KnowledgeBase => typeof(KnowledgeBase),
+            ResourceKind.Definition or ResourceKind.Article or ResourceKind.Action or ResourceKind.Procedure =>
+                throw new InvalidOperationException($"{kind} resources are not stored yet: add the kind to ResourceKinds."),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
@@ -32,13 +28,9 @@ internal static class ResourceKinds
         kind switch
         {
             ResourceKind.GlobalFact => "fact",
-            ResourceKind.Definition
-            or ResourceKind.KnowledgeBase
-            or ResourceKind.Article
-            or ResourceKind.Action
-            or ResourceKind.Procedure => throw new InvalidOperationException(
-                $"{kind} resources are not stored yet: add the kind to ResourceKinds."
-            ),
+            ResourceKind.KnowledgeBase => "knowledge base",
+            ResourceKind.Definition or ResourceKind.Article or ResourceKind.Action or ResourceKind.Procedure =>
+                throw new InvalidOperationException($"{kind} resources are not stored yet: add the kind to ResourceKinds."),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
@@ -49,6 +41,10 @@ internal static class ResourceKinds
         {
             FormatVersion = BotDefinition.CurrentFormatVersion,
             Facts = [.. all.Where(item => item.Target.Kind == ResourceKind.GlobalFact).Select(item => (GlobalFact)item.Record)],
+            KnowledgeBases =
+            [
+                .. all.Where(item => item.Target.Kind == ResourceKind.KnowledgeBase).Select(item => (KnowledgeBase)item.Record),
+            ],
         };
     }
 
