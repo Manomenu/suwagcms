@@ -310,3 +310,20 @@ test("AC-article-language-7: two articles in different languages with one title 
     await expect(page.getByRole("listitem")).toHaveCount(1);
     await expect(page.getByRole("listitem")).toContainText("cennik · offer · pl");
 });
+
+test("AC-articles-4: editing another field of an article whose text has CRLF line breaks leaves the stored text byte for byte", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const content = "# Cennik\r\n\r\n- zażółć gęślą jaźń\r\n\n\n";
+    await addArticle(request, bot, "priceList", { content });
+    await page.goto(`/bots/${bot}/articles`);
+
+    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByLabel("Title", { exact: true }).fill("Edited title");
+    await page.getByRole("button", { name: "Save" }).click();
+
+    await expect(page.getByRole("listitem").filter({ hasText: "priceList" })).toContainText("Edited title");
+    expect(await (await request.get(`/api/bots/${bot}/articles/priceList`)).json()).toMatchObject({ title: "Edited title", content });
+});

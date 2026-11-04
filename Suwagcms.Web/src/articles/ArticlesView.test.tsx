@@ -151,7 +151,24 @@ describe("the article form", () => {
     it("AC-articles-4: the texts are sent exactly as typed, not trimmed or changed", () => {
         const form = { ...emptyForm("offer"), content: "  # Cennik\r\n\r\n\n", llmGuide: "\tzażółć\n\n", description: " d " };
 
-        expect(bodyOf(form)).toMatchObject({ content: "  # Cennik\r\n\r\n\n", llmGuide: "\tzażółć\n\n", description: " d " });
+        expect(bodyOf(form, emptyForm("offer"))).toMatchObject({
+            content: "  # Cennik\r\n\r\n\n",
+            llmGuide: "\tzażółć\n\n",
+            description: " d ",
+        });
+    });
+
+    it("AC-articles-4: a text the person did not change keeps its stored line breaks, which a textarea reports as \\n", () => {
+        const initial = { ...emptyForm("offer"), content: "# Cennik\r\n\r\nText\r\n", llmGuide: "One\rTwo\n" };
+        const untouched = { ...initial, content: "# Cennik\n\nText\n", llmGuide: "One\nTwo\n", title: "New title" };
+        const edited = { ...untouched, content: "# Cennik\n\nChanged\n" };
+
+        expect(bodyOf(untouched, initial)).toMatchObject({
+            content: "# Cennik\r\n\r\nText\r\n",
+            llmGuide: "One\rTwo\n",
+            title: "New title",
+        });
+        expect(bodyOf(edited, initial).content).toBe("# Cennik\n\nChanged\n");
     });
 
     it("AC-articles-13: a form is dirty from the first change and clean again when it matches what it started with", () => {
@@ -187,7 +204,7 @@ describe("the language of an article", () => {
 
         expect(fieldHtml(html, "language")).toContain('<option value="pl" selected="">pl</option>');
         expect(view(articles)).toContain("· pl");
-        expect(bodyOf({ ...emptyForm("offer"), language: "pl" }).language).toBe("pl");
+        expect(bodyOf({ ...emptyForm("offer"), language: "pl" }, emptyForm("offer")).language).toBe("pl");
     });
 
     it("AC-article-language-8: the tooltip of the language select says what the field is for", () => {

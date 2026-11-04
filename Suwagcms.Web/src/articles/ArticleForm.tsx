@@ -60,7 +60,7 @@ export function ArticleForm({
     function submit(event: React.SyntheticEvent) {
         event.preventDefault();
         setRefusal(null);
-        saveArticle(bot, form.id, bodyOf(form), revision)
+        saveArticle(bot, form.id, bodyOf(form, initial), revision)
             .then(onSaved)
             .catch((error: unknown) => {
                 setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));

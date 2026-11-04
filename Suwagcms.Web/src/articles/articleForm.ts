@@ -42,14 +42,23 @@ export function formOf(article: Article): ArticleForm {
     };
 }
 
+function lineBreaksAsTyped(text: string): string {
+    return text.replace(/\r\n?/g, "\n");
+}
+
+/** A textarea reports every line break as \n, so a text the person did not change is sent as it was stored, with its own breaks. */
+function kept(text: string, initial: string): string {
+    return lineBreaksAsTyped(text) === lineBreaksAsTyped(initial) ? initial : text;
+}
+
 /** The text is sent exactly as typed: the CMS neither trims nor reformats it. */
-export function bodyOf(form: ArticleForm): SaveArticle {
+export function bodyOf(form: ArticleForm, initial: ArticleForm): SaveArticle {
     return {
         knowledgeBase: form.knowledgeBase,
         language: form.language,
         title: form.title,
-        content: form.content,
-        llmGuide: form.llmGuide,
+        content: kept(form.content, initial.content),
+        llmGuide: kept(form.llmGuide, initial.llmGuide),
         description: form.description,
     };
 }
