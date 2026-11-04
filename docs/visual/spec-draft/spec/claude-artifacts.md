@@ -6,6 +6,7 @@ source; the artifact is its published copy. Maintained by `vdoc.py register`, so
 | Document | File | Artifact | Updated |
 | :- | :- | :- | :- |
 | Article language | [2026-11-04-article-language.html](2026-11-04-article-language.html) | <https://claude.ai/artifact/L1EBzopXcnYetrVY1h5uQu> | 2026-11-04 |
+| Links between articles | [2026-11-04-article-links.html](2026-11-04-article-links.html) | <https://claude.ai/artifact/TRJN6hrTJdKKWXTSbgJQcX> | 2026-11-04 |
 | Articles | [2026-11-04-articles.html](2026-11-04-articles.html) | <https://claude.ai/artifact/3kufpewPjk4iMsj2mdGcmK> | 2026-11-04 |
 | Bot profiles | [2026-11-04-bot-profiles.html](2026-11-04-bot-profiles.html) | <https://claude.ai/artifact/7fRe9iC4tuqWJ78A2nexYr> | 2026-11-04 |
 | Claude Code plugin | [2026-11-04-claude-plugin.html](2026-11-04-claude-plugin.html) | <https://claude.ai/artifact/KVjVKUaYjSMRBquejPMR9f> | 2026-11-04 |
