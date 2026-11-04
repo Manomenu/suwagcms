@@ -469,7 +469,7 @@ Saved orderService, revision 4. Not ready for a version, 2 mistakes:
   <p>Part of the public contract. A bot's engine, in its own repository, runs the step this way, and running an HTTP action is described in the <code>http-actions</code> spec.</p>
   <script type="text/x-mermaid" data-caption="One action step in a conversation">
 flowchart TD
-  S[Step reached] --> K{Every parameter's fact has a value?}
+  S[Step reached] --> K{"Does every parameter have a value?"}
   K -->|no| F[Go to onFailure, no fact written]
   K -->|yes| R[Run the action]
   R -->|failure| F
