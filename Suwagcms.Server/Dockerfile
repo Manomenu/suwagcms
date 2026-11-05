@@ -2,8 +2,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0.400-alpine3.23 AS build
 WORKDIR /src
 COPY .editorconfig global.json nuget.config Directory.Build.props Directory.Build.rsp Directory.Packages.props BannedSymbols.txt ./
+COPY Suwagcms.Sdk/Suwagcms.Sdk.csproj Suwagcms.Sdk/packages.lock.json Suwagcms.Sdk/
+COPY Suwagcms.Contracts/Suwagcms.Contracts.csproj Suwagcms.Contracts/packages.lock.json Suwagcms.Contracts/
 COPY Suwagcms.Server/Suwagcms.Server.csproj Suwagcms.Server/packages.lock.json Suwagcms.Server/
 RUN dotnet restore Suwagcms.Server/Suwagcms.Server.csproj --locked-mode
+COPY Suwagcms.Sdk/ Suwagcms.Sdk/
+COPY Suwagcms.Contracts/ Suwagcms.Contracts/
 COPY Suwagcms.Server/ Suwagcms.Server/
 RUN dotnet publish Suwagcms.Server/Suwagcms.Server.csproj -c Release --no-restore -o /out
 

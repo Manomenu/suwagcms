@@ -1,0 +1,49 @@
+# Suwagcms.Sdk
+
+The SDK of a .NET bot (.NET 9 or later) built on Suwagcms.
+
+```sh
+dotnet add package Suwagcms.Sdk
+```
+
+It holds the definition format (`Suwagcms.Sdk.Format`, JSON schema in `definition-format.schema.json`), the validator
+(`Suwagcms.Sdk.Validation`) and the bot runtime (`Suwagcms.Sdk.BotRuntime`).
+
+## The bot runtime
+
+```csharp
+builder.Services.AddSuwagcmsBot("rzeczoznawca");   // the bot's own id; versions are kept in files under the content root
+var app = builder.Build();
+app.MapSuwagcmsBot();                              // GET /suwagcms/state, PUT /suwagcms/versions/{number}
+```
+
+The CMS pushes a version with `PUT /suwagcms/versions/{number}`: one JSON object with `formatVersion`, `bot`, `number`,
+`digest` (`VersionDigest.Of`) and the lists of the definition. The SDK validates it (`DefinitionValidator` at the `Version`
+stage), checks the bot id, the number and the digest, and loads it without a restart. A refusal is Problem Details with every
+mistake in `mistakes` (422 invalid, 409 the number holds another document, 503 the store failed) and changes nothing.
+Sending the same document again succeeds and changes nothing; a lower number is accepted and becomes current.
+`GET /suwagcms/state` answers `bot`, `current` (null before the first version), `held`, `inUse` and `storeError`. The shapes
+are in `bot-runtime.schema.json`, so a bot outside .NET can implement the same routes.
+
+The bot's code uses `IBotDefinitions`:
+
+- `CurrentNumber`: the number a new conversation starts on (null before the first version); keep it with the conversation.
+- `GetAsync(number)`: the definition of that version, also on an instance that was not pushed to.
+- `ReportInUseAsync(numbers)`: the versions your open conversations use, **across all instances of the bot**. Versions neither
+  current nor reported are removed; until the first report nothing is. When a conversation expires is your decision.
+
+**Several instances.** Pass a store they all reach: `AddSuwagcmsBot(id, store)` with your own `IVersionStore` (a table in the
+bot's database, say). The SDK writes versions and the reported numbers to it, the other instances read it every five seconds
+(`pollInterval`), and `GET /suwagcms/state` answers from it, so every instance says the same. The default `FileVersionStore`
+is for one instance; `InMemoryVersionStore` is for tests.
+
+**The routes have no key yet.** Anyone who can reach the bot can replace its definition, and the bot id check only stops a
+mistyped address. Until the CMS has identity, expose `/suwagcms/*` to a trusted network only.
+
+Without the runtime, the validator alone needs no database and no network:
+
+```csharp
+IReadOnlyList<Mistake> mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Version);
+```
+
+It returns every mistake at once, each with a stable code and a fix; an empty list means the definition passes.

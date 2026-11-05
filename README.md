@@ -23,7 +23,7 @@ facts here, and the CMS refuses any change that would leave the bot inconsistent
 One CMS holds several registered bots, each with its own profile, and the user switches between them. All resources
 belong to one bot. References work across that bot's knowledge bases and never between bots.
 
-At registration a bot declares what it supports:
+After registration the CMS asks the bot what it supports:
 
 | Declared              | What the CMS does with it                                       |
 | :-------------------- | :-------------------------------------------------------------- |
@@ -35,9 +35,9 @@ At registration a bot declares what it supports:
 
 | Resource       | Fields                                                                                           | Required                                                 |
 | :------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
-| **Article**    | `id`, `title`, `content`, `llmGuide`, `description`, `language`, availability                    | all; `language` is `pl` or `en` and defaults to `en`     |
-| **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`, availability             | all except `localFacts`; `whenStalled` if it collects    |
-| **Action**     | `id`, `description`, `parameters`, `results`, implementation, availability                       | all except `parameters` and `results`                    |
+| **Article**    | `id`, `title`, `content`, `llmGuide`, `description`, `language`                                  | all; `language` is `pl` or `en` and defaults to `en`     |
+| **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`                            | all except `localFacts`; `whenStalled` if it collects    |
+| **Action**     | `id`, `description`, `parameters`, `results`, implementation                                      | all except `parameters` and `results`                    |
 | **Global fact**| `name`, `type` and its constraints, `description`, `writableBy`                                  | all; `writableBy` defaults to `set`                      |
 | **Local fact** | as a global fact, but it lives inside one procedure                                              | as above                                                 |
 
@@ -66,7 +66,7 @@ languages are separate articles: the CMS does not link them as translations.
 
 | `writableBy`      | Who writes the fact                                         | Can a `collect` step use it? |
 | :---------------- | :---------------------------------------------------------- | :--------------------------- |
-| `assign`          | only the procedure itself; the model never sees the fact    | no                           |
+| `assign`          | only the procedure itself: `assign` steps and action results | no                           |
 | `set` (default)   | also the model, once, while the fact is empty               | yes                          |
 | `correct`         | also the model, when the customer corrects a known value    | yes                          |
 
@@ -305,8 +305,8 @@ Behaviour shared by all of them:
 - All mistakes are reported at once, so one pass fixes a whole batch.
 - "What uses this?" and "what would this change break?" can be asked without changing anything (dry run).
 - An agent may push a version itself; validation, history and rollback are the safeguards.
-- Once identity arrives, every change and push records who made it, a person or an agent, and each resource has a full
-  history. Until then the CMS and the bots' routes for it run only inside a trusted network.
+- Each resource has a full history of what changed and when; once identity arrives it also records who, a person or an
+  agent. Until then the CMS and the bots' routes for it run only inside a trusted network.
 
 ## Screens
 
@@ -397,7 +397,7 @@ Rasa concepts in this project's terms:
 ## The application skeleton
 
 An ASP.NET Core minimal-API server (Npgsql, Dapper, hand-written SQL, grate migrations), a React 19 + shadcn/ui + Tailwind
-web app with types generated from the server's OpenAPI document, and a Notes feature as the pattern end to end.
+web app with types generated from the server's OpenAPI document.
 
 ## What the gate guarantees
 
@@ -439,9 +439,9 @@ why; its acceptance criteria are the contract:
 | a spec has no acceptance section, a criterion without an id or with two, an id defined twice | fix the spec (`vdoc.py ids` numbers new criteria) |
 
 ```text
-$ just criteria AC-notes-1
-AC-notes-1       server test (xunit)          Suwagcms.Server.Tests/Notes/NoteEndpointsTests.cs:14
-AC-notes-1       e2e test (playwright)        Suwagcms.Web/src/notes/NotesScreen.e2e.ts:4
+$ just criteria AC-orders-1
+AC-orders-1      server test (xunit)          Suwagcms.Server.Tests/Orders/OrderEndpointsTests.cs:14
+AC-orders-1      e2e test (playwright)        Suwagcms.Web/src/orders/OrdersScreen.e2e.ts:4
 ```
 
 Where each kind of guardrail lives and how it names the id (the kinds are `Suwagcms.Gate/criteria.json`):
@@ -449,6 +449,8 @@ Where each kind of guardrail lives and how it names the id (the kinds are `Suwag
 | Kind | Where | How it names the id |
 | --- | --- | --- |
 | `server test (xunit)` | `Suwagcms.Server.Tests/<Feature>/` | `[Trait("criterion", "AC-notes-1")]` on the test |
+| `sdk test (xunit)` | `Suwagcms.Sdk.Tests/<Feature>/` | the same `Trait` |
+| `cli test (xunit)` | `Suwagcms.Cli.Tests/<Feature>/` | the same `Trait` |
 | `architecture test (xunit)` | `Suwagcms.Gate/`: the repository guards | the same `Trait` |
 | `web test (vitest)` | `Suwagcms.Web/src/**/*.test.ts(x)` | in the title: `it("AC-notes-1: a blank note is refused", …)` |
 | `e2e test (playwright)` | `Suwagcms.Web/src/**/*.e2e.ts` | in the title: `test("AC-notes-1: …", …)` |

@@ -6,6 +6,9 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # The local PostgreSQL — `just db` lists its recipes (.just/db.just)
 mod db '.just/db.just'
 
+# The local stack in one tmux session — `just tmux-dev start [--restart]|stop` (.just/tmux-dev.just)
+mod tmux-dev '.just/tmux-dev.just'
+
 [private]
 default:
     @just --list --unsorted
@@ -93,10 +96,22 @@ mutate:
     dotnet tool restore >/dev/null
     cd Suwagcms.Server.Tests && dotnet tool run dotnet-stryker
 
+# Regenerate Suwagcms.Sdk/definition-format.schema.json after changing a record of the definition format
+[group('dev')]
+sdk-schema:
+    @./scripts/.internal/sdk-schema.sh
+
 # Pack the dotnet new template as a NuGet package into .artifacts/nupkg
 [group('dev')]
 pack-template:
     dotnet pack pack/Solid.DotnetApp.Template.csproj -o .artifacts/nupkg
+
+# Pack the CLI and install (or update) it as the global `suwagcms` command
+[group('dev')]
+cli-install:
+    dotnet pack Suwagcms.Cli -c Release -o .artifacts/nupkg
+    dotnet tool uninstall --global Suwagcms.Cli || true
+    dotnet tool install --global --add-source .artifacts/nupkg Suwagcms.Cli
 
 # Install tools and packages from the lockfiles, and enable the git hooks
 [group('maintenance')]

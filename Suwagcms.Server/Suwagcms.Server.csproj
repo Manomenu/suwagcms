@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Suwagcms.Contracts/Suwagcms.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Database/Migrations/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

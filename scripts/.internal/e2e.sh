@@ -2,7 +2,7 @@
 # End-to-end tests (Suwagcms.Web/src/**/*.e2e.ts): a real browser against the real server and database. Not part of
 # check.sh. Arguments go to Playwright, e.g.
 #   e2e.sh --headed        watch the browser
-#   e2e.sh -g "note"       only the tests whose name matches
+#   e2e.sh -g "name"      only the tests whose name matches
 #
 # Every run starts from an empty database of its own (suwagcms_e2e; a linked worktree gets a suffixed name and its own
 # ports, checkout-env.sh), next to the development one, and its own server and web app (playwright.config.ts):

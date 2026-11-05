@@ -1,0 +1,20 @@
+using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Validation;
+
+namespace Suwagcms.Server.Editing;
+
+internal abstract record EditResult
+{
+    // Why: Revisions holds the revision each put resource has (or would have, on a dry run); a removed resource has none. NotReady is what still stops a version, which never refuses a save.
+    internal sealed record Saved(IReadOnlyDictionary<ResourceRef, int> Revisions, bool Written, IReadOnlyList<Mistake> NotReady)
+        : EditResult;
+
+    internal sealed record Refused(IReadOnlyList<Mistake> Mistakes) : EditResult;
+
+    // Why: Current is null when the resource does not exist, which is how an edit of a deleted resource looks.
+    internal sealed record Stale(ResourceRef Target, int Expected, int? Current) : EditResult;
+
+    internal sealed record Missing(ResourceRef Target) : EditResult;
+
+    internal sealed record UnknownBot : EditResult;
+}

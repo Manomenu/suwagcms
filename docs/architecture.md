@@ -5,12 +5,19 @@
 One line per top-level path (at most 300 characters each). `RepositoryLayoutTests` reads these
 lines: a new top-level folder needs its line here, a deleted one loses it.
 
-- `Suwagcms.slnx` — the .NET solution: the server and its tests.
-- `Suwagcms.Server/` — the HTTP API (ASP.NET Core minimal APIs, Npgsql, Dapper with hand-written SQL). One folder and namespace per feature: `Api/` wires the routes, `Notes/` is the example feature, `Health/` checks the database, `Database/` is the pool and the grate migrations.
+- `Suwagcms.slnx` — the .NET solution: the server, the SDK, the contracts, the CLI and their tests.
+- `Suwagcms.Server/` — the HTTP API (ASP.NET Core minimal APIs, Npgsql, Dapper with hand-written SQL). One folder and namespace per feature: `Api/` wires the routes, `Health/` checks the database, `Database/` is the pool and the migrations, `Editing/` the one write path of every resource.
 - `Suwagcms.Server/Database/Migrations/up/` — numbered SQL migrations, applied at start-up by grate and never edited afterwards.
-- `Suwagcms.Server.Tests/` — xUnit v3 tests against a real PostgreSQL. Mirrors the server's folders; `Characterization/` holds behaviour recorded before changing legacy code.
+- `Suwagcms.Server.Tests/` — xUnit v3 tests against a real PostgreSQL. Mirrors the server's folders; `Commands/` ties every route to a CLI command; `Characterization/` holds behaviour recorded before changing legacy code.
+- `Suwagcms.Sdk/` — the SDK of a .NET bot, a NuGet package (`net9.0;net10.0`): the definition format (`Format/`), the validator (`Validation/`), the bot runtime (`BotRuntime/`: routes, version store), JSON schemas (`just sdk-schema`). Contracts references it.
+- `Suwagcms.Sdk.Tests/` — xUnit v3 plain tests of the SDK, no database.
+- `Suwagcms.Contracts/` — the records the API sends and receives, shared by the server and the CLI. Empty so far; references the SDK.
+- `Suwagcms.Cli/` — the `suwagcms` command, packed as a .NET tool (System.CommandLine; `just cli-install`). So far `status` and `server`; one folder per feature, options and exit codes shared; references the contracts.
+- `Suwagcms.Cli.Tests/` — xUnit v3 tests of the CLI, run in process on the streams it is given.
+- `.claude-plugin/` — `marketplace.json`: this repository as a Claude Code marketplace, offering one plugin, `suwagcms`.
+- `claude-plugin/` — the Claude Code plugin: `.claude-plugin/plugin.json`, and `skills/suwagcms/SKILL.md`, the main skill that lists every CLI command. Tests in `Suwagcms.Cli.Tests/Plugin/` keep the list and the CLI equal.
 - `Suwagcms.Gate/` — the quality machinery: the gate script, the repository guards, the criteria check, the Claude Code hooks. See "The gate" below.
-- `Suwagcms.Web/` — the web app (React 19, shadcn/ui, Tailwind 4, Vite, TypeScript strict, pnpm). A folder per feature under `src/` (`notes/` is the example); `src/design/` is the shared design system (shadcn components, `cn`); `src/api/` the HTTP client and the generated `openapi.d.ts`.
+- `Suwagcms.Web/` — the web app (React 19, shadcn/ui, Tailwind 4, Vite, TypeScript strict, pnpm). A folder per feature under `src/`; `src/api/` the generated `openapi.d.ts`; the shared design system (shadcn) and the HTTP client come with the first feature that needs them.
 - `compose.yaml` — the whole stack on a laptop from the same Dockerfiles: db (profile `db`), server, web; everything configured from `.env` (`.env.example`) with ASP.NET names (`Section__Key`); only web publishes a port (8220).
 - `Suwagcms.Server/Dockerfile`, `Suwagcms.Web/Dockerfile` — the two images (pinned bases, locked restore, build context is the repo root); the web image is nginx serving the build and proxying `/api` to the server.
 - `.dockerignore` — keeps `node_modules`, `bin`, `obj` and `.env` out of the build context.
@@ -18,7 +25,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `.vscode/` — the editor's glue, shared: recommended extensions, formatter per language, file nesting, debug launch, tasks that call `scripts/.internal`. No style rules (they live in `.editorconfig` and the formatters' configs, so Rider agrees).
 - `.githooks/` — `pre-commit` runs gitleaks on what is being committed; `just sync` enables it.
 - `docs/` — documentation for people working on the repo: this map, `development.md`, the specs in `visual/spec/` (their acceptance criteria live as guardrails, see AGENTS.md), decisions above one feature in `adr/`.
-- `scripts/` — `scripts/.internal/` holds the everyday tools the gate and `just` run: `db.sh`, `checkout-env.sh`, `api-types.sh`, `api-diff.sh`, `contracts.sh`, `e2e.sh`, `smoke.sh`, `logs.sh`.
+- `scripts/` — `scripts/.internal/` holds the everyday tools the gate and `just` run: `db.sh`, `checkout-env.sh`, `api-types.sh`, `api-diff.sh`, `sdk-schema.sh`, `contracts.sh`, `e2e.sh`, `smoke.sh`, `logs.sh`.
 - `.claude/` — the committed Claude Code settings: a Stop hook that runs the quick gate, a PreToolUse hook that protects migrations, generated files, and the gate with the lint configs (`ALLOW_GATE_EDIT=1 claude` lifts the last).
 - `.config/` — `dotnet-tools.json`: the pinned CSharpier.
 - `.just/` — modules of the `justfile` (`just db`).

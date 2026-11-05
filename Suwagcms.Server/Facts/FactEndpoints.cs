@@ -1,0 +1,104 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Suwagcms.Contracts;
+using Suwagcms.Sdk.Format;
+using Suwagcms.Server.Database;
+using Suwagcms.Server.Editing;
+
+namespace Suwagcms.Server.Facts;
+
+internal static class FactEndpoints
+{
+    private const string Title = "The fact was not saved.";
+    private const string Problem = "application/problem+json";
+
+    public static void MapFacts(this IEndpointRouteBuilder routes)
+    {
+        routes.MapGet("/bots/{bot}/facts", List).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/facts/{name}", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes
+            .MapPut("/bots/{bot}/facts/{name}", Save)
+            .Accepts<SaveFact>("application/json")
+            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
+            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
+            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+        routes
+            .MapDelete("/bots/{bot}/facts/{name}", Delete)
+            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
+            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
+            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+    }
+
+    private static async Task<Results<Ok<List<Fact>>, ProblemHttpResult>> List(
+        string bot,
+        Pool pool,
+        CancellationToken cancellationToken
+    ) =>
+        await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
+            ? TypedResults.Ok(
+                stored.Where(item => item.Target.Kind == ResourceKind.GlobalFact).Select(item => FactMapping.Show(item, stored)).ToList()
+            )
+            : EditProblems.For(new EditResult.UnknownBot(), bot, "The facts were not listed.");
+
+    private static async Task<Results<Ok<Fact>, ProblemHttpResult>> Get(
+        string bot,
+        string name,
+        Pool pool,
+        CancellationToken cancellationToken
+    )
+    {
+        var target = new ResourceRef(ResourceKind.GlobalFact, name);
+        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        {
+            return EditProblems.For(new EditResult.UnknownBot(), bot, "The fact was not shown.");
+        }
+        return stored.SingleOrDefault(item => item.Target == target) is { } found
+            ? TypedResults.Ok(FactMapping.Show(found, stored))
+            : EditProblems.For(new EditResult.Missing(target), bot, "The fact was not shown.");
+    }
+
+    private static async Task<Results<Ok<Fact>, ProblemHttpResult>> Save(
+        string bot,
+        string name,
+        HttpRequest request,
+        DefinitionEditor editor,
+        Pool pool,
+        CancellationToken cancellationToken,
+        bool dryRun = false,
+        int? ifRevision = null
+    )
+    {
+        var target = new ResourceRef(ResourceKind.GlobalFact, name);
+        var (body, unreadable) = await StrictBody.ReadAsync<SaveFact>(request.Body, target, cancellationToken);
+        if (body is null)
+        {
+            return EditProblems.For(new EditResult.Refused(unreadable), bot, Title);
+        }
+        var result = await editor.ApplyAsync(
+            bot,
+            [new Put(target, FactMapping.ToRecord(name, body), ifRevision)],
+            dryRun,
+            cancellationToken
+        );
+        if (result is not EditResult.Saved saved)
+        {
+            return EditProblems.For(result, bot, Title);
+        }
+        // Why: a save leaves the procedures untouched, so who uses the fact is read after it, outside the lock.
+        var all = await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [];
+        return TypedResults.Ok(FactMapping.Show(FactMapping.ToRecord(name, body), saved.Revisions[target], all));
+    }
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> Delete(
+        string bot,
+        string name,
+        DefinitionEditor editor,
+        CancellationToken cancellationToken,
+        bool dryRun = false,
+        int? ifRevision = null
+    )
+    {
+        var target = new ResourceRef(ResourceKind.GlobalFact, name);
+        var result = await editor.ApplyAsync(bot, [new Remove(target, ifRevision)], dryRun, cancellationToken);
+        return result is EditResult.Saved ? TypedResults.NoContent() : EditProblems.For(result, bot, "The fact was not deleted.");
+    }
+}

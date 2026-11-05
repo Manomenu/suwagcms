@@ -1,0 +1,188 @@
+using System.CommandLine;
+using System.Globalization;
+using System.Text.Json;
+using Suwagcms.Cli.Bots;
+using Suwagcms.Cli.Connection;
+using Suwagcms.Cli.Editing;
+using Suwagcms.Cli.Output;
+using Suwagcms.Contracts;
+
+namespace Suwagcms.Cli.Versions;
+
+internal static class VersionsCommand
+{
+    public const string Collection = "versions";
+
+    private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
+
+    public static Command Create(GlobalOptions options, CliEnvironment environment) =>
+        new("versions", "List the versions of a bot, create one from its working state, or show one.")
+        {
+            CreateList(options, environment),
+            CreateCreate(options, environment),
+            CreateShow(options, environment),
+            CreateStatus(options, environment),
+        };
+
+    private static Command CreateList(GlobalOptions options, CliEnvironment environment)
+    {
+        var command = new Command("list", "List the versions of the bot, newest first (or --open the Versions screen in the web app).");
+        EditOptions.RefuseOpenWithJson(command, options);
+        command.SetAction(
+            async (parsed, cancellationToken) =>
+            {
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                if (target is null)
+                {
+                    return exit;
+                }
+                if (parsed.GetValue(options.Open))
+                {
+                    return await Open(target, parsed);
+                }
+                var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
+                if (answer.ExitCode != ExitCodes.Done)
+                {
+                    return await target.FailedAsync(answer, cancellationToken);
+                }
+                var versions = answer.Body?.Deserialize<List<VersionSummary>>(Web) ?? [];
+                return await target.Run.Report.DoneAsync(new VersionListDocument(target.Bot, versions), VersionText.Table(versions));
+            }
+        );
+        return command;
+    }
+
+    private static Command CreateCreate(GlobalOptions options, CliEnvironment environment)
+    {
+        var dryRun = EditOptions.DryRun();
+        var command = new Command(
+            "create",
+            "Create a version from the bot's working state: refused with every mistake while the state is unfinished or has not changed since the latest version."
+        )
+        {
+            dryRun,
+        };
+        EditOptions.RefuseOpen(command, options, "versions create");
+        command.SetAction(
+            async (parsed, cancellationToken) =>
+            {
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                if (target is null)
+                {
+                    return exit;
+                }
+                var answer = await ServerCall.PostAsync(
+                    environment,
+                    target.Address,
+                    target.CollectionPath(Collection) + EditOptions.Query(parsed.GetValue(dryRun), null),
+                    new { },
+                    cancellationToken
+                );
+                if (answer.ExitCode == ExitCodes.Refused)
+                {
+                    var heading = string.Create(CultureInfo.InvariantCulture, $"Not created, {answer.Mistakes.Count} mistake(s):");
+                    return await target.FailedAsync(
+                        answer with
+                        {
+                            Message = $"{heading}{Environment.NewLine}{answer.Message}",
+                        },
+                        cancellationToken
+                    );
+                }
+                if (answer.ExitCode != ExitCodes.Done)
+                {
+                    return await target.FailedAsync(answer, cancellationToken);
+                }
+                var created =
+                    answer.Body?.Deserialize<VersionCreated>(Web) ?? throw new InvalidOperationException("the server sent no version");
+                return await target.Run.Report.DoneAsync(created, VersionText.Created(created));
+            }
+        );
+        return command;
+    }
+
+    private static Command CreateStatus(GlobalOptions options, CliEnvironment environment)
+    {
+        var command = new Command(
+            "status",
+            "Ask the bot which version it has (never what the CMS last sent), with the latest version, the versions still in use and the recent pushes (or --open the Versions screen in the web app)."
+        );
+        EditOptions.RefuseOpenWithJson(command, options);
+        command.SetAction(
+            async (parsed, cancellationToken) =>
+            {
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                if (target is null)
+                {
+                    return exit;
+                }
+                if (parsed.GetValue(options.Open))
+                {
+                    return await Open(target, parsed);
+                }
+                var answer = await ServerCall.GetAsync(
+                    environment,
+                    target.Address,
+                    target.CollectionPath($"{Collection}/status"),
+                    cancellationToken
+                );
+                if (answer.ExitCode != ExitCodes.Done)
+                {
+                    return await target.FailedAsync(answer, cancellationToken);
+                }
+                var status = answer.Body?.Deserialize<BotStatus>(Web) ?? throw new InvalidOperationException("the server sent no status");
+                return await target.Run.Report.DoneAsync(status, VersionText.Status(status));
+            }
+        );
+        return command;
+    }
+
+    private static Command CreateShow(GlobalOptions options, CliEnvironment environment)
+    {
+        var number = new Argument<int>("number") { Description = "The version's number, like 14." };
+        var command = new Command(
+            "show",
+            "Show one version with its document exactly as stored (or --open the Versions screen in the web app)."
+        )
+        {
+            number,
+        };
+        EditOptions.RefuseOpenWithJson(command, options);
+        command.SetAction(
+            async (parsed, cancellationToken) =>
+            {
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                if (target is null)
+                {
+                    return exit;
+                }
+                if (parsed.GetValue(options.Open))
+                {
+                    return await Open(target, parsed);
+                }
+                var answer = await ServerCall.GetAsync(
+                    environment,
+                    target.Address,
+                    target.ItemPath(Collection, parsed.GetRequiredValue(number).ToString(CultureInfo.InvariantCulture)),
+                    cancellationToken
+                );
+                if (answer.ExitCode != ExitCodes.Done)
+                {
+                    return await target.FailedAsync(answer, cancellationToken);
+                }
+                var detail =
+                    answer.Body?.Deserialize<VersionDetail>(Web) ?? throw new InvalidOperationException("the server sent no version");
+                return await target.Run.Report.DoneAsync(detail, VersionText.Detail(detail));
+            }
+        );
+        return command;
+    }
+
+    private static Task<int> Open(BotTarget target, ParseResult parsed) =>
+        WebPage.ShowAsync(
+            target.PageOf(Collection),
+            parsed.InvocationConfiguration.Output,
+            parsed.InvocationConfiguration.Error,
+            target.Machine.OpenBrowser
+        );
+}

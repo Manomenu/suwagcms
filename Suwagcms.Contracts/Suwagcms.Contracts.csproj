@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Suwagcms.Contracts</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Suwagcms.Sdk/Suwagcms.Sdk.csproj" />
+  </ItemGroup>
+</Project>

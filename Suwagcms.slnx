@@ -3,6 +3,17 @@
     <Project Path="Suwagcms.Server/Suwagcms.Server.csproj" />
     <Project Path="Suwagcms.Server.Tests/Suwagcms.Server.Tests.csproj" />
   </Folder>
+  <Folder Name="/Suwagcms.Sdk/">
+    <Project Path="Suwagcms.Sdk/Suwagcms.Sdk.csproj" />
+    <Project Path="Suwagcms.Sdk.Tests/Suwagcms.Sdk.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Suwagcms.Contracts/">
+    <Project Path="Suwagcms.Contracts/Suwagcms.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/Suwagcms.Cli/">
+    <Project Path="Suwagcms.Cli/Suwagcms.Cli.csproj" />
+    <Project Path="Suwagcms.Cli.Tests/Suwagcms.Cli.Tests.csproj" />
+  </Folder>
   <Folder Name="/Suwagcms.Gate/">
     <Project Path="Suwagcms.Gate/Suwagcms.Gate.csproj" />
   </Folder>

@@ -8,7 +8,7 @@ const WEB_PORT = Number(process.env["E2E_WEB_PORT"] ?? 3331);
 const DATABASE = process.env["E2E_DATABASE"] ?? "suwagcms_e2e";
 
 export default defineConfig({
-    // The tests live next to the code they check (src/notes/NotesScreen.e2e.ts by NotesScreen.tsx).
+    // The tests live next to the code they check (src/<feature>/<Screen>.e2e.ts).
     testDir: "../src",
     testMatch: "**/*.e2e.ts",
     // One database for the run, so tests that create data would see each other's in parallel.
