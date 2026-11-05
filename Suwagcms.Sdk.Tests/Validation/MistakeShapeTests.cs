@@ -15,6 +15,7 @@ public sealed class MistakeShapeTests
             + new string('x', Article.MaxTextLength + 1)
             + "\",\"description\":\"D\"}]}",
         "{\"formatVersion\":1,\"knowledgeBases\":[{\"id\":\"k\",\"title\":\"T\"}],\"articles\":[{\"id\":\"a\",\"knowledgeBase\":\"k\",\"title\":\"T\",\"content\":\"[x](cms://article/none) [y](cms://article/)\",\"llmGuide\":\"G\",\"description\":\"D\"}]}",
+        "{\"formatVersion\":1,\"knowledgeBases\":[{\"id\":\"k\",\"title\":\"T\"}],\"articles\":[{\"id\":\"a\",\"knowledgeBase\":\"k\",\"title\":\"T\",\"content\":\"[x](cms://article/b)\",\"llmGuide\":\"G\",\"description\":\"D\"},{\"id\":\"b\",\"knowledgeBase\":\"k\",\"title\":\"T\",\"content\":\"[x](cms://article/a)\",\"llmGuide\":\"G\",\"description\":\"D\"}]}",
         "",
         "{ not json",
         "[]",

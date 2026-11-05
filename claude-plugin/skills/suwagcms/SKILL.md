@@ -68,7 +68,7 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 
 - Find the id with `suwagcms articles list --text <part of the title or id>`; the id is the first column.
 - Write the link as text in `--content` or `--guide` (or their files) of `articles add` or `articles edit`; no other command is needed.
-- A link to an article the bot does not have is refused with `reference.missing`, naming the field and the id; a malformed `cms://` target, or `cms://procedure/…`, is refused with `reference.malformed`. `--dry-run` shows it without saving.
+- A link to an article the bot does not have is refused with `reference.missing`, naming the field and the id; a malformed `cms://` target, or `cms://procedure/…`, is refused with `reference.malformed`; a link that closes a loop of articles, or an article linking to itself, is refused with `reference.loop` and the path, such as `pricing → discounts → pricing`: remove one link on it. `--dry-run` shows it without saving.
 - Text that only names an article stays plain text and is not protected. A `cms://` address inside a code span or code block, or an ordinary web link, is not a link to an article.
 
 ## Commands

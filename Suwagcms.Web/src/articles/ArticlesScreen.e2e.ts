@@ -480,3 +480,26 @@ test("AC-article-links-6: a link saved as Markdown through the API, as the CLI d
     await expect(page.locator('[data-markdown-editor="content"] [data-article-link="cennik"]')).toHaveText("Price list");
     await expect(page.locator('[data-markdown-editor="llmGuide"] [data-article-link="cennik"]')).toHaveText("Price list");
 });
+
+test("AC-loop-guard-1: a link that closes a loop is refused beside the field, with the path, and nothing is saved", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "pricing", { title: "Pricing", content: "See " });
+    await addArticle(request, bot, "discounts", { title: "Discounts", content: "See [Pricing](cms://article/pricing)." });
+    await openEditor(page, bot, "pricing");
+
+    await page.getByRole("textbox", { name: "content" }).click();
+    await page.keyboard.press("Control+End");
+    await page.locator('[data-markdown-editor="content"]').getByRole("button", { name: "Insert link" }).click();
+    await page.keyboard.type("disc");
+    await page
+        .getByRole("listbox", { name: "Articles to link" })
+        .getByRole("option", { name: /Discounts/ })
+        .click();
+    await page.getByRole("button", { name: "Save" }).click();
+
+    await expect(page.locator('[data-field="content"]')).toContainText("discounts → pricing → discounts");
+    expect(await contentOf(request, bot, "pricing")).toBe("See ");
+});

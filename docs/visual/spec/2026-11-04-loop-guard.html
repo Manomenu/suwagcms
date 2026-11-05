@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-loop-guard.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-loop-guard.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Loop guard</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 12 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>article-links</code></span>
@@ -473,6 +473,8 @@ Refused, 1 mistake:
   <ul>
     <li><b>after <code>procedure-model</code>:</b> a loop between the steps of one procedure is not refused, as in a <code>conversation</code> returning to its own <code>listen</code>.</li>
     <li><b>after <code>start-block</code>:</b> a loop between procedures through <code>start</code> is refused.</li>
+    <li><b>after <code>instruction-context</code>:</b> a loop article → procedure → article through a context is refused.</li>
+    <li><b>after <code>start-block</code>:</b> a procedure starting itself is refused.</li>
     <li><b>after <code>inform-block</code>, <code>article-procedure-links</code>:</b> a loop article → procedure → article is refused, such as <code>evacuation guide → evacuation procedure → evacuation guide</code>.</li>
   </ul>
 </section>
