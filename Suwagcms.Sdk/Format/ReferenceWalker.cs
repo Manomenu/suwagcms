@@ -32,6 +32,10 @@ public static class ReferenceWalker
             {
                 yield return new Reference(from, $"steps.{stepName}.{fact.Path}", Fact(fact.Name), fact.Use);
             }
+            foreach (var target in step.Blocks.SelectMany(block => block.Targets))
+            {
+                yield return new Reference(from, $"steps.{stepName}.{target.Path}", target.To, null);
+            }
             var rules = step.Next?.Rules ?? [];
             for (var index = 0; index < rules.Count; index++)
             {

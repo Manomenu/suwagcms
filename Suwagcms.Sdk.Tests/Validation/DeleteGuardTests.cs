@@ -93,6 +93,23 @@ public sealed class DeleteGuardTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-13")]
+    public void A_procedure_another_one_starts_is_refused_listing_the_starter_with_the_step()
+    {
+        var target = new ResourceRef(ResourceKind.Procedure, "documentsList");
+        var after = ProcedureSamples.Bot(ProcedureSamples.WithStep("get", new ProcedureStep { Start = "documentsList" }));
+
+        var mistake = Assert.Single(Deleting(after, target));
+
+        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(target, mistake.Resource);
+        Assert.Equal(
+            new RelatedResource(new ResourceRef(ResourceKind.Procedure, "orderValuation"), "steps.get.start"),
+            Assert.Single(mistake.Related)
+        );
+    }
+
+    [Fact]
     [Trait("criterion", "AC-delete-guard-1")]
     public void A_typo_in_a_link_is_still_worded_for_the_referrer_not_as_a_delete()
     {

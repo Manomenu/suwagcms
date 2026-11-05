@@ -7,32 +7,69 @@ internal static class ReferenceRules
     public static IReadOnlyList<Rule> All { get; } =
     [
         new(MistakeCodes.ReferenceMissing, ValidationStage.Save, MissingTargets),
-        new(MistakeCodes.ReferenceMalformed, ValidationStage.Save, Malformed),
+        new(MistakeCodes.ReferenceMalformed, ValidationStage.Save, definition => Malformed(definition).Concat(WrongIds(definition))),
         new(MistakeCodes.ReferenceLoop, ValidationStage.Save, LoopRules.Loops),
     ];
 
-    // Why: facts and articles share the one code, so a client treats a name that points at nothing the same way wherever it is written.
+    // Why: facts, articles and procedures share the one code, so a client treats a name that points at nothing the same way wherever it is written.
     private static IEnumerable<Mistake> MissingTargets(BotDefinition definition) =>
-        ProcedureFactRules.MissingFacts(definition).Concat(MissingArticles(definition));
+        ProcedureFactRules.MissingFacts(definition).Concat(MissingResources(definition));
 
-    private static IEnumerable<Mistake> MissingArticles(BotDefinition definition)
+    private static IEnumerable<Mistake> MissingResources(BotDefinition definition)
     {
-        var known = definition.Articles.Select(article => article.Id).ToHashSet(StringComparer.Ordinal);
+        var known = definition
+            .Articles.Select(article => new ResourceRef(ResourceKind.Article, article.Id))
+            .Concat(definition.Procedures.Select(procedure => new ResourceRef(ResourceKind.Procedure, procedure.Id)))
+            .ToHashSet();
+        var procedures = definition.Procedures.Select(procedure => procedure.Id).Order(StringComparer.Ordinal).ToList();
         return ReferenceWalker
             .From(definition)
-            .Where(reference => reference.To.Kind == ResourceKind.Article)
-            .Where(reference => !known.Contains(reference.To.Id))
-            .DistinctBy(reference => (reference.From.Id, reference.Path, reference.To.Id))
-            .Select(reference =>
-                Make(
-                    MistakeCodes.ReferenceMissing,
-                    reference.From.Id,
-                    reference.Path,
-                    $"{reference.Path} of '{reference.From.Id}' links to article '{reference.To.Id}', which this bot does not have.",
-                    "Pick an existing article; 'suwagcms articles list' shows them."
-                )
-            );
+            .Where(reference => reference.To.Kind != ResourceKind.GlobalFact)
+            .Where(reference => !WrongId(reference))
+            .Where(reference => !known.Contains(reference.To))
+            .DistinctBy(reference => (reference.From, reference.Path, reference.To))
+            .Select(reference => new Mistake(
+                MistakeCodes.ReferenceMissing,
+                ValidationStage.Save,
+                reference.From,
+                reference.Path,
+                Missing(reference),
+                reference.To.Kind == ResourceKind.Article
+                    ? "Pick an existing article; 'suwagcms articles list' shows them."
+                    : $"Procedures: {string.Join(", ", procedures)}.",
+                []
+            ));
     }
+
+    private static string Missing(Reference reference) =>
+        reference.From.Kind == ResourceKind.Article
+            ? $"{reference.Path} of '{reference.From.Id}' links to article '{reference.To.Id}', which this bot does not have."
+            : $"{Holder(reference)} names {DeleteGuard.Noun(reference.To.Kind)} '{reference.To.Id}', which this bot does not have.";
+
+    // Why: the path of a reference in a procedure says which block holds it, so one sentence serves every block.
+    private static string Holder(Reference reference)
+    {
+        var parts = reference.Path.Split('.');
+        return $"'{parts[2]}' of step '{parts[1]}' in '{reference.From.Id}'";
+    }
+
+    // Why: a link's id is judged by the link's own form; a name written in a procedure has to be an id before it can be looked up, and saying so beats saying it is missing.
+    private static bool WrongId(Reference reference) =>
+        reference.From.Kind == ResourceKind.Procedure && !ResourceIds.IsCamelCase(reference.To.Id);
+
+    private static IEnumerable<Mistake> WrongIds(BotDefinition definition) =>
+        ReferenceWalker
+            .From(definition)
+            .Where(reference => reference.To.Kind != ResourceKind.GlobalFact && WrongId(reference))
+            .Select(reference => new Mistake(
+                MistakeCodes.ReferenceMalformed,
+                ValidationStage.Save,
+                reference.From,
+                reference.Path,
+                $"{Holder(reference)} names '{reference.To.Id}', which is not an id: the id of a {DeleteGuard.Noun(reference.To.Kind)} is one camelCase word.",
+                $"Use the id of the {DeleteGuard.Noun(reference.To.Kind)}, like '{ResourceIds.Suggest(reference.To.Id)}'.",
+                []
+            ));
 
     private static IEnumerable<Mistake> Malformed(BotDefinition definition) =>
         definition.Articles.SelectMany(article =>

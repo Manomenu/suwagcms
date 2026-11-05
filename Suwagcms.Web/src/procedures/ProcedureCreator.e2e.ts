@@ -267,3 +267,37 @@ test("AC-procedure-creator-17: leaving the creator with unsaved changes asks fir
     await page.getByRole("navigation", { name: "Bots" }).getByRole("link", { name: "Procedures" }).click();
     await expect(page.getByRole("heading", { name: /Procedures of/ })).toBeVisible();
 });
+
+test("AC-procedure-creator-18: a start step is built with its form, which leaves out conversation, and reads back from the server", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(
+        request,
+        bot,
+        "documentsList",
+        { description: "Collects the documents", firstStep: "hello", steps: { hello: { say: "Hi" } } },
+        0,
+    );
+    await agentSaves(request, bot, "orderValuation", { description: "The customer orders a valuation", firstStep: null, steps: {} }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "start" }).click();
+    await node(page, "start").click();
+    const target = page.getByLabel("Start this procedure");
+    await expect(target.getByRole("option")).toHaveText(["(choose)", "documentsList"]);
+    await target.selectOption("documentsList");
+    await expect(node(page, "start")).toContainText("start: documentsList");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(async () => {
+        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+            steps: Record<string, { start?: string }>;
+        };
+        expect(stored.steps["start"]?.start).toBe("documentsList");
+    }).toPass();
+    await page.reload();
+    await node(page, "start").click();
+    await expect(page.getByLabel("Start this procedure")).toHaveValue("documentsList");
+});

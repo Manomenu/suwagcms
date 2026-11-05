@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-start-block.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-start-block.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Start block</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 18 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>procedure-model</code></span>
@@ -381,7 +381,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>9</b><span>criteria</span></div>
-    <div><b>2</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -462,6 +461,9 @@ getDocuments:
     <li>A scalar target, like <code>say</code>, and not a mapping: the block has one thing to say, and nothing to map, since an action's mapping exists only because actions never name facts.</li>
     <li><code>next</code> applies after the target ends, as with Rasa's <code>call</code>: a step's <code>next</code> always says where the procedure goes after its block, and this keeps that true.</li>
     <li>A blank target is a <code>Version</code> mistake and a wrong one a <code>Save</code> mistake, for the reason <code>procedure-model</code> gives: the first is work still to do, and the second breaks a reference.</li>
+    <li>A <code>start</code> whose target is turned off still starts: off limits only the model, as it does for an article named explicitly, and a procedure never stops halfway because of a switch elsewhere.</li>
+    <li>The starter goes on from <code>next</code> once the target ends: it is what makes a shared part reusable, and what README's mapping of Rasa's <code>call</code> says.</li>
+    <li>A target of <code>conversation</code> is refused by its own rule and is no edge in the reference graph, so it is one mistake and never also a loop.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -482,23 +484,6 @@ getDocuments:
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p><b>The first bot has no such block yet.</b> Suwchatbot's specs say a procedure cannot start another one, and its stack starts procedures only from a message. Until a bot declares <code>start</code>, nothing runs it, and <code>bot-declaration</code> keeps it out of what that bot is offered.</p></div>
   <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What does a <code>start</code> do when its target is turned off?</legend>
-      <p class="why">README says the model cannot start a procedure that is off, and that an article named explicitly is still delivered, but it does not say what an explicit <code>start</code> does. This spec only fixes the meaning for bots; <code>availability</code> holds its criterion. It assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="runs"><span><b>It still starts: off limits only the model</b><small>matches the rule for articles, and a procedure never stops halfway because of a switch elsewhere</small></span></label>
-      <label><input type="radio" value="next"><span><b>It is skipped, and the procedure goes on from <code>next</code></b><small>a stronger switch, but the facts the target should have written stay empty, and every branch after it must cope</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Does <code>next</code> wait until the target ends?</legend>
-      <p class="why">README maps Rasa's <code>call</code> to <code>start</code>, and <code>call</code> returns to the caller. Suwchatbot's stack has another idea of what comes back on top. This is the format's meaning, so it is costly to change later. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="after"><span><b>Yes: the starter goes on from <code>next</code> once the target ends</b><small>it is what makes a shared part reusable, and it is what README's mapping says</small></span></label>
-      <label><input type="radio" value="handoff"><span><b>No: <code>start</code> ends the starter and hands over</b><small>simpler for a bot, but a <code>start</code> could then have no <code>next</code>, and shared parts could not return</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

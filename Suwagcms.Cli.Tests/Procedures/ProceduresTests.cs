@@ -98,7 +98,7 @@ public sealed class ProceduresTests : IDisposable
             {
                 continue;
             }
-            foreach (var field in new[] { "listen", "collect", "say", "assign", "next" })
+            foreach (var field in new[] { "listen", "collect", "say", "assign", "start", "next" })
             {
                 block[field] ??= null;
             }
@@ -561,6 +561,67 @@ public sealed class ProceduresTests : IDisposable
         Assert.NotEqual(0, misspelt.ExitCode);
         Assert.Contains("--set <step>=<x>,<y>", misspelt.Error, StringComparison.Ordinal);
         Assert.Empty(server.Requests);
+    }
+
+    private const string StartYaml = """
+        id: orderValuation
+        description: The customer orders a valuation of a property.
+        firstStep: getDocuments
+        steps:
+          getDocuments:
+            start: documentsList
+            next: confirm
+          confirm:
+            say: Thank you.
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-start-block-1")]
+    public async Task A_start_step_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(
+            (request, body) =>
+                request.Method == HttpMethod.Get ? Echo(Wire(StartYaml).ToJsonString(), "orderValuation") : Echo(body, "orderValuation", 2)
+        );
+
+        var yaml = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", StartYaml)), server);
+        var json = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.json", Wire(StartYaml).ToJsonString())), server);
+        var shown = await TestCli.Run(Args("procedures", "show", "orderValuation"), server);
+        var edited = await TestCli.Run(Args("procedures", "edit", "orderValuation", "--file", FileWith("s.yaml", shown.Output)), server);
+
+        Assert.Equal((0, 0, 0, 0), (yaml.ExitCode, json.ExitCode, shown.ExitCode, edited.ExitCode));
+        var sent = JsonNode.Parse(recorder.Calls[0].Body);
+        Assert.Equal("documentsList", At(sent, "steps", "getDocuments", "start").GetValue<string>());
+        Assert.Equal("confirm", At(sent, "steps", "getDocuments", "next").GetValue<string>());
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[^1].Body)));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-start-block-5")]
+    public async Task A_start_left_blank_in_yaml_is_sent_as_blank_saved_and_listed_as_a_version_mistake_with_exit_0()
+    {
+        const string blank = """
+            id: orderValuation
+            description: d
+            firstStep: get
+            steps:
+              get:
+                start:
+            """;
+        const string notReady = """
+            [{"code":"step.block.empty","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.get.start",
+              "message":"In step 'get', start names no procedure.","fix":"Write the id of the procedure to start: start: documentsList.","related":[]}]
+            """;
+        var recorder = new Recorder();
+        var server = recorder.Serving((_, body) => Echo(body, "orderValuation", 1, notReady));
+
+        var result = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", blank)), server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("", At(JsonNode.Parse(recorder.Calls[0].Body), "steps", "get", "start").GetValue<string>());
+        Assert.Contains("step.block.empty", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

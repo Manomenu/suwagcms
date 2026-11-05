@@ -92,12 +92,14 @@ function CreatorBody({
     id,
     initial,
     facts,
+    procedures,
     stored,
 }: {
     bot: string;
     id: string;
     initial: ProcedureDetail;
     facts: Fact[];
+    procedures: string[];
     stored: Positions;
 }) {
     const [state, dispatch] = useReducer(reduce, initial, loaded);
@@ -298,9 +300,11 @@ function CreatorBody({
                         <StepForm
                             key={selected}
                             bot={bot}
+                            id={id}
                             name={selected}
                             draft={draft}
                             facts={facts}
+                            procedures={procedures}
                             edit={edit}
                             onRenamed={setSelected}
                             onDeleted={() => {
@@ -334,7 +338,14 @@ function CreatorBody({
 }
 
 /** The creator of one procedure: a graph of its steps, the form of the selected one, and the live list of mistakes. */
-export function Creator(props: { bot: string; id: string; initial: ProcedureDetail; facts: Fact[]; stored: Positions }) {
+export function Creator(props: {
+    bot: string;
+    id: string;
+    initial: ProcedureDetail;
+    facts: Fact[];
+    procedures: string[];
+    stored: Positions;
+}) {
     return (
         <ReactFlowProvider>
             <CreatorBody {...props} />

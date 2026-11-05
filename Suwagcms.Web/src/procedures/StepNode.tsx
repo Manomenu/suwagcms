@@ -20,6 +20,7 @@ function blocksOf(step: Step): string[] {
         ...(step.collect ? [`collect: ${step.collect.join(", ") || "nothing yet"}`] : []),
         ...(step.say !== undefined ? [`say: ${step.say || "nothing yet"}`] : []),
         ...(step.assign ? [`assign: ${Object.keys(step.assign).join(", ") || "nothing yet"}`] : []),
+        ...(step.start !== undefined ? [`start: ${step.start || "nothing yet"}`] : []),
     ];
 }
 

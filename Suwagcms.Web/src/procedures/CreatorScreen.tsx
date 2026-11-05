@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 
 import { Alert } from "@/design/alert";
 
-import { fetchFacts, fetchLayout, fetchProcedure, type Fact, type ProcedureDetail } from "./api";
+import { fetchFacts, fetchLayout, fetchProcedure, fetchProcedures, type Fact, type ProcedureDetail } from "./api";
 import { Creator } from "./Creator";
 import type { Positions } from "./layout";
 
 interface Loaded {
     detail: ProcedureDetail;
     facts: Fact[];
+    procedures: string[];
     stored: Positions;
 }
 
@@ -24,11 +25,13 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
             fetchProcedure(bot, id, controller.signal),
             fetchFacts(bot, controller.signal),
             fetchLayout(bot, id, controller.signal),
+            fetchProcedures(bot, controller.signal),
         ])
-            .then(([detail, facts, layout]) => {
+            .then(([detail, facts, layout, list]) => {
                 setLoaded({
                     detail,
                     facts,
+                    procedures: list.procedures.map((procedure) => procedure.id),
                     stored: Object.fromEntries(
                         Object.entries(layout.positions).map(([name, at]) => [name, { x: Number(at.x), y: Number(at.y) }]),
                     ),
@@ -50,5 +53,5 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
         );
     }
     if (loaded === null) return <p className="p-4 text-muted-foreground">Loading {id}…</p>;
-    return <Creator bot={bot} id={id} initial={loaded.detail} facts={loaded.facts} stored={loaded.stored} />;
+    return <Creator bot={bot} id={id} initial={loaded.detail} facts={loaded.facts} procedures={loaded.procedures} stored={loaded.stored} />;
 }

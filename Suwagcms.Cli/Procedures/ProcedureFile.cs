@@ -77,7 +77,13 @@ internal static class ProcedureFile
         }
         if (value is "" or "~" or "null")
         {
-            return key == "listen" ? new JsonObject() : null;
+            return key switch
+            {
+                "listen" => new JsonObject(),
+                // Why: a block left empty is work still to do, which a save lists; a null would make it no block at all.
+                "start" => "",
+                _ => null,
+            };
         }
         if (key == "known" && parent != "assign" && value is "true" or "false")
         {

@@ -2083,6 +2083,12 @@
               "type": "string"
             }
           },
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "next": {
             "oneOf": [
               {

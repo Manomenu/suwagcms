@@ -16,6 +16,7 @@ import {
     removeRule,
     renameStep,
     setBlock,
+    startable,
     stepOrder,
     toSave,
     valuesOffered,
@@ -120,6 +121,16 @@ describe("the draft", () => {
 
         expect(draft.steps["collect"]?.next).toEqual([{ when: {}, to: "collect" }, { to: "say" }]);
         expect(edgesOf(draft).map((edge) => `${edge.id}->${edge.target}`)).toEqual(["collect:rule-0->collect", "collect:rule-1->say"]);
+    });
+
+    it("AC-procedure-creator-18: a start step keeps its target, and conversation and the procedure itself are not offered", () => {
+        let draft = addStep(empty(), "start").draft;
+        expect(toSave(draft).steps).toEqual({ start: { start: "" } });
+        draft = setBlock(draft, "start", { start: "documentsList" });
+        const saved = toSave(draft);
+
+        expect(saved.steps).toEqual({ start: { start: "documentsList" } });
+        expect(startable(["conversation", "documentsList", "orderValuation"], "orderValuation")).toEqual(["documentsList"]);
     });
 
     it("AC-procedure-creator-8: range is offered only for an int fact, and oneOf offers an enum's values", () => {

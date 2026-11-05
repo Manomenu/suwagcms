@@ -27,7 +27,11 @@ internal static class ProcedureFactRules
             facts.Count == 0
                 ? "The bot has no facts yet: add one first."
                 : $"Facts: {string.Join(", ", facts.Order(StringComparer.Ordinal))}.";
-        foreach (var reference in ReferenceWalker.From(procedure).Where(reference => !facts.Contains(reference.To.Id)))
+        foreach (
+            var reference in ReferenceWalker
+                .From(procedure)
+                .Where(reference => reference.To.Kind == ResourceKind.GlobalFact && !facts.Contains(reference.To.Id))
+        )
         {
             yield return Make(
                 procedure,

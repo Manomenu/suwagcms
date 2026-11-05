@@ -38,6 +38,7 @@ public static class MistakeCodes
     public const string ReferenceMalformed = "reference.malformed";
     public const string ReferenceLoop = "reference.loop";
     public const string FactCollectNotWritable = "fact.collect.notWritable";
+    public const string StartTargetConversation = "start.target.conversation";
     public const string ConditionKindInvalid = "condition.kind.invalid";
     public const string ConditionTypeMisfit = "condition.type.misfit";
     public const string ConditionValueInvalid = "condition.value.invalid";

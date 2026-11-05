@@ -7,7 +7,19 @@ import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 
 import type { Fact } from "./api";
-import { addRule, collectable, connect, disconnect, deleteStep, markFirst, renameStep, setBlock, valuesOffered, type Draft } from "./draft";
+import {
+    addRule,
+    collectable,
+    connect,
+    disconnect,
+    deleteStep,
+    markFirst,
+    renameStep,
+    setBlock,
+    startable,
+    valuesOffered,
+    type Draft,
+} from "./draft";
 import { RuleEditor, TargetSelect } from "./RuleEditor";
 
 function NoFacts({ bot, onLeave }: { bot: string; onLeave: (href: string) => void }) {
@@ -155,21 +167,49 @@ function AssignForm({
     );
 }
 
+function StartForm({ target, offered, onChange }: { target: string; offered: string[]; onChange: (start: string) => void }) {
+    // Why: a target the step already names stays visible even when it is not offered, so opening a procedure never hides what is stored.
+    const options = offered.includes(target) || target === "" ? offered : [target, ...offered];
+    return (
+        <label className="flex flex-col gap-1 text-sm font-medium">
+            Start this procedure
+            <Select
+                className="w-full"
+                value={target}
+                onChange={(event) => {
+                    onChange(event.target.value);
+                }}
+            >
+                <option value="">(choose)</option>
+                {options.map((id) => (
+                    <option key={id} value={id}>
+                        {id}
+                    </option>
+                ))}
+            </Select>
+        </label>
+    );
+}
+
 /** The form of the selected step: its name, its blocks and its next. Every control writes into the draft; none of them judges it. */
 export function StepForm({
     bot,
+    id,
     name,
     draft,
     facts,
+    procedures,
     edit,
     onRenamed,
     onDeleted,
     onLeave,
 }: {
     bot: string;
+    id: string;
     name: string;
     draft: Draft;
     facts: Fact[];
+    procedures: string[];
     edit: (change: (draft: Draft) => Draft) => void;
     onRenamed: (name: string) => void;
     onDeleted: () => void;
@@ -248,6 +288,15 @@ export function StepForm({
                     onLeave={onLeave}
                     onChange={(assign) => {
                         edit((current) => setBlock(current, name, { assign }));
+                    }}
+                />
+            )}
+            {step.start !== undefined && (
+                <StartForm
+                    target={step.start}
+                    offered={startable(procedures, id)}
+                    onChange={(start) => {
+                        edit((current) => setBlock(current, name, { start }));
                     }}
                 />
             )}

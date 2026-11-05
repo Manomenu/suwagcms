@@ -58,7 +58,7 @@ public static class DeleteGuard
         );
     }
 
-    private static string Noun(ResourceKind kind) =>
+    internal static string Noun(ResourceKind kind) =>
         kind switch
         {
             ResourceKind.GlobalFact => "fact",

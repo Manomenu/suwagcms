@@ -14,6 +14,8 @@ public sealed record ProcedureStep
 
     public IReadOnlyDictionary<string, string>? Assign { get; init; }
 
+    public string? Start { get; init; }
+
     public NextSteps? Next { get; init; }
 
     [JsonExtensionData]
@@ -28,6 +30,7 @@ public sealed record ProcedureStep
                 Collect is null ? null : new CollectBlock(Collect),
                 Say is null ? null : new SayBlock(Say),
                 Assign is null ? null : new AssignBlock(Assign),
+                Start is null ? null : new StartBlock(Start),
             }.OfType<Block>(),
         ];
 }

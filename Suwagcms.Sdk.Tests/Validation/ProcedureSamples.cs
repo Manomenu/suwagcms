@@ -137,6 +137,7 @@ internal static class ProcedureSamples
                         },
                         ["none"] = new JsonObject(),
                         ["blank"] = new JsonObject { ["say"] = " " },
+                        ["toBase"] = new JsonObject { ["start"] = "conversation" },
                         ["emptyAssign"] = new JsonObject { ["assign"] = new JsonObject() },
                         ["ask"] = new JsonObject
                         {

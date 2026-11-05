@@ -6,5 +6,7 @@ public sealed record ListenBlock : Block
 
     public override IEnumerable<BlockFact> Facts => [];
 
+    public override IEnumerable<BlockTarget> Targets => [];
+
     public override BlockGap? Gap => null;
 }

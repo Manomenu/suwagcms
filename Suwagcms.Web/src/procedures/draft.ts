@@ -2,8 +2,8 @@
 // in the shape the server accepts, and the server's dry run says what is wrong with it.
 import type { Fact, ProcedureDetail, SaveProcedure } from "./api";
 
-export type BlockName = "listen" | "collect" | "say" | "assign";
-export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign"];
+export type BlockName = "listen" | "collect" | "say" | "assign" | "start";
+export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "start"];
 
 export interface Condition {
     oneOf?: string[];
@@ -24,6 +24,8 @@ export interface Step {
     collect?: string[];
     say?: string;
     assign?: Record<string, string>;
+    /** The id of the procedure this step starts. */
+    start?: string;
     /** A step's name, or rules whose last one is the default. A target of "" is a rule not yet connected. */
     next?: string | Rule[];
 }
@@ -63,6 +65,7 @@ function stepOf(wire: Wire): Step {
     if (wire.collect) step.collect = [...wire.collect];
     if (wire.say != null) step.say = wire.say;
     if (wire.assign) step.assign = { ...wire.assign };
+    if (wire.start != null) step.start = wire.start;
     const next = wire.next;
     if (typeof next === "string") step.next = next;
     else if (Array.isArray(next)) step.next = next.map(ruleOf);
@@ -92,6 +95,7 @@ export function toSave(draft: Draft): SaveProcedure {
                     ...(step.collect ? { collect: step.collect } : {}),
                     ...(step.say === undefined ? {} : { say: step.say }),
                     ...(step.assign ? { assign: step.assign } : {}),
+                    ...(step.start === undefined ? {} : { start: step.start }),
                     ...(step.next === undefined ? {} : { next: step.next }),
                 },
             ]),
@@ -188,7 +192,13 @@ function uniqueName(draft: Draft, base: string): string {
 
 export function addStep(draft: Draft, block: BlockName): { draft: Draft; name: string } {
     const name = uniqueName(draft, block);
-    const empty: Record<BlockName, Step> = { listen: { listen: true }, collect: { collect: [] }, say: { say: "" }, assign: { assign: {} } };
+    const empty: Record<BlockName, Step> = {
+        listen: { listen: true },
+        collect: { collect: [] },
+        say: { say: "" },
+        assign: { assign: {} },
+        start: { start: "" },
+    };
     return { draft: { ...draft, steps: { ...draft.steps, [name]: empty[block] } }, name };
 }
 
@@ -297,6 +307,11 @@ export function kindOf(condition: Condition): ConditionKind {
 /** The facts a collect may use: a fact only a procedure assigns is not asked of the customer. */
 export function collectable(facts: Fact[]): Fact[] {
     return facts.filter((fact) => fact.writableBy !== "assign");
+}
+
+/** The procedures a start may target: not the base of every conversation, and not the procedure itself, which would be a loop. */
+export function startable(procedures: string[], self: string): string[] {
+    return procedures.filter((id) => id !== "conversation" && id !== self);
 }
 
 export function valuesOffered(fact: Pick<Fact, "type" | "values"> | undefined): string[] | null {

@@ -12,6 +12,7 @@ internal static class ProcedureShapeRules
         Save(MistakeCodes.StepBlockUnknown, UnknownBlocks),
         Save(MistakeCodes.StepBlockMultiple, MultipleBlocks),
         Save(MistakeCodes.StepMissing, MissingSteps),
+        Save(MistakeCodes.StartTargetConversation, StartsConversation),
     ];
 
     private static Rule Save(string code, Func<Procedure, IEnumerable<Mistake>> check) =>
@@ -109,6 +110,19 @@ internal static class ProcedureShapeRules
             }
         }
     }
+
+    private static IEnumerable<Mistake> StartsConversation(Procedure procedure) =>
+        procedure
+            .Steps.Where(step => step.Value.Start == Procedure.ConversationId)
+            .Select(step =>
+                Make(
+                    procedure,
+                    MistakeCodes.StartTargetConversation,
+                    $"steps.{step.Key}.start",
+                    $"'start' of step '{step.Key}' in '{procedure.Id}' names '{Procedure.ConversationId}', which cannot be started: it is the base of every conversation.",
+                    "End the procedure here instead, by leaving out 'next'."
+                )
+            );
 
     private static Mistake Missing(Procedure procedure, string path, string what) =>
         Make(procedure, MistakeCodes.StepMissing, path, $"{what} names no step of '{procedure.Id}'.", ProcedureMistake.StepList(procedure));
