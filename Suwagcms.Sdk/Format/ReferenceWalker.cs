@@ -22,7 +22,15 @@ public static class ReferenceWalker
         }
     }
 
+    // Why: a local fact is contained in its procedure, so a use of one is no reference to another resource and is invisible outside.
     public static IEnumerable<Reference> From(Procedure procedure)
+    {
+        ArgumentNullException.ThrowIfNull(procedure);
+        return Uses(procedure).Where(reference => !procedure.Locals.ContainsKey(reference.To.Id));
+    }
+
+    // Why: every fact a step names, local or global, for the rules that check a use against the fact it means.
+    public static IEnumerable<Reference> Uses(Procedure procedure)
     {
         ArgumentNullException.ThrowIfNull(procedure);
         var from = new ResourceRef(ResourceKind.Procedure, procedure.Id);

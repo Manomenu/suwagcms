@@ -195,7 +195,7 @@ public sealed class ProcedureRulesTests
 
         Assert.Equal(["steps.a.collect[0]", "steps.b.assign.nowhere", "steps.c.next[0].when.gone"], found.Select(mistake => mistake.Path));
         Assert.Contains(
-            "'collect' of step 'a' names fact 'customer.cty', which this bot does not have",
+            "'collect' of step 'a' in 'p' names fact 'customer.cty', which this procedure does not see",
             found[0].Message,
             StringComparison.Ordinal
         );

@@ -424,7 +424,7 @@ Saved orderValuation, revision 1. Not ready for a version, 2 mistakes:
   <h3>2. A mistake that is refused right away</h3>
   <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml
 Refused, 1 mistake:
-  reference.missing  'collect' of step 'ask' names fact 'customer.cty', which this bot does not have. Facts: customer.city, order.kind.</div>
+  reference.missing  'collect' of step 'ask' in 'orderValuation' names fact 'customer.cty', which this procedure does not see. Facts it sees: customer.city, order.kind. Local facts of other procedures are not visible.</div>
   <h3>3. A fact only an assign may write</h3>
   <div class="term">Refused, 1 mistake:
   fact.collect.notWritable  'collect' of step 'ask' names fact 'x', which only an assign step may write. Remove it from collect, or give the fact 'writableBy: set'.</div>

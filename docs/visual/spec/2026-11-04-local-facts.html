@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Local facts</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 14 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>procedure-model</code></span>
@@ -381,7 +381,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>13</b><span>criteria</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -398,7 +397,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>A local fact in use cannot be taken away from under a step.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Editing local facts in the web: a panel in the creator, waiting in <code>procedure-creator</code>'s criteria after this feature.</li>
+      <li>Editing local facts on the Facts screen: they are edited in the panel of the procedure's creator, a criterion of <code>procedure-creator</code>.</li>
       <li>Commands for one local fact: a procedure is saved as one whole file, as <code>procedure-model</code> decided.</li>
       <li>Passing a local fact to the customer: <code>inform-block</code>. Filling one from an action: <code>action-block</code>.</li>
       <li>Refusing an edit that narrows a local fact a step relies on: <code>edit-guard</code>.</li>
@@ -445,7 +444,7 @@ order.kind     enum: house, flat   correct</div>
     <tr><td>a save removes a local fact and every use of it</td><td>accepted: the result is sound</td></tr>
     <tr><td>a local fact has a global fact's name</td><td>refused, whichever was saved second; see below</td></tr>
     <tr><td>a procedure is deleted</td><td>its local facts go with it, and their names are free for a global fact</td></tr>
-    <tr><td>a local fact no step uses</td><td>allowed at both stages (see Open questions)</td></tr>
+    <tr><td>a local fact no step uses</td><td>allowed at both stages</td></tr>
     <tr><td>a <code>collect</code> naming only local facts</td><td>the procedure still needs <code>whenStalled</code> before a version</td></tr>
   </table>
   <h3>Names shared with global facts</h3>
@@ -477,6 +476,8 @@ whenStalled:
     <li>Both directions of the “same name as a global fact” clash live here, as the <code>global-facts</code> spec already says; <code>edit-guard</code> keeps the prefix clash, which needs no local fact to exist. One rule on the result covers both directions, so splitting it across two specs would only duplicate its check.</li>
     <li>No commands for a single local fact: an agent edits the procedure's file, which is how it already reasons about a procedure.</li>
     <li>The global name <code>procedureId.name</code> is how a bot may report a local fact outside the procedure. In the format a step never writes it, so authors have one name to learn.</li>
+    <li>A local fact no step uses is allowed at both stages: it is harmless at run time, and the same as a global fact nobody uses.</li>
+    <li>A name clash is one mistake on the global fact, naming every procedure that holds the name, whichever side was saved second.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -500,17 +501,6 @@ whenStalled:
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout assumption"><p>A bot on an SDK older than this field ignores <code>localFacts</code> as an unknown field, and its validator then reports each step using one as <code>reference.missing</code>. That stops the load instead of misleading a customer, so the field does not raise <code>formatVersion</code>.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Is a local fact no step uses a mistake?</legend>
-      <p class="why">README and Suwchatbot's reader do not ask for a rule, and one more rule means one more mistake while a procedure is being built. It would catch leftovers, though. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="allow"><span><b>No: it is allowed at both stages</b><small>harmless at run time, and the same as a global fact nobody uses</small></span></label>
-      <label><input type="radio" value="version"><span><b>Yes: a <code>Version</code> mistake</b><small>catches leftovers, but differs from Suwchatbot's reader and adds a rule with no proven need</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

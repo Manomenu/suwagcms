@@ -139,7 +139,7 @@ internal static class ProcedureSaveCommands
     private static Option<string> FileOption() =>
         new("--file")
         {
-            Description = "A YAML or JSON file with the whole procedure: id, description, firstStep, steps, whenStalled.",
+            Description = "A YAML or JSON file with the whole procedure: id, description, firstStep, steps, whenStalled, localFacts.",
             Required = true,
         };
 

@@ -22,18 +22,18 @@ internal static class ProcedureFactRules
 
     private static IEnumerable<Mistake> MissingFacts(BotDefinition definition, Procedure procedure)
     {
-        var facts = definition.Facts.Select(fact => fact.Name).ToHashSet(StringComparer.Ordinal);
+        var facts = definition.Facts.Select(fact => fact.Name).Concat(procedure.Locals.Keys).ToHashSet(StringComparer.Ordinal);
         var known =
             facts.Count == 0
-                ? "The bot has no facts yet: add one first."
-                : $"Facts: {string.Join(", ", facts.Order(StringComparer.Ordinal))}.";
-        foreach (var reference in ReferenceWalker.From(procedure).Where(reference => !facts.Contains(reference.To.Id)))
+                ? "The procedure sees no facts yet: add one first."
+                : $"Facts it sees: {string.Join(", ", facts.Order(StringComparer.Ordinal))}. Local facts of other procedures are not visible.";
+        foreach (var reference in ReferenceWalker.Uses(procedure).Where(reference => !facts.Contains(reference.To.Id)))
         {
             yield return Make(
                 procedure,
                 MistakeCodes.ReferenceMissing,
                 reference.Path,
-                $"{Where(reference)} names fact '{reference.To.Id}', which this bot does not have.",
+                $"{Where(reference)} in '{procedure.Id}' names fact '{reference.To.Id}', which this procedure does not see.",
                 known
             );
         }
@@ -41,9 +41,9 @@ internal static class ProcedureFactRules
 
     private static IEnumerable<Mistake> NotWritable(BotDefinition definition, Procedure procedure)
     {
-        foreach (var reference in ReferenceWalker.From(procedure).Where(reference => reference.Use == FactUse.Collect))
+        foreach (var reference in ReferenceWalker.Uses(procedure).Where(reference => reference.Use == FactUse.Collect))
         {
-            if (Fact(definition, reference.To.Id) is { WritableBy: FactWriters.Assign })
+            if (Fact(definition, procedure, reference.To.Id) is { WritableBy: FactWriters.Assign })
             {
                 yield return Make(
                     procedure,
@@ -51,7 +51,14 @@ internal static class ProcedureFactRules
                     reference.Path,
                     $"{Where(reference)} names fact '{reference.To.Id}', which only an assign step may write.",
                     "Remove it from collect, or give the fact 'writableBy: set'.",
-                    [new RelatedResource(reference.To, "writableBy")]
+                    [
+                        procedure.Locals.ContainsKey(reference.To.Id)
+                            ? new RelatedResource(
+                                new ResourceRef(ResourceKind.Procedure, procedure.Id),
+                                $"localFacts.{reference.To.Id}.writableBy"
+                            )
+                            : new RelatedResource(reference.To, "writableBy"),
+                    ]
                 );
             }
         }
@@ -74,7 +81,7 @@ internal static class ProcedureFactRules
     {
         foreach (var entry in Conditions(procedure).Where(entry => entry.Condition.Range is not null))
         {
-            if (Fact(definition, entry.Fact) is { } fact && fact.Type != FactTypes.WholeNumber)
+            if (Fact(definition, procedure, entry.Fact) is { } fact && fact.Type != FactTypes.WholeNumber)
             {
                 yield return Make(
                     procedure,
@@ -91,7 +98,7 @@ internal static class ProcedureFactRules
     {
         foreach (var entry in Conditions(procedure))
         {
-            if (Fact(definition, entry.Fact) is not { } fact)
+            if (Fact(definition, procedure, entry.Fact) is not { } fact)
             {
                 continue;
             }
@@ -155,7 +162,7 @@ internal static class ProcedureFactRules
         {
             foreach (var (name, value) in step.Assign ?? new Dictionary<string, string>())
             {
-                if (Fact(definition, name) is { } fact && !FactValues.Accepts(fact, value))
+                if (Fact(definition, procedure, name) is { } fact && !FactValues.Accepts(fact, value))
                 {
                     yield return Make(
                         procedure,
@@ -183,7 +190,9 @@ internal static class ProcedureFactRules
             )
         );
 
-    private static GlobalFact? Fact(BotDefinition definition, string name) => definition.Facts.FirstOrDefault(fact => fact.Name == name);
+    // Why: inside a procedure a short name means its own local fact first; the name clash rule keeps that from hiding a global one.
+    private static GlobalFact? Fact(BotDefinition definition, Procedure procedure, string name) =>
+        procedure.Locals.TryGetValue(name, out var local) ? local.Named(name) : definition.Facts.FirstOrDefault(fact => fact.Name == name);
 
     private static string Where(Reference reference) =>
         reference.Use switch

@@ -28,11 +28,17 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         // Why: one pass at the Version stage finds both kinds, since it runs every Save rule too; only the Save ones refuse.
         var assembled = ResourceKinds.Assemble(after.Values);
         var found = DefinitionValidator.Validate(assembled, ValidationStage.Version);
-        if (found.Where(mistake => mistake.Stage == ValidationStage.Save).ToList() is { Count: > 0 } mistakes)
+        // Why: an edit is judged by the rules on its result and only worded for its cause, so the same break is refused however it came about.
+        var edited = EditGuard.Reshape(
+            ResourceKinds.Assemble(before.Values),
+            assembled,
+            [.. found.Where(mistake => mistake.Stage == ValidationStage.Save)]
+        );
+        if (edited.Count > 0)
         {
             // Why: a delete that leaves references behind is refused by the same rule as a typo, worded for the resource being deleted.
             var removed = changes.OfType<Remove>().Select(change => change.Target).ToList();
-            return new EditResult.Refused(DeleteGuard.Reshape(assembled, removed, mistakes));
+            return new EditResult.Refused(DeleteGuard.Reshape(assembled, removed, edited));
         }
 
         var touched = changes.Select(change => change.Target).Distinct().ToList();

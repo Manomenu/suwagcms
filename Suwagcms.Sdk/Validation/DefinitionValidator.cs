@@ -12,6 +12,7 @@ public static class DefinitionValidator
     [
         DuplicateIdRule.Rule,
         .. FactRules.All,
+        .. FactNameRules.All,
         .. KnowledgeBaseRules.All,
         .. ArticleRules.All,
         .. ReferenceRules.All,

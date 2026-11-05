@@ -20,7 +20,19 @@ import { Button } from "@/design/button";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
 import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
-import { addStep, BLOCKS, connect, deleteStep, disconnect, edgesOf, stepOrder, toSave, type BlockName, type Draft } from "./draft";
+import {
+    addStep,
+    BLOCKS,
+    connect,
+    deleteStep,
+    disconnect,
+    edgesOf,
+    factsSeen,
+    stepOrder,
+    toSave,
+    type BlockName,
+    type Draft,
+} from "./draft";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
 import { MistakeList } from "./MistakeList";
 import { targetOf, stepsWithMistakes } from "./mistakes";
@@ -300,7 +312,7 @@ function CreatorBody({
                             bot={bot}
                             name={selected}
                             draft={draft}
-                            facts={facts}
+                            facts={factsSeen(draft, facts)}
                             edit={edit}
                             onRenamed={setSelected}
                             onDeleted={() => {
