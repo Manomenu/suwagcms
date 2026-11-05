@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-version-create.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-version-create.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Creating a version</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 26 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>sdk-validator</code>, <code>global-facts</code>, <code>articles</code>, <code>procedure-model</code></span>
@@ -383,7 +383,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>15</b><span>criteria</span></div>
     <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -443,7 +442,7 @@ flowchart LR
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
     <tr><td>the numbers</td><td>per bot, from 1, one higher each time; a refused attempt uses no number</td></tr>
-    <tr><td>the working state equals the latest version</td><td>refused with a mistake saying nothing has changed since that version (assumption, see Open questions)</td></tr>
+    <tr><td>the working state equals the latest version</td><td>refused with a mistake saying nothing has changed since that version (accepted assumption, see Decisions)</td></tr>
     <tr><td>a dry run</td><td>lists the same mistakes, or says a version could be created, and creates nothing</td></tr>
     <tr><td>a save arriving while a version is being created</td><td>they run one after the other, so the version holds a state that really existed</td></tr>
     <tr><td>two creations at the same moment</td><td>the first succeeds; the second, finding nothing changed, is refused</td></tr>
@@ -471,6 +470,7 @@ flowchart LR
   <ul>
     <li>Creating a version is separate from pushing it (README), so a version can wait until someone has checked it.</li>
     <li>A version is one document, with a fixed order and form, so its hash means something and a later comparison shows only real changes.</li>
+    <li>Nothing changed since the latest version: creating is refused with a mistake saying so (accepted assumption), so a retrying agent or a double click adds no identical version. The state is compared with the latest version by the digest the document would have under that version's number.</li>
     <li>Creating a version touches only the CMS and never calls a bot, so its short hold on the bot's saves cannot wait on a network.</li>
   </ul>
 </section>
@@ -512,17 +512,6 @@ flowchart LR
   <div class="callout warn"><p>Versions are kept for good and each holds the whole definition, so storage grows with every version of a large knowledge base. README asks for this; nobody has measured it, and no criterion fixes a limit.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What happens when nothing has changed since the latest version?</legend>
-      <p class="why">An agent retrying a step, or a person clicking twice, would otherwise add identical versions, each looking like a change on the bot's page. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="refuse"><span><b>Refuse, with a mistake saying nothing changed</b><small>the list stays meaningful; pushing the latest still works</small></span></label>
-      <label><input type="radio" value="allow"><span><b>Create it anyway</b><small>simple, but the list fills with identical versions</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

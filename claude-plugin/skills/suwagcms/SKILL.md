@@ -89,8 +89,11 @@ it cannot be combined with `--json`. It only works from a shell that can reach t
 - `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused.
 - `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
 - `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
+- `suwagcms versions list` - list the versions of the bot, newest first, with date, counts of resources and digest; `--open` opens the Versions screen in the web app.
+- `suwagcms versions create [--dry-run]` - validate the bot's whole working state and freeze it as the next numbered version, which never changes. Refused (exit code `1`) with every mistake while anything is unfinished, and when nothing has changed since the latest version. It never contacts the bot; sending a version to the bot is a separate step. `--dry-run` answers the same, creates nothing and uses no number.
+- `suwagcms versions show <number>` - show one version with its document exactly as stored; `--json` gives it with its digest.
 
-`facts add`, `facts edit`, `facts delete`, `kb add`, `kb rename`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit` and `procedures delete` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
+`facts add`, `facts edit`, `facts delete`, `kb add`, `kb rename`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
 
