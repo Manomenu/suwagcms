@@ -6,8 +6,22 @@ import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 
-import type { Fact } from "./api";
-import { addRule, collectable, connect, disconnect, deleteStep, markFirst, renameStep, setBlock, valuesOffered, type Draft } from "./draft";
+import type { ActionView, Fact } from "./api";
+import {
+    addRule,
+    collectable,
+    connect,
+    disconnect,
+    deleteStep,
+    FAILURE,
+    factsThatFit,
+    markFirst,
+    renameStep,
+    setBlock,
+    valuesOffered,
+    type Draft,
+    type Step,
+} from "./draft";
 import { RuleEditor, TargetSelect } from "./RuleEditor";
 
 function NoFacts({ bot, onLeave }: { bot: string; onLeave: (href: string) => void }) {
@@ -155,12 +169,135 @@ function AssignForm({
     );
 }
 
+function MappingRows({
+    kind,
+    title,
+    fields,
+    mapped,
+    facts,
+    onChange,
+}: {
+    kind: "with" | "results";
+    title: string;
+    fields: NonNullable<ActionView["parameters"]>;
+    mapped: Record<string, string>;
+    facts: Fact[];
+    onChange: (mapped: Record<string, string>) => void;
+}) {
+    const names = Object.keys(fields);
+    if (names.length === 0) return null;
+    return (
+        <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium">{title}</legend>
+            {names.map((name) => {
+                const picked = mapped[name] ?? "";
+                const offered = factsThatFit(kind, fields[name] ?? {}, facts).map((fact) => fact.name);
+                // Why: a fact the step already names stays visible even when it no longer fits, so opening a procedure never hides what is stored.
+                const options = picked === "" || offered.includes(picked) ? offered : [...offered, picked];
+                return (
+                    <label key={name} className="flex items-center gap-1 text-sm">
+                        <span className="w-28 shrink-0 truncate" title={name}>
+                            {name}
+                        </span>
+                        <Select
+                            aria-label={`${title}: ${name}`}
+                            className="flex-1"
+                            value={picked}
+                            onChange={(event) => {
+                                const { [name]: _, ...rest } = mapped;
+                                onChange(event.target.value === "" ? rest : { ...rest, [name]: event.target.value });
+                            }}
+                        >
+                            <option value="">{kind === "with" ? "(choose a fact)" : "(ignored)"}</option>
+                            {options.map((option) => (
+                                <option key={option} value={option}>
+                                    {option}
+                                </option>
+                            ))}
+                        </Select>
+                    </label>
+                );
+            })}
+        </fieldset>
+    );
+}
+
+function ActionStepForm({
+    name,
+    step,
+    draft,
+    facts,
+    actions,
+    edit,
+}: {
+    name: string;
+    step: Step;
+    draft: Draft;
+    facts: Fact[];
+    actions: ActionView[];
+    edit: (change: (draft: Draft) => Draft) => void;
+}) {
+    const chosen = actions.find((action) => action.id === step.action);
+    const ids = actions.map((action) => action.id);
+    const options = step.action === undefined || step.action === "" || ids.includes(step.action) ? ids : [...ids, step.action];
+    return (
+        <>
+            <label className="flex flex-col gap-1 text-sm font-medium">
+                Action
+                <Select
+                    aria-label="Action"
+                    value={step.action ?? ""}
+                    onChange={(event) => {
+                        edit((current) => setBlock(current, name, { action: event.target.value }));
+                    }}
+                >
+                    <option value="">(choose an action)</option>
+                    {options.map((id) => (
+                        <option key={id} value={id}>
+                            {id}
+                        </option>
+                    ))}
+                </Select>
+            </label>
+            <MappingRows
+                kind="with"
+                title="Parameters"
+                fields={chosen?.parameters ?? {}}
+                mapped={step.with ?? {}}
+                facts={facts}
+                onChange={(mapped) => {
+                    edit((current) => setBlock(current, name, { with: mapped }));
+                }}
+            />
+            <MappingRows
+                kind="results"
+                title="Results"
+                fields={chosen?.results ?? {}}
+                mapped={step.results ?? {}}
+                facts={facts}
+                onChange={(mapped) => {
+                    edit((current) => setBlock(current, name, { results: mapped }));
+                }}
+            />
+            <TargetSelect
+                label="On failure, go to"
+                value={step.onFailure ?? ""}
+                draft={draft}
+                onChange={(to) => {
+                    edit((current) => (to === "" ? disconnect(current, name, FAILURE) : connect(current, name, FAILURE, to)));
+                }}
+            />
+        </>
+    );
+}
+
 /** The form of the selected step: its name, its blocks and its next. Every control writes into the draft; none of them judges it. */
 export function StepForm({
     bot,
     name,
     draft,
     facts,
+    actions,
     edit,
     onRenamed,
     onDeleted,
@@ -170,6 +307,7 @@ export function StepForm({
     name: string;
     draft: Draft;
     facts: Fact[];
+    actions: ActionView[];
     edit: (change: (draft: Draft) => Draft) => void;
     onRenamed: (name: string) => void;
     onDeleted: () => void;
@@ -250,6 +388,9 @@ export function StepForm({
                         edit((current) => setBlock(current, name, { assign }));
                     }}
                 />
+            )}
+            {step.action !== undefined && (
+                <ActionStepForm name={name} step={step} draft={draft} facts={facts} actions={actions} edit={edit} />
             )}
             <div className="flex flex-col gap-2">
                 <h3 className="text-base font-semibold">Next</h3>

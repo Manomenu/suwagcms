@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The CMS only holds the definition. The bot makes the call, with secret values from its own environment, and the SDK gives every .NET bot the same meaning of “run this action”: what is sent, what comes back and what counts as a failure. An action never names a fact.</p>
   </div>
   <div class="stats">
-    <div><b>19</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>20</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -545,13 +544,7 @@ implementation:
     <li><code>AC-http-actions-17</code> An action's own timeout, or 10 seconds without one, ends a call to a test service that does not answer, as a failure saying so.</li>
     <li><code>AC-http-actions-18</code> No reason returned by a run holds a secret's value, even when the test service repeats it in its answer.</li>
     <li><code>AC-http-actions-19</code> Each <code>suwagcms actions</code> command has its line in the plugin's main skill, which gives the file format and says a secret is written as a reference.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>action-block</code>:</b> the view of an action shows the procedures that use it.</li>
+    <li><code>AC-http-actions-20</code> The view of an action shows the procedures that use it.</li>
   </ul>
 </section>
 <section data-role="risks">

@@ -104,7 +104,7 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 
 - `suwagcms procedures list` - list the procedures of the bot with what still stops each from becoming a version, and what stops the bot as a whole (no `conversation`); `--open` opens the Procedures screen in the web app.
 - `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`; `--open` opens it in the web creator instead.
-- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused. `--open` opens the saved procedure in the web creator, laid out automatically when no one has placed its nodes.
+- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results` and `onFailure` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused. `--open` opens the saved procedure in the web creator, laid out automatically when no one has placed its nodes.
 - `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
 - `suwagcms procedures layout <id> [--set <step>=<x>,<y>]... [--clear]` - show where the web creator draws each step, set some positions, or forget them all so the creator arranges the graph itself. Positions are no part of the procedure: no revision changes and no version holds them.
 - `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
@@ -113,8 +113,8 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms actions add --file <file>` - add an action from a YAML or JSON file that holds the whole of it (see Action file below). A secret is written as a reference, `{secret:NAME}`, never as its value. The CMS never calls the action's URL: the bot does. `implementation: code` is refused with `action.code.readOnly`: a code action comes from the bot's declaration.
 - `suwagcms actions edit <id> --file <file> [--if-revision n]` - replace an action with the whole of a file. A code action is read-only: change it in the bot's code and deploy (refused with `action.code.readOnly`).
 - `suwagcms actions delete <id> [--if-revision n]` - delete an action that no procedure uses. A code action is read-only too: the CMS removes its copy once the bot stops declaring it and no step uses it.
-- `suwagcms usage <kind> <id>` - with `<kind>` fact, article or procedure: show what uses a resource ("Used by") and what it uses ("Uses"), each with the field that holds the reference; `--json` gives both as data. Ask it before a delete; it changes nothing.
-- `suwagcms rename <kind> <id> <newId> [--if-revision n] [--dry-run]` - with `<kind>` fact, kb, article or procedure: change a resource's id and rewrite every reference to it, all or nothing: a link's target in `content` and `llmGuide` (its label and all other text stay byte for byte), an article's `knowledgeBase`, a fact's name in each `collect`, `assign` and `when`. Each rewritten resource gets a new revision, so a save based on an older one is refused; versions already created keep the old id, and plain text naming the resource is not changed. `conversation` cannot change its id. `--dry-run` lists each referrer and field; `--json` gives them as data; `--open` opens the resource at its new address.
+- `suwagcms usage <kind> <id>` - with `<kind>` fact, article, procedure or action: show what uses a resource ("Used by") and what it uses ("Uses"), each with the field that holds the reference; `--json` gives both as data. Ask it before a delete; it changes nothing.
+- `suwagcms rename <kind> <id> <newId> [--if-revision n] [--dry-run]` - with `<kind>` fact, kb, article, procedure or action: change a resource's id and rewrite every reference to it, all or nothing: a link's target in `content` and `llmGuide` (its label and all other text stay byte for byte), an article's `knowledgeBase`, a fact's name in each `collect`, `assign` and `when`. Each rewritten resource gets a new revision, so a save based on an older one is refused; versions already created keep the old id, and plain text naming the resource is not changed. `conversation` cannot change its id. `--dry-run` lists each referrer and field; `--json` gives them as data; `--open` opens the resource at its new address.
 - `suwagcms versions list` - list the versions of the bot, newest first, with date, counts of resources and digest; `--open` opens the Versions screen in the web app.
 - `suwagcms versions create [--dry-run]` - validate the bot's whole working state and freeze it as the next numbered version, which never changes. Refused (exit code `1`) with every mistake while anything is unfinished, and when nothing has changed since the latest version. It never contacts the bot; `suwagcms push` sends it. `--dry-run` answers the same, creates nothing and uses no number.
 - `suwagcms versions show <number>` - show one version with its document exactly as stored; `--json` gives it with its digest.
@@ -135,6 +135,24 @@ Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <comma
 
 Show what a push will change first: `suwagcms versions status` gives the version the bot has and the latest, and
 `suwagcms diff <has> <latest>` compares them. Say what it changes for customers, then push.
+
+## Action step
+
+A procedure's step runs an action with the `action` block: `with` maps each parameter to the fact that gives its value, `results` maps a result to the fact it writes (one left out is ignored), `onFailure` names the step to go to when the action fails, and `next` says where to go on success. On a failure no fact is written.
+
+```yaml
+checkAddress:
+  action: checkServiceability
+  with: { address: customer.address }
+  results: { serviceable: isServiceable }
+  onFailure: tellItFailed
+  next:
+    - when: { isServiceable: { oneOf: [yes] } }
+      to: offerPlan
+    - to: sayNotServiceable
+```
+
+Types match strictly, judged on what the source can hold: an enum's values all among the target's, an int's range within the target's, a text's `maxLength` at most the target's, different types never (`action.mapping.tooWide`, `action.mapping.typeMismatch`). A result may write a fact with `writableBy: assign`. An unknown action or fact, or a parameter or result the action does not have, is `reference.missing`; two results into one fact is `action.mapping.resultTwice`. These refuse a save. A step with no `onFailure` or an unmapped parameter is saved and stops a version (`step.action.noOnFailure`, `step.action.unmappedParameter`). The same mapping mistakes on a code action only stop a version (`action.code.mapping`), since the bot's code can change without asking.
 
 ## Action file
 

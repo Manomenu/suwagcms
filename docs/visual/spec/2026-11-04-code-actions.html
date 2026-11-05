@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The bot's code can change without asking the CMS, so a new declaration is never refused because of what it does to the working state. What it breaks is reported, and it stops a version, not a save.</p>
   </div>
   <div class="stats">
-    <div><b>15</b><span>criteria</span></div>
-    <div><b>4</b><span>criteria after other features</span></div>
+    <div><b>19</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -510,16 +509,10 @@ implementation: code
     <li><code>AC-code-actions-13</code> A definition holding a code action passes the validator offline, with no declaration and no bot.</li>
     <li><code>AC-code-actions-14</code> The plugin's main skill says in the lines of <code>suwagcms actions</code> that a code action is read-only and where to change it.</li>
     <li><code>AC-code-actions-15</code> A version holds a bot's code actions with their contracts, alongside its HTTP actions.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>action-block</code>:</b> a procedure's step can use a code action, by the same rules of mapping and types as an HTTP action.</li>
-    <li><b>after <code>action-block</code>:</b> a mapping that does not fit a code action is a <code>Version</code> mistake, and refuses no save, including when a new declaration causes it.</li>
-    <li><b>after <code>action-block</code>:</b> a code action the declaration no longer lists, while a step uses it, stays in the CMS marked as no longer declared; saves go on working, the <code>Version</code> stage names each step, the next ask removes it once no step uses it, and asking again brings it back unmarked if the bot declares it again.</li>
-    <li><b>after <code>edit-guard</code>:</b> a change to a code action made by a declaration is not refused, even when a step maps what changed.</li>
+    <li><code>AC-code-actions-16</code> A change to a code action made by a declaration is not refused, even when a step maps what changed.</li>
+    <li><code>AC-code-actions-17</code> A procedure's step can use a code action, by the same rules of mapping and types as an HTTP action.</li>
+    <li><code>AC-code-actions-18</code> A mapping that does not fit a code action is a <code>Version</code> mistake, and refuses no save, including when a new declaration causes it.</li>
+    <li><code>AC-code-actions-19</code> A code action the declaration no longer lists, while a step uses it, stays in the CMS marked as no longer declared; saves go on working, the <code>Version</code> stage names each step, the next ask removes it once no step uses it, and asking again brings it back unmarked if the bot declares it again.</li>
   </ul>
 </section>
 <section data-role="risks">

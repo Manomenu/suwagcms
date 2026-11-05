@@ -29,7 +29,10 @@ public static class EditGuard
             if (before.Facts.FirstOrDefault(other => other.Name == fact.Name) is { } was && Differs(was, fact))
             {
                 var uses = after.Procedures.SelectMany(procedure =>
-                    ReferenceWalker.From(procedure).Where(use => use.To.Id == fact.Name).Select(use => new FactUseIn(procedure, use))
+                    ReferenceWalker
+                        .From(procedure)
+                        .Where(use => use.To == new ResourceRef(ResourceKind.GlobalFact, fact.Name))
+                        .Select(use => new FactUseIn(procedure, use))
                 );
                 Edited(new Edit(was, fact, new ResourceRef(ResourceKind.GlobalFact, fact.Name), "", [.. uses]), kept, causes);
             }
@@ -41,7 +44,10 @@ public static class EditGuard
             {
                 if (known is not null && known.Locals.TryGetValue(name, out var was) && Differs(was.Named(name), local.Named(name)))
                 {
-                    var uses = ReferenceWalker.Uses(procedure).Where(use => use.To.Id == name).Select(use => new FactUseIn(procedure, use));
+                    var uses = ReferenceWalker
+                        .Uses(procedure)
+                        .Where(use => use.To == new ResourceRef(ResourceKind.GlobalFact, name))
+                        .Select(use => new FactUseIn(procedure, use));
                     Edited(
                         new Edit(
                             was.Named(name),
@@ -56,7 +62,66 @@ public static class EditGuard
                 }
             }
         }
+        foreach (var action in after.Actions.Where(action => !action.IsCode))
+        {
+            if (before.Actions.FirstOrDefault(other => other.Id == action.Id) is { } was)
+            {
+                ActionFieldsGone(after, was, action, kept, causes);
+            }
+        }
         return [.. kept, .. causes];
+    }
+
+    // Why: a removed or retyped parameter or result breaks the steps that map it for one cause, the edit of the action, so it is said there once, with the steps listed.
+    private static void ActionFieldsGone(BotDefinition after, BotAction was, BotAction action, List<Mistake> kept, List<Mistake> causes)
+    {
+        foreach (
+            var (noun, section, old, now) in new[]
+            {
+                ("Parameter", "parameters", was.ParameterFields, action.ParameterFields),
+                ("Result", "results", was.ResultFields, action.ResultFields),
+            }
+        )
+        {
+            foreach (var (name, field) in old)
+            {
+                now.TryGetValue(name, out var left);
+                if (left is not null && left.Type == field.Type)
+                {
+                    continue;
+                }
+                var maps = section == "parameters" ? "with" : "results";
+                var places = after
+                    .Procedures.SelectMany(procedure =>
+                        procedure
+                            .Steps.Where(step =>
+                                step.Value.Action == action.Id
+                                && (maps == "with" ? step.Value.With : step.Value.Results)?.ContainsKey(name) == true
+                            )
+                            .Select(step => (procedure, step.Key, Path: $"steps.{step.Key}.{maps}.{name}"))
+                    )
+                    .OrderBy(place => place.procedure.Id, StringComparer.Ordinal)
+                    .ThenBy(place => place.Key, StringComparer.Ordinal)
+                    .ToList();
+                if (places.Count == 0)
+                {
+                    continue;
+                }
+                kept.RemoveAll(mistake => places.Any(place => mistake.Resource == Resource(place.procedure) && mistake.Path == place.Path));
+                var change = left is null ? "removed" : $"changed from {field.Type} to {left.Type}";
+                causes.Add(
+                    new Mistake(
+                        MistakeCodes.ActionFieldInUse,
+                        ValidationStage.Save,
+                        new ResourceRef(ResourceKind.Action, action.Id),
+                        $"{section}.{name}",
+                        $"{noun} '{name}' of '{action.Id}' is mapped, so it cannot be {change}. Used by: {string.Join(", ", places.Select(place => $"procedure {place.procedure.Id}, step {place.Key} ({maps})"))}.",
+                        "Change these steps first, or add a new one beside it.",
+                        [.. places.Select(place => new RelatedResource(Resource(place.procedure), place.Path))]
+                    )
+                );
+            }
+        }
     }
 
     private sealed record FactUseIn(Procedure Procedure, Reference Use);
@@ -275,7 +340,10 @@ public static class EditGuard
         var resource = new ResourceRef(ResourceKind.Procedure, procedure.Id);
         var uses = ReferenceWalker
             .Uses(procedure)
-            .Where(use => use.To.Id == name && kept.Any(mistake => IsAt(mistake, MistakeCodes.ReferenceMissing, resource, use.Path)))
+            .Where(use =>
+                use.To == new ResourceRef(ResourceKind.GlobalFact, name)
+                && kept.Any(mistake => IsAt(mistake, MistakeCodes.ReferenceMissing, resource, use.Path))
+            )
             .ToList();
         if (uses.Count == 0)
         {
@@ -304,6 +372,8 @@ public static class EditGuard
             FactUse.Collect => "collect",
             FactUse.Assign => "assign",
             FactUse.Condition => "when",
+            FactUse.Parameter => "with",
+            FactUse.Result => "results",
             _ => throw new ArgumentOutOfRangeException(nameof(use)),
         }})";
 }

@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
 import { useResourceHistory } from "@/api/history";
+import { renamer } from "@/api/rename";
+import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
+import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { HistoryPanel } from "@/design/historyPanel";
+import { UsagePanel } from "@/design/usagePanel";
 
 import { emptyForm, formOf } from "./actionForm";
 import { ActionForm } from "./ActionForm";
@@ -21,11 +25,15 @@ export function ActionsScreen({ bot }: { bot: string }) {
     const [failure, setFailure] = useState<string | null>(null);
     const [open, setOpen] = useState<Open>(null);
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+    const [changingId, setChangingId] = useState(false);
     const [location, navigate] = useLocation();
     const [params] = useSearchParams();
     const openParam = params.get("open");
     const openAction = open?.kind === "edit" ? open.action : null;
     const editing = openAction !== null && !isCode(openAction);
+    const openRevision = openAction === null ? 0 : revisionOf(actions?.find((action) => action.id === openAction.id) ?? openAction);
+    const usage = useUsage(bot, "actions", openAction?.id ?? null, openRevision);
+    const changer = useMemo(() => renamer(bot, "actions", openAction?.id ?? "", openRevision), [bot, openAction?.id, openRevision]);
     const history = useResourceHistory(bot, "actions", openAction?.id ?? null, openAction === null ? 0 : revisionOf(openAction));
 
     const load = useCallback(
@@ -100,14 +108,45 @@ export function ActionsScreen({ bot }: { bot: string }) {
                         <div>
                             <Button
                                 type="button"
-                                variant="destructive"
+                                variant="outline"
                                 onClick={() => {
-                                    remove(openAction);
+                                    setChangingId(true);
                                 }}
                             >
-                                Delete
+                                Change id
                             </Button>
                         </div>
+                    )}
+                    {changingId && openAction !== null && (
+                        <ChangeIdDialog
+                            noun="action"
+                            id={openAction.id}
+                            preview={changer.preview}
+                            apply={changer.apply}
+                            onChanged={(id) => {
+                                setChangingId(false);
+                                setOpen(null);
+                                load();
+                                navigate(`${location}?open=${encodeURIComponent(id)}`);
+                            }}
+                            onCancel={() => {
+                                setChangingId(false);
+                            }}
+                        />
+                    )}
+                    {openAction !== null && (
+                        <UsagePanel
+                            usage={usage.usage}
+                            failure={usage.failure}
+                            hrefOf={(entry) => usageHref(bot, entry)}
+                            {...(editing
+                                ? {
+                                      onDelete: () => {
+                                          remove(openAction);
+                                      },
+                                  }
+                                : {})}
+                        />
                     )}
                     {openAction !== null && isCode(openAction) && (
                         <CodeActionPanel

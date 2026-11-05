@@ -3,7 +3,7 @@ import { ApiError, request } from "./client";
 import type { components } from "./openapi";
 
 type RenameAnswer = components["schemas"]["RenameAnswer"];
-type RenameCollection = "facts" | "knowledge-bases" | "articles" | "procedures";
+type RenameCollection = "facts" | "knowledge-bases" | "articles" | "procedures" | "actions";
 
 function send(
     bot: string,

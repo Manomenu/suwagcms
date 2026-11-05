@@ -265,6 +265,36 @@
                     ]
                   }
                 },
+                "action": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "with": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "results": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "onFailure": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "next": {
                   "oneOf": [
                     {

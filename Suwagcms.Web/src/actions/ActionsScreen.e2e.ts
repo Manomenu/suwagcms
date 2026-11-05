@@ -213,3 +213,28 @@ test("AC-code-actions-9: the Actions screen shows an HTTP action whose id the bo
     await expect(page.getByRole("row").filter({ hasText: "lookupPolicy" })).toContainText("the bot also declares this id");
     running.close();
 });
+
+test("AC-http-actions-20: the view of an action shows the procedures that use it, and its Delete says why not", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await request.put(`/api/bots/${bot}/actions/check?ifRevision=0`, {
+        data: {
+            description: "Checks",
+            parameters: null,
+            results: null,
+            implementation: { http: { method: "GET", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+        },
+    });
+    await request.put(`/api/bots/${bot}/procedures/usesIt?ifRevision=0`, {
+        data: { description: "Uses it", firstStep: "run", steps: { run: { action: "check", onFailure: "failed" }, failed: { say: "S" } } },
+    });
+
+    await page.goto(`/bots/${bot}/actions?open=check`);
+
+    const usedBy = page.getByRole("region", { name: "Used by" });
+    await expect(usedBy).toContainText("usesIt");
+    await expect(usedBy).toContainText("steps.run.action");
+    await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
+});

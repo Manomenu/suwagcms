@@ -1888,7 +1888,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|articles|procedures)$",
+              "pattern": "^(facts|articles|procedures|actions)$",
               "type": "string"
             }
           },
@@ -1944,7 +1944,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|knowledge-bases|articles|procedures)$",
+              "pattern": "^(facts|knowledge-bases|articles|procedures|actions)$",
               "type": "string"
             }
           },
@@ -3657,6 +3657,36 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "action": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "with": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "onFailure": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "next": {
             "oneOf": [

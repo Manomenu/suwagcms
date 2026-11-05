@@ -19,6 +19,7 @@ public static class DefinitionValidator
         .. ReferenceRules.All,
         .. ProcedureShapeRules.All,
         .. ProcedureFactRules.All,
+        .. ActionStepRules.All,
         .. ProcedureVersionRules.All,
     ];
 

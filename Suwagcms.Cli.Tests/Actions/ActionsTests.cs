@@ -285,4 +285,96 @@ public sealed class ActionsTests : IDisposable
             line => line.Contains("A code action is read-only: change it in the bot's code and deploy", StringComparison.Ordinal)
         );
     }
+
+    private const string Step = """
+        id: orderService
+        description: Orders a service.
+        firstStep: checkAddress
+        steps:
+          checkAddress:
+            action: checkServiceability
+            with: { address: customer.address }
+            results: { serviceable: isServiceable }
+            onFailure: tellItFailed
+            next:
+              - when: { isServiceable: { oneOf: [yes] } }
+                to: offerPlan
+              - to: tellItFailed
+          offerPlan:
+            say: We serve you.
+          tellItFailed:
+            say: Sorry.
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-action-block-1")]
+    public async Task A_procedure_with_an_action_step_is_sent_as_written_and_its_show_output_is_accepted_back()
+    {
+        var sent = new List<(string Method, string Path, string Body)>();
+        var added =
+            """{"id":"orderService","description":"Orders a service.","firstStep":"checkAddress","steps":{"checkAddress":{"action":"checkServiceability","with":{"address":"customer.address"},"results":{"serviceable":"isServiceable"},"onFailure":"tellItFailed","next":[{"when":{"isServiceable":{"oneOf":["yes"]}},"to":"offerPlan"},{"to":"tellItFailed"}]},"offerPlan":{"say":"We serve you."},"tellItFailed":{"say":"Sorry."}},"whenStalled":null,"revision":1,"notReady":[],"localFacts":null}""";
+
+        var add = await TestCli.Run(["procedures", "add", "--file", Saved("p.yaml", Step), .. OnBot], Recording(sent, added));
+        var yaml = await TestCli.Run(["procedures", "show", "orderService", .. OnBot], Recording(sent, added));
+        var json = await TestCli.Run(["procedures", "show", "orderService", "--json", .. OnBot], Recording(sent, added));
+        var bodies = new List<string> { Assert.Single(sent, call => call.Method == "PUT").Body };
+        foreach (var (name, shown) in new[] { ("y.yaml", yaml.Output), ("j.json", json.Output) })
+        {
+            sent.Clear();
+            var edit = await TestCli.Run(
+                ["procedures", "edit", "orderService", "--file", Saved(name, shown), .. OnBot],
+                Recording(sent, added)
+            );
+            Assert.Equal(0, edit.ExitCode);
+            bodies.Add(Assert.Single(sent, call => call.Method == "PUT").Body);
+        }
+
+        Assert.Equal(0, add.ExitCode);
+        Assert.Equal("isServiceable", JsonNode.Parse(bodies[0])?["steps"]?["checkAddress"]?["results"]?["serviceable"]?.GetValue<string>());
+        var first = Text(JsonNode.Parse(bodies[0]));
+        Assert.All(bodies, body => Assert.Equal(first, Text(JsonNode.Parse(body))));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-block-11")]
+    public async Task An_unfinished_action_step_is_saved_and_the_cli_lists_it_and_exits_0()
+    {
+        const string Answer =
+            """{"id":"p","description":"d","firstStep":"run","steps":{},"whenStalled":null,"revision":1,"notReady":[{"code":"step.action.noOnFailure","stage":"Version","resource":{"kind":"Procedure","id":"p"},"path":"steps.run.onFailure","message":"Step 'run' has no onFailure.","fix":"Add the step to go to when the action fails.","related":[]}],"localFacts":null}""";
+
+        var result = await TestCli.Run(["procedures", "add", "--file", Saved("p.yaml", Step), .. OnBot], new StubServer(_ => Json(Answer)));
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("step.action.noOnFailure", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-block-15")]
+    public void The_lines_of_procedures_in_the_main_skill_give_the_format_of_the_action_block()
+    {
+        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
+        var line = skill
+            .ReplaceLineEndings("\n")
+            .Split('\n')
+            .Single(text => text.StartsWith("- `suwagcms procedures add", StringComparison.Ordinal));
+
+        foreach (var field in new[] { "`action`", "`with`", "`results`", "`onFailure`" })
+        {
+            Assert.Contains(field, line, StringComparison.Ordinal);
+        }
+        Assert.Contains("action: checkServiceability", skill, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-block-17")]
+    public async Task Usage_of_a_procedure_prints_the_action_and_each_mapped_fact_with_the_field()
+    {
+        const string Usage =
+            """{"usedBy":[],"uses":[{"kind":"action","id":"checkServiceability","field":"steps.checkAddress.action"},{"kind":"fact","id":"customer.address","field":"steps.checkAddress.with.address"}]}""";
+
+        var result = await TestCli.Run(["usage", "procedure", "orderService", .. OnBot], new StubServer(_ => Json(Usage)));
+
+        Assert.Contains("action checkServiceability (steps.checkAddress.action)", result.Output, StringComparison.Ordinal);
+        Assert.Contains("fact customer.address (steps.checkAddress.with.address)", result.Output, StringComparison.Ordinal);
+    }
 }
