@@ -23,7 +23,7 @@ just api-types            # regenerate Suwagcms.Web/src/api/openapi.d.ts after c
 just mutate               # Stryker.NET (MTP runner, preview) on the server code changed since master; needs a master with commits
 just pack-template        # the dotnet new template as a NuGet package in .artifacts/nupkg
 just up / just down      # the container stack on http://127.0.0.1:8220, then the smoke test
-just check-quick          # build, csharpier, server tests, tsc, eslint, vitest: about 20 seconds
+just check-quick          # build, csharpier, server tests, tsc, eslint, vitest: within 60 seconds
 just check                # the whole gate
 just fmt                  # csharpier format
 ```
@@ -45,7 +45,7 @@ directory name by `checkout-env.sh`; its databases are left behind, not dropped.
 ## Claude Code hooks
 
 `.claude/settings.json` runs `Suwagcms.Gate/scripts/check.sh --quick` when Claude stops, and blocks
-the stop while it fails (the loop is cut after one retry). The quick gate has a budget of 20
+the stop while it fails (the loop is cut after one retry). The quick gate has a budget of 60
 seconds and fails above it; `CHECK_QUICK_LIMIT=<seconds>` raises it on a machine that is slow
 across the board. Edits to migrations that already
 exist, to lockfiles and to other generated files are refused with a message saying what to run.
