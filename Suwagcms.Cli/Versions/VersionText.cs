@@ -45,10 +45,42 @@ internal static class VersionText
     public static string AlreadyPushed(string bot, int version) =>
         string.Create(CultureInfo.InvariantCulture, $"Bot {bot} already has v{version}. Nothing was sent.");
 
-    public static string Pushed(string bot, PushResult result)
+    public static string Pushed(string bot, PushResult result, int latest)
     {
         ArgumentNullException.ThrowIfNull(result);
-        return string.Create(CultureInfo.InvariantCulture, $"Bot {bot} has v{result.BotHas}.");
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"Bot {bot} has v{result.BotHas}.{(result.BotHas == latest ? "" : $" The latest version is v{latest}.")}"
+        );
+    }
+
+    public static string Planned(string bot, PushPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        var from = plan.BotHas is { } has ? $"v{has}" : "none";
+        var line = plan.Way switch
+        {
+            PushWay.Nothing => string.Create(
+                CultureInfo.InvariantCulture,
+                $"Bot {bot} already has v{plan.Version}. Nothing would be sent."
+            ),
+            PushWay.MakeCurrent => string.Create(
+                CultureInfo.InvariantCulture,
+                $"Bot {bot} holds v{plan.Version} and has {from}: v{plan.Version} would be made current without sending it. Nothing was changed."
+            ),
+            PushWay.Send => string.Create(
+                CultureInfo.InvariantCulture,
+                $"Bot {bot} has {from}: v{plan.Version} would be sent. Nothing was changed."
+            ),
+            _ => throw new ArgumentOutOfRangeException(nameof(plan), "unknown way of pushing"),
+        };
+        return plan.Changes is { } changes ? string.Join(Environment.NewLine, line, DiffText.Of(changes)) : line;
+    }
+
+    public static string PlanFailed(PushPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        return PushFailed(new PushResult(PushOutcome.Failed, plan.Version, plan.BotHas, plan.Problem, plan.Mistakes));
     }
 
     public static string PushFailed(PushResult result)

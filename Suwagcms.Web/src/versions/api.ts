@@ -36,6 +36,7 @@ export function numberOf(version: VersionSummary): number {
 
 export type BotStatus = components["schemas"]["BotStatus"];
 export type PushResult = components["schemas"]["PushResult"];
+export type PushPlan = components["schemas"]["PushPlan"];
 
 export function fetchStatus(bot: string, signal: AbortSignal): Promise<BotStatus> {
     return request<BotStatus>(`${versionsPath(bot)}/status`, { signal });
@@ -43,4 +44,8 @@ export function fetchStatus(bot: string, signal: AbortSignal): Promise<BotStatus
 
 export function pushVersion(bot: string, number: number): Promise<PushResult> {
     return request<PushResult>(`${versionsPath(bot)}/${number}/push`, { method: "POST" });
+}
+
+export function fetchPushPlan(bot: string, number: number): Promise<PushPlan> {
+    return request<PushPlan>(`${versionsPath(bot)}/${number}/push-plan`);
 }

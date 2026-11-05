@@ -1593,9 +1593,48 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/versions/{number}/push-plan": {
+      "get": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
-          "422": {
-            "description": "Unprocessable Entity",
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPlan"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3368,6 +3407,62 @@
         ],
         "description": "How an attempt to push a version ended."
       },
+      "PushPlan": {
+        "required": [
+          "version",
+          "botHas",
+          "way",
+          "problem",
+          "mistakes",
+          "changes"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "botHas": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "way": {
+            "$ref": "#/components/schemas/PushWay"
+          },
+          "problem": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          },
+          "changes": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VersionComparison"
+              }
+            ]
+          }
+        },
+        "description": "What a push of a version would do, with nothing changed: the way it would go, the version the bot reports, what the push would be refused for (`Problem` and `Mistakes`, empty when it would go through), and what going from the bot's version to this one changes (null when the two cannot be compared)."
+      },
       "PushResult": {
         "required": [
           "outcome",
@@ -3412,6 +3507,14 @@
           }
         },
         "description": "The answer to a push: how it ended, the version the bot reported afterwards (null when it did not answer), and when it failed, the reason and every mistake the bot named."
+      },
+      "PushWay": {
+        "enum": [
+          "Send",
+          "MakeCurrent",
+          "Nothing"
+        ],
+        "description": "How a push reaches the bot: the document is sent, a version the bot holds is made current without sending it, or nothing is needed because it is already current."
       },
       "Refusal": {
         "required": [

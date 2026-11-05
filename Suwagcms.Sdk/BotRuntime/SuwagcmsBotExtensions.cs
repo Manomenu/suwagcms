@@ -56,11 +56,23 @@ public static class SuwagcmsBotExtensions
                     await reader.ReadToEndAsync(cancellationToken),
                     cancellationToken
                 );
-                return refused is null
-                    ? Results.Json(accepted, BotRuntimeJson.Options)
-                    : Results.Json(refused, BotRuntimeJson.Options, ProblemJson, refused.Status);
+                return Answer(accepted, refused);
+            }
+        );
+        group.MapPut(
+            "/current",
+            async (HttpRequest request, VersionRuntime runtime, CancellationToken cancellationToken) =>
+            {
+                using var reader = new StreamReader(request.Body, Encoding.UTF8);
+                var (accepted, refused) = await runtime.MakeCurrentAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken);
+                return Answer(accepted, refused);
             }
         );
         return group;
     }
+
+    private static IResult Answer(BotState? accepted, BotRefusal? refused) =>
+        refused is null
+            ? Results.Json(accepted, BotRuntimeJson.Options)
+            : Results.Json(refused, BotRuntimeJson.Options, ProblemJson, refused.Status);
 }

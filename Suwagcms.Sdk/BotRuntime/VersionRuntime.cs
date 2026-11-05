@@ -92,25 +92,81 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
                 return (null, Refusal(503, "The store failed.", $"The version was not stored: {exception.Message}", []));
             }
 
-            loaded[number] = Parse(json);
-            var current = await RefreshAsync(cancellationToken);
-            if (current.Error is null)
-            {
-                await SweepAsync(current.State, cancellationToken);
-            }
-            else
-            {
-                // Why: the write succeeded, so the answer must already say so even though the store cannot be read back.
-                var held = current.State.Held.Contains(number) ? current.State.Held : [.. current.State.Held, number];
-                current = Publish(current with { State = current.State with { Current = number, Held = [.. held.Order()] } });
-            }
-
-            return (Answer(current), null);
+            return (await TakeEffectAsync(number, json, cancellationToken), null);
         }
         finally
         {
             writes.Release();
         }
+    }
+
+    public async Task<(BotState? Accepted, BotRefusal? Refused)> MakeCurrentAsync(string body, CancellationToken cancellationToken)
+    {
+        if (ChoiceIn(body) is not { } choice)
+        {
+            return (null, BadChoice());
+        }
+
+        await writes.WaitAsync(cancellationToken);
+        try
+        {
+            string json;
+            try
+            {
+                if (await store.ReadVersionAsync(choice.Number, cancellationToken) is not { } held)
+                {
+                    return (null, NotHeld(choice.Number));
+                }
+
+                if (VersionDigest.Of(held) != choice.Digest)
+                {
+                    return (null, Conflict(choice.Number));
+                }
+
+                // Why: the SDK may have been upgraded since the version arrived, and a bot never runs what the validator of today has not checked.
+                var mistakes = VersionIntake.Check(held, botId, choice.Number);
+                if (mistakes.Count > 0)
+                {
+                    return (null, Refusal(422, "The version was refused.", $"{mistakes.Count} mistake(s) in the held document.", mistakes));
+                }
+
+                if ((await store.ReadStateAsync(cancellationToken)).Current == choice.Number)
+                {
+                    return (await ReadStateAsync(cancellationToken), null);
+                }
+
+                await store.WriteCurrentAsync(choice.Number, cancellationToken);
+                json = held;
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                return (null, Refusal(503, "The store failed.", $"The version was not made current: {exception.Message}", []));
+            }
+
+            return (await TakeEffectAsync(choice.Number, json, cancellationToken), null);
+        }
+        finally
+        {
+            writes.Release();
+        }
+    }
+
+    private async Task<BotState> TakeEffectAsync(int number, string json, CancellationToken cancellationToken)
+    {
+        loaded[number] = Parse(json);
+        var current = await RefreshAsync(cancellationToken);
+        if (current.Error is null)
+        {
+            await SweepAsync(current.State, cancellationToken);
+        }
+        else
+        {
+            // Why: the write succeeded, so the answer must already say so even though the store cannot be read back.
+            var held = current.State.Held.Contains(number) ? current.State.Held : [.. current.State.Held, number];
+            current = Publish(current with { State = current.State with { Current = number, Held = [.. held.Order()] } });
+        }
+
+        return Answer(current);
     }
 
     // Why: keeping too much is safe, removing too much is not: nothing goes before the bot has reported once.
@@ -151,6 +207,54 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
     private static BotDefinition Parse(string json) =>
         JsonSerializer.Deserialize<BotDefinition>(json, DefinitionFormat.Options)
         ?? throw new InvalidDataException("A stored version is not a definition.");
+
+    private static CurrentChoice? ChoiceIn(string body)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<CurrentChoice>(body, BotRuntimeJson.Options);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static BotRefusal BadChoice() =>
+        Refusal(
+            422,
+            "The version was refused.",
+            "The body does not name a version.",
+            [
+                new Mistake(
+                    MistakeCodes.FormatInvalid,
+                    ValidationStage.Version,
+                    new ResourceRef(ResourceKind.Definition, string.Empty),
+                    "",
+                    "The body is not an object with a number and a digest.",
+                    "Send { \"number\": 12, \"digest\": \"…\" }.",
+                    []
+                ),
+            ]
+        );
+
+    private static BotRefusal NotHeld(int number) =>
+        Refusal(
+            409,
+            "The version was refused.",
+            $"Version {number} is not held.",
+            [
+                new Mistake(
+                    MistakeCodes.VersionNotHeld,
+                    ValidationStage.Version,
+                    new ResourceRef(ResourceKind.Definition, string.Empty),
+                    "number",
+                    $"Version {number} is not held by this bot.",
+                    "Send the document with PUT /suwagcms/versions/{number}.",
+                    []
+                ),
+            ]
+        );
 
     private static BotRefusal Conflict(int number) =>
         Refusal(

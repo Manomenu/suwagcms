@@ -7,12 +7,14 @@ import { Alert } from "@/design/alert";
 import {
     createVersion,
     fetchComparison,
+    fetchPushPlan,
     fetchStatus,
     fetchVersion,
     fetchVersions,
     numberOf,
     pushVersion,
     type BotStatus,
+    type PushPlan,
     type PushResult,
     type VersionComparison,
     type VersionDetail,
@@ -29,6 +31,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const [status, setStatus] = useState<BotStatus | null>(null);
     const [pushing, setPushing] = useState(false);
     const [pushFailure, setPushFailure] = useState<PushResult | null>(null);
+    const [plan, setPlan] = useState<PushPlan | null>(null);
     const [comparison, setComparison] = useState<VersionComparison | null>(null);
     const [params] = useSearchParams();
     const [location, navigate] = useLocation();
@@ -107,7 +110,19 @@ export function VersionsScreen({ bot }: { bot: string }) {
             onCloseComparison={() => {
                 setComparison(null);
             }}
+            plan={plan}
+            onPlan={(number) => {
+                fetchPushPlan(bot, number)
+                    .then(setPlan)
+                    .catch((error: unknown) => {
+                        setFailure(error instanceof Error ? error.message : String(error));
+                    });
+            }}
+            onCancelPlan={() => {
+                setPlan(null);
+            }}
             onPush={(number) => {
+                setPlan(null);
                 setPushing(true);
                 setPushFailure(null);
                 pushVersion(bot, number)

@@ -16,6 +16,7 @@ public sealed class PackedBotTests
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddSuwagcmsBot(
             "packed-bot",
+            store: args.Contains("--own-store") ? new InMemoryVersionStore() : null,
             declares: new BotCapabilities
             {
                 FormatVersion = BotDefinition.CurrentFormatVersion,
@@ -44,6 +45,7 @@ public sealed class PackedBotTests
     [Fact]
     [Trait("criterion", "AC-bot-runtime-sdk-1")]
     [Trait("criterion", "AC-bot-declaration-1")]
+    [Trait("criterion", "AC-version-rollback-15")]
     public async Task A_bot_built_on_the_packed_package_takes_a_version_without_a_restart_reports_it_and_answers_what_it_declares()
     {
         // Why: packing and publishing cost about 10 s, over the quick gate's budget; CI always runs this, a machine when the SDK changes.
@@ -82,11 +84,20 @@ public sealed class PackedBotTests
         // Why: every local pack has the same version, so the machine's package cache would hand back an older pack of the SDK.
         await RunAsync(bot, Path.Combine(scratch.Path, "cache"), "publish", "-o", published, "--nologo", "-v", "q", "-nodeReuse:false");
 
+        // Why: the first run has the default file store, the second a store the bot's code passes in.
+        await CheckPackedBotAsync(published, []);
+        await CheckPackedBotAsync(published, ["--own-store"]);
+        Directory.CreateDirectory(Path.GetDirectoryName(passed) ?? RepositoryFiles.Root);
+        await File.WriteAllTextAsync(passed, "", TestContext.Current.CancellationToken);
+    }
+
+    private static async Task CheckPackedBotAsync(string published, string[] arguments)
+    {
         using var process =
             Process.Start(
-                new ProcessStartInfo("dotnet", [Path.Combine(published, "Bot.dll")])
+                new ProcessStartInfo("dotnet", [Path.Combine(published, "Bot.dll"), .. arguments])
                 {
-                    WorkingDirectory = bot,
+                    WorkingDirectory = published,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     Environment = { ["ASPNETCORE_URLS"] = "http://127.0.0.1:0" },
@@ -107,25 +118,36 @@ public sealed class PackedBotTests
             Assert.Equal("lookupPolicy", declared.Member("codeActions").AsArray()[0]?.Member("id").Text());
 
             var document = Documents.Make(7, "packed", bot: "packed-bot");
-            using var content = new StringContent(document.ToJsonString(), Encoding.UTF8, "application/json");
-            using var put = await client.PutAsync(
-                new Uri("/suwagcms/versions/7", UriKind.Relative),
-                content,
-                TestContext.Current.CancellationToken
-            );
-
-            Assert.Equal(HttpStatusCode.OK, put.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, await PutAsync(client, "/suwagcms/versions/7", document.ToJsonString()));
             var state = await StateAsync(client);
             Assert.Equal(7, state.Member("current").GetValue<int>());
             Assert.Equal("packed-bot", state.Member("bot").Text());
-            Directory.CreateDirectory(Path.GetDirectoryName(passed) ?? RepositoryFiles.Root);
-            await File.WriteAllTextAsync(passed, "", TestContext.Current.CancellationToken);
+
+            Assert.Equal(
+                HttpStatusCode.OK,
+                await PutAsync(client, "/suwagcms/versions/8", Documents.Make(8, "later", bot: "packed-bot").ToJsonString())
+            );
+            var digest = document.Member("digest").Text();
+            var choice = new JsonObject { ["number"] = 7, ["digest"] = digest }.ToJsonString();
+            Assert.Equal(HttpStatusCode.OK, await PutAsync(client, "/suwagcms/current", choice));
+            Assert.Equal(7, (await StateAsync(client)).Member("current").GetValue<int>());
+            Assert.Equal(HttpStatusCode.OK, await PutAsync(client, "/suwagcms/current", choice));
+            var wrong = new JsonObject { ["number"] = 8, ["digest"] = digest }.ToJsonString();
+            Assert.Equal(HttpStatusCode.Conflict, await PutAsync(client, "/suwagcms/current", wrong));
+            Assert.Equal(7, (await StateAsync(client)).Member("current").GetValue<int>());
         }
         finally
         {
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync(TestContext.Current.CancellationToken);
         }
+    }
+
+    private static async Task<HttpStatusCode> PutAsync(HttpClient client, string path, string body)
+    {
+        using var content = new StringContent(body, Encoding.UTF8, "application/json");
+        using var response = await client.PutAsync(new Uri(path, UriKind.Relative), content, TestContext.Current.CancellationToken);
+        return response.StatusCode;
     }
 
     private static string InputsHash()

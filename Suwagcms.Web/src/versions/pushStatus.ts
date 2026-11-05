@@ -20,6 +20,13 @@ export function whenOf(iso: string): string {
     return `${iso.slice(0, 16).replace("T", " ")} UTC`;
 }
 
+/** The rule of the rollback's select: every kept version except the latest, which the main button pushes, and the one the bot has; newest first. */
+export function otherVersions(kept: number[], status: BotStatus): number[] {
+    const latest = whole(status.latest);
+    const has = whole(status.has);
+    return kept.filter((number) => number !== latest && number !== has).sort((a, b) => b - a);
+}
+
 function lastKnown(status: BotStatus): string {
     const known = whole(status.lastKnown);
     if (status.lastKnownAt === null) return "The bot has not reported a version yet.";

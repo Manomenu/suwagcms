@@ -38,6 +38,9 @@ internal sealed class TestBot : IAsyncDisposable
     // Why: lets a test hold, slow or change the push that reaches the bot, which the bot's own routes cannot do.
     public Func<HttpContext, Task>? OnPush { get; set; }
 
+    // Why: lets a test answer the route that makes a held version current as a bot on an older SDK or a faulty bot would; a hook that starts no answer lets the route run.
+    public Func<HttpContext, Task>? OnCurrent { get; set; }
+
     // Why: lets a test answer the declaration route as a bot outside the SDK could: wrongly, slowly, or not at all.
     public Func<HttpContext, Task>? OnDeclaration { get; set; }
 
@@ -70,10 +73,18 @@ internal sealed class TestBot : IAsyncDisposable
                     await answer(context);
                     return;
                 }
+                if (context.Request.Path == "/suwagcms/current" && OnCurrent is { } current)
+                {
+                    await current(context);
+                    if (context.Response.HasStarted)
+                    {
+                        return;
+                    }
+                }
                 if (HttpMethods.IsPut(context.Request.Method) && OnPush is { } hook)
                 {
                     await hook(context);
-                    if (context.RequestAborted.IsCancellationRequested)
+                    if (context.RequestAborted.IsCancellationRequested || context.Response.HasStarted)
                     {
                         return;
                     }

@@ -59,6 +59,7 @@ internal static class PushStore
         Pool pool,
         string bot,
         int version,
+        int? left,
         PushOutcome outcome,
         string? error,
         DateTimeOffset at,
@@ -101,6 +102,17 @@ internal static class PushStore
                         null,
                         JsonSerializer.SerializeToElement(error is null ? outcome.ToString() : $"{outcome}: {error}")
                     ),
+                    // Why: only a bot that moved left a version behind; a failed push names just the version it chose, as the entry's id.
+                    .. outcome == PushOutcome.Succeeded && left != version
+                        ?
+                        [
+                            new FieldChange(
+                                "botVersion",
+                                left is { } before ? JsonSerializer.SerializeToElement(before) : null,
+                                JsonSerializer.SerializeToElement(version)
+                            ),
+                        ]
+                        : Array.Empty<FieldChange>(),
                 ]
             ),
             at,

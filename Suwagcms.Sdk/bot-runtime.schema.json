@@ -181,6 +181,21 @@
       "digest"
     ]
   },
+  "currentChoice": {
+    "type": "object",
+    "properties": {
+      "number": {
+        "type": "integer"
+      },
+      "digest": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "number",
+      "digest"
+    ]
+  },
   "declaration": {
     "type": "object",
     "properties": {

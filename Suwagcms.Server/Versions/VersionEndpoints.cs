@@ -25,10 +25,8 @@ internal static class VersionEndpoints
         routes.MapGet("/bots/{bot}/versions/{from:int}/diff/{to:int}", Diff).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
         routes.MapGet("/bots/{bot}/versions/{number:int}/export", Export).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
         routes.MapGet("/bots/{bot}/versions/status", Status).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes
-            .MapPost("/bots/{bot}/versions/{number:int}/push", Push)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+        routes.MapPost("/bots/{bot}/versions/{number:int}/push", Push).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/versions/{number:int}/push-plan", PushPlan).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
     }
 
     // Why: it reads two frozen documents and neither the working state nor the bot, so the answer is the same for ever.
@@ -95,13 +93,30 @@ internal static class VersionEndpoints
         var (result, rejected) = await pusher.PushAsync(bot, number, cancellationToken);
         return result is not null
             ? TypedResults.Ok(result)
-            : TypedResults.Problem(
-                title: "The version was not pushed.",
-                detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
-                statusCode: rejected?.Status ?? throw new InvalidOperationException("a push gave neither a result nor a refusal"),
-                extensions: new Dictionary<string, object?> { ["mistakes"] = new[] { rejected.Mistake } }
-            );
+            : NotPushed(rejected ?? throw new InvalidOperationException("a push gave neither a result nor a refusal"));
     }
+
+    // Why: a read like the page's status, so it answers what a push would do while changing neither the bot nor the record of attempts.
+    private static async Task<Results<Ok<PushPlan>, ProblemHttpResult>> PushPlan(
+        string bot,
+        int number,
+        VersionPusher pusher,
+        CancellationToken cancellationToken
+    )
+    {
+        var (plan, rejected) = await pusher.PlanAsync(bot, number, cancellationToken);
+        return plan is not null
+            ? TypedResults.Ok(plan)
+            : NotPushed(rejected ?? throw new InvalidOperationException("a plan gave neither an answer nor a refusal"));
+    }
+
+    private static ProblemHttpResult NotPushed(VersionPusher.Rejected rejected) =>
+        TypedResults.Problem(
+            title: "The version was not pushed.",
+            detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
+            statusCode: rejected.Status,
+            extensions: new Dictionary<string, object?> { ["mistakes"] = new[] { rejected.Mistake } }
+        );
 
     private static async Task<Results<Ok<List<VersionSummary>>, ProblemHttpResult>> List(
         string bot,

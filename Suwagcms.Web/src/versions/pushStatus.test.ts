@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { BotStatus } from "./api";
-import { statusView } from "./pushStatus";
+import { otherVersions, statusView } from "./pushStatus";
 
 function status(over: Partial<BotStatus>): BotStatus {
     return {
@@ -78,5 +78,16 @@ describe("statusView", () => {
         const view = statusView(status({ has: 14, held: [11, 14], inUse: [11, 14] }));
 
         expect(view.inUse).toEqual([11]);
+    });
+});
+
+describe("otherVersions", () => {
+    it("AC-version-rollback-13: lists the kept versions other than the latest and the one the bot has, newest first", () => {
+        expect(otherVersions([11, 14, 12, 13], status({ has: 12, latest: 14 }))).toEqual([13, 11]);
+    });
+
+    it("AC-version-rollback-13: offers what the bot left behind after a rollback, also a version newer than the bot's", () => {
+        expect(otherVersions([14, 13, 12], status({ has: 12, latest: 14 }))).toEqual([13]);
+        expect(otherVersions([14, 13, 12], status({ has: null, latest: 14 }))).toEqual([13, 12]);
     });
 });

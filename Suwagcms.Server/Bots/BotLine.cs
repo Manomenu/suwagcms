@@ -46,6 +46,17 @@ internal sealed class BotLine(HttpClient http, IOptions<PushOptions> options, Ti
             cancellationToken
         );
 
+    public async Task<Reply> PutCurrentAsync(string address, int number, string digest, CancellationToken cancellationToken) =>
+        await SendAsync(
+            address,
+            new HttpRequestMessage(HttpMethod.Put, Route(address, "current"))
+            {
+                Content = JsonContent.Create(new CurrentChoice { Number = number, Digest = digest }, options: Json),
+            },
+            options.Value.PushTimeoutSeconds,
+            cancellationToken
+        );
+
     public static BotState? StateIn(Reply.Answer answer) => Parse<BotState>(answer.Body);
 
     public static BotRefusal? RefusalIn(Reply.Answer answer) => Parse<BotRefusal>(answer.Body);

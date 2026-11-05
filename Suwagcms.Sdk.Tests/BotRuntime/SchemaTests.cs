@@ -14,6 +14,7 @@ public sealed class SchemaTests
     [Fact]
     [Trait("criterion", "AC-bot-runtime-sdk-16")]
     [Trait("criterion", "AC-bot-declaration-3")]
+    [Trait("criterion", "AC-version-rollback-15")]
     public async Task The_committed_schema_of_the_state_answer_and_the_refusal_equals_the_one_generated()
     {
         var path = RepositoryFiles.Path("Suwagcms.Sdk/bot-runtime.schema.json");
@@ -28,7 +29,7 @@ public sealed class SchemaTests
         var committed = (await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken)).ReplaceLineEndings("\n");
         Assert.True(
             committed == generated,
-            "bot-runtime.schema.json no longer matches the state answer, the refusal, the version envelope or the declaration. Regenerate it with: just sdk-schema (scripts/.internal/sdk-schema.sh), and commit the result."
+            "bot-runtime.schema.json no longer matches the state answer, the refusal, the version envelope, the request that makes a version current or the declaration. Regenerate it with: just sdk-schema (scripts/.internal/sdk-schema.sh), and commit the result."
         );
     }
 
@@ -41,6 +42,16 @@ public sealed class SchemaTests
         Assert.Contains("\"storeError\"", schema.Member("state").ToJsonString(), StringComparison.Ordinal);
         Assert.Contains("\"mistakes\"", schema.Member("refusal").ToJsonString(), StringComparison.Ordinal);
         Assert.Contains("\"digest\"", schema.Member("versionEnvelope").ToJsonString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-version-rollback-15")]
+    public void The_schema_describes_the_request_that_makes_a_held_version_current()
+    {
+        var choice = Generate().Member("currentChoice").ToJsonString();
+
+        Assert.Contains("\"number\"", choice, StringComparison.Ordinal);
+        Assert.Contains("\"digest\"", choice, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -61,6 +72,7 @@ public sealed class SchemaTests
             ["state"] = Schema(typeof(BotState)),
             ["refusal"] = Schema(typeof(BotRefusal)),
             ["versionEnvelope"] = Schema(typeof(VersionEnvelope)),
+            ["currentChoice"] = Schema(typeof(CurrentChoice)),
             ["declaration"] = Schema(typeof(BotDeclaration)),
         };
 
