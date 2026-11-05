@@ -76,7 +76,7 @@ export function BotsView({
                         ))}
                     </select>
                 )}
-                {bots.length > 0 && (
+                {bots.length > 0 && registerForm === null && (
                     <Button variant="outline" onClick={onRegister}>
                         Register a bot
                     </Button>
@@ -84,7 +84,7 @@ export function BotsView({
             </header>
             {registerForm}
             {openId !== null && open === undefined && <MissingBot id={openId} />}
-            {bots.length === 0 && openId === null && <EmptyState onRegister={onRegister} />}
+            {bots.length === 0 && openId === null && registerForm === null && <EmptyState onRegister={onRegister} />}
             {bots.length > 0 && (open !== undefined || openId === null) && (
                 <ul className="flex flex-col gap-2">
                     {bots.map((bot) => (
