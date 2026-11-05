@@ -26,7 +26,10 @@ internal static class ArticlesCommand
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)
     {
         var knowledgeBase = new Option<string?>("--kb") { Description = "Only the articles of this knowledge base." };
-        var language = new Option<string?>("--language") { Description = "Only the articles in this language: pl or en." };
+        var language = new Option<string?>("--language")
+        {
+            Description = "Only the articles in this language, which is their knowledge base's: pl or en.",
+        };
         var text = new Option<string?>("--text")
         {
             Description = "Only the articles with this text in the title, id or description, ignoring case. The content is not read.",

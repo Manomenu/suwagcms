@@ -68,4 +68,52 @@ public sealed class KnowledgeBaseRulesTests
             [MistakeCodes.KnowledgeBaseTitleMissing, MistakeCodes.KnowledgeBaseTitleMissing],
             Check(Offer with { Title = "" }, new KnowledgeBase { Id = "second", Title = " " }).Select(mistake => mistake.Code)
         );
+
+    [Fact]
+    [Trait("criterion", "AC-knowledge-base-language-1")]
+    public void A_base_without_a_language_has_en_and_a_json_base_without_one_reads_as_en_and_is_accepted()
+    {
+        const string json = """{"formatVersion":1,"knowledgeBases":[{"id":"faq","title":"Questions"}]}""";
+
+        Assert.Equal("en", Offer.Language);
+        Assert.Equal("en", new KnowledgeBase { Id = "faq" }.Language);
+        Assert.Empty(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
+    }
+
+    [Theory]
+    [Trait("criterion", "AC-knowledge-base-language-4")]
+    [InlineData("pl")]
+    [InlineData("en")]
+    public void The_two_languages_are_accepted(string language) => Assert.Empty(Check(Offer with { Language = language }));
+
+    [Theory]
+    [Trait("criterion", "AC-knowledge-base-language-4")]
+    [InlineData("PL")]
+    [InlineData("En")]
+    [InlineData("de")]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData("pl ")]
+    public void Any_other_language_including_a_different_case_and_blank_is_refused_listing_both(string language)
+    {
+        var mistake = Assert.Single(Check(Offer with { Language = language }));
+
+        Assert.Equal("knowledgeBase.language.unknown", mistake.Code);
+        Assert.Equal(ValidationStage.Save, mistake.Stage);
+        Assert.Equal("language", mistake.Path);
+        Assert.Equal("Use one of: pl, en.", mistake.Fix);
+        Assert.Contains("'offer'", mistake.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-knowledge-base-language-4")]
+    public void The_message_names_the_language_given_and_a_json_definition_with_another_language_fails_offline()
+    {
+        const string json = """{"formatVersion":1,"knowledgeBases":[{"id":"oferta","title":"Oferta","language":"de"}]}""";
+
+        var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
+
+        Assert.Equal(MistakeCodes.KnowledgeBaseLanguageUnknown, mistake.Code);
+        Assert.Equal("Knowledge base 'oferta' has language 'de'.", mistake.Message);
+    }
 }

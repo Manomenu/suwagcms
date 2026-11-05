@@ -89,7 +89,7 @@ public sealed class ArticlesTests
         var (method, url, body) = Assert.Single(recorder.Calls);
         Assert.Equal(("PUT", "/api/bots/rzeczoznawca/articles/priceList?ifRevision=0"), (method, url));
         Assert.Equal(
-            """{"knowledgeBase":"offer","language":null,"title":"Price list","content":"From 400 zl.","llmGuide":"Ask the kind first.","description":"What a valuation costs"}""",
+            """{"knowledgeBase":"offer","title":"Price list","content":"From 400 zl.","llmGuide":"Ask the kind first.","description":"What a valuation costs"}""",
             body
         );
         Assert.Contains("Added 'priceList' (Price list, pl, in offer), revision 3.", result.Output, StringComparison.Ordinal);
@@ -213,7 +213,7 @@ public sealed class ArticlesTests
         Assert.Equal("GET", recorder.Calls[0].Method);
         Assert.Equal(("PUT", "/api/bots/rzeczoznawca/articles/priceList?ifRevision=3"), (recorder.Calls[1].Method, recorder.Calls[1].Url));
         Assert.Equal(
-            """{"knowledgeBase":"offer","language":"pl","title":"New title","content":"# Price\n\nFrom 400 zl.\n","llmGuide":"Ask the kind first.","description":"What a valuation costs"}""",
+            """{"knowledgeBase":"offer","title":"New title","content":"# Price\n\nFrom 400 zl.\n","llmGuide":"Ask the kind first.","description":"What a valuation costs"}""",
             recorder.Calls[1].Body
         );
     }
@@ -356,65 +356,37 @@ public sealed class ArticlesTests
         Assert.Empty(commands.Except(CommandList.Listed(skill)));
     }
 
-    [Fact]
-    [Trait("criterion", "AC-article-language-1")]
-    public async Task Articles_add_without_a_language_sends_none_so_the_server_gives_en()
+    [Theory]
+    [Trait("criterion", "AC-knowledge-base-language-7")]
+    [InlineData("add")]
+    [InlineData("edit")]
+    public async Task Articles_add_and_edit_have_no_language_option_and_ask_nothing(string word)
     {
-        var recorder = new Recorder();
-        var server = recorder.Serving(_ => (HttpStatusCode.OK, Guide));
+        var server = new Recorder().Serving(_ => (HttpStatusCode.OK, PriceList));
 
-        await TestCli.Run(Args("articles", "add", "guide", "--kb", "forValuers"), server);
+        var result = await TestCli.Run(Args("articles", word, "cennik", "--language", "pl", "--title", "Cennik"), server);
 
-        Assert.Null(BodyOf(recorder.Calls[0]).GetProperty("language").GetString());
+        Assert.Equal(2, result.ExitCode);
+        Assert.Contains("--language", result.Error, StringComparison.Ordinal);
+        Assert.Empty(server.Requests);
     }
 
     [Fact]
-    [Trait("criterion", "AC-article-language-3")]
-    public async Task Articles_add_and_edit_set_the_language_with_the_option()
-    {
-        var recorder = new Recorder();
-        var server = recorder.Serving(_ => (HttpStatusCode.OK, PriceList));
-
-        var add = await TestCli.Run(Args("articles", "add", "cennik", "--language", "pl", "--title", "Cennik"), server);
-        var edit = await TestCli.Run(Args("articles", "edit", "cennik", "--language", "en"), server);
-
-        Assert.Equal([0, 0], [add.ExitCode, edit.ExitCode]);
-        Assert.Equal("pl", BodyOf(recorder.Calls[0]).GetProperty("language").GetString());
-        Assert.Equal("en", BodyOf(recorder.Calls[2]).GetProperty("language").GetString());
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-article-language-3")]
-    public async Task Articles_edit_with_only_a_language_is_a_complete_edit()
+    [Trait("criterion", "AC-knowledge-base-language-7")]
+    public async Task The_body_of_an_add_and_of_an_edit_carries_no_language()
     {
         var recorder = new Recorder();
         var server = recorder.Serving(_ => (HttpStatusCode.OK, PriceList));
 
-        var result = await TestCli.Run(Args("articles", "edit", "priceList", "--language", "en"), server);
+        await TestCli.Run(Args("articles", "add", "cennik", "--kb", "offer", "--title", "Cennik"), server);
+        await TestCli.Run(Args("articles", "edit", "cennik", "--title", "Cennik 2"), server);
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Equal("Price list", BodyOf(recorder.Calls[1]).GetProperty("title").GetString());
+        Assert.False(BodyOf(recorder.Calls[0]).TryGetProperty("language", out _));
+        Assert.False(BodyOf(recorder.Calls[2]).TryGetProperty("language", out _));
     }
 
     [Fact]
-    [Trait("criterion", "AC-article-language-4")]
-    public async Task A_refused_language_prints_the_mistake_naming_both_languages_and_exits_1()
-    {
-        var server = StubServer.Answering(
-            HttpStatusCode.UnprocessableEntity,
-            """{"mistakes":[{"code":"article.language.unknown","path":"language","message":"'cennik' has language 'de'.","fix":"Use one of: pl, en."}]}"""
-        );
-
-        var result = await TestCli.Run(Args("articles", "edit", "cennik", "--language", "de"), server);
-
-        Assert.Equal(1, result.ExitCode);
-        Assert.Contains("article.language.unknown", result.Error, StringComparison.Ordinal);
-        Assert.Contains("'cennik' has language 'de'.", result.Error, StringComparison.Ordinal);
-        Assert.Contains("Use one of: pl, en.", result.Error, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-article-language-6")]
+    [Trait("criterion", "AC-knowledge-base-language-9")]
     public async Task Articles_list_sends_the_language_with_the_other_filters_and_prints_it_in_each_row()
     {
         var recorder = new Recorder();
@@ -424,24 +396,5 @@ public sealed class ArticlesTests
 
         Assert.Equal("/api/bots/rzeczoznawca/articles?knowledgeBase=offer&language=pl&text=cennik", recorder.Calls[0].Url);
         Assert.Equal("priceList  Price list  pl  offer", result.Output.Trim());
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-article-language-9")]
-    public void The_main_skill_mentions_language_on_the_lines_for_adding_editing_and_listing_articles()
-    {
-        var skill = SkillText.Section(
-            File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md")),
-            "Commands"
-        );
-
-        foreach (var command in new[] { "articles add", "articles edit", "articles list" })
-        {
-            var line = skill
-                .ReplaceLineEndings("\n")
-                .Split('\n')
-                .Single(text => text.StartsWith($"- `suwagcms {command} ", StringComparison.Ordinal));
-            Assert.Contains("--language", line, StringComparison.Ordinal);
-        }
     }
 }

@@ -8,8 +8,6 @@ public sealed record Article
 
     public string KnowledgeBase { get; init; } = "";
 
-    public string Language { get; init; } = ArticleLanguages.English;
-
     public string Title { get; init; } = "";
 
     public string Content { get; init; } = "";

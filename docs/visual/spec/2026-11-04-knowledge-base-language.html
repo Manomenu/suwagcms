@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-article-language.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-knowledge-base-language.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Article language</title>
+<title>Knowledge base language</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Article language</h1>
+  <h1>Knowledge base language</h1>
   <div class="doc-meta">
     <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 36 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>articles</code></span>
+    <span><b>Needs before it:</b> <code>knowledge-bases</code>, <code>articles</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -377,54 +377,65 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>Every article has a <code>language</code>, <code>pl</code> or <code>en</code>, and it is <code>en</code> unless someone says otherwise. It is chosen in the web and set through the CLI and the plugin like any other field; any other value is refused.</p>
-    <p>Two articles in different languages are simply two articles: the CMS does not link them as translations.</p>
+    <p>Every knowledge base has a <code>language</code>, <code>pl</code> or <code>en</code>, and it is <code>en</code> unless someone says otherwise. It is chosen in the web on the knowledge base form and set through the CLI and the plugin; any other value is refused.</p>
+    <p>An article has no language of its own: it is in the language of its knowledge base. Changing a base's language changes it for all its articles, and moving an article to another base changes it. The articles list still filters by language and shows it, derived from the base. The CMS does not link translations.</p>
   </div>
   <div class="stats">
     <div><b>2</b><span>languages</span></div>
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>14</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>A bot serving Polish and English customers has to know which language each article is in, to search the right ones and to answer in the right way. Without the field, that knowledge ends up in a title or an id, where nothing can check or filter it. README decides the shape: a required field with two values and a default, and no linked translations.</p>
+  <p>A bot serving Polish and English customers has to know which language each article is in, to search the right ones and to answer in the right way. Without the field, that knowledge ends up in a title or an id, where nothing can check or filter it. A language per article would have to be repeated on every article of a base and could disagree inside one base; the people who organise articles by language already do it by base, so the language belongs to the base. README decides the rest: a field with two values and a default, and no linked translations.</p>
 </section>
 
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>Each article has exactly one known language.</li>
-      <li>Set it through every door; filter by it when finding articles.</li>
+      <li>Each knowledge base has exactly one known language, and each article has the language of its base.</li>
+      <li>Set it through every door; filter articles by it when finding them.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Linking translations of one article: README rules it out.</li>
       <li>Detecting the language of a text: the field says what the author says, and the CMS does not compare it with the text.</li>
       <li>Other languages: a new value is a later change of the format.</li>
       <li>A language for procedures, facts or a bot.</li>
+      <li>An article in a language other than its base's: put it in a base of that language.</li>
     </ul></div>
   </div>
 </section>
 
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. A Polish article</h3>
-  <div class="term"><span class="dim">$</span> suwagcms articles add cennik --kb oferta --language pl --title "Cennik" …
+  <h3>1. A Polish base and its article</h3>
+  <div class="term"><span class="dim">$</span> suwagcms kb add oferta --title "Oferta" --language pl
+<span class="dim">$</span> suwagcms articles add cennik --kb oferta --title "Cennik" …
 <span class="dim">$</span> suwagcms articles list --language pl
   cennik  Cennik  pl  oferta</div>
   <h3>2. No language given</h3>
   <ol class="steps">
-    <li><p>An agent adds <code>pricing</code> without <code>--language</code>. The article has <code>en</code>. In the web, the select starts on <code>en</code> for a new article.</p></li>
+    <li><p>An agent adds the base <code>pricing</code> without <code>--language</code>. The base has <code>en</code>, and so do its articles. In the web, the select on the knowledge base form starts on <code>en</code> for a new base.</p></li>
   </ol>
-  <h3>3. An unknown language</h3>
-  <div class="term"><span class="dim">$</span> suwagcms articles edit cennik --language de
+  <h3>3. Switching a base</h3>
+  <div class="term"><span class="dim">$</span> suwagcms kb edit oferta --language en
+<span class="dim">$</span> suwagcms articles list --language en
+  cennik  Cennik  en  oferta</div>
+  <p>Nothing was written to <code>cennik</code>: its language is read from <code>oferta</code>. Moving <code>cennik</code> to a Polish base would make it <code>pl</code> again.</p>
+  <h3>4. An unknown language</h3>
+  <div class="term"><span class="dim">$</span> suwagcms kb edit oferta --language de
 Refused, 1 mistake:
-  article.language.unknown  'cennik' has language 'de'. Use one of: pl, en.</div>
-  <h3>4. The same subject in two languages</h3>
+  knowledgeBase.language.unknown  Knowledge base 'oferta' has language 'de'. Use one of: pl, en.</div>
+  <h3>5. A language on an article</h3>
+  <div class="term"><span class="dim">$</span> suwagcms articles add cennik --kb oferta --language pl …
+error: Unrecognized command or argument '--language'.</div>
+  <p>A request that sends <code>language</code> on an article is refused as an unknown field.</p>
+  <h3>6. The same subject in two languages</h3>
   <ol class="steps">
-    <li><p>Marta writes <code>cennik</code> in <code>pl</code> and <code>pricing</code> in <code>en</code>. They are two ordinary articles: editing one changes nothing in the other, and each can be deleted on its own.</p></li>
+    <li><p>Marta writes <code>cennik</code> in the base <code>oferta</code> (<code>pl</code>) and <code>pricing</code> in the base <code>offer</code> (<code>en</code>). They are two ordinary articles: editing one changes nothing in the other, and each can be deleted on its own.</p></li>
   </ol>
 </section>
 
@@ -432,36 +443,48 @@ Refused, 1 mistake:
   <h2>Behaviour</h2>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>an article is created without a language</td><td>it has <code>en</code></td></tr>
-    <tr><td>an article is edited without giving a language</td><td>it keeps the one it has; <code>en</code> does not overwrite <code>pl</code></td></tr>
-    <tr><td>any value other than <code>pl</code> or <code>en</code>, including <code>PL</code> and blank</td><td>refused with a mistake listing the two</td></tr>
-    <tr><td>a list filtered by language</td><td>only articles in that language, the same in the web and the CLI; combined with the other filters</td></tr>
+    <tr><td>a knowledge base is created without a language, or stored or sent without one</td><td>it has <code>en</code></td></tr>
+    <tr><td>a base is edited in the CLI without giving a language</td><td>it keeps the one it has; <code>en</code> does not overwrite <code>pl</code></td></tr>
+    <tr><td>any value other than <code>pl</code> or <code>en</code>, including <code>PL</code> and blank</td><td>refused at the Save stage with <code>knowledgeBase.language.unknown</code>, listing the two</td></tr>
+    <tr><td>a base's language changes</td><td>every article in it has the new language at once; no article is rewritten</td></tr>
+    <tr><td>an article moves to another base</td><td>it has the language of that base</td></tr>
+    <tr><td>a save of an article sends <code>language</code></td><td>refused by the server's strict reading as an unknown field</td></tr>
+    <tr><td>a stored article body holds a <code>language</code> from before</td><td>it loads, the field is ignored and not written back</td></tr>
+    <tr><td>a list filtered by language</td><td>only articles whose base has that language, the same in the web and the CLI; combined with the other filters</td></tr>
   </table>
-  <p>The value is checked by the same validator as every other rule, so a definition with another language fails offline and on the server alike. The editor's select has a tooltip saying what the field is for, like the other fields of an article.</p>
+  <p>The value is checked by the same validator as every other rule, so a definition with another language fails offline and on the server alike. Reads of an article carry the language of its base, read only, so the CLI and the web can show it; it is not part of the definition format, whose articles have no language. A version gives the bot the language on each knowledge base. On the article form, the language of the chosen base is read-only text beside the base selector, with a tooltip saying where it comes from, and the select on the knowledge base form has a tooltip saying what the field is for.</p>
 </section>
 
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
+    <li>The language belongs to the base: an author who works in two languages keeps two bases, and a language per article could disagree with the base the article is filed in.</li>
     <li>The value must match exactly, in lowercase: accepting <code>PL</code> would need a rule for which spelling gets stored, and the refusal costs one retry.</li>
-    <li>The default exists when an article is created, not when it is read: every stored article has its own value, so a later change of the default touches no article.</li>
-    <li>The API treats a save with no <code>language</code> the way the CLI does: a new article gets <code>en</code>, an existing one keeps its own. The server reads the article first and checks the save against the revision it read, so a change made in between is refused, never overwritten.</li>
-    <li>Availability is not a field of an article: it is a separate setting of a later feature, so the editor has no such control.</li>
+    <li>The default applies when a base is read: a stored base without a language, and a request without one, is <code>en</code>, so no migration is needed.</li>
+    <li>The API treats a save of a base like every other save, a whole replacement; the CLI's <code>kb edit</code> reads the base first and sends the fields it was not given unchanged, guarded by the revision it read.</li>
+    <li>A base has two editable fields, so one command, <code>suwagcms kb edit</code>, changes either.</li>
+    <li>The format keeps its version: it has not been released.</li>
+    <li>Availability is not a field of a base or an article here: it is a separate setting of a later feature.</li>
   </ul>
 </section>
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-article-language-1</code> An article created through the API or the CLI without a language has <code>en</code>, and reading it back shows <code>en</code>.</li>
-    <li><code>AC-article-language-2</code> In the web, the language of a new article is chosen in a select offering <code>pl</code> and <code>en</code>, starting on <code>en</code>, and the saved value is shown in the list and the editor.</li>
-    <li><code>AC-article-language-3</code> <code>suwagcms articles add</code> and <code>suwagcms articles edit</code> set the language with <code>--language</code>.</li>
-    <li><code>AC-article-language-4</code> Any value other than <code>pl</code> or <code>en</code>, including <code>PL</code> and blank, is refused with a mistake listing both, in the validator on its own and on the server.</li>
-    <li><code>AC-article-language-5</code> Editing an article without giving a language keeps its language.</li>
-    <li><code>AC-article-language-6</code> The article list filters by language, together with the other filters, with the same results in the web and with <code>suwagcms articles list --language</code>.</li>
-    <li><code>AC-article-language-7</code> Two articles in different languages can share a title, and editing or deleting one changes nothing in the other.</li>
-    <li><code>AC-article-language-8</code> The tooltip of the language select says what the field is for.</li>
-    <li><code>AC-article-language-9</code> The plugin's main skill mentions <code>--language</code> on the lines for adding, editing and listing articles.</li>
+    <li><code>AC-knowledge-base-language-1</code> A knowledge base created through the API or the CLI without a language has <code>en</code>, and reading it back shows <code>en</code>; so does a stored base or a request without one.</li>
+    <li><code>AC-knowledge-base-language-2</code> In the web, the language of a knowledge base is chosen in a select on its form offering <code>pl</code> and <code>en</code>, starting on <code>en</code> for a new base, and the saved value is shown in the list and the form.</li>
+    <li><code>AC-knowledge-base-language-3</code> <code>suwagcms kb add</code> sets the language with <code>--language</code>, and <code>suwagcms kb edit</code> changes it.</li>
+    <li><code>AC-knowledge-base-language-4</code> Any value other than <code>pl</code> or <code>en</code>, including <code>PL</code> and blank, is refused at the Save stage with <code>knowledgeBase.language.unknown</code>, a mistake listing both, in the validator on its own and on the server.</li>
+    <li><code>AC-knowledge-base-language-5</code> <code>suwagcms kb edit</code> without a language keeps the language of the base.</li>
+    <li><code>AC-knowledge-base-language-6</code> An article reads with the language of its knowledge base: changing the base's language changes it for all its articles, and moving an article to another base changes it.</li>
+    <li><code>AC-knowledge-base-language-7</code> A save of an article that sends <code>language</code> is refused as an unknown field, and <code>suwagcms articles add</code> and <code>suwagcms articles edit</code> have no <code>--language</code>.</li>
+    <li><code>AC-knowledge-base-language-8</code> A stored article body that holds <code>language</code> still loads, the field is ignored and not written back.</li>
+    <li><code>AC-knowledge-base-language-9</code> The article list filters by language, together with the other filters, with the same results in the web and with <code>suwagcms articles list --language</code>.</li>
+    <li><code>AC-knowledge-base-language-10</code> Two articles in different languages can share a title, and editing or deleting one changes nothing in the other.</li>
+    <li><code>AC-knowledge-base-language-11</code> The tooltip of the language select on the knowledge base form says what the field is for.</li>
+    <li><code>AC-knowledge-base-language-12</code> The article form shows the language of the chosen base as read-only text beside the base selector, follows the selector, and its tooltip says the language comes from the base.</li>
+    <li><code>AC-knowledge-base-language-13</code> The plugin's main skill mentions <code>--language</code> on the lines for adding and editing knowledge bases and for listing articles.</li>
+    <li><code>AC-knowledge-base-language-14</code> A version document holds the language on each of its <code>knowledgeBases</code> and none on its <code>articles</code>.</li>
   </ul>
 </section>
 
@@ -469,9 +492,8 @@ Refused, 1 mistake:
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>version-create</code>:</b> a version gives the bot each article's language.</li>
-    <li><b>after <code>version-diff</code>:</b> a comparison of versions shows a change of language.</li>
-    <li><b>after <code>batch-apply</code>:</b> a file of changes can set the language, and <code>en</code> applies without it.</li>
+    <li><b>after <code>version-diff</code>:</b> a comparison of versions shows a change of a knowledge base's language.</li>
+    <li><b>after <code>batch-apply</code>:</b> a file of changes can set the language of a knowledge base, and <code>en</code> applies without it.</li>
   </ul>
 </section>
 <!-- CONTENT END -->

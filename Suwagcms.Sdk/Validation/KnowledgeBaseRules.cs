@@ -9,6 +9,7 @@ internal static class KnowledgeBaseRules
         For(MistakeCodes.KnowledgeBaseIdInvalid, definition => definition.KnowledgeBases.SelectMany(Id)),
         For(MistakeCodes.KnowledgeBaseTitleMissing, definition => definition.KnowledgeBases.SelectMany(Title)),
         For(MistakeCodes.KnowledgeBaseTitleRepeated, Repeated),
+        For(MistakeCodes.KnowledgeBaseLanguageUnknown, definition => definition.KnowledgeBases.SelectMany(Language)),
     ];
 
     private static Rule For(string code, Func<BotDefinition, IEnumerable<Mistake>> check) => new(code, ValidationStage.Save, check);
@@ -37,6 +38,23 @@ internal static class KnowledgeBaseRules
                 "title",
                 $"Knowledge base '{knowledgeBase.Id}' has no title.",
                 "Add one: people tell the bases apart by their titles."
+            );
+        }
+    }
+
+    // Why: the value must match exactly, in lowercase: accepting PL would need a rule for which spelling gets stored.
+    private static IEnumerable<Mistake> Language(KnowledgeBase knowledgeBase)
+    {
+        if (!KnowledgeBaseLanguages.All.Contains(knowledgeBase.Language, StringComparer.Ordinal))
+        {
+            yield return Make(
+                MistakeCodes.KnowledgeBaseLanguageUnknown,
+                knowledgeBase,
+                "language",
+                string.IsNullOrWhiteSpace(knowledgeBase.Language)
+                    ? $"Knowledge base '{knowledgeBase.Id}' has no language."
+                    : $"Knowledge base '{knowledgeBase.Id}' has language '{knowledgeBase.Language}'.",
+                $"Use one of: {string.Join(", ", KnowledgeBaseLanguages.All)}."
             );
         }
     }

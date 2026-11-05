@@ -35,12 +35,12 @@ test("AC-knowledge-bases-7: a bot with no bases offers to create the first one, 
     expect(await (await request.get(`/api/bots/${bot}/knowledge-bases`)).json()).toMatchObject([{ id: "oferta", title: "Offer" }]);
 });
 
-test("AC-knowledge-bases-2: a base renamed in the web keeps its id", async ({ page, request }) => {
+test("AC-knowledge-bases-2: a base edited in the web keeps its id", async ({ page, request }) => {
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "Offer");
     await page.goto(`/bots/${bot}/knowledge-bases`);
 
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Rename" }).click();
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel("Title").fill("Our offer");
     await page.getByRole("button", { name: "Save" }).click();
 
@@ -63,14 +63,14 @@ test("AC-knowledge-bases-4: a title another base has is refused beside the title
     await expect(page.getByLabel("Title")).toHaveValue("  our OFFER ");
 });
 
-test("AC-knowledge-bases-6: renaming a base that changed meanwhile is refused with the current revision and keeps what was typed", async ({
+test("AC-knowledge-bases-6: editing a base that changed meanwhile is refused with the current revision and keeps what was typed", async ({
     page,
     request,
 }) => {
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "First");
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Rename" }).click();
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel("Title").fill("Marta's title");
     const other = await request.put(`/api/bots/${bot}/knowledge-bases/oferta?ifRevision=1`, { data: { title: "The agent's title" } });
     expect(other.status()).toBe(200);
@@ -119,4 +119,37 @@ test("AC-knowledge-bases-9: a base with articles is not deleted, and the screen 
     await expect(page.getByRole("alert")).toContainText("'priceList' is in the knowledge base 'oferta'");
     await expect(page.getByRole("row").filter({ hasText: "oferta" })).toBeVisible();
     expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(200);
+});
+
+test("AC-knowledge-base-language-2: a new base starts on en, the language chosen is saved and shown in the list and the form", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.getByRole("button", { name: "New knowledge base" }).click();
+    await expect(page.locator('[data-field="language"] select')).toHaveValue("en");
+    await expect(page.locator('[data-field="language"] select').locator("option")).toHaveText(["pl", "en"]);
+    await page.getByLabel("Id").fill("oferta");
+    await page.getByLabel("Title").fill("Oferta");
+
+    await page.locator('[data-field="language"] select').selectOption("pl");
+    await page.getByRole("button", { name: "Create", exact: true }).click();
+
+    const row = page.getByRole("row").filter({ hasText: "oferta" });
+    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
+    expect(await (await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).json()).toMatchObject({ language: "pl" });
+    await row.getByRole("button", { name: "Edit" }).click();
+    await expect(page.locator('[data-field="language"] select')).toHaveValue("pl");
+});
+
+test("AC-knowledge-base-language-11: the label of the language select carries a tooltip saying what the field is for", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.getByRole("button", { name: "New knowledge base" }).click();
+
+    await expect(page.locator('[data-field="language"] label')).toHaveAttribute("title", /language of every article in this base/);
 });

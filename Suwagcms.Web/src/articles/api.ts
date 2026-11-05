@@ -29,9 +29,6 @@ export function fetchArticle(bot: string, id: string, signal: AbortSignal): Prom
     return request<Article>(`${botPath(bot)}/articles/${encodeURIComponent(id)}`, { signal });
 }
 
-/** The languages an article can be in; the server refuses any other. */
-export const LANGUAGES = ["pl", "en"] as const;
-
 /** The bases an article can be put in. */
 export function fetchKnowledgeBases(bot: string, signal: AbortSignal): Promise<KnowledgeBase[]> {
     return request<KnowledgeBase[]>(`${botPath(bot)}/knowledge-bases`, { signal });

@@ -12,14 +12,14 @@ export function KnowledgeBasesView({
     bases,
     form,
     onAdd,
-    onRename,
+    onEdit,
     onDelete,
 }: {
     bot: string;
     bases: KnowledgeBase[];
     form: ReactNode;
     onAdd: () => void;
-    onRename: (base: KnowledgeBase) => void;
+    onEdit: (base: KnowledgeBase) => void;
     onDelete: (base: KnowledgeBase) => void;
 }) {
     return (
@@ -37,6 +37,7 @@ export function KnowledgeBasesView({
                             <tr>
                                 <th>Title</th>
                                 <th>Id</th>
+                                <th>Language</th>
                                 <th />
                             </tr>
                         </thead>
@@ -45,16 +46,17 @@ export function KnowledgeBasesView({
                                 <tr key={base.id}>
                                     <td className="font-medium">{base.title}</td>
                                     <td className="text-muted-foreground">{base.id}</td>
+                                    <td>{base.language}</td>
                                     <td>
                                         <div className="flex justify-end gap-2">
                                             <Button
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => {
-                                                    onRename(base);
+                                                    onEdit(base);
                                                 }}
                                             >
-                                                Rename
+                                                Edit
                                             </Button>
                                             <Button
                                                 variant="destructive"

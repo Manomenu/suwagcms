@@ -1,6 +1,6 @@
 namespace Suwagcms.Contracts;
 
-/// <summary>An article of a bot as the API shows it: the format's fields, and the revision to send back to guard an edit.</summary>
+/// <summary>An article of a bot as the API shows it: the format's fields, the language of its knowledge base (read only, derived), and the revision to send back to guard an edit.</summary>
 public sealed record ArticleView(
     string Id,
     string KnowledgeBase,

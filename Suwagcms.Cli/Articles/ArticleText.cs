@@ -10,7 +10,7 @@ internal static class ArticleText
         ArgumentNullException.ThrowIfNull(articles);
         if (articles.Count == 0)
         {
-            return "No articles found. Add one: suwagcms articles add <id> --kb <base> [--language pl|en] --title <text> --content-file <file> --guide-file <file> --description <text>";
+            return "No articles found. Add one: suwagcms articles add <id> --kb <base> --title <text> --content-file <file> --guide-file <file> --description <text>";
         }
         var idWidth = articles.Max(article => article.Id.Length);
         var titleWidth = articles.Max(article => article.Title.Length);

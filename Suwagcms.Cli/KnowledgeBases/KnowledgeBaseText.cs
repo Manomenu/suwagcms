@@ -14,7 +14,7 @@ internal static class KnowledgeBaseText
             return "";
         }
         var width = bases.Max(item => item.Id.Length);
-        return string.Join(Environment.NewLine, bases.Select(item => $"{item.Id.PadRight(width)}  {item.Title}"));
+        return string.Join(Environment.NewLine, bases.Select(item => $"{item.Id.PadRight(width)}  {item.Language}  {item.Title}"));
     }
 
     public static string Detail(KnowledgeBaseView item)
@@ -24,6 +24,7 @@ internal static class KnowledgeBaseText
             Environment.NewLine,
             item.Id,
             $"  title:    {item.Title}",
+            $"  language: {item.Language}",
             string.Create(CultureInfo.InvariantCulture, $"  revision: {item.Revision}")
         );
     }

@@ -1627,7 +1627,7 @@
             "format": "int32"
           }
         },
-        "description": "An article of a bot as the API shows it: the format's fields, and the revision to send back to guard an edit."
+        "description": "An article of a bot as the API shows it: the format's fields, the language of its knowledge base (read only, derived), and the revision to send back to guard an edit."
       },
       "Bot": {
         "required": [
@@ -1859,6 +1859,7 @@
         "required": [
           "id",
           "title",
+          "language",
           "revision"
         ],
         "type": "object",
@@ -1867,6 +1868,9 @@
             "type": "string"
           },
           "title": {
+            "type": "string"
+          },
+          "language": {
             "type": "string"
           },
           "revision": {
@@ -1878,7 +1882,7 @@
             "format": "int32"
           }
         },
-        "description": "A knowledge base of a bot as the API shows it: its id and title, and the revision to send back to guard an edit."
+        "description": "A knowledge base of a bot as the API shows it: its id, title and language, and the revision to send back to guard an edit."
       },
       "ListenArguments": {
         "type": "object"
@@ -2310,7 +2314,6 @@
       "SaveArticle": {
         "required": [
           "knowledgeBase",
-          "language",
           "title",
           "content",
           "llmGuide",
@@ -2319,12 +2322,6 @@
         "type": "object",
         "properties": {
           "knowledgeBase": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "language": {
             "type": [
               "null",
               "string"
@@ -2355,7 +2352,7 @@
             ]
           }
         },
-        "description": "What saving an article takes: every field of it but the id, which the address gives. A field left out is refused by the server, except language: a new article has en, and an existing one keeps its own; content and llmGuide are Markdown, kept exactly as sent."
+        "description": "What saving an article takes: every field of it but the id, which the address gives. A field left out is refused by the server; an article has no language of its own, so one sent is refused as an unknown field; content and llmGuide are Markdown, kept exactly as sent."
       },
       "SaveFact": {
         "required": [
@@ -2428,7 +2425,8 @@
       },
       "SaveKnowledgeBase": {
         "required": [
-          "title"
+          "title",
+          "language"
         ],
         "type": "object",
         "properties": {
@@ -2437,9 +2435,15 @@
               "null",
               "string"
             ]
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "What saving a knowledge base takes: its title; the id comes from the address. A title left out is refused by the server."
+        "description": "What saving a knowledge base takes: its title and its language; the id comes from the address. A title left out is refused by the server; a language left out is en."
       },
       "SaveProcedure": {
         "required": [

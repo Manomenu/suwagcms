@@ -146,75 +146,38 @@ public sealed class ArticleRulesTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-article-language-1")]
-    public void An_article_without_a_language_has_en()
-    {
-        Assert.Equal("en", new Article { Id = "pricing" }.Language);
-        Assert.Equal("en", Samples.Pricing.Language);
-    }
-
-    [Theory]
-    [Trait("criterion", "AC-article-language-4")]
-    [InlineData("pl")]
-    [InlineData("en")]
-    public void The_two_languages_are_accepted(string language) => Assert.Empty(Check(Samples.Pricing with { Language = language }));
-
-    [Theory]
-    [Trait("criterion", "AC-article-language-4")]
-    [InlineData("PL")]
-    [InlineData("En")]
-    [InlineData("de")]
-    [InlineData("")]
-    [InlineData("  ")]
-    [InlineData("pl ")]
-    public void Any_other_language_including_a_different_case_and_blank_is_refused_listing_both(string language)
-    {
-        var mistake = Assert.Single(Check(Samples.Pricing with { Language = language }));
-
-        Assert.Equal(MistakeCodes.ArticleLanguageUnknown, mistake.Code);
-        Assert.Equal("language", mistake.Path);
-        Assert.Equal("Use one of: pl, en.", mistake.Fix);
-        Assert.Contains("'pricing'", mistake.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-article-language-4")]
-    public void The_message_names_the_language_given()
-    {
-        var mistake = Assert.Single(Check(Samples.Pricing with { Id = "cennik", Language = "de" }));
-
-        Assert.Equal("'cennik' has language 'de'.", mistake.Message);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-article-language-4")]
-    public void A_json_definition_with_another_language_fails_offline_as_it_does_on_the_server()
+    [Trait("criterion", "AC-knowledge-base-language-8")]
+    public void A_json_article_holding_a_language_from_before_still_loads_and_the_field_is_ignored()
     {
         const string json =
             """{"formatVersion":1,"knowledgeBases":[{"id":"faq","title":"Questions"}],"articles":[{"id":"cennik","knowledgeBase":"faq","title":"T","content":"c","llmGuide":"g","description":"d","language":"de"}]}""";
-
-        var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
-
-        Assert.Equal(MistakeCodes.ArticleLanguageUnknown, mistake.Code);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-article-language-1")]
-    public void A_json_article_without_a_language_reads_as_en_and_is_accepted()
-    {
-        const string json =
-            """{"formatVersion":1,"knowledgeBases":[{"id":"faq","title":"Questions"}],"articles":[{"id":"cennik","knowledgeBase":"faq","title":"T","content":"c","llmGuide":"g","description":"d"}]}""";
 
         Assert.Empty(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
     }
 
     [Fact]
-    [Trait("criterion", "AC-article-language-7")]
-    public void Two_articles_in_different_languages_can_share_a_title()
+    [Trait("criterion", "AC-knowledge-base-language-10")]
+    public void Two_articles_in_bases_of_different_languages_can_share_a_title()
     {
-        var polish = Samples.Pricing with { Id = "cennik", Language = "pl", Title = "Cennik" };
-        var english = Samples.Pricing with { Id = "pricing", Language = "en", Title = "Cennik" };
+        var polishBase = new KnowledgeBase
+        {
+            Id = "oferta",
+            Title = "Oferta",
+            Language = KnowledgeBaseLanguages.Polish,
+        };
+        var polish = Samples.Pricing with { Id = "cennik", KnowledgeBase = "oferta", Title = "Cennik" };
+        var english = Samples.Pricing with { Id = "pricing", Title = "Cennik" };
 
-        Assert.Empty(Check(polish, english));
+        var mistakes = DefinitionValidator.Validate(
+            new BotDefinition
+            {
+                FormatVersion = 1,
+                KnowledgeBases = [Samples.Faq, polishBase],
+                Articles = [polish, english],
+            },
+            ValidationStage.Save
+        );
+
+        Assert.Empty(mistakes);
     }
 }

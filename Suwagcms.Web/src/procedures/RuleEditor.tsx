@@ -180,6 +180,7 @@ function ConditionRow({
                 </Select>
                 <Select
                     aria-label="Condition"
+                    className="w-32 shrink-0"
                     value={kindOf(condition)}
                     onChange={(event) => {
                         onChange(freshCondition(event.target.value as ConditionKind));
@@ -191,7 +192,7 @@ function ConditionRow({
                         </option>
                     ))}
                 </Select>
-                <Button type="button" variant="ghost" size="xs" aria-label={`Remove the condition on ${fact}`} onClick={onRemove}>
+                <Button type="button" variant="ghost" size="icon" aria-label={`Remove the condition on ${fact}`} onClick={onRemove}>
                     ✕
                 </Button>
             </div>
