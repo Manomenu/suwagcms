@@ -20,7 +20,19 @@ import { Button } from "@/design/button";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
 import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
-import { addStep, BLOCKS, connect, deleteStep, disconnect, edgesOf, stepOrder, toSave, type BlockName, type Draft } from "./draft";
+import {
+    addStep,
+    BLOCKS,
+    connect,
+    deleteStep,
+    disconnect,
+    edgesOf,
+    stepOrder,
+    toSave,
+    type BlockName,
+    type Draft,
+    type LinkableArticle,
+} from "./draft";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
 import { MistakeList } from "./MistakeList";
 import { targetOf, stepsWithMistakes } from "./mistakes";
@@ -93,6 +105,7 @@ function CreatorBody({
     initial,
     facts,
     procedures,
+    articles,
     stored,
 }: {
     bot: string;
@@ -100,6 +113,7 @@ function CreatorBody({
     initial: ProcedureDetail;
     facts: Fact[];
     procedures: string[];
+    articles: LinkableArticle[];
     stored: Positions;
 }) {
     const [state, dispatch] = useReducer(reduce, initial, loaded);
@@ -305,6 +319,7 @@ function CreatorBody({
                             draft={draft}
                             facts={facts}
                             procedures={procedures}
+                            articles={articles}
                             edit={edit}
                             onRenamed={setSelected}
                             onDeleted={() => {
@@ -344,6 +359,7 @@ export function Creator(props: {
     initial: ProcedureDetail;
     facts: Fact[];
     procedures: string[];
+    articles: LinkableArticle[];
     stored: Positions;
 }) {
     return (

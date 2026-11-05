@@ -5,4 +5,5 @@ public enum FactUse
     Collect,
     Assign,
     Condition,
+    Inform,
 }

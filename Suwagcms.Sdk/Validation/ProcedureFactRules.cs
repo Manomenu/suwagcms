@@ -31,6 +31,7 @@ internal static class ProcedureFactRules
             var reference in ReferenceWalker
                 .From(procedure)
                 .Where(reference => reference.To.Kind == ResourceKind.GlobalFact && !facts.Contains(reference.To.Id))
+                .Where(reference => !ReferenceRules.WrongName(reference))
         )
         {
             yield return Make(
@@ -195,6 +196,7 @@ internal static class ProcedureFactRules
             FactUse.Collect => $"'collect' of step '{Step(reference)}'",
             FactUse.Assign => $"'assign' of step '{Step(reference)}'",
             FactUse.Condition => $"'when' of a rule of step '{Step(reference)}'",
+            FactUse.Inform => $"'inform' of step '{Step(reference)}' in '{reference.From.Id}'",
             _ => throw new ArgumentOutOfRangeException(nameof(reference)),
         };
 

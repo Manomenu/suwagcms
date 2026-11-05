@@ -131,11 +131,15 @@ steps:
 ```
 
 - A step holds exactly one block: `listen` (wait for the next message), `collect: [fact, ...]` (ask until the facts are known),
-  `say: text` (send a fixed text), `assign: { fact: value }` (overwrite facts with values you chose), `start` (below). `collect` cannot name a fact
+  `say: text` (send a fixed text), `assign: { fact: value }` (overwrite facts with values you chose), `start` and `inform` (below). `collect` cannot name a fact
   with `writableBy: assign`; every fact named must exist (`suwagcms facts list`) and a value must fit the fact's type.
 - `start: <procedure id>` starts another procedure of this bot, and the step's `next` is where this one goes on once that one ends. The
   target must exist (`suwagcms procedures list`); `conversation` cannot be started (`start.target.conversation`), and a loop of starts is
   refused (`reference.loop`). A blank target is saved and listed as unfinished.
+- `inform: { instruction: text, articles: [id, ...], facts: [fact, ...] }` passes on articles and facts to the customer by reference. Where
+  `say` sends a fixed text, inform leaves the words to the model, following the instruction, and the article stays the one place that holds the
+  truth. Everything named must exist (`reference.missing`), a fact with any `writableBy` may be named, and the article may be in any knowledge
+  base of the bot. Naming nothing (`step.inform.empty`) or a blank instruction (`instruction.blank`) is saved and listed as unfinished.
 - `next` is a step's id, or a list of rules `{ when, to }` tried from the top; the last rule has no `when` and is the default.
   A step without `next` ends the procedure. Steps may loop back (a `conversation` returns to its own `listen`).
 - `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)

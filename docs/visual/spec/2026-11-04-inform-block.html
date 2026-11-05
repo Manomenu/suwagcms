@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-inform-block.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-inform-block.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Inform block</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 19 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>articles</code>, <code>procedure-model</code></span>
@@ -382,7 +382,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>9</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -449,7 +448,7 @@ Saved orderValuation, revision 6.
   <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing. The rules are in the validator, so they hold offline too.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a fact with any <code>writableBy</code>, including <code>assign</code></td><td>allowed: naming it is the author's choice to pass it on; the model still cannot write it (see Open questions)</td></tr>
+    <tr><td>a fact with any <code>writableBy</code>, including <code>assign</code></td><td>allowed: naming it is the author's choice to pass it on; the model still cannot write it</td></tr>
     <tr><td>the same article or fact named twice</td><td>accepted, and read back as written; it means one thing to pass on</td></tr>
     <tr><td>an article in another knowledge base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
     <tr><td><code>inform</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
@@ -474,6 +473,8 @@ whatHappensNext:
     <li>The block lists articles and facts, as README and the feature map say. What must be said that neither holds belongs in an article, which keeps one place for what is true.</li>
     <li>An empty block and a blank instruction are <code>Version</code> mistakes, for the reason <code>procedure-model</code> gives: they are work still to do. A name with no target breaks a reference, so it is a <code>Save</code> mistake.</li>
     <li>The instruction is required, as on <code>whenStalled</code>: without it a bot would have to invent how to phrase the step, and two bots would do it differently.</li>
+    <li>A fact with <code>writableBy: assign</code> can be named: naming it is the author's explicit choice to pass on its value, the model still cannot write it, and that is how an action's result reaches the customer.</li>
+    <li>The block takes articles and facts only, with no named points: what is true lives in one place, and an optional field can arrive later without raising <code>formatVersion</code> if a bot needs it.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -501,23 +502,6 @@ whatHappensNext:
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p><b>Suwchatbot's draft of this block differs.</b> Its <code>inform-step</code> spec, still with an open question on this, lists named <code>points</code> and leaves out facts, while its <code>procedure-building-blocks</code> expects facts. The CMS owns the format, so this spec follows README; whichever way that question is settled, the two must agree before a bot runs the block.</p></div>
   <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Can <code>inform</code> pass on a fact with <code>writableBy: assign</code>?</legend>
-      <p class="why">README says the model never sees such a fact, and yet that is where an action's result usually lands, and telling the customer that result is the main use of naming a fact at all. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="allow"><span><b>Yes: naming it is the author's explicit choice</b><small>the model sees the value only at this step and still cannot write it; README's sentence would then read “the model never sees it unless a step passes it on”</small></span></label>
-      <label><input type="radio" value="refuse"><span><b>No: refused on save</b><small>keeps README's sentence as it is, but an action's result could never reach the customer except through <code>say</code>, which holds fixed text</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Does the block also take named <code>points</code>, as Suwchatbot's draft does?</legend>
-      <p class="why">Points are short named texts a bot can check one by one (“turnaround”, “delivery”), which gives its delivery check something to check. README and the feature map list only articles and facts. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="not-now"><span><b>Not now: articles and facts only</b><small>what is true lives in one place; an optional field can arrive later without raising <code>formatVersion</code>, if Suwchatbot settles on it</small></span></label>
-      <label><input type="radio" value="points"><span><b>Yes: <code>points</code> as a third optional list</b><small>ready for that draft, but truths would be written inside procedures again</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

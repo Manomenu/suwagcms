@@ -180,6 +180,38 @@
                     "null"
                   ]
                 },
+                "inform": {
+                  "type": "object",
+                  "properties": {
+                    "instruction": {
+                      "type": "string"
+                    },
+                    "articles": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "facts": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    }
+                  }
+                },
                 "next": {
                   "oneOf": [
                     {

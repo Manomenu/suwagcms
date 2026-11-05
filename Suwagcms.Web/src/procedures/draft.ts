@@ -2,8 +2,8 @@
 // in the shape the server accepts, and the server's dry run says what is wrong with it.
 import type { Fact, ProcedureDetail, SaveProcedure } from "./api";
 
-export type BlockName = "listen" | "collect" | "say" | "assign" | "start";
-export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "start"];
+export type BlockName = "listen" | "collect" | "say" | "assign" | "start" | "inform";
+export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "start", "inform"];
 
 export interface Condition {
     oneOf?: string[];
@@ -19,6 +19,12 @@ export interface Rule {
     to: string;
 }
 
+export interface Inform {
+    instruction: string;
+    articles?: string[];
+    facts?: string[];
+}
+
 export interface Step {
     listen?: true;
     collect?: string[];
@@ -26,6 +32,7 @@ export interface Step {
     assign?: Record<string, string>;
     /** The id of the procedure this step starts. */
     start?: string;
+    inform?: Inform;
     /** A step's name, or rules whose last one is the default. A target of "" is a rule not yet connected. */
     next?: string | Rule[];
 }
@@ -59,6 +66,14 @@ function ruleOf(raw: unknown): Rule {
     return rest;
 }
 
+function informOf(wire: NonNullable<Wire["inform"]>): Inform {
+    return {
+        instruction: wire.instruction ?? "",
+        ...(wire.articles ? { articles: [...wire.articles] } : {}),
+        ...(wire.facts ? { facts: [...wire.facts] } : {}),
+    };
+}
+
 function stepOf(wire: Wire): Step {
     const step: Step = {};
     if (wire.listen) step.listen = true;
@@ -66,6 +81,7 @@ function stepOf(wire: Wire): Step {
     if (wire.say != null) step.say = wire.say;
     if (wire.assign) step.assign = { ...wire.assign };
     if (wire.start != null) step.start = wire.start;
+    if (wire.inform) step.inform = informOf(wire.inform);
     const next = wire.next;
     if (typeof next === "string") step.next = next;
     else if (Array.isArray(next)) step.next = next.map(ruleOf);
@@ -96,6 +112,7 @@ export function toSave(draft: Draft): SaveProcedure {
                     ...(step.say === undefined ? {} : { say: step.say }),
                     ...(step.assign ? { assign: step.assign } : {}),
                     ...(step.start === undefined ? {} : { start: step.start }),
+                    ...(step.inform ? { inform: step.inform } : {}),
                     ...(step.next === undefined ? {} : { next: step.next }),
                 },
             ]),
@@ -198,6 +215,7 @@ export function addStep(draft: Draft, block: BlockName): { draft: Draft; name: s
         say: { say: "" },
         assign: { assign: {} },
         start: { start: "" },
+        inform: { inform: { instruction: "" } },
     };
     return { draft: { ...draft, steps: { ...draft.steps, [name]: empty[block] } }, name };
 }
@@ -309,9 +327,20 @@ export function collectable(facts: Fact[]): Fact[] {
     return facts.filter((fact) => fact.writableBy !== "assign");
 }
 
+/** An article a block or a context may name: the id is what is stored, the title what the author sees. */
+export interface LinkableArticle {
+    id: string;
+    title: string;
+}
+
 /** The procedures a start may target: not the base of every conversation, and not the procedure itself, which would be a loop. */
 export function startable(procedures: string[], self: string): string[] {
     return procedures.filter((id) => id !== "conversation" && id !== self);
+}
+
+/** What a form lists: what it offers, then whatever the step already names, so opening a procedure never hides what is stored. */
+export function withStored(offered: string[], stored: string[]): string[] {
+    return [...offered, ...stored.filter((name) => !offered.includes(name))];
 }
 
 export function valuesOffered(fact: Pick<Fact, "type" | "values"> | undefined): string[] | null {

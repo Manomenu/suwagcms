@@ -2,14 +2,16 @@ import { useEffect, useState } from "react";
 
 import { Alert } from "@/design/alert";
 
-import { fetchFacts, fetchLayout, fetchProcedure, fetchProcedures, type Fact, type ProcedureDetail } from "./api";
+import { fetchArticles, fetchFacts, fetchLayout, fetchProcedure, fetchProcedures, type Fact, type ProcedureDetail } from "./api";
 import { Creator } from "./Creator";
+import type { LinkableArticle } from "./draft";
 import type { Positions } from "./layout";
 
 interface Loaded {
     detail: ProcedureDetail;
     facts: Fact[];
     procedures: string[];
+    articles: LinkableArticle[];
     stored: Positions;
 }
 
@@ -26,12 +28,14 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
             fetchFacts(bot, controller.signal),
             fetchLayout(bot, id, controller.signal),
             fetchProcedures(bot, controller.signal),
+            fetchArticles(bot, controller.signal),
         ])
-            .then(([detail, facts, layout, list]) => {
+            .then(([detail, facts, layout, list, articles]) => {
                 setLoaded({
                     detail,
                     facts,
                     procedures: list.procedures.map((procedure) => procedure.id),
+                    articles: articles.map((article) => ({ id: article.id, title: article.title })),
                     stored: Object.fromEntries(
                         Object.entries(layout.positions).map(([name, at]) => [name, { x: Number(at.x), y: Number(at.y) }]),
                     ),
@@ -53,5 +57,15 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
         );
     }
     if (loaded === null) return <p className="p-4 text-muted-foreground">Loading {id}…</p>;
-    return <Creator bot={bot} id={id} initial={loaded.detail} facts={loaded.facts} procedures={loaded.procedures} stored={loaded.stored} />;
+    return (
+        <Creator
+            bot={bot}
+            id={id}
+            initial={loaded.detail}
+            facts={loaded.facts}
+            procedures={loaded.procedures}
+            articles={loaded.articles}
+            stored={loaded.stored}
+        />
+    );
 }

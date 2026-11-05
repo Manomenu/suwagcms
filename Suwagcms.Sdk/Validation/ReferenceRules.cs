@@ -7,7 +7,7 @@ internal static class ReferenceRules
     public static IReadOnlyList<Rule> All { get; } =
     [
         new(MistakeCodes.ReferenceMissing, ValidationStage.Save, MissingTargets),
-        new(MistakeCodes.ReferenceMalformed, ValidationStage.Save, definition => Malformed(definition).Concat(WrongIds(definition))),
+        new(MistakeCodes.ReferenceMalformed, ValidationStage.Save, definition => Malformed(definition).Concat(WrongNames(definition))),
         new(MistakeCodes.ReferenceLoop, ValidationStage.Save, LoopRules.Loops),
     ];
 
@@ -25,7 +25,7 @@ internal static class ReferenceRules
         return ReferenceWalker
             .From(definition)
             .Where(reference => reference.To.Kind != ResourceKind.GlobalFact)
-            .Where(reference => !WrongId(reference))
+            .Where(reference => !WrongName(reference))
             .Where(reference => !known.Contains(reference.To))
             .DistinctBy(reference => (reference.From, reference.Path, reference.To))
             .Select(reference => new Mistake(
@@ -53,23 +53,34 @@ internal static class ReferenceRules
         return $"'{parts[2]}' of step '{parts[1]}' in '{reference.From.Id}'";
     }
 
-    // Why: a link's id is judged by the link's own form; a name written in a procedure has to be an id before it can be looked up, and saying so beats saying it is missing.
-    private static bool WrongId(Reference reference) =>
-        reference.From.Kind == ResourceKind.Procedure && !ResourceIds.IsCamelCase(reference.To.Id);
+    // Why: a link's id is judged by the link's own form, and a collect or a rule names a fact it then finds missing; a name an author writes for a target has to have the right form before it can be looked up, and saying so beats saying it is missing.
+    public static bool WrongName(Reference reference) =>
+        reference.From.Kind == ResourceKind.Procedure
+        && (
+            reference.To.Kind == ResourceKind.GlobalFact
+                ? reference.Use == FactUse.Inform && !FactNames.IsValid(reference.To.Id)
+                : !ResourceIds.IsCamelCase(reference.To.Id)
+        );
 
-    private static IEnumerable<Mistake> WrongIds(BotDefinition definition) =>
+    private static IEnumerable<Mistake> WrongNames(BotDefinition definition) =>
         ReferenceWalker
             .From(definition)
-            .Where(reference => reference.To.Kind != ResourceKind.GlobalFact && WrongId(reference))
+            .Where(WrongName)
             .Select(reference => new Mistake(
                 MistakeCodes.ReferenceMalformed,
                 ValidationStage.Save,
                 reference.From,
                 reference.Path,
-                $"{Holder(reference)} names '{reference.To.Id}', which is not an id: the id of a {DeleteGuard.Noun(reference.To.Kind)} is one camelCase word.",
-                $"Use the id of the {DeleteGuard.Noun(reference.To.Kind)}, like '{ResourceIds.Suggest(reference.To.Id)}'.",
+                reference.To.Kind == ResourceKind.GlobalFact
+                    ? $"{Holder(reference)} names '{reference.To.Id}', which is not the name of a fact: camelCase words joined by dots, like customer.city."
+                    : $"{Holder(reference)} names '{reference.To.Id}', which is not an id: the id of {An(reference.To.Kind)} is one camelCase word.",
+                reference.To.Kind == ResourceKind.GlobalFact
+                    ? $"Use the name of the fact, like '{FactNames.Suggest(reference.To.Id)}'."
+                    : $"Use the id of the {DeleteGuard.Noun(reference.To.Kind)}, like '{ResourceIds.Suggest(reference.To.Id)}'.",
                 []
             ));
+
+    private static string An(ResourceKind kind) => kind == ResourceKind.Article ? "an article" : "a procedure";
 
     private static IEnumerable<Mistake> Malformed(BotDefinition definition) =>
         definition.Articles.SelectMany(article =>

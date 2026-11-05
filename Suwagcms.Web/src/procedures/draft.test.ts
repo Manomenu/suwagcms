@@ -20,6 +20,7 @@ import {
     stepOrder,
     toSave,
     valuesOffered,
+    withStored,
     type Draft,
 } from "./draft";
 
@@ -131,6 +132,22 @@ describe("the draft", () => {
 
         expect(saved.steps).toEqual({ start: { start: "documentsList" } });
         expect(startable(["conversation", "documentsList", "orderValuation"], "orderValuation")).toEqual(["documentsList"]);
+    });
+
+    it("AC-procedure-creator-19: an inform keeps its instruction and lists in order, an untouched one goes back as stored, and a stored name stays listed", () => {
+        let draft = addStep(empty(), "inform").draft;
+        expect(toSave(draft).steps).toEqual({ inform: { inform: { instruction: "" } } });
+        draft = setBlock(draft, "inform", { inform: { instruction: "Tell it.", articles: ["zebra", "alpha"], facts: ["order.kind"] } });
+
+        expect(toSave(draft).steps).toEqual({
+            inform: { inform: { instruction: "Tell it.", articles: ["zebra", "alpha"], facts: ["order.kind"] } },
+        });
+        const stored = fromDetail({
+            ...detail,
+            steps: { tell: { inform: { instruction: "Tell it.", facts: ["order.kind"], articles: null } } },
+        });
+        expect(toSave(stored).steps).toEqual({ tell: { inform: { instruction: "Tell it.", facts: ["order.kind"] } } });
+        expect(withStored(["a", "b"], ["c", "a"])).toEqual(["a", "b", "c"]);
     });
 
     it("AC-procedure-creator-8: range is offered only for an int fact, and oneOf offers an enum's values", () => {

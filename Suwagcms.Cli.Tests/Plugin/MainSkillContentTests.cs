@@ -16,6 +16,11 @@ public sealed class MainSkillContentTests
             ["cms://article/<id>", "articles list --text", "reference.missing", "reference.malformed", "reference.loop"]
         ),
         ("the form of the start block", "Procedure file", ["start: <procedure id>", "start.target.conversation"]),
+        (
+            "the form of the inform block and how it differs from say",
+            "Procedure file",
+            ["inform: { instruction: text", "Where\n  `say` sends a fixed text"]
+        ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
     ];
 
@@ -50,6 +55,11 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-start-block-9")]
     public void The_main_skill_gives_the_form_of_the_start_block() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of the start block", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-inform-block-9")]
+    public void The_main_skill_gives_the_form_of_the_inform_block_and_how_it_differs_from_say() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of the inform block", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-5")]

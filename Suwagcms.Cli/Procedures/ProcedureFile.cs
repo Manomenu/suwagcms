@@ -81,7 +81,7 @@ internal static class ProcedureFile
             {
                 "listen" => new JsonObject(),
                 // Why: a block left empty is work still to do, which a save lists; a null would make it no block at all.
-                "start" => "",
+                "start" or "instruction" => "",
                 _ => null,
             };
         }

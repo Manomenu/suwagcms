@@ -110,6 +110,39 @@ public sealed class DeleteGuardTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-14")]
+    public void A_fact_named_in_an_inform_is_refused_listing_the_step_and_field()
+    {
+        var fact = new ResourceRef(ResourceKind.GlobalFact, "note.left");
+        var after = ProcedureSamples.Bot(
+            ProcedureSamples.WithStep("tell", new ProcedureStep { Inform = new InformArguments { Facts = ["note.left"] } })
+        );
+
+        var mistake = Assert.Single(Deleting(after, fact));
+
+        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(fact, mistake.Resource);
+        Assert.Equal("steps.tell.inform.facts[0]", Assert.Single(mistake.Related).Location);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-delete-guard-15")]
+    public void An_article_an_inform_names_is_refused_listing_the_procedure_and_the_step()
+    {
+        var after = ProcedureSamples.Bot(
+            ProcedureSamples.WithStep("tell", new ProcedureStep { Inform = new InformArguments { Articles = ["cennik"] } })
+        );
+
+        var mistake = Assert.Single(Deleting(after, Cennik));
+
+        Assert.Equal(Cennik, mistake.Resource);
+        Assert.Equal(
+            new RelatedResource(new ResourceRef(ResourceKind.Procedure, "orderValuation"), "steps.tell.inform.articles[0]"),
+            Assert.Single(mistake.Related)
+        );
+    }
+
+    [Fact]
     [Trait("criterion", "AC-delete-guard-1")]
     public void A_typo_in_a_link_is_still_worded_for_the_referrer_not_as_a_delete()
     {

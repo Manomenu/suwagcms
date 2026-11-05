@@ -98,7 +98,7 @@ public sealed class ProceduresTests : IDisposable
             {
                 continue;
             }
-            foreach (var field in new[] { "listen", "collect", "say", "assign", "start", "next" })
+            foreach (var field in new[] { "listen", "collect", "say", "assign", "start", "inform", "next" })
             {
                 block[field] ??= null;
             }
@@ -622,6 +622,76 @@ public sealed class ProceduresTests : IDisposable
         Assert.Equal(0, result.ExitCode);
         Assert.Equal("", At(JsonNode.Parse(recorder.Calls[0].Body), "steps", "get", "start").GetValue<string>());
         Assert.Contains("step.block.empty", result.Output, StringComparison.Ordinal);
+    }
+
+    private const string InformYaml = """
+        id: orderValuation
+        description: The customer orders a valuation of a property.
+        firstStep: whatHappensNext
+        steps:
+          whatHappensNext:
+            inform:
+              instruction: Tell the customer where to bring the documents.
+              articles: [zebraRules, officeContact]
+              facts: [order.kind, customer.city]
+            next: wait
+          wait:
+            listen:
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-inform-block-1")]
+    public async Task An_inform_step_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(
+            (request, body) =>
+                request.Method == HttpMethod.Get ? Echo(Wire(InformYaml).ToJsonString(), "orderValuation") : Echo(body, "orderValuation", 2)
+        );
+
+        var yaml = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", InformYaml)), server);
+        var json = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.json", Wire(InformYaml).ToJsonString())), server);
+        var shown = await TestCli.Run(Args("procedures", "show", "orderValuation"), server);
+        var edited = await TestCli.Run(Args("procedures", "edit", "orderValuation", "--file", FileWith("s.yaml", shown.Output)), server);
+
+        Assert.Equal((0, 0, 0, 0), (yaml.ExitCode, json.ExitCode, shown.ExitCode, edited.ExitCode));
+        var sent = JsonNode.Parse(recorder.Calls[0].Body);
+        var inform = At(sent, "steps", "whatHappensNext", "inform");
+        Assert.Equal("Tell the customer where to bring the documents.", At(inform, "instruction").GetValue<string>());
+        Assert.Equal(["zebraRules", "officeContact"], At(inform, "articles").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(["order.kind", "customer.city"], At(inform, "facts").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[^1].Body)));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-inform-block-6")]
+    public async Task An_inform_with_nothing_filled_in_is_sent_with_a_blank_instruction_and_its_mistakes_exit_0()
+    {
+        const string blank = """
+            id: orderValuation
+            description: d
+            firstStep: tell
+            steps:
+              tell:
+                inform:
+                  instruction:
+            """;
+        const string notReady = """
+            [{"code":"step.inform.empty","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.tell.inform",
+              "message":"'inform' of step 'tell' names nothing to pass on.","fix":"Add an article or a fact.","related":[]},
+             {"code":"instruction.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.tell.inform.instruction",
+              "message":"'inform' of step 'tell' has no instruction.","fix":"Say how to pass this on.","related":[]}]
+            """;
+        var recorder = new Recorder();
+        var server = recorder.Serving((_, body) => Echo(body, "orderValuation", 1, notReady));
+
+        var result = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", blank)), server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("", At(JsonNode.Parse(recorder.Calls[0].Body), "steps", "tell", "inform", "instruction").GetValue<string>());
+        Assert.Contains("step.inform.empty", result.Output, StringComparison.Ordinal);
+        Assert.Contains("instruction.blank", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

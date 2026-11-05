@@ -18,7 +18,10 @@ import {
     setBlock,
     startable,
     valuesOffered,
+    withStored,
     type Draft,
+    type Inform,
+    type LinkableArticle,
 } from "./draft";
 import { RuleEditor, TargetSelect } from "./RuleEditor";
 
@@ -42,6 +45,40 @@ function NoFacts({ bot, onLeave }: { bot: string; onLeave: (href: string) => voi
     );
 }
 
+/** A list to tick. What is ticked keeps its order, the one the author ticked it in, and anything already stored stays listed. */
+function Checklist({
+    legend,
+    names,
+    picked,
+    labelOf,
+    onChange,
+}: {
+    legend: string;
+    names: string[];
+    picked: string[];
+    labelOf?: (name: string) => string;
+    onChange: (picked: string[]) => void;
+}) {
+    return (
+        <fieldset className="flex flex-col gap-1">
+            <legend className="text-sm font-medium">{legend}</legend>
+            {names.map((name) => (
+                <label key={name} className="flex items-center gap-2 text-sm">
+                    <input
+                        type="checkbox"
+                        className="accent-primary"
+                        checked={picked.includes(name)}
+                        onChange={(event) => {
+                            onChange(event.target.checked ? [...picked, name] : picked.filter((other) => other !== name));
+                        }}
+                    />
+                    {labelOf?.(name) ?? name}
+                </label>
+            ))}
+        </fieldset>
+    );
+}
+
 function CollectForm({
     picked,
     facts,
@@ -56,27 +93,12 @@ function CollectForm({
     onChange: (facts: string[]) => void;
 }) {
     const offered = collectable(facts);
-    // Why: a fact the step already names stays visible even when it is not offered, so opening a procedure never hides what is stored.
-    const names = [...offered.map((fact) => fact.name), ...picked.filter((name) => !offered.some((fact) => fact.name === name))];
-    if (names.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
-    return (
-        <fieldset className="flex flex-col gap-1">
-            <legend className="text-sm font-medium">Collect these facts</legend>
-            {names.map((name) => (
-                <label key={name} className="flex items-center gap-2 text-sm">
-                    <input
-                        type="checkbox"
-                        className="accent-primary"
-                        checked={picked.includes(name)}
-                        onChange={(event) => {
-                            onChange(event.target.checked ? [...picked, name] : picked.filter((other) => other !== name));
-                        }}
-                    />
-                    {name}
-                </label>
-            ))}
-        </fieldset>
+    const names = withStored(
+        offered.map((fact) => fact.name),
+        picked,
     );
+    if (names.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
+    return <Checklist legend="Collect these facts" names={names} picked={picked} onChange={onChange} />;
 }
 
 function AssignForm({
@@ -191,6 +213,69 @@ function StartForm({ target, offered, onChange }: { target: string; offered: str
     );
 }
 
+function InformForm({
+    inform,
+    articles,
+    facts,
+    onChange,
+}: {
+    inform: Inform;
+    articles: LinkableArticle[];
+    facts: Fact[];
+    onChange: (inform: Inform) => void;
+}) {
+    const articleNames = withStored(
+        articles.map((article) => article.id),
+        inform.articles ?? [],
+    );
+    const factNames = withStored(
+        facts.map((fact) => fact.name),
+        inform.facts ?? [],
+    );
+    return (
+        <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-medium">
+                Instruction
+                <Textarea
+                    placeholder="How to pass this on"
+                    value={inform.instruction}
+                    onChange={(event) => {
+                        onChange({ ...inform, instruction: event.target.value });
+                    }}
+                />
+            </label>
+            {articleNames.length === 0 ? (
+                <p className="text-sm text-muted-foreground">This bot has no articles yet.</p>
+            ) : (
+                <Checklist
+                    legend="Articles to pass on"
+                    names={articleNames}
+                    picked={inform.articles ?? []}
+                    labelOf={(id) => {
+                        const title = articles.find((article) => article.id === id)?.title;
+                        return title === undefined ? id : `${title} (${id})`;
+                    }}
+                    onChange={(picked) => {
+                        onChange({ ...inform, articles: picked });
+                    }}
+                />
+            )}
+            {factNames.length === 0 ? (
+                <p className="text-sm text-muted-foreground">This bot has no facts yet.</p>
+            ) : (
+                <Checklist
+                    legend="Facts to pass on"
+                    names={factNames}
+                    picked={inform.facts ?? []}
+                    onChange={(picked) => {
+                        onChange({ ...inform, facts: picked });
+                    }}
+                />
+            )}
+        </div>
+    );
+}
+
 /** The form of the selected step: its name, its blocks and its next. Every control writes into the draft; none of them judges it. */
 export function StepForm({
     bot,
@@ -199,6 +284,7 @@ export function StepForm({
     draft,
     facts,
     procedures,
+    articles,
     edit,
     onRenamed,
     onDeleted,
@@ -210,6 +296,7 @@ export function StepForm({
     draft: Draft;
     facts: Fact[];
     procedures: string[];
+    articles: LinkableArticle[];
     edit: (change: (draft: Draft) => Draft) => void;
     onRenamed: (name: string) => void;
     onDeleted: () => void;
@@ -297,6 +384,16 @@ export function StepForm({
                     offered={startable(procedures, id)}
                     onChange={(start) => {
                         edit((current) => setBlock(current, name, { start }));
+                    }}
+                />
+            )}
+            {step.inform && (
+                <InformForm
+                    inform={step.inform}
+                    articles={articles}
+                    facts={facts}
+                    onChange={(inform) => {
+                        edit((current) => setBlock(current, name, { inform }));
                     }}
                 />
             )}

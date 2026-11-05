@@ -301,3 +301,40 @@ test("AC-procedure-creator-18: a start step is built with its form, which leaves
     await node(page, "start").click();
     await expect(page.getByLabel("Start this procedure")).toHaveValue("documentsList");
 });
+
+test("AC-procedure-creator-19: an inform step is built with its form and reads back from the server with its lists", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, { data: { title: "Offer" } })).status()).toBe(200);
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/articles/officeContact?ifRevision=0`, {
+                data: { knowledgeBase: "offer", title: "The office", content: "c", llmGuide: "g", description: "d" },
+            })
+        ).status(),
+    ).toBe(200);
+    await agentSaves(request, bot, "orderValuation", { description: "The customer orders a valuation", firstStep: null, steps: {} }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "inform" }).click();
+    await node(page, "inform").click();
+    await page.getByLabel("Instruction").fill("Tell the customer where to go.");
+    await page.getByLabel("The office (officeContact)").check();
+    await page.getByLabel("system.flag").check();
+    await page.getByLabel("customer.city").check();
+    await expect(node(page, "inform")).toContainText("inform: officeContact, system.flag, customer.city");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(async () => {
+        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+            steps: Record<string, { inform?: { instruction: string; articles: string[]; facts: string[] } }>;
+        };
+        expect(stored.steps["inform"]?.inform).toEqual({
+            instruction: "Tell the customer where to go.",
+            articles: ["officeContact"],
+            facts: ["system.flag", "customer.city"],
+        });
+    }).toPass();
+});

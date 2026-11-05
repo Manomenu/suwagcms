@@ -16,6 +16,8 @@ public sealed record ProcedureStep
 
     public string? Start { get; init; }
 
+    public InformArguments? Inform { get; init; }
+
     public NextSteps? Next { get; init; }
 
     [JsonExtensionData]
@@ -31,6 +33,7 @@ public sealed record ProcedureStep
                 Say is null ? null : new SayBlock(Say),
                 Assign is null ? null : new AssignBlock(Assign),
                 Start is null ? null : new StartBlock(Start),
+                Inform is null ? null : new InformBlock(Inform),
             }.OfType<Block>(),
         ];
 }

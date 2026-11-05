@@ -9,6 +9,8 @@ internal static class ProcedureVersionRules
         For(MistakeCodes.ProcedureFirstStepMissing, FirstStep),
         For(MistakeCodes.StepBlockMissing, NoBlock),
         For(MistakeCodes.StepBlockEmpty, EmptyBlocks),
+        For(MistakeCodes.StepInformEmpty, InformsNothing),
+        For(MistakeCodes.InstructionBlank, InformBlank),
         For(MistakeCodes.StepUnreachable, Unreachable),
         For(MistakeCodes.NextDefaultMissing, NoDefault),
         For(MistakeCodes.ProcedureNoWhenStalled, NoWhenStalled),
@@ -61,6 +63,32 @@ internal static class ProcedureVersionRules
                 )
                 .OfType<Mistake>()
         );
+
+    private static IEnumerable<Mistake> InformsNothing(Procedure procedure) =>
+        procedure
+            .Steps.Where(step => step.Value.Inform is { } inform && (inform.Articles?.Count ?? 0) + (inform.Facts?.Count ?? 0) == 0)
+            .Select(step =>
+                Make(
+                    procedure,
+                    MistakeCodes.StepInformEmpty,
+                    $"steps.{step.Key}.inform",
+                    $"'inform' of step '{step.Key}' names nothing to pass on.",
+                    "Add an article or a fact."
+                )
+            );
+
+    private static IEnumerable<Mistake> InformBlank(Procedure procedure) =>
+        procedure
+            .Steps.Where(step => step.Value.Inform is { } inform && !ProcedureMistake.Given(inform.Instruction))
+            .Select(step =>
+                Make(
+                    procedure,
+                    MistakeCodes.InstructionBlank,
+                    $"steps.{step.Key}.inform.instruction",
+                    $"'inform' of step '{step.Key}' has no instruction.",
+                    "Say how to pass this on."
+                )
+            );
 
     private static IEnumerable<Mistake> Unreachable(Procedure procedure)
     {
