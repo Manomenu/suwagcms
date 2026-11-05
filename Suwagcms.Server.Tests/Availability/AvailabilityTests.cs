@@ -256,7 +256,7 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Contains(
-            "article or a procedure",
+            "a procedure or an action",
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
             StringComparison.Ordinal
         );
@@ -274,7 +274,7 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
         var missing = await scene.TurnRaw("article", "noSuchArticle", "off");
 
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
-        Assert.Contains("article or a procedure", await FixOf(missing), StringComparison.Ordinal);
+        Assert.Contains("a procedure or an action", await FixOf(missing), StringComparison.Ordinal);
         var unknownBot = await scene.Push.Client.PostAsync(
             "/api/bots/noSuchBot/availability/article/x/off",
             null,

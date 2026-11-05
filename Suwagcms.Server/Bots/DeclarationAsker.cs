@@ -9,7 +9,7 @@ using Suwagcms.Server.Editing;
 namespace Suwagcms.Server.Bots;
 
 // Why: the one place that turns a bot's answer, or its absence, into what the CMS holds; it holds no lock or transaction while it waits on the bot.
-internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider time)
+internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider time, DefinitionEditor editor)
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
@@ -96,6 +96,7 @@ internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider tim
         var text = declaration is null ? null : JsonSerializer.Serialize(declaration, Web);
         var at = time.GetUtcNow();
         await DeclarationStore.StoreAsync(pool, bot, text, at, cancellationToken);
+        await editor.AlignCodeActionsAsync(bot, cancellationToken);
         return await StatusAsync(
             bot,
             new DeclarationStore.StoredDeclaration(address, text, at.UtcDateTime),
@@ -153,7 +154,7 @@ internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider tim
         [
             .. DeclarationValidator
                 .CheckDefinition(ResourceKinds.Assemble(resources), declaration)
-                .Where(mistake => mistake.Code == MistakeCodes.DeclarationBlock),
+                .Where(mistake => mistake.Code != MistakeCodes.DeclarationFormatVersion),
         ];
     }
 }

@@ -164,7 +164,7 @@ internal static class VersionText
     private static string Counts(VersionSummary version) =>
         string.Create(
             CultureInfo.InvariantCulture,
-            $"{version.Facts} facts, {version.KnowledgeBases} knowledge bases, {version.Articles} articles, {version.Procedures} procedures"
+            $"{version.Facts} facts, {version.KnowledgeBases} knowledge bases, {version.Articles} articles, {version.Procedures} procedures, {version.Actions} actions"
         );
 
     private static string Date(VersionSummary version) =>

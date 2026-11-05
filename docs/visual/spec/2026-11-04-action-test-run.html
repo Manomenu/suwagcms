@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-action-block.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-action-test-run.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Action block</title>
+<title>Action test run</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Action block</h1>
+  <h1>Action test run</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 24 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>procedure-model</code>, <code>http-actions</code></span>
+    <span><b>Feature:</b> 25 of the suwagcms feature map, optional</span>
+    <span><b>Needs before it:</b> <code>http-actions</code>, <code>bot-runtime-sdk</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,152 +376,155 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A procedure gets an <code>action</code> block: a step runs an action without waiting for the customer, maps its parameters from facts and its results to facts, and says where to go when it fails. Then the procedure branches on facts as usual.</p>
-    <p>The mapping lives in the step, never in the action, so one action serves many procedures and the CMS can check every mapping against the types on both sides.</p>
+    <p>From an action's page, or with <code>suwagcms actions test</code>, an author gives parameter values and sees what comes back: the results, or the failure and its reason. An action can be tried before any procedure uses it and before any version holds it.</p>
+    <p>The bot makes the call, never the CMS, for HTTP actions as well, because the secrets are only in the bot's environment. A test run is a real call to a real service, so anything other than a <code>GET</code> asks first.</p>
   </div>
   <div class="stats">
-    <div><b>14</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>0</b><span>open questions</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>After <code>http-actions</code> a bot has actions, and no procedure can use them. Rasa's custom actions read and write any slot directly, so nothing outside the action's code knows which slots it touches. README takes the step-then-branch shape from Rasa and leaves that out: with an explicit mapping, a renamed fact, a narrowed range or a mistyped result is caught when it is saved, not during a conversation.</p>
-  <p>ElevenLabs' tool node supplies the other half: a call at a fixed point in a workflow, with a separate route for failure, so a service being down is a path the author designed.</p>
+  <p>Without this, the first real call of a new action happens in a customer's conversation, or in a test conversation after a version and a push. A wrong URL, a missing secret or an answer of another shape shows up there as a step that took <code>onFailure</code>, with no reason in sight. The author wants to know whether it works right now.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>A step runs an action, with its parameters and results mapped to facts.</li>
-      <li>Every mapping is checked by reference and by type, with a fix for each mistake.</li>
-      <li>Every action step has a path for failure before it can reach a version.</li>
+      <li>Try a saved action with chosen values, from the web, the CLI and the plugin.</li>
+      <li>See enough to fix it: the results, or the reason, the status and a part of the answer.</li>
+      <li>No secret value ever reaches the CMS.</li>
+      <li>Trying an action changes nothing in the CMS or in the bot's version.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Running the step: bots do that, and the first bot's specs are in its own repository. “What this asks of a bot” below is the contract they implement.</li>
-      <li>Fixed values in <code>with</code>: README maps parameters to facts, and an <code>assign</code> step before it does the same job.</li>
-      <li>Refusing to delete a used action, or to change what a step maps, and renaming: <code>delete-guard</code>, <code>edit-guard</code> and <code>resource-rename</code> hold those items.</li>
-      <li>Branching on the kind of failure: there is one failure path, and the reason is not a fact.</li>
+      <li>Trying a whole step with its mapping to facts: a run has no conversation and no facts.</li>
+      <li>Keeping a record of test runs: nothing needs them after the answer, and <code>change-history</code> records changes.</li>
+      <li>Trying unsaved changes: the page asks to save first, so a run always matches a stored action.</li>
+      <li>Mocking a service: it would prove nothing about the real one.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent adds an address check to a procedure</h3>
-  <p>The procedure below saves through <code>suwagcms procedures edit --file</code> with no mistakes. <code>isServiceable</code> has <code>writableBy: assign</code>, so the model can never set it and only the action writes it.</p>
-  <script type="text/x-code" data-file="orderService.yaml" data-lang="yaml" data-title="One step of a procedure">
-checkAddress:
-  action: checkServiceability
-  with: { address: customer.address }
-  results: { serviceable: isServiceable }
-  onFailure: tellItFailed
-  next:
-    - when: { isServiceable: { oneOf: [yes] } }
-      to: offerPlan
-    - to: sayNotServiceable
-</script>
-  <h3>2. Types that do not fit</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderService --file orderService.yaml
-Refused, 2 mistakes:
-  action.mapping.tooWide  Step 'checkAddress' passes fact 'customer.note' (text, up to 500) to parameter 'address' (text, up to 200). Use a fact of at most 200, or raise the parameter's maxLength.
-  reference.missing       Step 'checkAddress' maps result 'servicable', which action 'checkServiceability' does not have. Results: serviceable.</div>
-  <h3>3. A step still being built</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderService --file orderService.yaml
-Saved orderService, revision 4. Not ready for a version, 2 mistakes:
-  step.action.noOnFailure     Step 'checkAddress' has no onFailure. Add the step to go to when the action fails.
-  step.action.unmappedParameter  Step 'checkAddress' does not map parameter 'address'. Add it under 'with'.</div>
+  <h3>1. Marta tries a new action</h3>
+  <ol class="steps">
+    <li><p>On <code>checkServiceability</code> she types the address <code>Polna 3, Suwałki</code> and presses <span class="btn primary">Run</span>. The action is a <code>POST</code>, so a dialog says it will really be called; she confirms.</p></li>
+    <li><p>The page shows <b>Success</b>, <code>serviceable = yes</code>, 320 ms.</p></li>
+  </ol>
+  <h3>2. An agent finds a missing secret</h3>
+  <div class="term"><span class="dim">$</span> suwagcms actions test checkServiceability --param address="Polna 3, Suwałki" --yes
+Failed: secret CRM_TOKEN was not found in the bot's environment. Nothing was sent.
+Set it in the environment of bot rzeczoznawca and run again.
+<span class="dim">$</span> echo $?
+1</div>
+  <h3>3. An answer of another shape</h3>
+  <ol class="steps">
+    <li><p>The service answers 200 with <code>{ "status": "ok" }</code>. The page shows <b>Failed</b>: result <code>serviceable</code> is missing from the answer, with the status and the body of the answer below it, so Marta sees what to change.</p></li>
+  </ol>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>The fields of the step</h3>
-  <table>
-    <tr><th>Field</th><th>Means</th></tr>
-    <tr><td><code>action</code></td><td>the action's id</td></tr>
-    <tr><td><code>with</code></td><td>parameter name → the fact that gives its value</td></tr>
-    <tr><td><code>results</code></td><td>result name → the fact it writes; a result may be left unmapped and is then ignored</td></tr>
-    <tr><td><code>onFailure</code></td><td>the step to go to on a failure</td></tr>
-    <tr><td><code>next</code></td><td>as on any step: where to go on success, by fixed target or by rules on facts</td></tr>
-  </table>
-  <h3>What is checked when</h3>
-  <table>
-    <tr><th>Mistake</th><th>Stage</th></tr>
-    <tr><td><code>action</code> naming an action this bot does not have</td><td>Save, with the bot's actions</td></tr>
-    <tr><td><code>with</code> or <code>results</code> naming a parameter or result the action does not have</td><td>Save, with the ones it has</td></tr>
-    <tr><td><code>with</code> or <code>results</code> naming a fact this bot does not have</td><td>Save, with the bot's facts</td></tr>
-    <tr><td>a mapping whose types do not fit, as below</td><td>Save, with both types</td></tr>
-    <tr><td>two results written to one fact</td><td>Save</td></tr>
-    <tr><td><code>onFailure</code> naming a step that does not exist</td><td>Save, with the steps of the procedure</td></tr>
-    <tr><td><code>onFailure</code> on a step with another block</td><td>Save</td></tr>
-    <tr><td>a step with no <code>action</code> filled in, a parameter of the action not mapped, no <code>onFailure</code></td><td>Version</td></tr>
-  </table>
-  <p>A step reached only through an <code>onFailure</code> is reachable. A fact may be written by a result at any level of <code>writableBy</code>, because the action writes it and not the model. A save behaves as <code>procedure-model</code> describes: <code>Save</code> mistakes refuse it, and <code>Version</code> mistakes are listed without refusing.</p>
-  <h3>When types fit</h3>
-  <p>Types must be the same, and every value the source can hold must fit the target. A parameter's source is its fact; a result's target is its fact.</p>
-  <table>
-    <tr><th>Type</th><th>Fits when</th><th>Example of a refusal</th></tr>
-    <tr><td><code>enum</code></td><td>the source's values are all among the target's</td><td>result <code>{yes, no, maybe}</code> into fact <code>{yes, no}</code></td></tr>
-    <tr><td><code>int</code></td><td>the source's range is within the target's</td><td>fact 0 to 500 into parameter 1 to 100</td></tr>
-    <tr><td><code>text</code></td><td>the source's <code>maxLength</code> is at most the target's</td><td>fact up to 500 into parameter up to 200</td></tr>
-    <tr><td>different types</td><td>never</td><td><code>int</code> into <code>text</code></td></tr>
-  </table>
-  <h3>What this asks of a bot</h3>
-  <p>Part of the public contract. A bot's engine, in its own repository, runs the step this way, and running an HTTP action is described in the <code>http-actions</code> spec.</p>
-  <script type="text/x-mermaid" data-caption="One action step in a conversation">
-flowchart TD
-  S[Step reached] --> K{"Does every parameter have a value?"}
-  K -->|no| F[Go to onFailure, no fact written]
-  K -->|yes| R[Run the action]
-  R -->|failure| F
-  R -->|success| W[Write mapped results to facts]
-  W --> N[Follow next]
+  <script type="text/x-mermaid" data-caption="A test run: the CMS holds the definition and the bot holds the secrets">
+sequenceDiagram
+  participant A as Web or CLI
+  participant C as CMS
+  participant B as Bot
+  participant S as Service
+  A->>C: run the action with these values
+  C->>C: check the values against its parameters
+  C->>B: the saved action and the values
+  B->>S: the real call, secrets filled in
+  S-->>B: answer
+  B-->>C: results or failure, secrets masked
+  C-->>A: the same
 </script>
-  <p>On a failure no fact is written, so a procedure never branches on half an answer. The step does not wait for the customer. The customer sees nothing of a failure unless the <code>onFailure</code> step says something.</p>
+  <table>
+    <tr><th>Situation</th><th>Result</th></tr>
+    <tr><td>the service answers and results fit</td><td>success, with the results, the status and the time taken; the CLI exits 0</td></tr>
+    <tr><td>a failure, as the <code>http-actions</code> spec defines it</td><td>failed, with the reason and what is known: the status, the time taken, the start of the answer; the CLI exits 1</td></tr>
+    <tr><td>a value that does not fit its parameter, or a parameter left out</td><td>every mistake at once, with nothing sent to the bot; the CLI exits 1</td></tr>
+    <tr><td>the bot cannot be reached, or does not answer in time</td><td>says so, and that the action has not been judged; the CLI exits 1</td></tr>
+    <tr><td>the bot has no such route, as on an older SDK</td><td>says this bot does not offer test runs and to update its SDK; the CLI exits 1</td></tr>
+    <tr><td>the action has never been in a version</td><td>works: the saved action is sent with the request, so no push is needed</td></tr>
+    <tr><td>the action does not exist</td><td>refused, naming it</td></tr>
+    <tr><td>a save of the same bot during a run</td><td>unaffected: no run holds a lock while it waits on a bot</td></tr>
+    <tr><td>the answer's body is long</td><td>the first 2000 characters are shown, with a note saying it was cut</td></tr>
+  </table>
+  <p>A run writes nothing: no fact, no resource, no version, no record. The time the CMS waits is the action's own timeout, plus a little for the way to the bot and back. If the action's service repeats a secret, the bot masks the value before the answer leaves it.</p>
+  <h3>Asking first</h3>
+  <table>
+    <tr><th>Action</th><th>Web</th><th>CLI</th></tr>
+    <tr><td><code>GET</code></td><td>runs</td><td>runs</td></tr>
+    <tr><td>another method</td><td>a dialog saying the service will really be called, with the method and URL</td><td>without <code>--yes</code>: prints the method and URL, sends nothing and exits 1</td></tr>
+  </table>
+</section>
+<section data-role="ui">
+  <h2>Screen</h2>
+  <div class="wire after"><span class="wf-label">Test run on an action's page</span>
+    <div class="wf-bar"><b>checkServiceability</b><span class="wf-grow"></span><span class="tag accent">http</span></div>
+    <div class="wf-body">
+      <div class="wf-row"><span>address</span><span class="wf-input wf-grow">Polna 3, Suwałki</span><span class="wf-btn primary">Run</span></div>
+      <p class="wf-muted">Runs on bot rzeczoznawca and really calls the service.</p>
+      <div class="wf-card"><span class="tag bad">failed</span> Answer 200: result <code>serviceable</code> is missing. <span class="wf-muted">320 ms</span><div class="wf-line"></div></div>
+    </div>
+  </div>
+</section>
+<section data-role="contract">
+  <h2>Contract</h2>
+  <p>This adds a route to the public contract between the CMS and any bot. Its shape is published with the bot runtime's JSON schema.</p>
+  <table>
+    <tr><th>Route</th><th>Takes</th><th>Answers</th></tr>
+    <tr><td><code>POST /suwagcms/actions/test</code></td><td>an HTTP action as the format defines it, and the parameter values</td><td><code>outcome</code> (success or failure), <code>results</code>, <code>reason</code>, <code>status</code>, <code>elapsedMs</code>, <code>answerStart</code></td></tr>
+  </table>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>An action never names a fact, and the step maps both ways (README), so one action can serve many procedures.</li>
-    <li>Fit is judged on what the source can hold, without looking at live values: a value that could never be written is a mistake now, not a failed conversation later.</li>
-    <li>A parameter whose fact has no value at run time means failure, not an empty call. The CMS cannot prove in general that a fact is known by then, and an author already has <code>collect</code> and <code>onFailure</code> for it.</li>
-    <li>Every parameter must be mapped and a result need not be: a call without its input is broken, while a result nobody needs is harmless.</li>
-    <li><code>onFailure</code> is required by the <code>Version</code> stage and not by <code>Save</code>, in line with how <code>procedure-model</code> treats unfinished work, and <code>availability</code> relies on it being there.</li>
+    <li>Every test run goes through the bot, including HTTP actions: the feature map sends only code actions there, but README says the bot runs actions and secrets are names in its environment, so the CMS could not make the call at all.</li>
+    <li>The request carries the saved action, so an action can be tried before any version holds it, and the run does not depend on what the bot has loaded.</li>
+    <li>The run uses the same runner as a conversation, from <code>http-actions</code>, so a test proves what a conversation will do.</li>
+    <li>A run keeps no record, because the answer is the whole value of it; this keeps the feature small, in line with being optional on the feature map.</li>
+    <li>A failure of the action and a failure to reach the bot are told apart in words and in <code>--json</code>, and both exit 1.</li>
+    <li>The CLI asks for <code>--yes</code> before a real call for every method but <code>GET</code>: a plain test of a <code>POST</code> then does nothing by accident, and a call to another system has no rollback.</li>
+    <li>An outcome of <code>unreachable</code> or <code>notOffered</code> says the action has not been judged, in words and in <code>--json</code>.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-action-block-1</code> A procedure with an <code>action</code> step using <code>with</code>, <code>results</code>, <code>onFailure</code> and rule-based <code>next</code>, saved with <code>suwagcms procedures add --file</code>, reads back as written in YAML and JSON, and <code>show</code> output is accepted back by <code>edit --file</code>.</li>
-    <li><code>AC-action-block-2</code> An action never holds a fact's name: the same action is used by two procedures mapping it to different facts, and neither save changes the action.</li>
-    <li><code>AC-action-block-3</code> <code>action</code> naming an action the bot does not have is refused with <code>reference.missing</code>, with the bot's actions.</li>
-    <li><code>AC-action-block-4</code> <code>with</code> or <code>results</code> naming a parameter or result the action does not have is refused, with the ones it has.</li>
-    <li><code>AC-action-block-5</code> <code>with</code> or <code>results</code> naming a fact the bot does not have is refused with <code>reference.missing</code>, with the bot's facts.</li>
-    <li><code>AC-action-block-6</code> For each type, a parameter mapping that fits is saved and one that does not is refused, naming both types; different types are always refused.</li>
-    <li><code>AC-action-block-7</code> For each type, a result mapping that fits is saved and one that does not is refused, naming both types.</li>
-    <li><code>AC-action-block-8</code> A result may be mapped to a fact with <code>writableBy</code> <code>assign</code>, <code>set</code> or <code>correct</code>.</li>
-    <li><code>AC-action-block-9</code> A result left unmapped produces no mistake; two results mapped to one fact are refused.</li>
-    <li><code>AC-action-block-10</code> <code>onFailure</code> naming a missing step, and <code>onFailure</code> on a step with another block, are each refused.</li>
-    <li><code>AC-action-block-11</code> At the <code>Version</code> stage the validator reports a step with no <code>action</code> filled in, a parameter not mapped and a missing <code>onFailure</code>; a procedure with only these is saved, and the answer lists them with the CLI exiting 0.</li>
-    <li><code>AC-action-block-12</code> A step reached only through <code>onFailure</code> is not reported as unreachable.</li>
-    <li><code>AC-action-block-13</code> The mapping rules give the same mistakes from the server, the CLI and the validator offline.</li>
-    <li><code>AC-action-block-15</code> The lines of <code>suwagcms procedures</code> in the plugin's main skill give the format of the <code>action</code> block.</li>
+    <li><code>AC-action-test-run-1</code> In the web and with <code>suwagcms actions test</code>, a run of an HTTP action against a test service, through a test bot, shows success with the results, the status and the time taken, and the CLI exits 0.</li>
+    <li><code>AC-action-test-run-2</code> The request reaches the test service from the bot, not from the CMS, and a secret's value comes from the bot's environment.</li>
+    <li><code>AC-action-test-run-3</code> An action saved in the working state and never in a version can be run, and the bot's reported version stays as it was.</li>
+    <li><code>AC-action-test-run-4</code> A failure of the action, for each kind the <code>http-actions</code> spec defines, shows the reason with the status, the time taken and the start of the answer when known, and the CLI exits 1.</li>
+    <li><code>AC-action-test-run-5</code> A value that does not fit its parameter and a parameter left out are reported at once, with their fixes, and nothing is sent to the bot.</li>
+    <li><code>AC-action-test-run-6</code> With the bot unreachable, or not answering in time, the run says so and is told apart from a failure of the action in the words and in <code>--json</code>.</li>
+    <li><code>AC-action-test-run-7</code> A bot without the test route shows as not offering test runs, with the fix.</li>
+    <li><code>AC-action-test-run-8</code> A secret's value appears nowhere in the bot's answer, even when the test service repeats it in its body.</li>
+    <li><code>AC-action-test-run-9</code> A body of more than 2000 characters is shown cut, with a note saying so.</li>
+    <li><code>AC-action-test-run-10</code> A run changes no fact, resource or version, and leaves no record.</li>
+    <li><code>AC-action-test-run-11</code> A save of the same bot during a run waiting on a slow service completes without waiting for it.</li>
+    <li><code>AC-action-test-run-12</code> A <code>GET</code> action runs at once; for another method the web shows a dialog with the method and URL before running, and the CLI without <code>--yes</code> prints them, sends nothing and exits 1.</li>
+    <li><code>AC-action-test-run-13</code> While a form holds unsaved changes, the web's <span class="btn">Run</span> is disabled and says to save first.</li>
+    <li><code>AC-action-test-run-14</code> <code>suwagcms actions test</code> with <code>--json</code> returns the outcome, the results, the reason, the status and the time taken, and has its line in the plugin's main skill, which says a test run really calls the service.</li>
+    <li><code>AC-action-test-run-15</code> The published schema of the test route is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
+    <li><code>AC-action-test-run-16</code> A test run of a code action goes through the bot and runs its code with the given values, asks first as for a non-<code>GET</code> action because the CMS cannot know what it does, and a bot that has no way to run it from the SDK says so.</li>
+    <li><code>AC-action-test-run-17</code> A turned-off action can still be tried, and the answer says procedures will not run it while it is off.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>delete-guard</code>:</b> the “Uses” panel and <code>suwagcms usage</code> of a procedure list the action and each fact a step maps, with the field holding each.</li>
-    <li><b>after <code>local-facts</code>:</b> a result can fill a local fact and a parameter can take its value from one, by the same rules of reference and type.</li>
-    <li><b>after <code>procedure-creator</code>:</b> the form of an <code>action</code> step offers the bot's actions, then a row per parameter and result offering only the facts that fit, and a failure edge drawn to a step; the mistakes show in the live list.</li>
+    <li><b>after <code>cms-identity</code>:</b> the request carries the bot's key, and a wrong key shows as a failed run saying how to fix it.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>Strict types may annoy.</b> A fact of up to 500 characters cannot feed a parameter of up to 200, even if real values are short. The fix is a change of one number with a clear message, and the alternative is failures in conversations.</p></div>
-  <div class="callout warn"><p><b>This block changes reachability in <code>procedure-model</code>.</b> That rule has to follow <code>onFailure</code> too, and the criterion above guards it.</p></div>
+  <div class="callout risk"><p><b>The route lets anyone who reaches the bot make it call any address with its secrets.</b> The CMS never sees the values, but the caller chooses the URL. A pushed version carries the same danger, and this route makes it one request away. Until <code>cms-identity</code> the bot's routes must be reachable only from a trusted network, and the SDK's documentation has to say so here too. The prefix <code>http-actions</code> decided, which limits the names a definition can reach, narrows it.</p></div>
+  <div class="callout risk"><p><b>A test run can do real work.</b> Trying <code>sendOffer</code> really sends an offer. The dialog and <code>--yes</code> make that a choice, and they cannot make it safe.</p></div>
+  <div class="callout warn"><p><b>Masking catches a secret repeated as it is.</b> A service that encodes it, for example in Base64, gets past the mask, and the start of its answer reaches the CMS's page.</p></div>
 </section>
-
 <!-- CONTENT END -->
 </main>
 </div>

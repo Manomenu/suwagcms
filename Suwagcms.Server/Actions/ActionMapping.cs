@@ -1,0 +1,57 @@
+using Suwagcms.Contracts;
+using Suwagcms.Sdk.Format;
+using Suwagcms.Server.Editing;
+
+namespace Suwagcms.Server.Actions;
+
+internal static class ActionMapping
+{
+    public static BotAction ToRecord(string id, SaveAction body) =>
+        new()
+        {
+            Id = id,
+            Description = body.Description ?? "",
+            Parameters = body.Parameters,
+            Results = body.Results,
+            Implementation = body.Implementation,
+        };
+
+    public static SaveAction Merged(BotAction stored, SaveAction given) =>
+        new(
+            given.Description ?? stored.Description,
+            given.Parameters ?? stored.Parameters,
+            given.Results ?? stored.Results,
+            given.Implementation ?? stored.Implementation
+        );
+
+    public static ActionView Show(StoredResource stored, IReadOnlyList<StoredResource> all, BotDeclaration? declaration) =>
+        Show((BotAction)stored.Record, stored.Revision, all, declaration);
+
+    // Why: both marks come from comparing the copy with the last declaration, so asking again changes them without a write; a bot that declares nothing has said nothing about its code actions.
+    public static ActionView Show(BotAction action, int revision, IEnumerable<StoredResource> all, BotDeclaration? declaration)
+    {
+        var declared = declaration?.CodeActions.Any(code => code.Id == action.Id) ?? false;
+        return new(
+            action.Id,
+            action.Description,
+            action.Parameters,
+            action.Results,
+            action.Implementation,
+            revision,
+            UsedBy(action.Id, all),
+            !action.IsCode && declared,
+            action.IsCode && declaration is not null && !declared
+        );
+    }
+
+    // Why: the procedures that name the action come from the reference walker, the one place that knows where a definition names one.
+    private static List<string> UsedBy(string id, IEnumerable<StoredResource> all) =>
+        [
+            .. ReferenceWalker
+                .From(ResourceKinds.Assemble(all))
+                .Where(reference => reference.To == new ResourceRef(ResourceKind.Action, id))
+                .Select(reference => reference.From.Id)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal),
+        ];
+}

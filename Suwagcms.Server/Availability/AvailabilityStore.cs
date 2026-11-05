@@ -97,7 +97,8 @@ internal static class AvailabilityStore
                         JsonSerializer.SerializeToElement(off ? "on" : "off"),
                         JsonSerializer.SerializeToElement(off ? "off" : "on")
                     ),
-                ]
+                ],
+                Resource: found.Id
             ),
             now,
             cancellationToken

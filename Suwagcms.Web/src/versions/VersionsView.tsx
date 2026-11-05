@@ -268,7 +268,7 @@ export function VersionsView({
                                     </td>
                                     <td className="text-muted-foreground">
                                         {version.facts} facts, {version.knowledgeBases} knowledge bases, {version.articles} articles,{" "}
-                                        {version.procedures} procedures
+                                        {version.procedures} procedures, {version.actions} actions
                                     </td>
                                     <td>
                                         <code className="text-muted-foreground" title={version.sha256}>

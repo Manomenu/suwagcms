@@ -90,11 +90,14 @@ The CMS holds the action's contract. The work happens in one of two places:
 | Implementation | Who edits what                                                                                  |
 | :------------- | :---------------------------------------------------------------------------------------------- |
 | `http`         | the whole action is defined in the CMS: URL, method and references to secrets, never their values |
-| `code`         | written in the bot and declared at registration; the CMS shows it read-only and controls its availability |
+| `code`         | written in the bot and declared by it; the CMS asks after registration, shows it read-only and controls its availability |
 
 Parameters and results are typed like facts, and the procedure's step maps them to facts. An action therefore never
 names a fact itself, so one action can serve many procedures and can also fill local facts. The target fact of a
 result is written by the action, so it can be `writableBy: assign`.
+
+`suwagcms actions test <id>` tries a saved action through the bot; anything but a `GET` first asks for `--yes`.
+A secret written `{secret:NAME}` is read from the bot's environment variable `SUWAGCMS_SECRET_NAME`.
 
 ### Procedures
 

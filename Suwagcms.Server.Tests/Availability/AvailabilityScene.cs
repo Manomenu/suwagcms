@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Sdk.Format;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Versions;
 
@@ -25,9 +26,9 @@ internal sealed class AvailabilityScene(PushScene push, TestBot bot, ArticleApi 
 
     public string Id => Push.Bot;
 
-    public static async Task<AvailabilityScene> StartAsync(HttpClient client, IVersionStore? store = null)
+    public static async Task<AvailabilityScene> StartAsync(HttpClient client, IVersionStore? store = null, BotCapabilities? declares = null)
     {
-        var bot = await TestBot.StartAsync(PushScene.FreshId(), store);
+        var bot = await TestBot.StartAsync(PushScene.FreshId(), store, declares: declares);
         var push = await PushScene.RegisterAsync(client, bot.Id, bot.Address);
         await push.FillAsync();
         var articles = new ArticleApi(client, bot.Id);

@@ -14,13 +14,15 @@ internal static class AvailabilityEndpoints
     public const string ConversationRefused = "availability.conversation";
 
     private const string Problem = "application/problem+json";
-    private const string WhatCanBeOff = "Only an article or a procedure can be turned off; facts and knowledge bases have no availability.";
+    private const string WhatCanBeOff =
+        "Only an article, a procedure or an action can be turned off; facts and knowledge bases have no availability.";
 
     // Why: the words a person types for a kind; any other word is refused with this list, so the route does not narrow it.
     private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
     {
         ["article"] = ResourceKind.Article,
         ["procedure"] = ResourceKind.Procedure,
+        ["action"] = ResourceKind.Action,
     };
 
     public static void MapAvailability(this IEndpointRouteBuilder routes)

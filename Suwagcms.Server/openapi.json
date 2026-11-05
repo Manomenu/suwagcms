@@ -1245,6 +1245,335 @@
         }
       }
     },
+    "/api/bots/{bot}/actions": {
+      "get": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActionView"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/actions/{id}": {
+      "get": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/actions/{id}/test": {
+      "post": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionTestAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/versions": {
       "get": {
         "tags": [
@@ -1665,7 +1994,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|articles|procedures)$",
+              "pattern": "^(facts|articles|procedures|actions)$",
               "type": "string"
             }
           },
@@ -1721,7 +2050,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|knowledge-bases|articles|procedures)$",
+              "pattern": "^(facts|knowledge-bases|articles|procedures|actions)$",
               "type": "string"
             }
           },
@@ -2070,7 +2399,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|knowledge-bases|articles|procedures|versions)$",
+              "pattern": "^(facts|knowledge-bases|articles|procedures|actions|versions)$",
               "type": "string"
             }
           },
@@ -2367,6 +2696,187 @@
   },
   "components": {
     "schemas": {
+      "ActionField": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "values": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "min": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "max": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxLength": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ActionImplementation": { },
+      "ActionTestAnswer": {
+        "required": [
+          "outcome",
+          "results",
+          "reason",
+          "status",
+          "elapsedMs",
+          "answerStart",
+          "answerCut"
+        ],
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string"
+          },
+          "results": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "elapsedMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "answerStart": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "answerCut": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "What a test run came to. `Outcome` is `success` or `failure` when the bot ran the action, `unreachable` when the bot could not be reached or gave no usable answer, and `notOffered` when the bot has no such route; in the last two the action has not been judged.\n`Status`, `ElapsedMs` and `AnswerStart` are what is known of the call; `AnswerCut` says the answer was longer than what is shown. `Note` says what the run cannot show, such as that the action is turned off."
+      },
+      "ActionView": {
+        "required": [
+          "id",
+          "description",
+          "parameters",
+          "results",
+          "implementation",
+          "revision",
+          "usedBy",
+          "alsoDeclared",
+          "noLongerDeclared"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "implementation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ActionImplementation"
+              }
+            ]
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "alsoDeclared": {
+            "type": "boolean"
+          },
+          "noLongerDeclared": {
+            "type": "boolean"
+          }
+        },
+        "description": "An action of a bot as the API shows it: the format's fields, with secrets only as the names its headers hold, the revision to send back to guard an edit, the procedures that use it, whether the bot also declares this id as a code action, and whether a code action in use is no longer declared."
+      },
       "ApplyChanges": {
         "required": [
           "bot",
@@ -2387,7 +2897,7 @@
             ]
           }
         },
-        "description": "A file of changes as a request. Each change says what it does (add, edit or delete, with the kind as the value: fact, knowledgeBase, article, procedure), the resource's id (name for a fact), and for an add or edit the fields of that resource's own save; an edit or delete may give ifRevision. Bot, when given, must be the bot of the address."
+        "description": "A file of changes as a request. Each change says what it does (add, edit or delete, with the kind as the value: fact, knowledgeBase, article, procedure, action), the resource's id (name for a fact), and for an add or edit the fields of that resource's own save; an edit or delete may give ifRevision. Bot, when given, must be the bot of the address."
       },
       "ArticleView": {
         "required": [
@@ -3054,7 +3564,7 @@
             }
           }
         },
-        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists the steps of the working state using a block the declaration leaves out."
+        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists what of the working state does not fit the declaration: steps using a block it leaves out, and actions it no longer has, describes differently or also holds as a code action."
       },
       "DeclarationStored": {
         "enum": [
@@ -3321,7 +3831,7 @@
             "format": "uuid"
           }
         },
-        "description": "One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure or version; and id), the action (added, edited, deleted, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share."
+        "description": "One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure, action or version; and id), the action (added, edited, deleted, renamed, turned on, turned off, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share."
       },
       "HistoryPage": {
         "required": [
@@ -3676,6 +4186,36 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "action": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "with": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "onFailure": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "next": {
             "oneOf": [
@@ -4091,6 +4631,70 @@
             "type": "string"
           }
         }
+      },
+      "RunAction": {
+        "required": [
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "What a test run of a saved action takes: the value of each parameter, as text."
+      },
+      "SaveAction": {
+        "required": [
+          "description",
+          "parameters",
+          "results",
+          "implementation"
+        ],
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "parameters": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "implementation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ActionImplementation"
+              }
+            ]
+          }
+        },
+        "description": "What saving an action takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once. A secret stands in a header as {secret:NAME}, never as its value."
       },
       "SaveArticle": {
         "required": [
@@ -4527,6 +5131,7 @@
           "knowledgeBases",
           "articles",
           "procedures",
+          "actions",
           "sha256"
         ],
         "type": "object",
@@ -4575,6 +5180,14 @@
             ],
             "format": "int32"
           },
+          "actions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
           "sha256": {
             "type": "string"
           }
@@ -4604,6 +5217,9 @@
     },
     {
       "name": "ProcedureEndpoints"
+    },
+    {
+      "name": "ActionEndpoints"
     },
     {
       "name": "VersionEndpoints"

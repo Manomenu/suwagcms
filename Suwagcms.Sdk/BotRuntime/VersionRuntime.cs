@@ -6,9 +6,12 @@ using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.BotRuntime;
 
-internal sealed partial class VersionRuntime(string botId, IVersionStore store, ILogger<VersionRuntime> logger)
-    : IBotDefinitions,
-        IDisposable
+internal sealed partial class VersionRuntime(
+    string botId,
+    IVersionStore store,
+    ILogger<VersionRuntime> logger,
+    BotDeclaration? declaration = null
+) : IBotDefinitions, IDisposable
 {
     private readonly SemaphoreSlim writes = new(1, 1);
     private readonly SemaphoreSlim refreshes = new(1, 1);
@@ -130,7 +133,7 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
 
     public async Task<(BotState? Accepted, BotRefusal? Refused)> PushAsync(int number, string json, CancellationToken cancellationToken)
     {
-        var mistakes = VersionIntake.Check(json, botId, number);
+        var mistakes = VersionIntake.Check(json, botId, number, declaration);
         if (mistakes.Count > 0)
         {
             return (null, Refusal(422, "The version was refused.", $"{mistakes.Count} mistake(s) in the document.", mistakes));
@@ -188,7 +191,7 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
                 }
 
                 // Why: the SDK may have been upgraded since the version arrived, and a bot never runs what the validator of today has not checked.
-                var mistakes = VersionIntake.Check(held, botId, choice.Number);
+                var mistakes = VersionIntake.Check(held, botId, choice.Number, declaration);
                 if (mistakes.Count > 0)
                 {
                     return (null, Refusal(422, "The version was refused.", $"{mistakes.Count} mistake(s) in the held document.", mistakes));

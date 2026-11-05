@@ -376,12 +376,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>Anyone can turn an article or a procedure off, from the web, the CLI or the plugin. The list of what uses it is shown first, and being in use never stops it. Turning off changes whether a resource can be found, never whether it exists, so no reference breaks.</p>
+    <p>Anyone can turn an article, a procedure or an action off, from the web, the CLI or the plugin. The list of what uses it is shown first, and being in use never stops it. Turning off changes whether a resource can be found, never whether it exists, so no reference breaks.</p>
     <p>Availability is a live setting outside versions. The CMS sends it to one instance of the bot at once, with no push, the others pick it up at their next poll, and it applies to every conversation, also those on an older version. If the bot cannot be reached, the page says the change is saved and not delivered, because “off” is often an emergency and nobody should believe it too early.</p>
   </div>
   <div class="stats">
-    <div><b>25</b><span>criteria</span></div>
-    <div><b>5</b><span>criteria after other features</span></div>
+    <div><b>28</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -446,7 +446,7 @@ The bot still has the previous setting. Send it with: suwagcms availability send
     <tr><th>Off</th><th>Effect</th></tr>
     <tr><td>Article</td><td>left out of search; a procedure naming it explicitly still gets it</td></tr>
     <tr><td>Procedure</td><td>the model cannot start it, even from an article's guide; conversations already in it finish</td></tr>
-    <tr><td>Action</td><td>a step running it takes <code>onFailure</code>, which makes it a usable emergency switch</td></tr>
+    <tr><td>Action</td><td>the SDK says it is off, and the bot's engine takes the step's <code>onFailure</code>, which makes it a usable emergency switch</td></tr>
   </table>
   <p>The bot's engine carries these out, in its own repository. The SDK gives it the answers, so that bots cannot differ on them, and this spec's criteria check those answers.</p>
   <h3>How a change travels</h3>
@@ -562,6 +562,9 @@ sequenceDiagram
     <li><code>AC-availability-23</code> Turning off <code>conversation</code> is refused with the reason.</li>
     <li><code>AC-availability-24</code> Every push sends the whole set before the version, so a missed change is repaired and a new version never runs without it.</li>
     <li><code>AC-availability-25</code> A renamed resource keeps its setting, and turning it off also reaches conversations on an older version that holds it under its old <code>id</code>.</li>
+    <li><code>AC-availability-26</code> An action can be turned off and on like an article, with its setting kept when its <code>id</code> changes, and the Actions screen shows its state.</li>
+    <li><code>AC-availability-27</code> A code action can be turned off the same way, though the rest of it is read-only.</li>
+    <li><code>AC-availability-28</code> For a step running a turned-off action, the SDK says on any version that the action is off and still gives the step with its <code>onFailure</code> step; the CMS stores and delivers this, and taking that route is the bot's to carry out.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
@@ -569,9 +572,6 @@ sequenceDiagram
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>inform-block</code>, <code>instruction-context</code>:</b> the SDK gives an article a procedure names explicitly even while it is off.</li>
-    <li><b>after <code>http-actions</code>:</b> an action can be turned off, and the Actions screen shows its state.</li>
-    <li><b>after <code>code-actions</code>:</b> a code action can be turned off the same way, though the rest of it is read-only.</li>
-    <li><b>after <code>action-block</code>:</b> the SDK answers, for a step running a turned-off action, that it takes its <code>onFailure</code> step, on any version.</li>
     <li><b>after <code>cms-identity</code>:</b> the request carries the bot's key, and a wrong key shows as not delivered, saying how to fix it.</li>
   </ul>
 </section>

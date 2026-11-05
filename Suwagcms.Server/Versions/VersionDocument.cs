@@ -24,7 +24,7 @@ internal static class VersionDocument
             ["facts"] = Kind(all, ResourceKind.GlobalFact),
             ["knowledgeBases"] = Kind(all, ResourceKind.KnowledgeBase),
             ["articles"] = Kind(all, ResourceKind.Article),
-            ["actions"] = new JsonArray(),
+            ["actions"] = Kind(all, ResourceKind.Action),
             ["procedures"] = Kind(all, ResourceKind.Procedure),
         };
         var digest = VersionDigest.Of(document.ToJsonString(Compact));

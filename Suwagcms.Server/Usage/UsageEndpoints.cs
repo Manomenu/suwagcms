@@ -11,17 +11,18 @@ internal static class UsageEndpoints
     private const string Title = "The usage was not shown.";
     private const string Problem = "application/problem+json";
 
-    // Why: the route accepts only these three segments, so the lookup cannot miss.
+    // Why: the route accepts only these segments, so the lookup cannot miss.
     private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
     {
         ["facts"] = ResourceKind.GlobalFact,
         ["articles"] = ResourceKind.Article,
         ["procedures"] = ResourceKind.Procedure,
+        ["actions"] = ResourceKind.Action,
     };
 
     public static void MapUsage(this IEndpointRouteBuilder routes) =>
         routes
-            .MapGet("/bots/{bot}/{kind:regex(^(facts|articles|procedures)$)}/{id}/usage", Show)
+            .MapGet("/bots/{bot}/{kind:regex(^(facts|articles|procedures|actions)$)}/{id}/usage", Show)
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
 
     private static async Task<Results<Ok<UsageView>, ProblemHttpResult>> Show(

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Suwagcms.Server.Actions;
 using Suwagcms.Server.Articles;
 using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
@@ -42,6 +43,7 @@ internal static class ServerApp
         builder.Services.AddTransient<DeclarationAsker>();
         builder.Services.AddTransient<AvailabilitySender>();
         builder.Services.AddTransient<VersionPusher>();
+        builder.Services.AddTransient<ActionTester>();
         builder.Services.AddTransient<BotStatusReader>();
         builder.Services.AddOpenApi();
 
@@ -57,6 +59,7 @@ internal static class ServerApp
         api.MapFacts();
         api.MapKnowledgeBases();
         api.MapProcedures();
+        api.MapActions();
         api.MapVersions();
         api.MapUsage();
         api.MapRenames();

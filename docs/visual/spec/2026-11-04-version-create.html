@@ -381,8 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Creating and pushing are separate on purpose: unfinished work is not sent by accident, and a version can wait until someone has checked it. The frozen document is the public contract with every bot.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>18</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -495,14 +494,7 @@ flowchart LR
     <li><code>AC-version-create-15</code> Each <code>suwagcms versions</code> command has its line in the plugin's main skill.</li>
     <li><code>AC-version-create-16</code> A version is checked against what the bot declares.</li>
     <li><code>AC-version-create-17</code> Availability is not part of a version: a version holds nothing about what is off, and turning a resource off gives no reason for a new version.</li>
-  </ul>
-</section>
-
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>http-actions</code>:</b> a version holds the bot's actions.</li>
+    <li><code>AC-version-create-18</code> A version holds the bot's actions.</li>
   </ul>
 </section>
 

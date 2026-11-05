@@ -30,10 +30,11 @@ public static class ReferenceWalker
     public static IEnumerable<Reference> From(Procedure procedure)
     {
         ArgumentNullException.ThrowIfNull(procedure);
-        return Uses(procedure).Where(reference => !procedure.Locals.ContainsKey(reference.To.Id));
+        return Uses(procedure)
+            .Where(reference => reference.To.Kind != ResourceKind.GlobalFact || !procedure.Locals.ContainsKey(reference.To.Id));
     }
 
-    // Why: every fact a step names, local or global, for the rules that check a use against the fact it means.
+    // Why: every fact a step names, local or global, for the rules that check a use against the fact it means, and the action it runs, which has no use of a fact to say.
     public static IEnumerable<Reference> Uses(Procedure procedure)
     {
         ArgumentNullException.ThrowIfNull(procedure);
@@ -43,6 +44,10 @@ public static class ReferenceWalker
             foreach (var fact in step.Blocks.SelectMany(block => block.Facts))
             {
                 yield return new Reference(from, $"steps.{stepName}.{fact.Path}", Fact(fact.Name), fact.Use);
+            }
+            if (!string.IsNullOrWhiteSpace(step.Action))
+            {
+                yield return new Reference(from, $"steps.{stepName}.action", new ResourceRef(ResourceKind.Action, step.Action), null);
             }
             var rules = step.Next?.Rules ?? [];
             for (var index = 0; index < rules.Count; index++)
@@ -77,6 +82,16 @@ public static class ReferenceWalker
     {
         ArgumentNullException.ThrowIfNull(procedure);
         ArgumentNullException.ThrowIfNull(target);
+        if (target.Kind == ResourceKind.Action)
+        {
+            return procedure with
+            {
+                Steps = procedure.Steps.ToDictionary(
+                    step => step.Key,
+                    step => step.Value.Action == target.Id ? step.Value with { Action = newId } : step.Value
+                ),
+            };
+        }
         if (target.Kind != ResourceKind.GlobalFact || procedure.Locals.ContainsKey(target.Id))
         {
             return procedure;
@@ -94,6 +109,8 @@ public static class ReferenceWalker
                     {
                         Collect = step.Value.Collect?.Select(Renamed).ToList(),
                         Assign = step.Value.Assign?.ToDictionary(entry => Renamed(entry.Key), entry => entry.Value),
+                        With = step.Value.With?.ToDictionary(entry => entry.Key, entry => Renamed(entry.Value)),
+                        Results = step.Value.Results?.ToDictionary(entry => entry.Key, entry => Renamed(entry.Value)),
                         Next = step.Value.Next is { Rules: { } rules } next
                             ? next with
                             {

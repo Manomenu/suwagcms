@@ -108,6 +108,7 @@ public static class DeclarationValidator
         var declared = string.Join(", ", declaration.Blocks);
         return
         [
+            .. DeclarationContract.Check(definition, declaration),
             .. definition
                 .Procedures.OrderBy(procedure => procedure.Id, StringComparer.Ordinal)
                 .SelectMany(procedure =>
@@ -179,6 +180,16 @@ public static class DeclarationValidator
                 "Give each code action the id a procedure will name it by."
             );
         }
+        else if (!ResourceIds.IsCamelCase(action.Id))
+        {
+            yield return OfAction(
+                MistakeCodes.CodeActionIdInvalid,
+                action,
+                "id",
+                $"'{action.Id}' is not an action id: it is one camelCase word.",
+                $"Rename the code action to '{ResourceIds.Suggest(action.Id)}'."
+            );
+        }
 
         if (string.IsNullOrWhiteSpace(action.Description))
         {
@@ -194,6 +205,39 @@ public static class DeclarationValidator
         foreach (var mistake in Fields(action, "parameters", action.Parameters).Concat(Fields(action, "results", action.Results)))
         {
             yield return mistake;
+        }
+
+        foreach (var mistake in FieldNames(action, "parameters", action.Parameters).Concat(FieldNames(action, "results", action.Results)))
+        {
+            yield return mistake;
+        }
+    }
+
+    // Why: the CMS keeps a code action's fields by name, so a name that is no name, or is said twice, cannot be kept; the answer is refused and the last good one stands.
+    private static IEnumerable<Mistake> FieldNames(CodeAction action, string list, IReadOnlyList<CodeActionField> fields)
+    {
+        foreach (
+            var name in fields.Select(field => field.Name).Where(name => !ResourceIds.IsCamelCase(name)).Distinct(StringComparer.Ordinal)
+        )
+        {
+            yield return OfAction(
+                MistakeCodes.CodeActionFieldInvalid,
+                action,
+                $"{list}.{name}",
+                $"'{name}' in {list} of code action '{action.Id}' is not one camelCase word.",
+                $"Rename it to '{ResourceIds.Suggest(name)}'."
+            );
+        }
+
+        foreach (var group in fields.GroupBy(field => field.Name, StringComparer.Ordinal).Where(group => group.Count() > 1))
+        {
+            yield return OfAction(
+                MistakeCodes.CodeActionFieldRepeated,
+                action,
+                $"{list}.{group.Key}",
+                $"'{group.Key}' is listed {string.Create(CultureInfo.InvariantCulture, $"{group.Count()}")} times in {list} of code action '{action.Id}'.",
+                "Keep one of them, or give each its own name."
+            );
         }
     }
 

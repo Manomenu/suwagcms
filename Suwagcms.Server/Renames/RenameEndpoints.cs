@@ -18,11 +18,12 @@ internal static class RenameEndpoints
         ["knowledge-bases"] = ResourceKind.KnowledgeBase,
         ["articles"] = ResourceKind.Article,
         ["procedures"] = ResourceKind.Procedure,
+        ["actions"] = ResourceKind.Action,
     };
 
     public static void MapRenames(this IEndpointRouteBuilder routes) =>
         routes
-            .MapPost("/bots/{bot}/{kind:regex(^(facts|knowledge-bases|articles|procedures)$)}/{id}/rename", Apply)
+            .MapPost("/bots/{bot}/{kind:regex(^(facts|knowledge-bases|articles|procedures|actions)$)}/{id}/rename", Apply)
             .Accepts<RenameResource>("application/json")
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
             .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)

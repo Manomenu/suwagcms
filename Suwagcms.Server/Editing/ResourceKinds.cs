@@ -21,7 +21,8 @@ internal static class ResourceKinds
             ResourceKind.KnowledgeBase => typeof(KnowledgeBase),
             ResourceKind.Article => typeof(Article),
             ResourceKind.Procedure => typeof(Procedure),
-            ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
+            ResourceKind.Action => typeof(BotAction),
+            ResourceKind.Definition => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
@@ -35,9 +36,7 @@ internal static class ResourceKinds
             ResourceKind.Article => "article",
             ResourceKind.Procedure => "procedure",
             ResourceKind.Definition => "definition",
-            ResourceKind.Action => throw new InvalidOperationException(
-                $"{kind} resources are not stored yet: add the kind to ResourceKinds."
-            ),
+            ResourceKind.Action => "action",
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
@@ -49,7 +48,8 @@ internal static class ResourceKinds
             ResourceKind.KnowledgeBase => "knowledgeBase",
             ResourceKind.Article => "article",
             ResourceKind.Procedure => "procedure",
-            ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
+            ResourceKind.Action => "action",
+            ResourceKind.Definition => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
@@ -67,6 +67,7 @@ internal static class ResourceKinds
                 .. all.Where(item => item.Target.Kind == ResourceKind.KnowledgeBase).Select(item => (KnowledgeBase)item.Record),
             ],
             Articles = [.. all.Where(item => item.Target.Kind == ResourceKind.Article).Select(item => (Article)item.Record)],
+            Actions = [.. all.Where(item => item.Target.Kind == ResourceKind.Action).Select(item => (BotAction)item.Record)],
             Procedures = [.. all.Where(item => item.Target.Kind == ResourceKind.Procedure).Select(item => (Procedure)item.Record)],
         };
     }
@@ -78,6 +79,7 @@ internal static class ResourceKinds
             KnowledgeBase knowledgeBase => knowledgeBase with { Id = id },
             Article article => article with { Id = id },
             Procedure procedure => procedure with { Id = id },
+            BotAction action => action with { Id = id },
             _ => throw new ArgumentException($"{record.GetType().Name} is not a stored resource."),
         };
 

@@ -14,6 +14,8 @@ internal static class EditProblems
     public const string ResourceStale = "resource.stale";
     public const string ResourceSameId = "resource.sameId";
     public const string ChangedTwice = "change.twice";
+    public const string CodeReadOnly = "action.code.readOnly";
+    public const string CodeDeclared = "action.code.declared";
 
     public static ProblemHttpResult For(EditResult result, string bot, string title) =>
         Problem(
@@ -71,6 +73,39 @@ internal static class EditProblems
             $"There is no bot '{bot}'.",
             "Check the bot's id, or register the bot first.",
             []
+        );
+
+    public static Mistake ReadOnly(ResourceRef target) =>
+        new(
+            CodeReadOnly,
+            ValidationStage.Save,
+            target,
+            "implementation",
+            $"'{target.Id}' is written in the bot's code, so the CMS only shows it.",
+            "Change it in the bot and deploy; the CMS sees the change the next time it asks.",
+            []
+        );
+
+    public static Mistake CodeWritten(ResourceRef target) =>
+        new(
+            CodeReadOnly,
+            ValidationStage.Save,
+            target,
+            "implementation",
+            $"'{target.Id}' says 'implementation: code', and a code action comes only from the bot's declaration.",
+            "Write it in the bot, state it in the SDK's setup and deploy; the CMS sees it the next time it asks. Or give it an HTTP implementation.",
+            []
+        );
+
+    public static Mistake DeclaredId(ResourceRef target, ResourceRef declared) =>
+        new(
+            CodeDeclared,
+            ValidationStage.Save,
+            target,
+            "id",
+            $"The bot declares a code action '{declared.Id}', so an HTTP action cannot take that id.",
+            "Choose another id, or use the code action in your procedures.",
+            [new RelatedResource(declared, "id")]
         );
 
     public static Mistake SameId(ResourceRef target) =>

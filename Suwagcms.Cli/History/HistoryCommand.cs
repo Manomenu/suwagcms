@@ -20,6 +20,7 @@ internal static class HistoryCommand
         ["kb"] = "knowledge-bases",
         ["article"] = "articles",
         ["procedure"] = "procedures",
+        ["action"] = "actions",
         ["version"] = "versions",
     };
 
@@ -27,7 +28,7 @@ internal static class HistoryCommand
     {
         var kind = new Argument<string?>("kind")
         {
-            Description = "fact, kb, article, procedure or version. Left out with the id: every change to the bot.",
+            Description = "fact, kb, article, procedure, action or version. Left out with the id: every change to the bot.",
             Arity = ArgumentArity.ZeroOrOne,
         };
         kind.AcceptOnlyFromAmong([.. Collections.Keys]);

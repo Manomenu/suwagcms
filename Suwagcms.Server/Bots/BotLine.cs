@@ -69,6 +69,23 @@ internal sealed class BotLine(HttpClient http, IOptions<PushOptions> options, Ti
             cancellationToken
         );
 
+    public async Task<Reply> TestActionAsync(string address, string request, int seconds, CancellationToken cancellationToken) =>
+        await SendAsync(
+            address,
+            new HttpRequestMessage(HttpMethod.Post, Route(address, "actions/test"))
+            {
+                Content = new StringContent(request, Encoding.UTF8, "application/json"),
+            },
+            seconds,
+            cancellationToken
+        );
+
+    public static ActionOutcome? OutcomeIn(Reply.Answer answer) =>
+        answer.Status is >= 200 and < 300
+        && Parse<ActionOutcome>(answer.Body) is { Outcome: ActionOutcome.Success or ActionOutcome.Failure } outcome
+            ? outcome
+            : null;
+
     public static BotState? StateIn(Reply.Answer answer) => Parse<BotState>(answer.Body);
 
     public static BotRefusal? RefusalIn(Reply.Answer answer) => Parse<BotRefusal>(answer.Body);

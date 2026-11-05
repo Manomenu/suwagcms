@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { Fact, ProcedureDetail } from "./api";
 import {
+    FAILURE,
+    factsThatFit,
     addRule,
     addStep,
     canRemoveRule,
@@ -211,5 +213,50 @@ describe("local facts", () => {
         expect(factsSeen(with1, [])[0]).toMatchObject({ type: "text", writableBy: "set", maxLength: 10 });
         expect(toSave(with1).localFacts).toEqual({ visitDate: { type: "text", description: "When", maxLength: 10 } });
         expect(toSave(removeLocalFact(with1, "visitDate"))).not.toHaveProperty("localFacts");
+    });
+});
+
+describe("an action step", () => {
+    const fact = (name: string, over: Partial<Fact>): Fact => ({
+        name,
+        type: "text",
+        description: "",
+        writableBy: "set",
+        values: null,
+        min: null,
+        max: null,
+        maxLength: 10,
+        revision: 1,
+        usedBy: [],
+        ...over,
+    });
+
+    it("AC-action-block-16: a parameter row offers only the facts whose every value fits it, and a result row the facts that take all it gives", () => {
+        const short = fact("short", { maxLength: 10 });
+        const long = fact("long", { maxLength: 500 });
+        const number = fact("number", { type: "int", min: 1, max: 5, maxLength: null });
+        const field = { type: "text", maxLength: 200, values: null, min: null, max: null };
+
+        expect(factsThatFit("with", field, [short, long, number]).map((found) => found.name)).toEqual(["short"]);
+        expect(factsThatFit("results", field, [short, long, number]).map((found) => found.name)).toEqual(["long"]);
+    });
+
+    it("AC-action-block-16: a failure edge is drawn to a step, reads back, and goes when that step is renamed or deleted", () => {
+        const start: Draft = {
+            description: "",
+            firstStep: "check",
+            whenStalled: null,
+            localFacts: {},
+            steps: { check: { action: "send" }, failed: { say: "Sorry" } },
+        };
+
+        const joined = connect(start, "check", FAILURE, "failed");
+        expect(joined.steps["check"]?.onFailure).toBe("failed");
+        expect(edgesOf(joined)).toContainEqual({ id: "check:failure", source: "check", handle: "failure", target: "failed" });
+        expect(stepOrder(joined)).toEqual(["check", "failed"]);
+        expect(toSave(joined).steps?.["check"]).toMatchObject({ action: "send", onFailure: "failed" });
+        expect(renameStep(joined, "failed", "sorry").steps["check"]?.onFailure).toBe("sorry");
+        expect(deleteStep(joined, "failed").steps["check"]?.onFailure).toBeUndefined();
+        expect(disconnect(joined, "check", FAILURE).steps["check"]?.onFailure).toBeUndefined();
     });
 });

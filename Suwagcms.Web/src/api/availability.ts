@@ -1,4 +1,4 @@
-// Why: the article and procedure screens turn resources on and off through the same routes and read the same setting, so the calls and their hook exist once.
+// Why: the article, procedure and action screens turn resources on and off through the same routes and read the same setting, so the calls and their hook exist once.
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError, request } from "./client";
@@ -8,7 +8,7 @@ type AvailabilityView = components["schemas"]["AvailabilityView"];
 type AvailabilityAnswer = components["schemas"]["AvailabilityAnswer"];
 type AvailabilityDelivery = components["schemas"]["AvailabilityDelivery"];
 
-type AvailabilityKind = "article" | "procedure";
+type AvailabilityKind = "article" | "procedure" | "action";
 
 function botPath(bot: string): string {
     return `/bots/${encodeURIComponent(bot)}/availability`;
@@ -27,6 +27,7 @@ export interface AvailabilityState {
     isOff: (kind: AvailabilityKind, id: string) => boolean;
     turn: (kind: AvailabilityKind, id: string, off: boolean) => void;
     send: () => void;
+    reload: () => void;
 }
 
 /** What a bot has on and off, as the CMS holds it, and whether the bot has it, from the bot's own answer; asking the bot does not hold up the rest of the screen. */
@@ -84,5 +85,11 @@ export function useAvailability(bot: string): AvailabilityState {
         [view],
     );
 
-    return { delivery, failure, isOff, turn, send };
+    const reload = useCallback(() => {
+        load(false, new AbortController().signal).catch((error: unknown) => {
+            setFailure(messageOf(error));
+        });
+    }, [load]);
+
+    return { delivery, failure, isOff, turn, send, reload };
 }

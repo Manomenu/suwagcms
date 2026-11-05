@@ -10,7 +10,11 @@ internal static class FactRules
         new(
             MistakeCodes.FactNameInvalid,
             ValidationStage.Save,
-            definition => definition.Facts.SelectMany(Name).Concat(definition.Procedures.SelectMany(LocalNames))
+            definition =>
+                definition
+                    .Facts.SelectMany(Name)
+                    .Concat(definition.Procedures.SelectMany(LocalNames))
+                    .Concat(definition.Actions.Where(action => !action.IsCode).SelectMany(FieldNames))
         ),
         For(MistakeCodes.FactTypeInvalid, Type),
         For(MistakeCodes.FactDescriptionMissing, Description),
@@ -26,7 +30,51 @@ internal static class FactRules
 
     // Why: one rule per code, so a code that never fires is found by the test that every rule has a mistake.
     private static Rule For(string code, Func<GlobalFact, IEnumerable<Mistake>> check) =>
-        new(code, ValidationStage.Save, definition => definition.Facts.SelectMany(check).Concat(Locals(definition, check)));
+        new(
+            code,
+            ValidationStage.Save,
+            definition => definition.Facts.SelectMany(check).Concat(Locals(definition, check)).Concat(ActionFields(definition, check))
+        );
+
+    // Why: a parameter or a result is typed by the same rules as a fact, with the same codes; a code action's are the bot's, and a declaration is judged when it arrives.
+    private static IEnumerable<Mistake> ActionFields(BotDefinition definition, Func<GlobalFact, IEnumerable<Mistake>> check) =>
+        definition
+            .Actions.Where(action => !action.IsCode)
+            .SelectMany(action =>
+                FieldsOf(action)
+                    .SelectMany(field =>
+                        check(field.Field.Named(field.Name)).Select(mistake => InAction(mistake, action, $"{field.List}.{field.Name}"))
+                    )
+            );
+
+    private static IEnumerable<(string List, string Name, ActionField Field)> FieldsOf(BotAction action) =>
+        action
+            .ParameterFields.Select(entry => ("parameters", entry.Key, entry.Value))
+            .Concat(action.ResultFields.Select(entry => ("results", entry.Key, entry.Value)));
+
+    private static Mistake InAction(Mistake mistake, BotAction action, string place)
+    {
+        var resource = new ResourceRef(ResourceKind.Action, action.Id);
+        return mistake with
+        {
+            Resource = resource,
+            Path = $"{place}.{mistake.Path}",
+            Related = [.. mistake.Related.Select(related => new RelatedResource(resource, $"{place}.{related.Location}"))],
+        };
+    }
+
+    private static IEnumerable<Mistake> FieldNames(BotAction action) =>
+        FieldsOf(action)
+            .Where(field => !ResourceIds.IsCamelCase(field.Name))
+            .Select(field => new Mistake(
+                MistakeCodes.FactNameInvalid,
+                ValidationStage.Save,
+                new ResourceRef(ResourceKind.Action, action.Id),
+                $"{field.List}.{field.Name}",
+                $"'{field.Name}' is not a name for this list: it is one camelCase word with no dots (visitDate).",
+                $"Rename it to '{ResourceIds.Suggest(field.Name)}'.",
+                []
+            ));
 
     // Why: a local fact has the same rules with the same codes; only where the mistake sits differs, inside its procedure.
     private static IEnumerable<Mistake> Locals(BotDefinition definition, Func<GlobalFact, IEnumerable<Mistake>> check) =>

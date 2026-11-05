@@ -19,11 +19,12 @@ internal static class RenameCommand
         ["kb"] = ("knowledge-bases", "KnowledgeBase"),
         ["article"] = ("articles", "Article"),
         ["procedure"] = ("procedures", "Procedure"),
+        ["action"] = ("actions", "Action"),
     };
 
     public static Command Create(GlobalOptions options, CliEnvironment environment)
     {
-        var kind = new Argument<string>("kind") { Description = "fact, kb, article or procedure." };
+        var kind = new Argument<string>("kind") { Description = "fact, kb, article, procedure or action." };
         kind.AcceptOnlyFromAmong([.. Kinds.Keys]);
         var id = new Argument<string>("id") { Description = "The resource's id or, for a fact, its name." };
         var newId = new Argument<string>("newId") { Description = "The id it gets, in the form that kind of resource requires." };

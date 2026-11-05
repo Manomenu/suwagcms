@@ -44,7 +44,18 @@ internal static class Samples
             Facts = [CityFact],
             KnowledgeBases = [Faq],
             Articles = [Pricing],
-            Actions = [new BotAction { Id = "sendOffer" }],
+            Actions =
+            [
+                new BotAction
+                {
+                    Id = "sendOffer",
+                    Description = "Sends the offer",
+                    Implementation = new ActionImplementation
+                    {
+                        Http = new HttpCall { Method = "POST", Address = "https://crm.internal/offers" },
+                    },
+                },
+            ],
             Procedures = [Procedure("conversation"), Procedure("quote")],
         };
 

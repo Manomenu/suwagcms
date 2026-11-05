@@ -27,7 +27,11 @@ internal static class ProcedureFactRules
             facts.Count == 0
                 ? "The procedure sees no facts yet: add one first."
                 : $"Facts it sees: {string.Join(", ", facts.Order(StringComparer.Ordinal))}. Local facts of other procedures are not visible.";
-        foreach (var reference in ReferenceWalker.Uses(procedure).Where(reference => !facts.Contains(reference.To.Id)))
+        foreach (
+            var reference in ReferenceWalker
+                .Uses(procedure)
+                .Where(reference => reference.To.Kind == ResourceKind.GlobalFact && !facts.Contains(reference.To.Id))
+        )
         {
             yield return Make(
                 procedure,
@@ -201,6 +205,8 @@ internal static class ProcedureFactRules
             FactUse.Collect => $"'collect' of step '{Step(reference)}'",
             FactUse.Assign => $"'assign' of step '{Step(reference)}'",
             FactUse.Condition => $"'when' of a rule of step '{Step(reference)}'",
+            FactUse.Parameter => $"'with' of step '{Step(reference)}'",
+            FactUse.Result => $"'results' of step '{Step(reference)}'",
             _ => throw new ArgumentOutOfRangeException(nameof(reference)),
         };
 

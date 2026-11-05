@@ -19,7 +19,8 @@ internal static class HistoryStore
         string Action,
         int? Revision,
         IReadOnlyList<FieldChange> Changes,
-        Guid? Batch = null
+        Guid? Batch = null,
+        Guid? Resource = null
     );
 
     private sealed record EntryRow(
@@ -44,8 +45,8 @@ internal static class HistoryStore
         await connection.ExecuteAsync(
             new CommandDefinition(
                 """
-                INSERT INTO change_entry (bot_id, kind, public_id, action, revision, changes, batch, at)
-                VALUES (@bot, @Kind, @Id, @Action, @Revision, @changes::jsonb, @Batch, @at)
+                INSERT INTO change_entry (bot_id, kind, public_id, action, revision, changes, batch, resource_id, at)
+                VALUES (@bot, @Kind, @Id, @Action, @Revision, @changes::jsonb, @Batch, @Resource, @at)
                 """,
                 new
                 {
@@ -56,6 +57,7 @@ internal static class HistoryStore
                     entry.Revision,
                     changes = JsonSerializer.Serialize(entry.Changes, Web),
                     entry.Batch,
+                    entry.Resource,
                     at,
                 },
                 transaction,
@@ -85,7 +87,9 @@ internal static class HistoryStore
                     SELECT id AS Id, at AS At, kind AS Kind, public_id AS PublicId, action AS Action, revision AS Revision, changes::text AS Changes, batch AS Batch
                     FROM change_entry
                     WHERE bot_id = @bot
-                      AND (@kind::text IS NULL OR (kind = @kind AND public_id = @id))
+                      AND (@kind::text IS NULL OR (kind = @kind AND (public_id = @id OR resource_id IN (
+                          SELECT resource_id FROM change_entry WHERE bot_id = @bot AND kind = @kind AND public_id = @id
+                      ))))
                       AND (@before::bigint IS NULL OR id < @before)
                     ORDER BY id DESC
                     LIMIT @size

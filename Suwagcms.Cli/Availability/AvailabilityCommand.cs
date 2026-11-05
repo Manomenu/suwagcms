@@ -13,7 +13,7 @@ internal static class AvailabilityCommand
 
     public static Command Create(GlobalOptions options, CliEnvironment environment)
     {
-        var command = new Command("availability", "Turn articles and procedures on and off, a live setting outside versions.")
+        var command = new Command("availability", "Turn articles, procedures and actions on and off, a live setting outside versions.")
         {
             List(options, environment),
             Off(options, environment),
@@ -27,7 +27,7 @@ internal static class AvailabilityCommand
     {
         var command = new Command(
             "list",
-            "List every article and procedure, on or off, and say whether the bot has the setting. Changes nothing."
+            "List every article, procedure and action, on or off, and say whether the bot has the setting. Changes nothing."
         );
         EditOptions.RefuseOpen(command, options, "availability list");
         command.SetAction(
@@ -113,7 +113,7 @@ internal static class AvailabilityCommand
 
     private static Command Turn(string word, string description, Option<bool>? yes, GlobalOptions options, CliEnvironment environment)
     {
-        var kind = new Argument<string>("kind") { Description = "article or procedure." };
+        var kind = new Argument<string>("kind") { Description = "article, procedure or action." };
         var id = new Argument<string>("id") { Description = "The resource's id." };
         var dryRun = EditOptions.DryRun();
         var command = new Command(word, description) { kind, id, dryRun };

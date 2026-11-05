@@ -363,3 +363,83 @@ test("AC-procedure-creator-19: the creator offers only the blocks the bot last d
         server.close();
     }
 });
+
+test("AC-action-block-16: an action step's form offers the bot's actions, then a row per parameter and result with only the facts that fit, and a failure edge; the mistakes show in the live list", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await request.put(`/api/bots/${bot}/actions/checkKind?ifRevision=0`, {
+        data: {
+            description: "Checks",
+            parameters: { place: { type: "text", maxLength: 100, description: "Where" } },
+            results: { kind: { type: "enum", values: ["house", "flat"], description: "What" } },
+            implementation: { http: { method: "POST", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+        },
+    });
+    await agentSaves(
+        request,
+        bot,
+        "withAction",
+        { description: "Runs an action", firstStep: "run", steps: { run: { action: "" }, failed: { say: "Sorry" } } },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/withAction`);
+    await page.locator('[data-step="run"]').click();
+
+    await page.getByLabel("Action", { exact: true }).selectOption("checkKind");
+
+    const parameter = page.getByLabel("Parameters: place");
+    await expect(parameter.getByRole("option")).toHaveText(["(choose a fact)", "customer.city", "system.flag"]);
+    const result = page.getByLabel("Results: kind");
+    await expect(result.getByRole("option")).toHaveText(["(ignored)", "order.kind"]);
+    await expect(page.getByText("Step 'run' has no onFailure.")).toBeVisible();
+    await expect(page.getByText("Step 'run' does not map parameter 'place'.")).toBeVisible();
+
+    await parameter.selectOption("customer.city");
+    await result.selectOption("order.kind");
+    await page.getByLabel("On failure, go to").selectOption("failed");
+
+    await expect(page.getByText("Step 'run' has no onFailure.")).toHaveCount(0);
+    await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect
+        .poll(
+            async () =>
+                ((await (await request.get(`/api/bots/${bot}/procedures/withAction`)).json()) as { steps: { run: unknown } }).steps.run,
+        )
+        .toMatchObject({ action: "checkKind", with: { place: "customer.city" }, results: { kind: "order.kind" }, onFailure: "failed" });
+});
+
+test("AC-action-block-17: the Uses panel of a procedure lists the action and each fact a step maps, with the field holding each", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await request.put(`/api/bots/${bot}/actions/checkKind?ifRevision=0`, {
+        data: {
+            description: "Checks",
+            parameters: { place: { type: "text", maxLength: 100, description: "Where" } },
+            results: null,
+            implementation: { http: { method: "POST", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+        },
+    });
+    await agentSaves(
+        request,
+        bot,
+        "withAction",
+        {
+            description: "Runs",
+            firstStep: "run",
+            steps: { run: { action: "checkKind", with: { place: "customer.city" }, onFailure: "failed" }, failed: { say: "S" } },
+        },
+        0,
+    );
+
+    await page.goto(`/bots/${bot}/procedures/withAction`);
+
+    const uses = page.getByRole("region", { name: "Uses" });
+    await expect(uses).toContainText("checkKind");
+    await expect(uses).toContainText("steps.run.action");
+    await expect(uses).toContainText("steps.run.with.place");
+});

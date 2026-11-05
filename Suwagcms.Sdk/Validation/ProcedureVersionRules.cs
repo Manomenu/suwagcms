@@ -72,7 +72,9 @@ internal static class ProcedureVersionRules
         var queue = new Queue<string>([first]);
         while (queue.TryDequeue(out var current))
         {
-            foreach (var (_, target) in procedure.Steps[current].Next?.Targets ?? [])
+            var step = procedure.Steps[current];
+            var targets = (step.Next?.Targets ?? []).Select(target => target.Target);
+            foreach (var target in step.OnFailure is { } failure ? targets.Append(failure) : targets)
             {
                 if (procedure.Steps.ContainsKey(target) && reached.Add(target))
                 {
