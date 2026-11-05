@@ -9,6 +9,8 @@ namespace Suwagcms.Cli.Procedures;
 // Why: the file is YAML or JSON and the server takes JSON, so the file becomes one JSON object whose meaning does not depend on the format it was written in.
 internal static class ProcedureFile
 {
+    private static readonly HashSet<string> TopNumbers = new(["revision"], StringComparer.Ordinal);
+
     public static async Task<(JsonObject? Document, string Problem)> ReadAsync(string path, CancellationToken cancellationToken)
     {
         string text;
@@ -28,7 +30,7 @@ internal static class ProcedureFile
         ArgumentNullException.ThrowIfNull(text);
         try
         {
-            var node = text.TrimStart().StartsWith('{') ? JsonNode.Parse(text) : FromYaml(text);
+            var node = text.TrimStart().StartsWith('{') ? JsonNode.Parse(text) : FromYaml(text, TopNumbers);
             return node is JsonObject document
                 ? (document, "")
                 : (null, $"'{name}' does not hold one procedure: write a mapping with id, description, firstStep and steps.");
@@ -39,15 +41,16 @@ internal static class ProcedureFile
         }
     }
 
-    private static JsonNode? FromYaml(string text)
+    // Why: a file of changes holds procedures too, so it reads the same way and only names its own numbers at the top of each change.
+    public static JsonNode? FromYaml(string text, IReadOnlySet<string> topNumbers)
     {
         var stream = new YamlStream();
         stream.Load(new StringReader(text));
-        return stream.Documents.Count == 0 ? null : Convert(stream.Documents[0].RootNode, "", "");
+        return stream.Documents.Count == 0 ? null : Convert(stream.Documents[0].RootNode, "", "", topNumbers);
     }
 
     // Why: YAML writes 42 and true unquoted, and only min, max and known mean a number or a boolean; every other plain scalar is the text it spells.
-    private static JsonNode? Convert(YamlNode node, string key, string parent)
+    private static JsonNode? Convert(YamlNode node, string key, string parent, IReadOnlySet<string> topNumbers)
     {
         switch (node)
         {
@@ -56,19 +59,19 @@ internal static class ProcedureFile
                 foreach (var (name, value) in mapping.Children)
                 {
                     var childKey = (name as YamlScalarNode)?.Value ?? "";
-                    result[childKey] = Convert(value, childKey, key);
+                    result[childKey] = Convert(value, childKey, key, topNumbers);
                 }
                 return result;
             case YamlSequenceNode sequence:
-                return new JsonArray([.. sequence.Children.Select(item => Convert(item, "", key))]);
+                return new JsonArray([.. sequence.Children.Select(item => Convert(item, "", key, topNumbers))]);
             case YamlScalarNode scalar:
-                return Scalar(scalar, key, parent);
+                return Scalar(scalar, key, parent, topNumbers);
             default:
                 return null;
         }
     }
 
-    private static JsonNode? Scalar(YamlScalarNode scalar, string key, string parent)
+    private static JsonNode? Scalar(YamlScalarNode scalar, string key, string parent, IReadOnlySet<string> topNumbers)
     {
         var value = scalar.Value ?? "";
         if (scalar.Style != ScalarStyle.Plain)
@@ -83,7 +86,7 @@ internal static class ProcedureFile
         {
             return value == "true";
         }
-        var isNumber = (key is "min" or "max" && parent == "range") || (key == "revision" && parent.Length == 0);
+        var isNumber = (key is "min" or "max" && parent == "range") || (parent.Length == 0 && topNumbers.Contains(key));
         return isNumber && int.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number)
             ? number
             : value;

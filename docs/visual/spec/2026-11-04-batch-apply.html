@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Applying a file of changes</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 34 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>global-facts</code>, <code>article-links</code></span>
@@ -380,9 +380,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It is the one way to make changes that only work together, and it is an ordinary save with more than one change in it, so it knows no rule of its own. A file says what to change. It is not a local copy of the bot.</p>
   </div>
   <div class="stats">
-    <div><b>14</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
     <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -456,7 +456,7 @@ Applied: 5 added, 2 edited, 1 deleted.
   <script type="text/x-code" data-file="changes.yaml" data-lang="yaml">
 bot: rzeczoznawca            # optional; refused if it is not the bot in use
 changes:
-  - add: article             # add, edit or delete; kinds: fact, knowledgeBase, article
+  - add: article             # add, edit or delete; kinds: fact, knowledgeBase, article, procedure
     id: rabaty
     knowledgeBase: oferta
     title: Rabaty
@@ -478,6 +478,14 @@ changes:
     <li>A file is a list of changes, not a desired state: absent resources are left alone, and no one can delete half a bot by working from an old copy.</li>
     <li>The API takes the changes as a request, and the YAML is only the CLI's form of it: the server knows one write path and one rule set.</li>
     <li>Without <code>ifRevision</code> a change applies to the latest revision, as a CLI edit does.</li>
+    <li>A file holds a list of add, edit and delete, not the state wanted: it says what it does, and a typo in an <code>id</code> cannot silently add a resource.</li>
+    <li>A file has no size limit of its own beyond the request's ordinary one: no measurement exists, and any number would be a guess.</li>
+    <li>An add of a resource and a delete of it in one file are two changes to one resource, refused for that, never as a missing resource: the outcome would depend on their order.</li>
+    <li>What is wrong with a file's shape (an unknown field, a change that says no kind) comes back first and all at once, as an unreadable body does on a save; the rules then judge a file whose every change could be read.</li>
+    <li>What is out of date (an old <code>ifRevision</code>, a resource that is gone, two changes to one resource) comes back together, before the rules: a file based on an old read has no result worth judging, as a single save does.</li>
+    <li>A refused file answers with the same status whatever refused it, and every mistake it holds carries its change's position; a mistake on a resource the file does not name has none.</li>
+    <li>An edit is merged with what is stored under the bot's lock, so a save just before it is kept, not refused; <code>ifRevision</code> is what asks for a refusal.</li>
+    <li>Changing a resource's availability is not part of a file: availability is a live setting outside versions and not a field of a resource.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -497,14 +505,16 @@ changes:
     <li><code>AC-batch-apply-12</code> A file and a save of the same bot arriving at the same moment run one after the other: each is checked against the state the other left, and a refused file leaves no trace of itself.</li>
     <li><code>AC-batch-apply-13</code> <code>--json</code> returns the result per change, and the mistakes as a save returns them.</li>
     <li><code>AC-batch-apply-14</code> <code>suwagcms apply</code> has its line in the plugin's main skill, and a separate skill for batch changes starts with a dry run.</li>
+    <li><code>AC-batch-apply-15</code> A dry run shows the same refusals as an ordinary save, judged on the whole file's result: a used article and every reference to it can go in one file, and two new articles linking to each other are refused as a loop.</li>
+    <li><code>AC-batch-apply-16</code> A file of changes covers procedures, and a successful answer also lists the <code>Version</code> stage's mistakes without refusing.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>delete-guard</code>, <code>loop-guard</code>, <code>edit-guard</code>:</b> a dry run shows the same refusals as an ordinary save, judged on the whole file's result: a used article and every reference to it can go in one file, and two new articles linking to each other are refused as a loop.</li>
-    <li><b>after <code>procedure-model</code>, <code>http-actions</code>:</b> a file of changes covers procedures and actions, and a successful answer also lists the <code>Version</code> stage's mistakes without refusing.</li>
+    <li><b>after <code>edit-guard</code>:</b> a dry run shows the refusals of the edit guard too, judged on the whole file's result.</li>
+    <li><b>after <code>http-actions</code>:</b> a file of changes covers actions.</li>
     <li><b>after <code>version-export</code>:</b> an exported file given to <code>apply</code> is refused, saying that exports are for reading and how to write a file of changes.</li>
   </ul>
 </section>
@@ -512,23 +522,6 @@ changes:
   <h2>Risks and assumptions</h2>
   <div class="callout warn"><p><b>A large file holds up the bot's other saves.</b> Saves of one bot run one at a time, so a big file delays others for as long as it takes. With one team this is acceptable, and it never waits on a person or a network. Nobody has measured it for thousands of changes.</p></div>
   <div class="callout warn"><p><b>An all-or-nothing file does not suit partial progress.</b> One mistake in 500 changes stops them all, by design: the list of mistakes is the way forward.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What does the file hold: changes, or the state wanted?</legend>
-      <p class="why">A list of changes fits README's wording and its ban on local editing. A file of the wanted state would be shorter for a full import, but it brings back a local copy with an old-copy risk. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="changes"><span><b>A list of add, edit and delete</b><small>says what it does; nothing is deleted by being absent</small></span></label>
-      <label><input type="radio" value="state"><span><b>The wanted state of the resources it names</b><small>add or edit chosen by itself, shorter files, but a typo in an <code>id</code> silently adds</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Does a file have a size limit of its own?</legend>
-      <p class="why">A large file holds the bot's other saves. No measurement exists, so any number would be a guess. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="none"><span><b>None beyond the request's ordinary limit</b><small>the owner's own guide: nothing until a real need shows up</small></span></label>
-      <label><input type="radio" value="limit"><span><b>A limit on the number of changes</b><small>a known worst case, at the cost of splitting what was meant to be atomic</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

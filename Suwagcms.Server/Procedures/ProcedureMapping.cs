@@ -17,6 +17,14 @@ internal static class ProcedureMapping
             WhenStalled = body.WhenStalled,
         };
 
+    public static SaveProcedure Merged(Procedure stored, SaveProcedure given) =>
+        new(
+            given.Description ?? stored.Description,
+            given.FirstStep ?? stored.FirstStep,
+            given.Steps ?? stored.Steps,
+            given.WhenStalled ?? stored.WhenStalled
+        );
+
     public static ProcedureDetail Show(Procedure procedure, int revision, IReadOnlyList<Mistake> notReady) =>
         new(
             procedure.Id,

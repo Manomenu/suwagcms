@@ -17,6 +17,15 @@ internal static class ArticleMapping
             Description = body.Description ?? "",
         };
 
+    public static SaveArticle Merged(Article stored, SaveArticle given) =>
+        new(
+            given.KnowledgeBase ?? stored.KnowledgeBase,
+            given.Title ?? stored.Title,
+            given.Content ?? stored.Content,
+            given.LlmGuide ?? stored.LlmGuide,
+            given.Description ?? stored.Description
+        );
+
     // Why: an article has no language of its own, so it is read off its knowledge base, which the stored resources hold.
     public static Dictionary<string, string> Languages(IEnumerable<StoredResource> stored) =>
         stored

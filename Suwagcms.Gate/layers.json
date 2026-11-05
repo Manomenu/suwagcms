@@ -1,5 +1,5 @@
 {
-  "serverLayers": ["Api", "Usage", "Articles", "KnowledgeBases", "Procedures | ProcedureLayouts", "Versions", "Facts", "Bots", "Health", "Editing", "Database"],
+  "serverLayers": ["Api", "Changes", "Usage", "Articles", "KnowledgeBases", "Procedures | ProcedureLayouts", "Versions", "Facts", "Bots", "Health", "Editing", "Database"],
   "projects": {
     "Suwagcms.Sdk": { "references": [], "internalsVisibleTo": ["Suwagcms.Sdk.Tests"] },
     "Suwagcms.Sdk.Tests": { "references": ["Suwagcms.Sdk"], "internalsVisibleTo": [] },

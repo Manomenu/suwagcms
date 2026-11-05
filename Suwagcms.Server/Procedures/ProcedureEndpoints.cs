@@ -98,7 +98,7 @@ internal static class ProcedureEndpoints
     }
 
     // Why: a version needs the base procedure, so the delete is refused for good; replace its steps with an edit instead.
-    private static Mistake Required(ResourceRef target) =>
+    public static Mistake Required(ResourceRef target) =>
         new(
             ConversationRequired,
             ValidationStage.Save,

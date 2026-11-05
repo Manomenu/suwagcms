@@ -56,7 +56,7 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
         }
     }
 
-    private static string Noun(string kind) =>
+    public static string Noun(string kind) =>
         kind switch
         {
             "GlobalFact" => "fact",

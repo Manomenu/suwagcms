@@ -1580,10 +1580,99 @@
           }
         }
       }
+    },
+    "/api/bots/{bot}/changes": {
+      "post": {
+        "tags": [
+          "ChangesEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyChanges"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangesApplied"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChangesRefusal"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ApplyChanges": {
+        "required": [
+          "bot",
+          "changes"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "changes": {
+            "type": [
+              "null",
+              "array"
+            ]
+          }
+        },
+        "description": "A file of changes as a request. Each change says what it does (add, edit or delete, with the kind as the value: fact, knowledgeBase, article, procedure), the resource's id (name for a fact), and for an add or edit the fields of that resource's own save; an edit or delete may give ifRevision. Bot, when given, must be the bot of the address."
+      },
       "ArticleView": {
         "required": [
           "id",
@@ -1763,6 +1852,179 @@
           }
         },
         "description": "What the bot itself reports (never what the CMS tried to send), and what the CMS knows beside it.\n`Has`, `Held` and `InUse` are the bot's answer and are empty unless `Reach` is `Answered`;\n`LastKnown` is the number it reported the last time it answered, at `LastKnownAt`."
+      },
+      "ChangeApplied": {
+        "required": [
+          "change",
+          "action",
+          "kind",
+          "id",
+          "revision"
+        ],
+        "type": "object",
+        "properties": {
+          "change": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "action": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "What one change of a file did, or would do on a dry run. Change is its position in the file, from 1; Action is added, edited or deleted; Kind is the word the file uses; Revision is the resource's new revision, none after a delete."
+      },
+      "ChangeMistake": {
+        "required": [
+          "change",
+          "code",
+          "stage",
+          "resource",
+          "path",
+          "message",
+          "fix",
+          "related"
+        ],
+        "type": "object",
+        "properties": {
+          "change": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ValidationStage"
+          },
+          "resource": {
+            "$ref": "#/components/schemas/ResourceRef"
+          },
+          "path": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "fix": {
+            "type": "string"
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedResource"
+            }
+          }
+        },
+        "description": "A mistake as a save returns it, with the position in the file of the change it belongs to, from 1. Change is empty when the mistake is on the file as a whole or on a resource the file does not name."
+      },
+      "ChangesApplied": {
+        "required": [
+          "added",
+          "edited",
+          "deleted",
+          "dryRun",
+          "changes",
+          "notReady"
+        ],
+        "type": "object",
+        "properties": {
+          "added": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "edited": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "deleted": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "dryRun": {
+            "type": "boolean"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeApplied"
+            }
+          },
+          "notReady": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "The answer to a file of changes: the counts, the result per change, whether anything was written, and NotReady, what still stops a version, which never refuses a file."
+      },
+      "ChangesRefusal": {
+        "required": [
+          "title",
+          "status",
+          "detail",
+          "mistakes"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": "string"
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeMistake"
+            }
+          }
+        },
+        "description": "The Problem Details of a refused file of changes: every mistake at once, each with its change's position. Nothing was saved."
       },
       "Fact": {
         "required": [
@@ -2667,6 +2929,9 @@
     },
     {
       "name": "ProcedureLayoutEndpoints"
+    },
+    {
+      "name": "ChangesEndpoints"
     }
   ]
 }

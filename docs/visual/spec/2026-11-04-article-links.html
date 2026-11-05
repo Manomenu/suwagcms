@@ -450,7 +450,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><code>cms://procedure/…</code></td><td>refused until <code>article-procedure-links</code> exists; afterwards only in <code>llmGuide</code></td></tr>
     <tr><td>several bad links in one save</td><td>all reported at once</td></tr>
     <tr><td>a link to an article in another base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
-    <tr><td>two articles that link to each other</td><td>a loop, which <code>loop-guard</code> refuses: <code>batch-apply</code> does not change that. Until then each save needs its target to exist, so the second article of such a pair cannot be written</td></tr>
+    <tr><td>two articles that link to each other</td><td>a loop, which <code>loop-guard</code> refuses, also when both arrive in one file of changes</td></tr>
   </table>
   <h3>The picker</h3>
   <p>It lists this bot's articles, whichever base they are in, and narrows as the author types a title or an <code>id</code>. It leaves out the article being edited. Clicking a chip's link opens the target. Deleting a chip removes the link from the text.</p>

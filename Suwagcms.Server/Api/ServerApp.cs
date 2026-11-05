@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using Suwagcms.Server.Articles;
 using Suwagcms.Server.Bots;
+using Suwagcms.Server.Changes;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Facts;
@@ -52,6 +53,7 @@ internal static class ServerApp
         api.MapVersions();
         api.MapUsage();
         api.MapProcedureLayouts();
+        api.MapChanges();
         return app;
     }
 }
