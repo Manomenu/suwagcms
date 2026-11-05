@@ -9,6 +9,10 @@ function factsPath(bot: string): string {
     return `/bots/${encodeURIComponent(bot)}/facts`;
 }
 
+export function fetchFact(bot: string, name: string, signal: AbortSignal): Promise<Fact> {
+    return request<Fact>(`${factsPath(bot)}/${encodeURIComponent(name)}`, { signal });
+}
+
 export function fetchFacts(bot: string, signal: AbortSignal): Promise<Fact[]> {
     return request<Fact[]>(factsPath(bot), { signal });
 }

@@ -129,7 +129,10 @@ internal static class ArticlesCommand
         var id = new Argument<string>("id") { Description = "The article's id, like priceList." };
         var ifRevision = EditOptions.IfRevision();
         var dryRun = EditOptions.DryRun();
-        var command = new Command("delete", "Delete an article. Nothing checks yet whether another article or a procedure refers to it.")
+        var command = new Command(
+            "delete",
+            "Delete an article. Refused while another article links to it, with every referrer listed; `usage article <id>` shows them first."
+        )
         {
             id,
             ifRevision,

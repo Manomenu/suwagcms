@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
+import { UsagePanel } from "@/design/usagePanel";
 
 import {
     deleteArticle,
@@ -28,6 +31,10 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     const [open, setOpen] = useState<Open>(null);
     const [dirty, setDirty] = useState(false);
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+    const [location, navigate] = useLocation();
+    const [params] = useSearchParams();
+    const openParam = params.get("open");
+    const usage = useUsage(bot, "articles", open?.kind === "edit" ? open.article.id : null);
 
     const fail = useCallback((signal: AbortSignal) => {
         return (error: unknown) => {
@@ -70,6 +77,20 @@ export function ArticlesScreen({ bot }: { bot: string }) {
         loadArticles(new AbortController().signal);
     }, [loadArticles]);
 
+    // Why: a link from another screen, or from the Used by panel, arrives as ?open=<id>; it is taken once and dropped from the address.
+    useEffect(() => {
+        if (openParam === null) return;
+        navigate(location, { replace: true });
+        if (dirty && !window.confirm(DISCARD_QUESTION)) return;
+        fetchArticle(bot, openParam, new AbortController().signal)
+            .then((article) => {
+                setOpen({ kind: "edit", article });
+            })
+            .catch((error: unknown) => {
+                setFailure(error instanceof Error ? error.message : String(error));
+            });
+    }, [openParam, location, navigate, dirty, bot]);
+
     if (failure !== null) {
         return (
             <main className="mx-auto max-w-2xl p-4">
@@ -87,7 +108,10 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     function remove(article: Article) {
         setDeleteFailure(null);
         deleteArticle(bot, article.id, revisionOf(article))
-            .then(reload)
+            .then(() => {
+                setOpen(null);
+                reload();
+            })
             .catch((error: unknown) => {
                 setDeleteFailure(
                     error instanceof ApiError
@@ -133,13 +157,22 @@ export function ArticlesScreen({ bot }: { bot: string }) {
             onEdit={(article) => {
                 if (confirmDiscard()) setOpen({ kind: "edit", article });
             }}
-            onDelete={remove}
             onLeave={(event) => {
                 if (!confirmDiscard()) event.preventDefault();
             }}
             form={
                 <>
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
+                    {open?.kind === "edit" && (
+                        <UsagePanel
+                            usage={usage.usage}
+                            failure={usage.failure}
+                            hrefOf={(entry) => usageHref(bot, entry)}
+                            onDelete={() => {
+                                remove(open.article);
+                            }}
+                        />
+                    )}
                     {open !== null && (
                         <ArticleForm
                             key={open.kind === "edit" ? open.article.id : "add"}

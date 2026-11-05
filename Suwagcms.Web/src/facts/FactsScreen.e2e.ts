@@ -111,7 +111,8 @@ test("AC-global-facts-8: a fact deleted in the web is gone from the list and fro
     await addCity(request, bot);
     await page.goto(`/bots/${bot}/facts`);
 
-    await page.getByRole("listitem").filter({ hasText: "customer.city" }).getByRole("button", { name: "Delete" }).click();
+    await page.getByRole("listitem").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("button", { name: "Delete" }).click();
 
     await expect(page.getByText("No facts yet.")).toBeVisible();
     expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(404);
@@ -126,4 +127,29 @@ test("AC-global-facts-13: the facts screen of one bot shows nothing of another b
 
     await expect(page.getByText("No facts yet.")).toBeVisible();
     await expect(page.getByText("customer.city")).toHaveCount(0);
+});
+
+test("AC-delete-guard-12: a fact a procedure uses is refused for delete in the API, and in the web Delete is disabled beside a link to the procedure (AC-delete-guard-7, AC-delete-guard-9)", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addCity(request, bot);
+    const saved = await request.put(`/api/bots/${bot}/procedures/orderValuation?ifRevision=0`, {
+        data: { description: "Orders a valuation.", firstStep: "ask", steps: { ask: { collect: ["customer.city"] } } },
+    });
+    expect(saved.status()).toBe(200);
+
+    const refused = await request.delete(`/api/bots/${bot}/facts/customer.city`);
+    expect(refused.status()).toBe(422);
+    await page.goto(`/bots/${bot}/facts`);
+    await page.getByRole("listitem").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+
+    await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
+    await expect(page.getByText("Used in 1 place. Remove that reference first.")).toBeVisible();
+    const usedBy = page.getByRole("region", { name: "Used by" });
+    await expect(usedBy).toContainText("steps.ask.");
+    await usedBy.getByRole("link", { name: "orderValuation" }).click();
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation$`));
+    expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(200);
 });

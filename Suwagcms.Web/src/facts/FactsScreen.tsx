@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
+import { UsagePanel } from "@/design/usagePanel";
 
-import { deleteFact, fetchFacts, revisionOf, type Fact } from "./api";
+import { deleteFact, fetchFact, fetchFacts, revisionOf, type Fact } from "./api";
 import { emptyForm, formOf } from "./factForm";
 import { FactForm } from "./FactForm";
 import { FactsView } from "./FactsView";
@@ -16,6 +19,10 @@ export function FactsScreen({ bot }: { bot: string }) {
     const [failure, setFailure] = useState<string | null>(null);
     const [open, setOpen] = useState<Open>(null);
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+    const [location, navigate] = useLocation();
+    const [params] = useSearchParams();
+    const openParam = params.get("open");
+    const usage = useUsage(bot, "facts", open?.kind === "edit" ? open.fact.name : null);
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -38,6 +45,19 @@ export function FactsScreen({ bot }: { bot: string }) {
         };
     }, [load]);
 
+    // Why: a link from the Used by panel of another screen arrives as ?open=<name>; it is taken once and dropped from the address.
+    useEffect(() => {
+        if (openParam === null) return;
+        navigate(location, { replace: true });
+        fetchFact(bot, openParam, new AbortController().signal)
+            .then((fact) => {
+                setOpen({ kind: "edit", fact });
+            })
+            .catch((error: unknown) => {
+                setFailure(error instanceof Error ? error.message : String(error));
+            });
+    }, [openParam, location, navigate, bot]);
+
     if (failure !== null) {
         return (
             <main className="mx-auto max-w-2xl p-4">
@@ -54,6 +74,7 @@ export function FactsScreen({ bot }: { bot: string }) {
         setDeleteFailure(null);
         deleteFact(bot, fact.name, revisionOf(fact))
             .then(() => {
+                setOpen(null);
                 load();
             })
             .catch((error: unknown) => {
@@ -75,10 +96,19 @@ export function FactsScreen({ bot }: { bot: string }) {
             onEdit={(fact) => {
                 setOpen({ kind: "edit", fact });
             }}
-            onDelete={remove}
             form={
                 <>
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
+                    {open?.kind === "edit" && (
+                        <UsagePanel
+                            usage={usage.usage}
+                            failure={usage.failure}
+                            hrefOf={(entry) => usageHref(bot, entry)}
+                            onDelete={() => {
+                                remove(open.fact);
+                            }}
+                        />
+                    )}
                     {open !== null && (
                         <FactForm
                             key={open.kind === "edit" ? open.fact.name : "add"}

@@ -12,6 +12,16 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
 
     public string ItemPath(string collection, string id) => $"{CollectionPath(collection)}/{Uri.EscapeDataString(id)}";
 
+    // Why: the web app opens a fact or an article in its list from ?open=<id>, and a procedure in its creator.
+    private string? LinkTo(string kind, string id) =>
+        kind switch
+        {
+            "GlobalFact" => new Uri(PageOf("facts"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
+            "Article" => new Uri(PageOf("articles"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
+            "Procedure" => new Uri(Address, $"bots/{Uri.EscapeDataString(Bot)}/procedures/{Uri.EscapeDataString(id)}").AbsoluteUri,
+            _ => null,
+        };
+
     public Uri PageOf(string collection) => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/{collection}");
 
     public static async Task<(BotTarget? Target, int ExitCode)> ResolveAsync(
@@ -51,7 +61,18 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
             {
                 Message = $"{answer.Message}{Environment.NewLine}{await BotsLineAsync(Machine, Address, cancellationToken)}",
             }
-            : answer;
+            : answer with
+            {
+                // Why: a command may put its own heading above the mistakes, so only their lines get the links.
+                Message =
+                    answer.Mistakes.Count == 0
+                        ? answer.Message
+                        : answer.Message.Replace(
+                            ServerAnswer.Describe(answer.Mistakes, null),
+                            ServerAnswer.Describe(answer.Mistakes, LinkTo),
+                            StringComparison.Ordinal
+                        ),
+            };
         return await Run.Report.ReportAsync(shown, Address);
     }
 

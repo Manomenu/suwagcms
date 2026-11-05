@@ -1315,6 +1315,62 @@
         }
       }
     },
+    "/api/bots/{bot}/{kind}/{id}/usage": {
+      "get": {
+        "tags": [
+          "UsageEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^(facts|articles|procedures)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/procedures/{id}/layout": {
       "get": {
         "tags": [
@@ -2133,6 +2189,48 @@
           }
         }
       },
+      "UsageLink": {
+        "required": [
+          "kind",
+          "id",
+          "field"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          }
+        },
+        "description": "One reference: the resource on the other end (`Kind` is fact, article or procedure) and the field of the referrer that holds it."
+      },
+      "UsageView": {
+        "required": [
+          "usedBy",
+          "uses"
+        ],
+        "type": "object",
+        "properties": {
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageLink"
+            }
+          },
+          "uses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageLink"
+            }
+          }
+        },
+        "description": "What refers to a resource and what it refers to, each with the field that holds the reference: the lists a refused delete is made of."
+      },
       "ValidationStage": {
         "enum": [
           "Save",
@@ -2256,6 +2354,9 @@
     },
     {
       "name": "VersionEndpoints"
+    },
+    {
+      "name": "UsageEndpoints"
     },
     {
       "name": "ProcedureLayoutEndpoints"

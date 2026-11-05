@@ -18,7 +18,6 @@ export function ArticlesView({
     onFilters,
     onAdd,
     onEdit,
-    onDelete,
     onLeave,
 }: {
     bot: string;
@@ -29,7 +28,6 @@ export function ArticlesView({
     onFilters: (filters: Filters) => void;
     onAdd: () => void;
     onEdit: (article: Article) => void;
-    onDelete: (article: Article) => void;
     onLeave: (event: React.MouseEvent) => void;
 }) {
     const filtered = filters.knowledgeBase !== "" || filters.language !== "" || filters.text.trim() !== "";
@@ -125,15 +123,6 @@ export function ArticlesView({
                                 }}
                             >
                                 Edit
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    onDelete(article);
-                                }}
-                            >
-                                Delete
                             </Button>
                         </li>
                     ))}
