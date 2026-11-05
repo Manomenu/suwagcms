@@ -10,6 +10,11 @@ public sealed class MainSkillContentTests
         ("how to pick the bot", "Server and bot", ["--bot", "SUWAGCMS_BOT", "suwagcms use <id>"]),
         ("to use --json", "Output", ["--json", "one JSON document"]),
         ("how to read a refusal", "Refusals", ["Exit code `1`", "mistakes", "fix"]),
+        (
+            "how to link an article and find its target",
+            "Link to an article",
+            ["cms://article/<id>", "articles list --text", "reference.missing", "reference.malformed"]
+        ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
     ];
 
@@ -34,6 +39,11 @@ public sealed class MainSkillContentTests
             $"The main skill, claude-plugin/skills/suwagcms/SKILL.md, does not say: {string.Join("; ", missing)}."
         );
     }
+
+    [Fact]
+    [Trait("criterion", "AC-article-links-12")]
+    public void The_main_skill_gives_the_link_form_and_how_to_find_a_target() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("how to link an article", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-5")]

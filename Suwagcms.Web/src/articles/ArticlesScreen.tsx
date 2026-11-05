@@ -97,6 +97,18 @@ export function ArticlesScreen({ bot }: { bot: string }) {
             });
     }
 
+    // Why: a chip opens the article it links to in the same editor, after the same question about unsaved changes.
+    function openLinked(id: string) {
+        if (!confirmDiscard()) return;
+        fetchArticle(bot, id, new AbortController().signal)
+            .then((article) => {
+                setOpen({ kind: "edit", article });
+            })
+            .catch((error: unknown) => {
+                setFailure(error instanceof Error ? error.message : String(error));
+            });
+    }
+
     function reloadEdited(id: string) {
         reload();
         fetchArticle(bot, id, new AbortController().signal)
@@ -151,6 +163,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
                                 setOpen(null);
                             }}
                             onDirtyChange={setDirty}
+                            onOpenArticle={openLinked}
                         />
                     )}
                 </>

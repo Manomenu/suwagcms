@@ -35,6 +35,7 @@ public static class MistakeCodes
     public const string StepBlockMultiple = "step.block.multiple";
     public const string StepMissing = "step.missing";
     public const string ReferenceMissing = "reference.missing";
+    public const string ReferenceMalformed = "reference.malformed";
     public const string FactCollectNotWritable = "fact.collect.notWritable";
     public const string ConditionKindInvalid = "condition.kind.invalid";
     public const string ConditionTypeMisfit = "condition.type.misfit";

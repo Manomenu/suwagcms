@@ -60,7 +60,15 @@ function mistake(code: string, path: string): Mistake {
 
 function fields(mistakes: Mistake[] = []): string {
     return renderToStaticMarkup(
-        <ArticleFields form={emptyForm("offer")} bases={bases} mistakes={mistakes} idLocked={false} onChange={() => undefined} />,
+        <ArticleFields
+            form={emptyForm("offer")}
+            bases={bases}
+            mistakes={mistakes}
+            idLocked={false}
+            targets={[]}
+            onOpenArticle={() => undefined}
+            onChange={() => undefined}
+        />,
     );
 }
 
@@ -127,14 +135,16 @@ describe("ArticleFields", () => {
         expect(html).toContain('data-field="llmGuide"');
         expect(html).toContain('data-field="description"');
         expect(html).toContain("md:grid-cols-3");
-        expect(html.match(/<textarea/g)).toHaveLength(3);
+        expect(html.match(/<textarea/g)).toHaveLength(1);
+        expect(html.match(/data-markdown-editor=/g)).toHaveLength(2);
     });
 
     it("AC-articles-2: each mistake is shown, with its fix, beside the field its path names and no other", () => {
         const html = fields([mistake("article.llmGuide.missing", "llmGuide"), mistake("article.title.missing", "title")]);
 
         expect(fieldHtml(html, "llmGuide")).toContain("the message the fix");
-        expect(fieldHtml(html, "llmGuide")).toContain('aria-invalid="true"');
+        // Why: the editor itself exists only in a browser, so the page marks its wrapper and the browser test checks the textbox.
+        expect(fieldHtml(html, "llmGuide")).toContain('data-invalid="true"');
         expect(fieldHtml(html, "title")).toContain("the message the fix");
         expect(fieldHtml(html, "content")).not.toContain("the message");
         expect(fields()).not.toContain('aria-invalid="');
@@ -198,6 +208,8 @@ describe("the language of an article", () => {
                 bases={bases}
                 mistakes={[]}
                 idLocked
+                targets={[]}
+                onOpenArticle={() => undefined}
                 onChange={() => undefined}
             />,
         );

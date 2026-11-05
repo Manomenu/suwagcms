@@ -61,6 +61,16 @@ it cannot be combined with `--json`. It only works from a shell that can reach t
 - Run it outside Claude Code's sandbox (the Bash tool's sandbox override, which the user approves), never in the background.
 - Check it opened: the command prints the page's address; when you cannot be sure, give that address to the user as a link.
 
+## Link to an article
+
+In the `content` or `llmGuide` of an article, a link to another article of the bot is an ordinary Markdown link whose target is
+`cms://article/<id>`, for example `[Price list](cms://article/cennik)`. The web shows it as a chip with the article's current title.
+
+- Find the id with `suwagcms articles list --text <part of the title or id>`; the id is the first column.
+- Write the link as text in `--content` or `--guide` (or their files) of `articles add` or `articles edit`; no other command is needed.
+- A link to an article the bot does not have is refused with `reference.missing`, naming the field and the id; a malformed `cms://` target, or `cms://procedure/…`, is refused with `reference.malformed`. `--dry-run` shows it without saving.
+- Text that only names an article stays plain text and is not protected. A `cms://` address inside a code span or code block, or an ordinary web link, is not a link to an article.
+
 ## Commands
 
 - `suwagcms status` - say which server address is used and whether the server answers; `--open` opens the web app.
@@ -82,7 +92,7 @@ it cannot be combined with `--json`. It only works from a shell that can reach t
 - `suwagcms articles show <id>` - show one article in full with its revision; `--json` gives `content` and `llmGuide` exactly as stored.
 - `suwagcms articles add <id> --kb <id> [--language pl|en] --title <text> --content <text>|--content-file <file> --guide <text>|--guide-file <file> --description <text>` - add an article. All but `--language` are required: an article is in `en` unless `--language pl` says otherwise, and any other value is refused. `content` is what is true, in Markdown, and the customer reads it through the model; `llmGuide` is how the model should talk about it, in Markdown; `description` is plain text for the bot's search ("what does it answer"), never shown to the customer. A file may be `-` for stdin (one of the two). Texts are stored exactly as written. The id is camelCase, never changes and is unique across all the bases of the bot.
 - `suwagcms articles edit <id> [options of add] [--if-revision n]` - change an article: only the options given change (so `en` never overwrites `pl`, unless `--language en` is given); `--kb` moves it to another base. Without `--if-revision` the edit applies to the revision it just read and a change made meanwhile is refused with the current revision.
-- `suwagcms articles delete <id> [--if-revision n]` - delete an article; it does not check yet whether anything refers to it.
+- `suwagcms articles delete <id> [--if-revision n]` - delete an article; refused with `reference.missing` while the `content` or `llmGuide` of another article links to it.
 
 - `suwagcms procedures list` - list the procedures of the bot with what still stops each from becoming a version, and what stops the bot as a whole (no `conversation`); `--open` opens the Procedures screen in the web app.
 - `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`; `--open` opens it in the web creator instead.

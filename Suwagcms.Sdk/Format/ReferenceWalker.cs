@@ -6,7 +6,20 @@ public static class ReferenceWalker
     public static IEnumerable<Reference> From(BotDefinition definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        return definition.Procedures.SelectMany(From);
+        return definition.Procedures.SelectMany(From).Concat(definition.Articles.SelectMany(From));
+    }
+
+    public static IEnumerable<Reference> From(Article article)
+    {
+        ArgumentNullException.ThrowIfNull(article);
+        var from = new ResourceRef(ResourceKind.Article, article.Id);
+        foreach (var (path, text) in new[] { ("content", article.Content), ("llmGuide", article.LlmGuide) })
+        {
+            foreach (var link in CmsLinks.In(text).Where(link => link.Form == CmsLinkForm.Article))
+            {
+                yield return new Reference(from, path, new ResourceRef(ResourceKind.Article, link.Id), null);
+            }
+        }
     }
 
     public static IEnumerable<Reference> From(Procedure procedure)

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-article-links.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-article-links.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Links between articles</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 10 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>articles</code></span>
@@ -383,7 +383,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>12</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -451,7 +450,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><code>cms://procedure/…</code></td><td>refused until <code>article-procedure-links</code> exists; afterwards only in <code>llmGuide</code></td></tr>
     <tr><td>several bad links in one save</td><td>all reported at once</td></tr>
     <tr><td>a link to an article in another base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
-    <tr><td>two articles created in one save, each linking to the other's id</td><td>not possible until <code>batch-apply</code>; each single save needs its target to exist</td></tr>
+    <tr><td>two articles that link to each other</td><td>a loop, which <code>loop-guard</code> refuses: <code>batch-apply</code> does not change that. Until then each save needs its target to exist, so the second article of such a pair cannot be written</td></tr>
   </table>
   <h3>The picker</h3>
   <p>It lists this bot's articles, whichever base they are in, and narrows as the author types a title or an <code>id</code>. It leaves out the article being edited. Clicking a chip's link opens the target. Deleting a chip removes the link from the text.</p>
@@ -474,6 +473,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ul>
     <li>A link is a standard Markdown link with a <code>cms://</code> address (owner's decision): an agent edits it as text, and a bot that does nothing special still gets readable text.</li>
     <li>Stored labels are not rewritten when a target's title changes: that would change every referrer's revision for a cosmetic reason. The chip shows the current title, and a version carries current titles (see below).</li>
+    <li>The label of a link, once its target has a new title, is the current title filled in when a version is created (the open question's recommended answer, accepted): the customer never sees an old name, and a new title does not touch every referrer's revision.</li>
+    <li>A link is read by the SDK, in one place, as a standard Markdown link outside code spans and fenced blocks; the reference walker yields it as a reference from the article, with the field as its path, so every later rule reuses one extraction. A target that is not <code>cms://article/&lt;id&gt;</code> or <code>cms://procedure/&lt;id&gt;</code> is refused as <code>reference.malformed</code>, and a procedure target too, until <code>article-procedure-links</code> exists.</li>
+    <li>The web editor is Tiptap with the Mention extension for the chip and the picker, and <code>@tiptap/markdown</code>. Its round trip keeps a text written in the usual style as it is; a text in another style (<code>*</code> lists, <code>_emphasis_</code>, padded tables, CRLF) is saved as stored while the author does not change it, and rewritten into the editor's style once the author does.</li>
     <li>The picker does not hide a target that would close a loop: <code>loop-guard</code> refuses it on save and says why, which teaches more than a missing row.</li>
   </ul>
 </section>
@@ -500,27 +502,15 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>version-create</code>:</b> in a version, the label of each link is the target's title at that moment, so a retitled article never reaches a customer under its old name.</li>
+    <li><b>after <code>version-create</code>:</b> in a version, the label of a link to an article is the target's title at that moment, so a retitled article never reaches a customer under its old name.</li>
   </ul>
 </section>
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p>A rich editor may rewrite Markdown it reads, such as turning <code>*</code> lists into <code>-</code>. The round-trip criterion would catch it; the architecture plan holds a plain Markdown editor with the picker as the fallback, and the format stays the same either way.</p></div>
+  <div class="callout risk"><p>A rich editor may rewrite Markdown it reads, such as turning <code>*</code> lists into <code>-</code>. The round-trip test (Markdown to editor to Markdown) passes for the test set with Tiptap, so the plain Markdown editor with the picker stays only a fallback, and the format would be the same either way. Tiptap's Markdown is an early release: raw HTML and comments in a text are not kept once the author edits that text.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What does a link's label say once its target has a new title?</legend>
-      <p class="why">The feature map's scope says only that a link is stored by id, while the label is text a customer can end up reading. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="version"><span><b>The current title, filled in when a version is created</b><small>the customer never sees an old name, and a new title does not touch every referrer's revision</small></span></label>
-      <label><input type="radio" value="rewrite"><span><b>Rewrite the label in every referrer when a title changes</b><small>the stored text is always right, but one small edit changes many resources and can make other people's open edits stale</small></span></label>
-      <label><input type="radio" value="leave"><span><b>Leave labels as written</b><small>simplest, but the old name may reach customers</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

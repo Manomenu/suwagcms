@@ -41,7 +41,7 @@ async function addArticle(
 async function fill(page: Page, id: string, title: string): Promise<void> {
     await page.getByLabel("Id", { exact: true }).fill(id);
     await page.getByLabel("Title", { exact: true }).fill(title);
-    await page.getByLabel(/^content/).fill("What a valuation costs.\n");
+    await page.getByLabel(/^content/).fill("What a valuation costs.");
     await page.getByLabel(/^llmGuide/).fill("Ask which kind of property first.");
     await page.getByLabel(/^description/).fill("What a valuation costs and what affects the price");
 }
@@ -65,7 +65,7 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
     await expect(row).toContainText("Price list");
     await expect(row).toContainText("priceList · forValuers");
     const listed = await request.get(`/api/bots/${bot}/articles?knowledgeBase=forValuers`);
-    expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs.\n" }]);
+    expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs." }]);
 });
 
 test("AC-articles-9: the label of content, llmGuide and description carries a tooltip saying who reads it", async ({ page, request }) => {
@@ -326,4 +326,157 @@ test("AC-articles-4: editing another field of an article whose text has CRLF lin
 
     await expect(page.getByRole("listitem").filter({ hasText: "priceList" })).toContainText("Edited title");
     expect(await (await request.get(`/api/bots/${bot}/articles/priceList`)).json()).toMatchObject({ title: "Edited title", content });
+});
+
+async function openEditor(page: Page, bot: string, id: string): Promise<void> {
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("listitem").filter({ hasText: id }).getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByRole("textbox", { name: "content" })).toBeVisible();
+}
+
+async function contentOf(request: APIRequestContext, bot: string, id: string): Promise<string> {
+    return ((await (await request.get(`/api/bots/${bot}/articles/${id}`)).json()) as { content: string }).content;
+}
+
+test("AC-article-links-1: choosing an article in the picker puts a chip with its title in the text and stores the Markdown link there", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { title: "Price list" });
+    await addArticle(request, bot, "wycena", { title: "Valuation", content: "See the " });
+    await openEditor(page, bot, "wycena");
+
+    await page.getByRole("textbox", { name: "content" }).click();
+    await page.keyboard.press("Control+End");
+    await page.locator('[data-markdown-editor="content"]').getByRole("button", { name: "Insert link" }).click();
+    await page.keyboard.type("cen");
+    await page
+        .getByRole("listbox", { name: "Articles to link" })
+        .getByRole("option", { name: /Price list/ })
+        .click();
+    await page.keyboard.type("now.");
+
+    await expect(page.locator('[data-markdown-editor="content"] [data-article-link="cennik"]')).toHaveText("Price list");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("textbox", { name: "content" })).toHaveCount(0);
+    expect(await contentOf(request, bot, "wycena")).toBe("See the [Price list](cms://article/cennik) now.");
+});
+
+test("AC-article-links-2: the picker lists the articles of every base of this bot, narrows by title or id, leaves out the article being edited and shows none of another bot", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const other = await newBot(request);
+    await addArticle(request, bot, "cennik", { title: "Price list", knowledgeBase: "offer" });
+    await addArticle(request, bot, "rules", { title: "Rules of valuers", knowledgeBase: "forValuers" });
+    await addArticle(request, bot, "wycena", { title: "Valuation" });
+    await addArticle(request, other, "secret", { title: "Secret price" });
+    await openEditor(page, bot, "wycena");
+    const options = page.getByRole("listbox", { name: "Articles to link" }).getByRole("option");
+
+    await page.getByRole("textbox", { name: "content" }).click();
+    await page.locator('[data-markdown-editor="content"]').getByRole("button", { name: "Insert link" }).click();
+    await expect(options).toHaveText([/Price list/, /Rules of valuers/]);
+    await page.keyboard.type("rul");
+    await expect(options).toHaveText([/Rules of valuers/]);
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("cenn");
+    await expect(options).toHaveText([/Price list/]);
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.press("Backspace");
+    await page.keyboard.type("secret");
+    await expect(page.getByText("No article matches")).toBeVisible();
+});
+
+test("AC-article-links-3: opening an article with links and saving another field leaves its text as stored", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik");
+    const content =
+        "# Heading\n\n* star list\n* with [Prices](cms://article/cennik)\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\nSome _emphasis_.\r\n";
+    await addArticle(request, bot, "wycena", { content });
+    await openEditor(page, bot, "wycena");
+
+    await page.getByLabel("Title", { exact: true }).fill("Edited");
+    await page.getByRole("button", { name: "Save" }).click();
+
+    await expect(page.getByRole("listitem").filter({ hasText: "wycena" })).toContainText("Edited");
+    expect(await contentOf(request, bot, "wycena")).toBe(content);
+});
+
+test("AC-article-links-4: a chip shows the current title of its target, while the stored label stays", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { title: "Price list" });
+    await addArticle(request, bot, "wycena", { content: "See [Price list](cms://article/cennik)." });
+    await request.put(`/api/bots/${bot}/articles/cennik?ifRevision=1`, {
+        data: { knowledgeBase: "offer", title: "Prices", content: "c", llmGuide: "g", description: "d" },
+    });
+    await openEditor(page, bot, "wycena");
+
+    await expect(page.locator('[data-article-link="cennik"]')).toHaveText("Prices");
+    await page.getByLabel("Title", { exact: true }).fill("Valuation");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: "wycena" })).toContainText("Valuation");
+    expect(await contentOf(request, bot, "wycena")).toBe("See [Price list](cms://article/cennik).");
+});
+
+test("AC-article-links-5: clicking a chip opens its article, and deleting a chip removes the link from the saved text", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { title: "Price list" });
+    await addArticle(request, bot, "wycena", { content: "See [Price list](cms://article/cennik)" });
+    await openEditor(page, bot, "wycena");
+
+    await page.getByRole("textbox", { name: "content" }).click();
+    await page.keyboard.press("Control+End");
+    await page.keyboard.press("Backspace");
+    await expect(page.locator("[data-article-link]")).toHaveCount(0);
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("textbox", { name: "content" })).toHaveCount(0);
+    expect(await contentOf(request, bot, "wycena")).toBe("See ");
+
+    await openEditor(page, bot, "cennik");
+    await expect(page.getByLabel("Id", { exact: true })).toHaveValue("cennik");
+    await request.put(`/api/bots/${bot}/articles/wycena?ifRevision=2`, {
+        data: {
+            knowledgeBase: "offer",
+            title: "Valuation",
+            content: "See [Price list](cms://article/cennik)",
+            llmGuide: "g",
+            description: "d",
+        },
+    });
+    await openEditor(page, bot, "wycena");
+    await page.locator('[data-article-link="cennik"]').click();
+    await expect(page.getByLabel("Id", { exact: true })).toHaveValue("cennik");
+    await expect(page.getByLabel("Title", { exact: true })).toHaveValue("Price list");
+});
+
+test("AC-article-links-6: a link saved as Markdown through the API, as the CLI does, is a chip in the web, in content and in llmGuide", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { title: "Price list" });
+    const saved = await request.put(`/api/bots/${bot}/articles/wycena?ifRevision=0`, {
+        data: {
+            knowledgeBase: "offer",
+            title: "Valuation",
+            content: "See [Price list](cms://article/cennik).",
+            llmGuide: "Mention [it](cms://article/cennik).",
+            description: "d",
+        },
+    });
+    expect(saved.status()).toBe(200);
+    await openEditor(page, bot, "wycena");
+
+    await expect(page.locator('[data-markdown-editor="content"] [data-article-link="cennik"]')).toHaveText("Price list");
+    await expect(page.locator('[data-markdown-editor="llmGuide"] [data-article-link="cennik"]')).toHaveText("Price list");
 });

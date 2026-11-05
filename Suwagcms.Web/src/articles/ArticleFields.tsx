@@ -4,7 +4,9 @@ import { Input } from "@/design/input";
 import { Textarea } from "@/design/textarea";
 
 import { LANGUAGES, type KnowledgeBase } from "./api";
+import type { LinkTarget } from "./articleLink";
 import { HINTS, fieldOf, type ArticleForm, type FieldName } from "./articleForm";
+import { LinkedTextEditor } from "./LinkedTextEditor";
 
 const SELECT = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 
@@ -14,16 +16,35 @@ export function ArticleFields({
     bases,
     mistakes,
     idLocked,
+    targets,
+    onOpenArticle,
     onChange,
 }: {
     form: ArticleForm;
     bases: KnowledgeBase[];
     mistakes: Mistake[];
     idLocked: boolean;
+    targets: LinkTarget[];
+    onOpenArticle: (id: string) => void;
     onChange: (change: Partial<ArticleForm>) => void;
 }) {
     const errorsOf = (field: FieldName) =>
         mistakes.filter((mistake) => fieldOf(mistake) === field).map((mistake) => `${mistake.message} ${mistake.fix}`);
+    const textEditor = (field: "content" | "llmGuide") => (
+        <LinkedTextEditor
+            id={`article-${field}`}
+            label={field}
+            value={form[field]}
+            targets={targets}
+            selfId={form.id}
+            invalid={errorsOf(field).length > 0}
+            describedBy={errorsOf(field).length > 0 ? `article-${field}-mistakes` : undefined}
+            onOpen={onOpenArticle}
+            onChange={(markdown) => {
+                onChange({ [field]: markdown });
+            }}
+        />
+    );
     return (
         <>
             <div className="grid gap-3 md:grid-cols-4">
@@ -94,26 +115,10 @@ export function ArticleFields({
             </div>
             <div className="grid gap-3 md:grid-cols-3">
                 <Field prefix="article" name="content" label="content" hint={HINTS.content} errors={errorsOf("content")}>
-                    {(props) => (
-                        <Textarea
-                            {...props}
-                            value={form.content}
-                            onChange={(event) => {
-                                onChange({ content: event.currentTarget.value });
-                            }}
-                        />
-                    )}
+                    {() => textEditor("content")}
                 </Field>
                 <Field prefix="article" name="llmGuide" label="llmGuide" hint={HINTS.llmGuide} errors={errorsOf("llmGuide")}>
-                    {(props) => (
-                        <Textarea
-                            {...props}
-                            value={form.llmGuide}
-                            onChange={(event) => {
-                                onChange({ llmGuide: event.currentTarget.value });
-                            }}
-                        />
-                    )}
+                    {() => textEditor("llmGuide")}
                 </Field>
                 <Field prefix="article" name="description" label="description" hint={HINTS.description} errors={errorsOf("description")}>
                     {(props) => (

@@ -7,7 +7,6 @@ internal static class ProcedureFactRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        For(MistakeCodes.ReferenceMissing, MissingFacts),
         For(MistakeCodes.FactCollectNotWritable, NotWritable),
         For(MistakeCodes.ConditionKindInvalid, Kinds),
         For(MistakeCodes.ConditionTypeMisfit, Misfits),
@@ -17,6 +16,9 @@ internal static class ProcedureFactRules
 
     private static Rule For(string code, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
         ProcedureMistake.For(code, ValidationStage.Save, check);
+
+    public static IEnumerable<Mistake> MissingFacts(BotDefinition definition) =>
+        definition.Procedures.SelectMany(procedure => MissingFacts(definition, procedure));
 
     private static IEnumerable<Mistake> MissingFacts(BotDefinition definition, Procedure procedure)
     {

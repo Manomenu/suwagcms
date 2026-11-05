@@ -41,7 +41,7 @@ internal static class FactMapping
         [
             .. ReferenceWalker
                 .From(ResourceKinds.Assemble(all))
-                .Where(reference => reference.To.Id == fact)
+                .Where(reference => reference.To.Kind == ResourceKind.GlobalFact && reference.To.Id == fact)
                 .Select(reference => reference.From.Id)
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal),
