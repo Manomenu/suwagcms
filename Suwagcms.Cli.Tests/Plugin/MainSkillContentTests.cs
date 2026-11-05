@@ -13,7 +13,7 @@ public sealed class MainSkillContentTests
         (
             "how to link an article and find its target",
             "Link to an article",
-            ["cms://article/<id>", "articles list --text", "reference.missing", "reference.malformed"]
+            ["cms://article/<id>", "articles list --text", "reference.missing", "reference.malformed", "reference.loop"]
         ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
     ];

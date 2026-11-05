@@ -8,6 +8,7 @@ internal static class ReferenceRules
     [
         new(MistakeCodes.ReferenceMissing, ValidationStage.Save, MissingTargets),
         new(MistakeCodes.ReferenceMalformed, ValidationStage.Save, Malformed),
+        new(MistakeCodes.ReferenceLoop, ValidationStage.Save, LoopRules.Loops),
     ];
 
     // Why: facts and articles share the one code, so a client treats a name that points at nothing the same way wherever it is written.

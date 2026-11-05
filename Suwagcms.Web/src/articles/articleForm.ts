@@ -67,8 +67,15 @@ export function isDirty(form: ArticleForm, initial: ArticleForm): boolean {
     return FIELDS.some((field) => form[field] !== initial[field]);
 }
 
-/** The field a mistake belongs beside: its path names it; a taken id is reported on `revision`, so it is told apart by its code. */
-export function fieldOf(mistake: Mistake): FieldName | null {
+/**
+ * The field a mistake belongs beside: its path names it; a taken id is reported on `revision`, so it is told apart by its code.
+ * A loop is reported once, on one article of it, and lists the others in `related`, so the article being edited finds its own link there.
+ */
+export function fieldOf(mistake: Mistake, articleId: string): FieldName | null {
     if (mistake.code === "resource.exists") return "id";
-    return FIELDS.find((field) => field === mistake.path) ?? null;
+    const path =
+        mistake.code === "reference.loop" && mistake.resource.id !== articleId
+            ? mistake.related.find((item) => item.resource.kind === "Article" && item.resource.id === articleId)?.location
+            : mistake.path;
+    return FIELDS.find((field) => field === path) ?? null;
 }

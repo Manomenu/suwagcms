@@ -58,10 +58,10 @@ function mistake(code: string, path: string): Mistake {
     };
 }
 
-function fields(mistakes: Mistake[] = []): string {
+function fields(mistakes: Mistake[] = [], id = ""): string {
     return renderToStaticMarkup(
         <ArticleFields
-            form={emptyForm("offer")}
+            form={{ ...emptyForm("offer"), id }}
             bases={bases}
             mistakes={mistakes}
             idLocked={false}
@@ -151,9 +151,38 @@ describe("ArticleFields", () => {
     });
 
     it("AC-articles-3: a taken id is shown beside the id and an unknown base beside the base", () => {
-        expect(fieldOf(mistake("resource.exists", "revision"))).toBe("id");
-        expect(fieldOf(mistake("article.knowledgeBase.unknown", "knowledgeBase"))).toBe("knowledgeBase");
-        expect(fieldOf(mistake("save.invalid", "$"))).toBeNull();
+        expect(fieldOf(mistake("resource.exists", "revision"), "priceList")).toBe("id");
+        expect(fieldOf(mistake("article.knowledgeBase.unknown", "knowledgeBase"), "priceList")).toBe("knowledgeBase");
+        expect(fieldOf(mistake("save.invalid", "$"), "priceList")).toBeNull();
+    });
+});
+
+describe("a refused loop", () => {
+    const loop: Mistake = {
+        ...mistake("reference.loop", "content"),
+        message: "These links close a loop: discounts → pricing → discounts.",
+        resource: { kind: "Article", id: "discounts" },
+        related: [{ resource: { kind: "Article", id: "pricing" }, location: "llmGuide" }],
+    };
+
+    it("AC-loop-guard-1: the path is shown beside the field of the link of the article being edited, whichever article the mistake is on", () => {
+        const onPricing = fields([loop], "pricing");
+        const onDiscounts = fields([loop], "discounts");
+
+        expect(fieldHtml(onPricing, "llmGuide")).toContain("discounts → pricing → discounts");
+        expect(fieldHtml(onPricing, "content")).not.toContain("→");
+        expect(fieldHtml(onDiscounts, "content")).toContain("discounts → pricing → discounts");
+        expect(fieldHtml(onDiscounts, "llmGuide")).not.toContain("→");
+    });
+
+    it("AC-loop-guard-3: a loop of one article is shown beside the field that holds the link", () => {
+        const self: Mistake = {
+            ...mistake("reference.loop", "llmGuide"),
+            message: "pricing → pricing",
+            resource: { kind: "Article", id: "pricing" },
+        };
+
+        expect(fieldHtml(fields([self], "pricing"), "llmGuide")).toContain("pricing → pricing");
     });
 });
 
@@ -230,7 +259,7 @@ describe("the language of an article", () => {
     it("AC-article-language-4: a refused language is shown beside the language select", () => {
         const html = fields([mistake("article.language.unknown", "language")]);
 
-        expect(fieldOf(mistake("article.language.unknown", "language"))).toBe("language");
+        expect(fieldOf(mistake("article.language.unknown", "language"), "priceList")).toBe("language");
         expect(fieldHtml(html, "language")).toContain("the message the fix");
     });
 

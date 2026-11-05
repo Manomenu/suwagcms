@@ -88,7 +88,7 @@ export function ArticleForm({
     }
 
     const mistakes = refusal?.mistakes ?? [];
-    const loose = mistakes.filter((mistake) => fieldOf(mistake) === null);
+    const loose = mistakes.filter((mistake) => fieldOf(mistake, form.id) === null);
     const moved = mistakes.some((mistake) => mistake.code === "resource.stale");
     return (
         <form onSubmit={submit} className="flex flex-col gap-3 rounded-lg border p-4">

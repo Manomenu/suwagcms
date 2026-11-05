@@ -29,7 +29,7 @@ export function ArticleFields({
     onChange: (change: Partial<ArticleForm>) => void;
 }) {
     const errorsOf = (field: FieldName) =>
-        mistakes.filter((mistake) => fieldOf(mistake) === field).map((mistake) => `${mistake.message} ${mistake.fix}`);
+        mistakes.filter((mistake) => fieldOf(mistake, form.id) === field).map((mistake) => `${mistake.message} ${mistake.fix}`);
     const textEditor = (field: "content" | "llmGuide") => (
         <LinkedTextEditor
             id={`article-${field}`}

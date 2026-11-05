@@ -36,6 +36,7 @@ public static class MistakeCodes
     public const string StepMissing = "step.missing";
     public const string ReferenceMissing = "reference.missing";
     public const string ReferenceMalformed = "reference.malformed";
+    public const string ReferenceLoop = "reference.loop";
     public const string FactCollectNotWritable = "fact.collect.notWritable";
     public const string ConditionKindInvalid = "condition.kind.invalid";
     public const string ConditionTypeMisfit = "condition.type.misfit";
