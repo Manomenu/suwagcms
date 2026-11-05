@@ -197,7 +197,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Theory]
-    [Trait("criterion", "AC-bot-persona-5")]
+    [Trait("criterion", "AC-bot-persona-14")]
     [InlineData("rename", "/api/bots/{0}/persona/persona/rename")]
     [InlineData("off", "/api/bots/{0}/availability/persona/persona/off")]
     public async Task A_persona_cannot_be_renamed_or_turned_off(string _, string address)
@@ -218,7 +218,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Theory]
-    [Trait("criterion", "AC-bot-persona-3")]
+    [Trait("criterion", "AC-bot-persona-14")]
     [InlineData("add")]
     [InlineData("delete")]
     public async Task A_file_of_changes_can_only_edit_a_persona(string verb)
