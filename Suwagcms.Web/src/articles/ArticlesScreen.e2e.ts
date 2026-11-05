@@ -61,9 +61,10 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
     await page.locator('[data-field="knowledgeBase"] select').selectOption("forValuers");
     await page.getByRole("button", { name: "Add", exact: true }).click();
 
-    const row = page.getByRole("listitem").filter({ hasText: "priceList" });
+    const row = page.getByRole("row").filter({ hasText: "priceList" });
     await expect(row).toContainText("Price list");
-    await expect(row).toContainText("priceList · forValuers");
+    await expect(row.getByRole("cell", { name: "priceList", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "forValuers", exact: true })).toBeVisible();
     const listed = await request.get(`/api/bots/${bot}/articles?knowledgeBase=forValuers`);
     expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs." }]);
 });
@@ -112,14 +113,15 @@ test("AC-articles-6: an edit in the web changes the article and a new base moves
     await addArticle(request, bot, "priceList");
     await page.goto(`/bots/${bot}/articles`);
 
-    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel("Title", { exact: true }).fill("New title");
     await page.locator('[data-field="knowledgeBase"] select').selectOption("forValuers");
     await page.getByRole("button", { name: "Save" }).click();
 
-    const row = page.getByRole("listitem").filter({ hasText: "priceList" });
+    const row = page.getByRole("row").filter({ hasText: "priceList" });
     await expect(row).toContainText("New title");
-    await expect(row).toContainText("priceList · forValuers");
+    await expect(row.getByRole("cell", { name: "priceList", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "forValuers", exact: true })).toBeVisible();
 });
 
 test("AC-articles-7: saving an edit of an article that changed meanwhile is refused with the current revision and keeps what was typed", async ({
@@ -129,7 +131,7 @@ test("AC-articles-7: saving an edit of an article that changed meanwhile is refu
     const bot = await newBot(request);
     await addArticle(request, bot, "priceList", { description: "First" });
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel(/^description/).fill("Marta's text");
     const other = await request.put(`/api/bots/${bot}/articles/priceList?ifRevision=1`, {
         data: {
@@ -147,10 +149,10 @@ test("AC-articles-7: saving an edit of an article that changed meanwhile is refu
     await expect(page.getByRole("alert")).toContainText("it is now revision 2");
     await expect(page.getByLabel(/^description/)).toHaveValue("Marta's text");
     await page.getByRole("button", { name: "Reload the article" }).click();
-    await expect(page.getByRole("listitem").filter({ hasText: "priceList" })).toContainText("The agent's text");
+    await expect(page.getByRole("row").filter({ hasText: "priceList" })).toContainText("The agent's text");
     await expect(page.getByLabel(/^description/)).toHaveValue("Marta's text");
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("listitem").filter({ hasText: "priceList" })).toContainText("Marta's text");
+    await expect(page.getByRole("row").filter({ hasText: "priceList" })).toContainText("Marta's text");
 });
 
 test("AC-articles-8: an article deleted in the web is gone from the list and from the API", async ({ page, request }) => {
@@ -158,7 +160,7 @@ test("AC-articles-8: an article deleted in the web is gone from the list and fro
     await addArticle(request, bot, "priceList");
     await page.goto(`/bots/${bot}/articles`);
 
-    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
     await page.getByRole("button", { name: "Delete" }).click();
 
     await expect(page.getByText("No articles yet.")).toBeVisible();
@@ -171,14 +173,14 @@ test("AC-articles-11: the list filters by base and by text, the same as the API 
     await addArticle(request, bot, "other", { title: "Other", description: "Unrelated", content: "A rabat is a discount." });
     await addArticle(request, bot, "elsewhere", { knowledgeBase: "forValuers", title: "Rabat", description: "Rabat" });
     await page.goto(`/bots/${bot}/articles`);
-    await expect(page.getByRole("listitem")).toHaveCount(3);
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(3);
 
     await page.getByLabel("Search").fill("rabat");
-    await expect(page.getByRole("listitem")).toHaveCount(2);
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(2);
     await page.getByLabel("Knowledge base", { exact: true }).selectOption("offer");
 
-    await expect(page.getByRole("listitem")).toHaveCount(1);
-    await expect(page.getByRole("listitem")).toContainText("discounts");
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toContainText("discounts");
     const api = await request.get(`/api/bots/${bot}/articles?knowledgeBase=offer&text=rabat`);
     expect(((await api.json()) as { id: string }[]).map((article) => article.id)).toEqual(["discounts"]);
 });
@@ -245,8 +247,10 @@ test("AC-article-language-2: a new article starts on en, the language chosen is 
     await page.locator('[data-field="language"] select').selectOption("pl");
     await page.getByRole("button", { name: "Add", exact: true }).click();
 
-    const row = page.getByRole("listitem").filter({ hasText: "cennik" });
-    await expect(row).toContainText("cennik · forValuers · pl");
+    const row = page.getByRole("row").filter({ hasText: "cennik" });
+    await expect(row.getByRole("cell", { name: "cennik", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "forValuers", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
     expect(await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()).toMatchObject({ language: "pl" });
     await row.getByRole("button", { name: "Edit" }).click();
     await expect(page.locator('[data-field="language"] select')).toHaveValue("pl");
@@ -260,7 +264,10 @@ test("AC-article-language-2: an article added without choosing keeps en", async 
 
     await page.getByRole("button", { name: "Add", exact: true }).click();
 
-    await expect(page.getByRole("listitem").filter({ hasText: "pricing" })).toContainText("pricing · forValuers · en");
+    const row = page.getByRole("row").filter({ hasText: "pricing" });
+    await expect(row.getByRole("cell", { name: "pricing", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "forValuers", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "en", exact: true })).toBeVisible();
 });
 
 test("AC-article-language-8: the label of the language select carries a tooltip saying what the field is for", async ({
@@ -288,14 +295,17 @@ test("AC-article-language-6: the list filters by language together with the othe
         description: "Ile kosztuje",
     });
     await page.goto(`/bots/${bot}/articles`);
-    await expect(page.getByRole("listitem")).toHaveCount(3);
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(3);
 
     await page.getByLabel("Language", { exact: true }).selectOption("pl");
-    await expect(page.getByRole("listitem")).toHaveCount(2);
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(2);
     await page.getByLabel("Knowledge base", { exact: true }).selectOption("offer");
 
-    await expect(page.getByRole("listitem")).toHaveCount(1);
-    await expect(page.getByRole("listitem")).toContainText("cennik · offer · pl");
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
+    const row = page.getByRole("main").locator("tbody").getByRole("row");
+    await expect(row.getByRole("cell", { name: "cennik", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "offer", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
     const api = await request.get(`/api/bots/${bot}/articles?language=pl&knowledgeBase=offer`);
     expect(((await api.json()) as { id: string }[]).map((article) => article.id)).toEqual(["cennik"]);
 });
@@ -306,11 +316,14 @@ test("AC-article-language-7: two articles in different languages with one title 
     await addArticle(request, bot, "pricing", { language: "en", title: "Cennik" });
     await page.goto(`/bots/${bot}/articles`);
 
-    await page.getByRole("listitem").filter({ hasText: "pricing" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "pricing" }).getByRole("button", { name: "Edit" }).click();
     await page.getByRole("button", { name: "Delete" }).click();
 
-    await expect(page.getByRole("listitem")).toHaveCount(1);
-    await expect(page.getByRole("listitem")).toContainText("cennik · offer · pl");
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
+    const row = page.getByRole("main").locator("tbody").getByRole("row");
+    await expect(row.getByRole("cell", { name: "cennik", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "offer", exact: true })).toBeVisible();
+    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
 });
 
 test("AC-articles-4: editing another field of an article whose text has CRLF line breaks leaves the stored text byte for byte", async ({
@@ -322,17 +335,17 @@ test("AC-articles-4: editing another field of an article whose text has CRLF lin
     await addArticle(request, bot, "priceList", { content });
     await page.goto(`/bots/${bot}/articles`);
 
-    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel("Title", { exact: true }).fill("Edited title");
     await page.getByRole("button", { name: "Save" }).click();
 
-    await expect(page.getByRole("listitem").filter({ hasText: "priceList" })).toContainText("Edited title");
+    await expect(page.getByRole("row").filter({ hasText: "priceList" })).toContainText("Edited title");
     expect(await (await request.get(`/api/bots/${bot}/articles/priceList`)).json()).toMatchObject({ title: "Edited title", content });
 });
 
 async function openEditor(page: Page, bot: string, id: string): Promise<void> {
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("listitem").filter({ hasText: id }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: id }).getByRole("button", { name: "Edit" }).click();
     await expect(page.getByRole("textbox", { name: "content" })).toBeVisible();
 }
 
@@ -407,7 +420,7 @@ test("AC-article-links-3: opening an article with links and saving another field
     await page.getByLabel("Title", { exact: true }).fill("Edited");
     await page.getByRole("button", { name: "Save" }).click();
 
-    await expect(page.getByRole("listitem").filter({ hasText: "wycena" })).toContainText("Edited");
+    await expect(page.getByRole("row").filter({ hasText: "wycena" })).toContainText("Edited");
     expect(await contentOf(request, bot, "wycena")).toBe(content);
 });
 
@@ -423,7 +436,7 @@ test("AC-article-links-4: a chip shows the current title of its target, while th
     await expect(page.locator('[data-article-link="cennik"]')).toHaveText("Prices");
     await page.getByLabel("Title", { exact: true }).fill("Valuation");
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("listitem").filter({ hasText: "wycena" })).toContainText("Valuation");
+    await expect(page.getByRole("row").filter({ hasText: "wycena" })).toContainText("Valuation");
     expect(await contentOf(request, bot, "wycena")).toBe("See [Price list](cms://article/cennik).");
 });
 
@@ -438,6 +451,8 @@ test("AC-article-links-5: clicking a chip opens its article, and deleting a chip
 
     await page.getByRole("textbox", { name: "content" }).click();
     await page.keyboard.press("Control+End");
+    // Why: the editor learns the caret from a selectionchange event, so a Backspace in the same frame acts on the old caret and deletes nothing.
+    await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.keyboard.press("Backspace");
     await expect(page.locator("[data-article-link]")).toHaveCount(0);
     await page.getByRole("button", { name: "Save" }).click();
@@ -517,7 +532,7 @@ test("AC-delete-guard-1: an article another article links to is refused for dele
     const refused = await request.delete(`/api/bots/${bot}/articles/cennik`);
     expect(refused.status()).toBe(422);
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("listitem").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
 
     await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
     await expect(page.getByText("Used in 1 place. Remove that reference first.")).toBeVisible();
@@ -533,7 +548,7 @@ test("AC-delete-guard-7: the panels list who uses the article and what it uses a
     await addArticle(request, bot, "cennik", { content: "See [w](cms://article/warunki)." });
     await addArticle(request, bot, "wycena", { content: "See [c](cms://article/cennik)." });
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("listitem").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
 
     await expect(page.getByRole("region", { name: "Used by" })).toContainText("wycena");
     await expect(page.getByRole("region", { name: "Used by" })).toContainText("content");
@@ -549,14 +564,14 @@ test("AC-delete-guard-4: after the last link is removed in the web the article c
     await addArticle(request, bot, "cennik");
     await addArticle(request, bot, "wycena", { content: "See [it](cms://article/cennik)." });
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("listitem").filter({ hasText: "wycena" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "wycena" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel(/^content/).fill("No link now.");
     await page.getByRole("button", { name: "Save" }).click();
-    await page.getByRole("listitem").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
 
     await expect(page.getByRole("region", { name: "Used by" })).toContainText("Nothing uses this.");
     await page.getByRole("button", { name: "Delete" }).click();
 
-    await expect(page.getByRole("listitem")).toHaveCount(1);
+    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
     expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
 });

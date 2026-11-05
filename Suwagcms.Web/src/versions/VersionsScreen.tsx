@@ -51,13 +51,9 @@ export function VersionsScreen({ bot }: { bot: string }) {
     }, [load]);
 
     if (failure !== null) {
-        return (
-            <main className="mx-auto max-w-2xl p-4">
-                <Alert variant="destructive">{failure}</Alert>
-            </main>
-        );
+        return <Alert variant="destructive">{failure}</Alert>;
     }
-    if (versions === null) return <main className="mx-auto max-w-2xl p-4 text-muted-foreground">Loading versions…</main>;
+    if (versions === null) return <p className="text-muted-foreground">Loading versions…</p>;
 
     return (
         <VersionsView

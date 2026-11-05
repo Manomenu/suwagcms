@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { Button } from "@/design/button";
 
+import "./articleEditor.css";
 import { extensionsOf } from "./articleEditor";
 import { openPicker, type LinkTarget } from "./articleLink";
 
@@ -58,7 +59,7 @@ export function LinkedTextEditor({
                 "aria-label": label,
                 ...(invalid ? { "aria-invalid": "true" } : {}),
                 ...(describedBy === undefined ? {} : { "aria-describedby": describedBy }),
-                class: "prose-sm min-h-48 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                class: "article-editor min-h-48 w-full rounded-md border border-input bg-secondary p-3 text-sm text-foreground outline-none focus-visible:border-primary aria-invalid:border-destructive",
             },
         },
         onUpdate: ({ editor: changed }) => {

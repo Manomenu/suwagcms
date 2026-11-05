@@ -36,7 +36,7 @@ test("AC-global-facts-1: a fact added in the web is listed with its type, limit,
 
     await addIn(page, "customer.city", "The city the customer lives in", "80");
 
-    const row = page.getByRole("listitem").filter({ hasText: "customer.city" });
+    const row = page.getByRole("row").filter({ hasText: "customer.city" });
     await expect(row).toContainText("text, up to 80 · set");
     await expect(row).toContainText("The city the customer lives in");
     const listed = await request.get(`/api/bots/${bot}/facts`);
@@ -88,7 +88,7 @@ test("AC-global-facts-11: saving an edit of a fact that changed meanwhile is ref
     const bot = await newBot(request);
     await addCity(request, bot, "First");
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("listitem").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel("Description").fill("Marta's text");
     const other = await request.put(`/api/bots/${bot}/facts/customer.city?ifRevision=1`, {
         data: { type: "text", description: "The agent's text", writableBy: null, values: null, min: null, max: null, maxLength: 80 },
@@ -100,10 +100,10 @@ test("AC-global-facts-11: saving an edit of a fact that changed meanwhile is ref
     await expect(page.getByRole("alert")).toContainText("it is now revision 2");
     await expect(page.getByLabel("Description")).toHaveValue("Marta's text");
     await page.getByRole("button", { name: "Reload the facts" }).click();
-    await expect(page.getByRole("listitem").filter({ hasText: "customer.city" })).toContainText("The agent's text");
+    await expect(page.getByRole("row").filter({ hasText: "customer.city" })).toContainText("The agent's text");
     await expect(page.getByLabel("Description")).toHaveValue("Marta's text");
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByRole("listitem").filter({ hasText: "customer.city" })).toContainText("Marta's text");
+    await expect(page.getByRole("row").filter({ hasText: "customer.city" })).toContainText("Marta's text");
 });
 
 test("AC-global-facts-8: a fact deleted in the web is gone from the list and from the API", async ({ page, request }) => {
@@ -111,7 +111,7 @@ test("AC-global-facts-8: a fact deleted in the web is gone from the list and fro
     await addCity(request, bot);
     await page.goto(`/bots/${bot}/facts`);
 
-    await page.getByRole("listitem").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
     await page.getByRole("button", { name: "Delete" }).click();
 
     await expect(page.getByText("No facts yet.")).toBeVisible();
@@ -143,7 +143,7 @@ test("AC-delete-guard-12: a fact a procedure uses is refused for delete in the A
     const refused = await request.delete(`/api/bots/${bot}/facts/customer.city`);
     expect(refused.status()).toBe(422);
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("listitem").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
 
     await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
     await expect(page.getByText("Used in 1 place. Remove that reference first.")).toBeVisible();

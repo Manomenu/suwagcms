@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { Link } from "wouter";
 
 import { Button } from "@/design/button";
+import { Page, Paper } from "@/design/page";
+import { Table } from "@/design/table";
 
 import type { KnowledgeBase } from "./api";
 
@@ -22,14 +23,7 @@ export function KnowledgeBasesView({
     onDelete: (base: KnowledgeBase) => void;
 }) {
     return (
-        <main className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-            <header className="flex items-center gap-2">
-                <h1 className="flex-1 text-2xl font-semibold">Knowledge bases of {bot}</h1>
-                <Link href={`~/bots/${encodeURIComponent(bot)}`} className="text-sm text-primary underline underline-offset-4">
-                    Bots
-                </Link>
-                <Button onClick={onAdd}>New knowledge base</Button>
-            </header>
+        <Page title={`Knowledge bases of ${bot}`} actions={<Button onClick={onAdd}>New knowledge base</Button>}>
             {form}
             {bases.length === 0 ? (
                 <p className="text-muted-foreground">
@@ -37,35 +31,48 @@ export function KnowledgeBasesView({
                     apart.
                 </p>
             ) : (
-                <ul className="flex flex-col gap-2">
-                    {bases.map((base) => (
-                        <li key={base.id} className="flex items-center gap-3 rounded-lg border p-3">
-                            <div className="flex flex-1 flex-col gap-1">
-                                <span className="font-medium">{base.title}</span>
-                                <span className="text-sm text-muted-foreground">{base.id}</span>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    onRename(base);
-                                }}
-                            >
-                                Rename
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    onDelete(base);
-                                }}
-                            >
-                                Delete
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
+                <Paper>
+                    <Table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Id</th>
+                                <th />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {bases.map((base) => (
+                                <tr key={base.id}>
+                                    <td className="font-medium">{base.title}</td>
+                                    <td className="text-muted-foreground">{base.id}</td>
+                                    <td>
+                                        <div className="flex justify-end gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    onRename(base);
+                                                }}
+                                            >
+                                                Rename
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => {
+                                                    onDelete(base);
+                                                }}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </Paper>
             )}
-        </main>
+        </Page>
     );
 }

@@ -258,12 +258,12 @@ test("AC-procedure-creator-17: leaving the creator with unsaved changes asks fir
         void dialog.dismiss();
     });
 
-    await page.getByRole("link", { name: "Procedures" }).click();
+    await page.getByRole("navigation", { name: "Bots" }).getByRole("link", { name: "Procedures" }).click();
 
     await expect.poll(() => asked.length).toBe(1);
     expect(asked[0]).toContain("unsaved changes");
     await expect(page.getByRole("heading", { name: /Creator: orderValuation/ })).toBeVisible();
     page.once("dialog", (dialog) => void dialog.accept());
-    await page.getByRole("link", { name: "Procedures" }).click();
+    await page.getByRole("navigation", { name: "Bots" }).getByRole("link", { name: "Procedures" }).click();
     await expect(page.getByRole("heading", { name: /Procedures of/ })).toBeVisible();
 });

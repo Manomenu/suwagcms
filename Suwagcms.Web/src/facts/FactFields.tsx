@@ -3,10 +3,9 @@ import type { ReactNode } from "react";
 import type { Mistake } from "@/api/client";
 import { Field as DesignField } from "@/design/field";
 import { Input } from "@/design/input";
+import { Select } from "@/design/select";
 
 import { fieldOf, type FactForm, type FieldName } from "./factForm";
-
-const SELECT = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 
 /** One field of the fact form with the mistakes its path names written beneath it. */
 function Field({
@@ -57,9 +56,9 @@ export function FactFields({
             </Field>
             <Field field="type" label="Type" mistakes={mistakes}>
                 {(props) => (
-                    <select
+                    <Select
                         {...props}
-                        className={SELECT}
+                        className="w-full"
                         value={form.type}
                         onChange={(event) => {
                             onChange({ type: event.currentTarget.value });
@@ -68,7 +67,7 @@ export function FactFields({
                         <option value="text">text</option>
                         <option value="enum">enum</option>
                         <option value="int">int</option>
-                    </select>
+                    </Select>
                 )}
             </Field>
             {form.type === "enum" && (
@@ -141,9 +140,9 @@ export function FactFields({
             </Field>
             <Field field="writableBy" label="Writable by" mistakes={mistakes}>
                 {(props) => (
-                    <select
+                    <Select
                         {...props}
-                        className={SELECT}
+                        className="w-full"
                         value={form.writableBy}
                         onChange={(event) => {
                             onChange({ writableBy: event.currentTarget.value });
@@ -152,7 +151,7 @@ export function FactFields({
                         <option value="assign">assign</option>
                         <option value="set">set</option>
                         <option value="correct">correct</option>
-                    </select>
+                    </Select>
                 )}
             </Field>
         </>

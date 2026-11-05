@@ -4,6 +4,7 @@ import { useLocation, useSearchParams } from "wouter";
 import { ApiError } from "@/api/client";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
+import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 import { UsagePanel } from "@/design/usagePanel";
 
 import {
@@ -34,6 +35,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     const [location, navigate] = useLocation();
     const [params] = useSearchParams();
     const openParam = params.get("open");
+    useLeaveGuard(dirty, DISCARD_QUESTION);
     const usage = useUsage(bot, "articles", open?.kind === "edit" ? open.article.id : null);
 
     const fail = useCallback((signal: AbortSignal) => {
@@ -91,18 +93,12 @@ export function ArticlesScreen({ bot }: { bot: string }) {
             });
     }, [openParam, location, navigate, dirty, bot]);
 
-    if (failure !== null) {
-        return (
-            <main className="mx-auto max-w-2xl p-4">
-                <Alert variant="destructive">{failure}</Alert>
-            </main>
-        );
-    }
-    if (articles === null || bases === null) return <main className="mx-auto max-w-2xl p-4 text-muted-foreground">Loading articles…</main>;
+    if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
+    if (articles === null || bases === null) return <p className="text-muted-foreground">Loading articles…</p>;
 
     // Why: opening another editor or leaving the screen would throw away what was typed, so it asks first.
     function confirmDiscard(): boolean {
-        return !dirty || window.confirm(DISCARD_QUESTION);
+        return mayLeave();
     }
 
     function remove(article: Article) {

@@ -17,7 +17,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `.claude-plugin/` — `marketplace.json`: this repository as a Claude Code marketplace, offering one plugin, `suwagcms`.
 - `claude-plugin/` — the Claude Code plugin: `.claude-plugin/plugin.json`, and `skills/suwagcms/SKILL.md`, the main skill that lists every CLI command. Tests in `Suwagcms.Cli.Tests/Plugin/` keep the list and the CLI equal.
 - `Suwagcms.Gate/` — the quality machinery: the gate script, the repository guards, the criteria check, the Claude Code hooks. See "The gate" below.
-- `Suwagcms.Web/` — the web app (React 19, shadcn/ui, Tailwind 4, Vite, TypeScript strict, pnpm). A folder per feature under `src/`; `src/api/` the generated `openapi.d.ts`; the shared design system (shadcn) and the HTTP client come with the first feature that needs them.
+- `Suwagcms.Web/` — the web app (React 19, Tailwind 4, Vite, TypeScript strict, pnpm). A folder per feature under `src/`; `src/shell/` is the frame every page sits in; `src/design/` the shared design system; `src/api/` the generated `openapi.d.ts` and the HTTP client.
 - `compose.yaml` — the whole stack on a laptop from the same Dockerfiles: db (profile `db`), server, web; everything configured from `.env` (`.env.example`) with ASP.NET names (`Section__Key`); only web publishes a port (8220).
 - `Suwagcms.Server/Dockerfile`, `Suwagcms.Web/Dockerfile` — the two images (pinned bases, locked restore, build context is the repo root); the web image is nginx serving the build and proxying `/api` to the server.
 - `.dockerignore` — keeps `node_modules`, `bin`, `obj` and `.env` out of the build context.

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 
+import { fetchBots, type Bot } from "@/api/bots";
 import { Alert } from "@/design/alert";
 
-import { fetchBots, type Bot } from "./api";
 import { BotsView, profilePath } from "./BotsView";
 import { RegisterBotForm } from "./RegisterBotForm";
 
@@ -31,13 +31,9 @@ export function BotsScreen({ openId }: { openId: string | null }) {
     }, []);
 
     if (failure !== null) {
-        return (
-            <main className="mx-auto max-w-2xl p-4">
-                <Alert variant="destructive">{failure}</Alert>
-            </main>
-        );
+        return <Alert variant="destructive">{failure}</Alert>;
     }
-    if (bots === null) return <main className="mx-auto max-w-2xl p-4 text-muted-foreground">Loading bots…</main>;
+    if (bots === null) return <p className="text-muted-foreground">Loading bots…</p>;
 
     return (
         <BotsView
@@ -45,9 +41,6 @@ export function BotsScreen({ openId }: { openId: string | null }) {
             openId={openId}
             onRegister={() => {
                 setRegistering(true);
-            }}
-            onSwitch={(id) => {
-                navigate(`~${profilePath(id)}`);
             }}
             registerForm={
                 registering ? (

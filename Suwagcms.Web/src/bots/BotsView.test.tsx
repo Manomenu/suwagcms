@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
-import type { Bot } from "./api";
+import type { Bot } from "@/api/bots";
 import { BotsView, profilePath } from "./BotsView";
 
 const rzeczoznawca: Bot = { id: "rzeczoznawca", name: "Rzeczoznawca", address: "http://rzeczoznawca.internal:8080" };
@@ -11,7 +11,7 @@ const sklep: Bot = { id: "sklep", name: "Sklep", address: "http://sklep.internal
 function render(bots: Bot[], openId: string | null): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots">
-            <BotsView bots={bots} openId={openId} onRegister={() => undefined} onSwitch={() => undefined} registerForm={null} />
+            <BotsView bots={bots} openId={openId} onRegister={() => undefined} registerForm={null} />
         </Router>,
     );
 }
@@ -29,19 +29,11 @@ describe("BotsView", () => {
         for (const bots of [[], [rzeczoznawca]]) {
             const html = renderToStaticMarkup(
                 <Router ssrPath="/bots">
-                    <BotsView bots={bots} openId={null} onRegister={() => undefined} onSwitch={() => undefined} registerForm={<form />} />
+                    <BotsView bots={bots} openId={null} onRegister={() => undefined} registerForm={<form />} />
                 </Router>,
             );
 
             expect(html).not.toContain("Register a bot");
-        }
-    });
-
-    it("every screen of a bot can be reached from the list", () => {
-        const html = render([rzeczoznawca], null);
-
-        for (const screen of ["facts", "knowledge-bases", "articles", "procedures", "versions"]) {
-            expect(html).toContain(`/bots/rzeczoznawca/${screen}`);
         }
     });
 
@@ -63,10 +55,20 @@ describe("BotsView", () => {
         expect(html).not.toContain("http://sklep.internal:8080");
     });
 
-    it("marks the open bot as the current page", () => {
+    it("asks to choose a bot or register one when none is chosen", () => {
+        const html = render([rzeczoznawca, sklep], null);
+
+        expect(html).toContain("Choose a bot from the panel to work on it, or register a new one.");
+        expect(html).toContain("Register a bot");
+    });
+
+    it("shows the open bot's name and address, and not the other bots", () => {
         const html = render([rzeczoznawca, sklep], "sklep");
 
-        expect(html).toMatch(/aria-current="page"[^>]*>.*Sklep/);
+        expect(html).toContain("<h1");
+        expect(html).toContain("Sklep");
+        expect(html).toContain("http://sklep.internal:8080");
+        expect(html).not.toContain("Rzeczoznawca");
         expect(html).not.toContain("No bot");
     });
 });

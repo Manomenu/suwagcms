@@ -23,10 +23,13 @@ test("AC-bot-profiles-2: registering a bot opens its profile at /bots/<id>, and 
     await page.getByRole("button", { name: "Register", exact: true }).click();
 
     await expect(page).toHaveURL(`/bots/${id}`);
-    await expect(page.getByRole("listitem").filter({ hasText: "Registered in the web" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation").getByRole("listitem").filter({ hasText: "Registered in the web" })).toHaveAttribute(
+        "aria-current",
+        "page",
+    );
     await page.goto("/bots");
-    await expect(page.getByRole("link", { name: "Registered in the web" })).toBeVisible();
-    await expect(page.getByText("http://registered.internal:8080")).toBeVisible();
+    await expect(page.getByRole("main").getByRole("link", { name: "Registered in the web" })).toBeVisible();
+    await expect(page.getByRole("main").getByText("http://registered.internal:8080")).toBeVisible();
 });
 
 test("AC-bot-profiles-4: a refused registration shows every mistake with its fix and registers nothing", async ({ page }) => {
@@ -60,12 +63,20 @@ test("AC-bot-profiles-8: switching the profile in one tab changes neither anothe
         if (call.url().includes("/api/") && call.method() !== "GET") changes.push(`${call.method()} ${call.url()}`);
     });
 
-    await tabOne.getByLabel("Bot", { exact: true }).selectOption(second);
+    await tabOne
+        .getByRole("navigation")
+        .getByRole("link", { name: `Name of ${second}` })
+        .click();
 
     await expect(tabOne).toHaveURL(`/bots/${second}`);
     await tabTwo.reload();
     await expect(tabTwo).toHaveURL(`/bots/${first}`);
-    await expect(tabTwo.getByRole("listitem").filter({ hasText: `Name of ${first}` })).toHaveAttribute("aria-current", "page");
+    await expect(
+        tabTwo
+            .getByRole("navigation")
+            .getByRole("listitem")
+            .filter({ hasText: `Name of ${first}` }),
+    ).toHaveAttribute("aria-current", "page");
     expect(changes).toEqual([]);
 });
 
@@ -75,6 +86,6 @@ test("AC-bot-profiles-11: an address naming a bot that does not exist shows a pa
     await page.goto("/bots/no-such-bot");
 
     await expect(page.getByText("No bot 'no-such-bot'")).toBeVisible();
-    await page.getByRole("link", { name: "Bots", exact: true }).click();
+    await page.getByRole("main").getByRole("link", { name: "Bots", exact: true }).click();
     await expect(page).toHaveURL("/bots");
 });

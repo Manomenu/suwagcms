@@ -24,12 +24,8 @@ export function ProceduresScreen({ bot }: { bot: string }) {
     }, [bot]);
 
     if (failure !== null) {
-        return (
-            <main className="mx-auto max-w-2xl p-4">
-                <Alert variant="destructive">{failure}</Alert>
-            </main>
-        );
+        return <Alert variant="destructive">{failure}</Alert>;
     }
-    if (list === null) return <main className="mx-auto max-w-2xl p-4 text-muted-foreground">Loading procedures…</main>;
+    if (list === null) return <p className="text-muted-foreground">Loading procedures…</p>;
     return <ProceduresView bot={bot} list={list} />;
 }

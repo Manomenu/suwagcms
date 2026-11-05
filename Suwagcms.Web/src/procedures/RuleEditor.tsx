@@ -1,5 +1,6 @@
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
+import { Select } from "@/design/select";
 
 import type { Fact } from "./api";
 import {
@@ -30,9 +31,9 @@ function TargetSelect({ label, value, draft, onChange }: { label: string; value:
     return (
         <label className="flex items-center gap-2 text-sm">
             <span className="shrink-0">{label}</span>
-            <select
+            <Select
                 aria-label={label}
-                className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2"
+                className="flex-1"
                 value={value in draft.steps ? value : ""}
                 onChange={(event) => {
                     onChange(event.target.value);
@@ -44,7 +45,7 @@ function TargetSelect({ label, value, draft, onChange }: { label: string; value:
                         {name}
                     </option>
                 ))}
-            </select>
+            </Select>
         </label>
     );
 }
@@ -61,9 +62,8 @@ function ConditionValue({
     const kind = kindOf(condition);
     if (kind === "known") {
         return (
-            <select
+            <Select
                 aria-label="Known or unknown"
-                className="h-8 rounded-md border bg-background px-2 text-sm"
                 value={condition.known === false ? "no" : "yes"}
                 onChange={(event) => {
                     onChange({ known: event.target.value === "yes" });
@@ -71,7 +71,7 @@ function ConditionValue({
             >
                 <option value="yes">known</option>
                 <option value="no">not known yet</option>
-            </select>
+            </Select>
         );
     }
     if (kind === "range") {
@@ -82,7 +82,7 @@ function ConditionValue({
                 <Input
                     aria-label="From"
                     type="number"
-                    className="h-8 w-20"
+                    className="w-20"
                     value={range.min ?? ""}
                     onChange={(event) => {
                         const min = number(event.target.value);
@@ -95,7 +95,7 @@ function ConditionValue({
                 <Input
                     aria-label="To"
                     type="number"
-                    className="h-8 w-20"
+                    className="w-20"
                     value={range.max ?? ""}
                     onChange={(event) => {
                         const max = number(event.target.value);
@@ -116,6 +116,7 @@ function ConditionValue({
                     <label key={value} className="flex items-center gap-1">
                         <input
                             type="checkbox"
+                            className="accent-primary"
                             checked={chosen.includes(value)}
                             onChange={(event) => {
                                 onChange({ oneOf: event.target.checked ? [...chosen, value] : chosen.filter((other) => other !== value) });
@@ -130,7 +131,6 @@ function ConditionValue({
     return (
         <Input
             aria-label="Values, separated by commas"
-            className="h-8"
             value={chosen.join(", ")}
             onChange={(event) => {
                 onChange({
@@ -161,11 +161,11 @@ function ConditionRow({
 }) {
     const known = facts.find((candidate) => candidate.name === fact);
     return (
-        <div className="flex flex-col gap-1 rounded-md bg-muted/50 p-2">
+        <div className="flex flex-col gap-1 rounded-md bg-secondary p-2">
             <div className="flex items-center gap-1">
-                <select
+                <Select
                     aria-label="Fact"
-                    className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-sm"
+                    className="flex-1"
                     value={fact}
                     onChange={(event) => {
                         onFact(event.target.value);
@@ -177,10 +177,9 @@ function ConditionRow({
                             {candidate.name}
                         </option>
                     ))}
-                </select>
-                <select
+                </Select>
+                <Select
                     aria-label="Condition"
-                    className="h-8 rounded-md border bg-background px-2 text-sm"
                     value={kindOf(condition)}
                     onChange={(event) => {
                         onChange(freshCondition(event.target.value as ConditionKind));
@@ -191,7 +190,7 @@ function ConditionRow({
                             {KIND_LABEL[kind]}
                         </option>
                     ))}
-                </select>
+                </Select>
                 <Button type="button" variant="ghost" size="xs" aria-label={`Remove the condition on ${fact}`} onClick={onRemove}>
                     ✕
                 </Button>
@@ -211,7 +210,7 @@ function RuleCard({ rule, index, context }: { rule: Rule; index: number; context
     };
     const unused = facts.filter((fact) => !(fact.name in (rule.when ?? {})));
     return (
-        <li className="flex flex-col gap-2 rounded-lg border p-2" data-rule={isDefault ? "default" : index}>
+        <li className="flex flex-col gap-2 rounded-lg border border-border p-2" data-rule={isDefault ? "default" : index}>
             <div className="flex items-center justify-between text-sm font-medium">
                 {isDefault ? "Otherwise (default)" : `Rule ${index + 1}: when`}
                 {stepValue !== undefined && canRemoveRule(stepValue, index) && (

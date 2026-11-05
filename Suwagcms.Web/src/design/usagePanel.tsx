@@ -1,7 +1,7 @@
-import { Link } from "wouter";
-
 import { Alert } from "@/design/alert";
+import { Anchor } from "@/design/anchor";
 import { Button } from "@/design/button";
+import { Paper } from "@/design/page";
 
 /** One reference as the panel needs it: the resource on the other end and the field of the referrer that holds it. */
 export interface UsageEntry {
@@ -22,7 +22,7 @@ function Card({
     hrefOf: (entry: UsageEntry) => string;
 }) {
     return (
-        <section aria-label={title} className="flex flex-1 flex-col gap-1 rounded-lg border p-3 text-sm">
+        <Paper aria-label={title} role="region" className="flex min-w-0 flex-1 basis-64 flex-col gap-1 text-sm wrap-anywhere">
             <h3 className="font-semibold">{title}</h3>
             {entries.length === 0 ? (
                 <p className="text-muted-foreground">{empty}</p>
@@ -30,9 +30,7 @@ function Card({
                 <ul className="flex flex-col gap-1">
                     {entries.map((entry) => (
                         <li key={`${entry.kind}:${entry.id}:${entry.field}`}>
-                            <Link href={hrefOf(entry)} className="text-primary underline underline-offset-4">
-                                {entry.id}
-                            </Link>{" "}
+                            <Anchor href={hrefOf(entry)}>{entry.id}</Anchor>{" "}
                             <span className="text-muted-foreground">
                                 {entry.kind} · {entry.field}
                             </span>
@@ -40,7 +38,7 @@ function Card({
                     ))}
                 </ul>
             )}
-        </section>
+        </Paper>
     );
 }
 
@@ -66,7 +64,7 @@ export function UsagePanel({
         <div className="flex flex-col gap-3">
             {onDelete !== undefined && (
                 <div className="flex items-center gap-3">
-                    <Button type="button" variant="outline" disabled={count > 0} onClick={onDelete}>
+                    <Button type="button" variant="destructive" disabled={count > 0} onClick={onDelete}>
                         Delete
                     </Button>
                     {count > 0 && (
@@ -77,7 +75,7 @@ export function UsagePanel({
                     )}
                 </div>
             )}
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
                 <Card title="Used by" entries={usage.usedBy} empty="Nothing uses this." hrefOf={hrefOf} />
                 <Card title="Uses" entries={usage.uses} empty="This uses nothing." hrefOf={hrefOf} />
             </div>
