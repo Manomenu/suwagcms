@@ -184,7 +184,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-version-create-6")]
-    public async Task The_routes_under_versions_are_a_list_a_read_and_a_creation_and_nothing_else()
+    public async Task The_routes_under_versions_are_reads_a_creation_and_a_push_that_changes_the_bot_never_a_version()
     {
         _ = database.Pool;
         var routes = app
@@ -200,7 +200,13 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
             .ToList();
 
         Assert.Equal(
-            ["GET /api/bots/{bot}/versions", "GET /api/bots/{bot}/versions/{number:int}", "POST /api/bots/{bot}/versions"],
+            [
+                "GET /api/bots/{bot}/versions",
+                "GET /api/bots/{bot}/versions/status",
+                "GET /api/bots/{bot}/versions/{number:int}",
+                "POST /api/bots/{bot}/versions",
+                "POST /api/bots/{bot}/versions/{number:int}/push",
+            ],
             routes
         );
     }

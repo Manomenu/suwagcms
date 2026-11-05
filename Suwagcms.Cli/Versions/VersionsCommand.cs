@@ -21,6 +21,7 @@ internal static class VersionsCommand
             CreateList(options, environment),
             CreateCreate(options, environment),
             CreateShow(options, environment),
+            CreateStatus(options, environment),
         };
 
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)
@@ -95,6 +96,42 @@ internal static class VersionsCommand
                 var created =
                     answer.Body?.Deserialize<VersionCreated>(Web) ?? throw new InvalidOperationException("the server sent no version");
                 return await target.Run.Report.DoneAsync(created, VersionText.Created(created));
+            }
+        );
+        return command;
+    }
+
+    private static Command CreateStatus(GlobalOptions options, CliEnvironment environment)
+    {
+        var command = new Command(
+            "status",
+            "Ask the bot which version it has (never what the CMS last sent), with the latest version, the versions still in use and the recent pushes (or --open the Versions screen in the web app)."
+        );
+        EditOptions.RefuseOpenWithJson(command, options);
+        command.SetAction(
+            async (parsed, cancellationToken) =>
+            {
+                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
+                if (target is null)
+                {
+                    return exit;
+                }
+                if (parsed.GetValue(options.Open))
+                {
+                    return await Open(target, parsed);
+                }
+                var answer = await ServerCall.GetAsync(
+                    environment,
+                    target.Address,
+                    target.CollectionPath($"{Collection}/status"),
+                    cancellationToken
+                );
+                if (answer.ExitCode != ExitCodes.Done)
+                {
+                    return await target.FailedAsync(answer, cancellationToken);
+                }
+                var status = answer.Body?.Deserialize<BotStatus>(Web) ?? throw new InvalidOperationException("the server sent no status");
+                return await target.Run.Report.DoneAsync(status, VersionText.Status(status));
             }
         );
         return command;

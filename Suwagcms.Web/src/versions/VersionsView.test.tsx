@@ -4,7 +4,7 @@ import { Router } from "wouter";
 
 import type { Mistake } from "@/api/client";
 
-import type { VersionDetail, VersionSummary } from "./api";
+import type { BotStatus, PushResult, VersionDetail, VersionSummary } from "./api";
 import { VersionsView } from "./VersionsView";
 
 const versions: VersionSummary[] = [
@@ -49,12 +49,47 @@ const mistakes: Mistake[] = [
     },
 ];
 
-function view(shown: { versions?: VersionSummary[]; refused?: Mistake[] | null; shown?: VersionDetail | null }): string {
+const answering: BotStatus = {
+    bot: "rzeczoznawca",
+    address: "http://rzeczoznawca.internal:8080",
+    reach: "Answered",
+    has: 12,
+    held: [11, 12],
+    inUse: [11],
+    lastKnown: 12,
+    lastKnownAt: "2026-11-04T21:40:00+00:00",
+    reason: null,
+    otherBot: null,
+    latest: 14,
+    hasUnknownVersion: false,
+    attempts: [
+        {
+            id: "1",
+            version: 14,
+            outcome: "Failed",
+            error: "cannot reach http://rzeczoznawca.internal:8080.",
+            at: "2026-11-04T21:42:00+00:00",
+        },
+        { id: "0", version: 13, outcome: "Succeeded", error: null, at: "2026-11-02T09:20:00+00:00" },
+    ],
+};
+
+function view(shown: {
+    versions?: VersionSummary[];
+    refused?: Mistake[] | null;
+    shown?: VersionDetail | null;
+    status?: BotStatus | null;
+    pushFailure?: PushResult | null;
+}): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/versions">
             <VersionsView
                 bot="rzeczoznawca"
                 versions={shown.versions ?? versions}
+                status={shown.status ?? null}
+                pushFailure={shown.pushFailure ?? null}
+                pushing={false}
+                onPush={() => undefined}
                 refused={shown.refused ?? null}
                 shown={shown.shown ?? null}
                 onCreate={() => undefined}
@@ -107,5 +142,42 @@ describe("VersionsView", () => {
         expect(html).toContain("Connect it or delete it.");
         expect(html).toContain('href="/bots/rzeczoznawca/procedures"');
         expect(html).toContain("Open orderValuation");
+    });
+
+    it("AC-version-push-3: shows what the bot has beside the latest version, with the main button to push the latest", () => {
+        const html = view({ status: answering });
+
+        expect(html).toContain("Bot has v12 · Latest v14");
+        expect(html).toContain("Push v14");
+    });
+
+    it("AC-version-push-3: shows no push button when the bot is up to date", () => {
+        const html = view({ status: { ...answering, has: 14 } });
+
+        expect(html).toContain("Bot has v14 · up to date");
+        expect(html).not.toContain("Push v14");
+    });
+
+    it("AC-version-push-13: lists the versions still in use by conversations", () => {
+        expect(view({ status: answering })).toContain("Still in use by conversations: v11");
+    });
+
+    it("AC-version-push-12: lists the recent pushes with their time, version, result and reason", () => {
+        const html = view({ status: answering });
+
+        expect(html).toContain("2026-11-04 21:42 UTC · v14 · failed: cannot reach http://rzeczoznawca.internal:8080.");
+        expect(html).toContain("2026-11-02 09:20 UTC · v13 · pushed");
+    });
+
+    it("AC-version-push-6: shows a refused push as failed with the bot's mistakes", () => {
+        const html = view({
+            status: answering,
+            pushFailure: { outcome: "Failed", version: 14, botHas: null, reason: "the bot refused v14: 1 mistake(s)", mistakes },
+        });
+
+        expect(html).toContain("failed");
+        expect(html).toContain("the bot refused v14");
+        expect(html).toContain("No path reaches step");
+        expect(html).toContain("Bot has v12 · Latest v14");
     });
 });

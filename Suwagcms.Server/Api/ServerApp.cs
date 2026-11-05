@@ -32,6 +32,10 @@ internal static class ServerApp
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<DefinitionEditor>();
         builder.Services.AddSingleton<VersionCreator>();
+        builder.Services.AddOptions<PushOptions>().BindConfiguration("Push");
+        builder.Services.AddHttpClient<BotLine>(client => client.Timeout = Timeout.InfiniteTimeSpan);
+        builder.Services.AddTransient<VersionPusher>();
+        builder.Services.AddTransient<BotStatusReader>();
         builder.Services.AddOpenApi();
 
         var app = builder.Build();

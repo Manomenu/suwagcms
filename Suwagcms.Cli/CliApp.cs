@@ -37,6 +37,7 @@ internal static class CliApp
             ProceduresCommand.Create(options, environment),
             VersionsCommand.Create(options, environment),
             UsageCommand.Create(options, environment),
+            PushCommand.Create(options, environment),
         };
         options.AddTo(root);
         return root;

@@ -1315,6 +1315,104 @@
         }
       }
     },
+    "/api/bots/{bot}/versions/status": {
+      "get": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BotStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/versions/{number}/push": {
+      "post": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushResult"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/{kind}/{id}/usage": {
       "get": {
         "tags": [
@@ -1550,6 +1648,121 @@
           }
         },
         "description": "A registered bot: the id that sits in addresses and commands, the name people see, and where the CMS reaches it."
+      },
+      "BotReach": {
+        "enum": [
+          "Answered",
+          "Unreachable",
+          "WrongAddress"
+        ],
+        "description": "What asking a bot for its state came to: it answered, it could not be reached, or the address answers as another bot."
+      },
+      "BotStatus": {
+        "required": [
+          "bot",
+          "address",
+          "reach",
+          "has",
+          "held",
+          "inUse",
+          "lastKnown",
+          "lastKnownAt",
+          "reason",
+          "otherBot",
+          "latest",
+          "hasUnknownVersion",
+          "attempts"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "reach": {
+            "$ref": "#/components/schemas/BotReach"
+          },
+          "has": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "held": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "inUse": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "lastKnown": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "lastKnownAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "otherBot": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "latest": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "hasUnknownVersion": {
+            "type": "boolean"
+          },
+          "attempts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PushAttempt"
+            }
+          }
+        },
+        "description": "What the bot itself reports (never what the CMS tried to send), and what the CMS knows beside it.\n`Has`, `Held` and `InUse` are the bot's answer and are empty unless `Reach` is `Answered`;\n`LastKnown` is the number it reported the last time it answered, at `LastKnownAt`."
       },
       "Fact": {
         "required": [
@@ -1911,6 +2124,96 @@
           }
         },
         "description": "One line of a bot's procedures: how many mistakes still stop this procedure from becoming a version."
+      },
+      "PushAttempt": {
+        "required": [
+          "id",
+          "version",
+          "outcome",
+          "error",
+          "at"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/PushOutcome"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "One recorded push: the version, when it was tried, how it ended and, when it failed, the reason."
+      },
+      "PushOutcome": {
+        "enum": [
+          "Succeeded",
+          "Failed"
+        ],
+        "description": "How an attempt to push a version ended."
+      },
+      "PushResult": {
+        "required": [
+          "outcome",
+          "version",
+          "botHas",
+          "reason",
+          "mistakes"
+        ],
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "$ref": "#/components/schemas/PushOutcome"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "botHas": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "The answer to a push: how it ended, the version the bot reported afterwards (null when it did not answer), and when it failed, the reason and every mistake the bot named."
       },
       "Refusal": {
         "required": [
