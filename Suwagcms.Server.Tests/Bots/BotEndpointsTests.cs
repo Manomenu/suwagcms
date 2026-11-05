@@ -58,7 +58,6 @@ public sealed class BotEndpointsTests(TestDatabase database) : IDisposable
     public async Task A_registration_with_every_field_wrong_is_refused_with_every_mistake_and_its_fix_and_registers_nothing()
     {
         using var client = Client();
-        var before = await Listed(client);
 
         var response = await Register(client, "Not Valid", " ", "rzeczoznawca.internal");
         var mistakes = await MistakesOf(response);
@@ -66,7 +65,8 @@ public sealed class BotEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(["bot.addressInvalid", "bot.idInvalid", "bot.nameMissing"], Codes(mistakes));
         Assert.All(mistakes, mistake => Assert.False(string.IsNullOrWhiteSpace(mistake.GetProperty("fix").GetString())));
-        Assert.Equal(before, await Listed(client));
+        // Why: other test classes register bots at the same time, so the whole list cannot be compared before and after.
+        Assert.DoesNotContain(await Listed(client), bot => bot.Id == "Not Valid" || bot.Address == "rzeczoznawca.internal");
     }
 
     [Theory]

@@ -8,8 +8,8 @@ public sealed class ArticleScaleTests(TestDatabase database) : IDisposable
 {
     private const int Articles = 5000;
 
-    // Why: the first measurement was about 200 ms, so the limit is 1000 ms: too little for a rule that is slow per pair of articles.
-    private const int LimitMilliseconds = 1000;
+    // Why: about 200 ms on an idle machine and 2 s with several agents building at once, so 5 s still catches a save that grew badly.
+    private const int LimitMilliseconds = 5000;
 
     private readonly TestApp app = new();
 
