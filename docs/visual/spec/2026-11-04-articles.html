@@ -401,7 +401,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>What an agent or a person writes comes back unchanged.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>The <code>language</code> field: <code>article-language</code>.</li>
+      <li>The language of an article, which is its knowledge base's: <code>knowledge-base-language</code>.</li>
       <li>Links to other articles and chips in the editor: <code>article-links</code>.</li>
       <li>Blocking the delete of an article something refers to: <code>delete-guard</code>.</li>
       <li>Turning an article off: <code>availability</code>.</li>
@@ -438,7 +438,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <table>
     <tr><th>Field</th><th>Rule</th><th>Who reads it</th></tr>
     <tr><td><code>id</code></td><td>required; camelCase; unique across all the bot's articles, not only its base; fixed once created</td><td>references, commands</td></tr>
-    <tr><td><code>knowledgeBase</code></td><td>required; a base of this bot; changing it moves the article</td><td>authors</td></tr>
+    <tr><td><code>knowledgeBase</code></td><td>required; a base of this bot; changing it moves the article, which then has the language of the new base</td><td>authors</td></tr>
     <tr><td><code>title</code></td><td>required, not blank</td><td>authors, the model</td></tr>
     <tr><td><code>content</code></td><td>required, not blank; Markdown</td><td>the customer, through the model</td></tr>
     <tr><td><code>llmGuide</code></td><td>required, not blank; Markdown</td><td>the model, with the article</td></tr>

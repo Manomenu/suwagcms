@@ -60,6 +60,29 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
         );
 
     [Fact]
+    [Trait("criterion", "AC-knowledge-base-language-14")]
+    public async Task A_version_document_holds_the_language_on_each_knowledge_base_and_none_on_its_articles()
+    {
+        var api = await (await NewBot()).Ready();
+        var articles = new ArticleApi(api.Client, api.Bot);
+        Assert.True((await articles.KnowledgeBases.AddWithLanguage("oferta", "Oferta", "pl")).IsSuccessStatusCode);
+        Assert.True((await articles.KnowledgeBases.Add("offer", "Offer")).IsSuccessStatusCode);
+        Assert.True((await articles.Add("cennik", ArticleApi.Body("oferta"))).IsSuccessStatusCode);
+
+        var document = await api.DocumentOf((await api.Created()).Version.Number);
+
+        Assert.Equal(
+            ["oferta|pl", "offer|en"],
+            document
+                .GetProperty("knowledgeBases")
+                .EnumerateArray()
+                .Select(item => $"{item.GetProperty("id")}|{item.GetProperty("language")}")
+                .Order(StringComparer.Ordinal)
+        );
+        Assert.False(document.GetProperty("articles")[0].TryGetProperty("language", out _));
+    }
+
+    [Fact]
     [Trait("criterion", "AC-version-create-1")]
     public async Task A_working_state_that_passes_the_Version_stage_becomes_the_next_version_and_is_listed()
     {

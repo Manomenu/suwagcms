@@ -10,8 +10,8 @@ import { emptyForm, fieldOf, HINTS, isDirty, bodyOf } from "./articleForm";
 import { ArticlesView } from "./ArticlesView";
 
 const bases: KnowledgeBase[] = [
-    { id: "offer", title: "Offer", revision: 1 },
-    { id: "forValuers", title: "For valuers", revision: 1 },
+    { id: "offer", title: "Offer", language: "pl", revision: 1 },
+    { id: "forValuers", title: "For valuers", language: "en", revision: 1 },
 ];
 
 const articles: Article[] = [
@@ -220,19 +220,18 @@ describe("the article form", () => {
 });
 
 describe("the language of an article", () => {
-    it("AC-article-language-2: the select of a new article offers pl and en and starts on en", () => {
+    it("AC-knowledge-base-language-12: the article form shows the language of the chosen base as read-only text, not as a control", () => {
         const html = fieldHtml(fields(), "language");
 
-        expect(html).toContain('<option value="en" selected="">en</option>');
-        expect(html).toContain('<option value="pl">pl</option>');
-        expect(html.match(/<option/g)).toHaveLength(2);
-        expect(emptyForm("offer").language).toBe("en");
+        expect(html).toMatch(/<output[^>]*>pl<\/output>/);
+        expect(html).not.toContain("<select");
+        expect(html).not.toContain("<input");
     });
 
-    it("AC-article-language-2: an article's own language is the one selected and the one listed", () => {
+    it("AC-knowledge-base-language-12: the text follows the base selector", () => {
         const html = renderToStaticMarkup(
             <ArticleFields
-                form={{ ...emptyForm("offer"), language: "pl" }}
+                form={{ ...emptyForm("forValuers"), id: "guide" }}
                 bases={bases}
                 mistakes={[]}
                 idLocked
@@ -242,34 +241,32 @@ describe("the language of an article", () => {
             />,
         );
 
-        expect(fieldHtml(html, "language")).toContain('<option value="pl" selected="">pl</option>');
-        expect(view(articles)).toContain("<td>pl</td>");
-        expect(bodyOf({ ...emptyForm("offer"), language: "pl" }, emptyForm("offer")).language).toBe("pl");
+        expect(fieldHtml(html, "language")).toMatch(/<output[^>]*>en<\/output>/);
     });
 
-    it("AC-article-language-8: the tooltip of the language select says what the field is for", () => {
+    it("AC-knowledge-base-language-12: the tooltip says the language comes from the knowledge base", () => {
         const html = fieldHtml(fields(), "language");
 
         expect(html).toContain(`title="${HINTS.language}"`);
-        expect(HINTS.language).toMatch(/language the article is written in/);
+        expect(HINTS.language).toMatch(/language of the knowledge base the article is in/);
         expect(HINTS.language).toMatch(/pick the right articles/);
     });
 
-    it("AC-article-language-4: a refused language is shown beside the language select", () => {
-        const html = fields([mistake("article.language.unknown", "language")]);
-
-        expect(fieldOf(mistake("article.language.unknown", "language"), "priceList")).toBe("language");
-        expect(fieldHtml(html, "language")).toContain("the message the fix");
+    it("AC-knowledge-base-language-7: the body of a save carries no language", () => {
+        expect(bodyOf(emptyForm("offer"), emptyForm("offer"))).not.toHaveProperty("language");
+        expect(emptyForm("offer")).not.toHaveProperty("language");
     });
 
-    it("AC-article-language-6: the list offers a language filter with pl and en", () => {
+    it("AC-knowledge-base-language-9: the list shows the language of each article and offers a language filter with pl and en", () => {
         const html = view(articles);
 
+        expect(html).toContain("<td>pl</td>");
         expect(html).toContain("All languages");
         expect(html).toContain('aria-label="Language"');
+        expect(html.match(/<option value="(pl|en)">/g)).toEqual(['<option value="pl">', '<option value="en">']);
     });
 
-    it("AC-article-language-6: an empty list under a language filter says that no article matches", () => {
+    it("AC-knowledge-base-language-9: an empty list under a language filter says that no article matches", () => {
         expect(view([], bases, { knowledgeBase: "", language: "en", text: "" })).toContain("No article matches the filters.");
     });
 });

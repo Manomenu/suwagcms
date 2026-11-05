@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+
+import { LANGUAGES } from "@/api/languages";
 import { Anchor } from "@/design/anchor";
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
@@ -6,7 +8,7 @@ import { Page, Paper } from "@/design/page";
 import { Select } from "@/design/select";
 import { Table } from "@/design/table";
 
-import { LANGUAGES, type Article, type Filters, type KnowledgeBase } from "./api";
+import type { Article, Filters, KnowledgeBase } from "./api";
 
 /** The Articles screen: the heading, the filters, the list with its actions, and whatever form is open. */
 export function ArticlesView({

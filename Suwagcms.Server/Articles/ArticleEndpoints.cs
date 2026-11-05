@@ -37,16 +37,22 @@ internal static class ArticleEndpoints
         string? language = null
     ) =>
         await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
-            ? TypedResults.Ok(
-                stored
-                    .Where(item =>
-                        item.Target.Kind == ResourceKind.Article
-                        && ArticleMapping.Matches((Article)item.Record, knowledgeBase, text, language)
-                    )
-                    .Select(ArticleMapping.Show)
-                    .ToList()
-            )
+            ? TypedResults.Ok(ListOf(stored, knowledgeBase, text, language))
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The articles were not listed.");
+
+    private static List<ArticleView> ListOf(List<StoredResource> stored, string? knowledgeBase, string? text, string? language)
+    {
+        var languages = ArticleMapping.Languages(stored);
+        return
+        [
+            .. stored
+                .Where(item =>
+                    item.Target.Kind == ResourceKind.Article
+                    && ArticleMapping.Matches((Article)item.Record, knowledgeBase, text, language, languages)
+                )
+                .Select(item => ArticleMapping.Show(item, languages)),
+        ];
+    }
 
     private static async Task<Results<Ok<ArticleView>, ProblemHttpResult>> Get(
         string bot,
@@ -61,7 +67,7 @@ internal static class ArticleEndpoints
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The article was not shown.");
         }
         return stored.SingleOrDefault(item => item.Target == target) is { } found
-            ? TypedResults.Ok(ArticleMapping.Show(found))
+            ? TypedResults.Ok(ArticleMapping.Show(found, ArticleMapping.Languages(stored)))
             : EditProblems.For(new EditResult.Missing(target), bot, "The article was not shown.");
     }
 
@@ -82,15 +88,16 @@ internal static class ArticleEndpoints
         {
             return EditProblems.For(new EditResult.Refused(unreadable), bot, Title);
         }
-        // Why: a save without a language keeps the one the article has, so the revision read is the one the save is checked against; a new article has en.
-        var current = body.Language is null
-            ? (await ResourceStore.ReadAsync(pool, bot, cancellationToken))?.SingleOrDefault(item => item.Target == target)
-            : null;
-        var record = ArticleMapping.ToRecord(id, body, current is null ? ArticleLanguages.English : ((Article)current.Record).Language);
-        var expected = ifRevision ?? (body.Language is null ? current?.Revision ?? 0 : null);
-        var result = await editor.ApplyAsync(bot, [new Put(target, record, expected)], dryRun, cancellationToken);
+        var record = ArticleMapping.ToRecord(id, body);
+        var result = await editor.ApplyAsync(bot, [new Put(target, record, ifRevision)], dryRun, cancellationToken);
         return result is EditResult.Saved saved
-            ? TypedResults.Ok(ArticleMapping.Show(record, saved.Revisions[target]))
+            ? TypedResults.Ok(
+                ArticleMapping.Show(
+                    record,
+                    saved.Revisions[target],
+                    ArticleMapping.Languages(await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [])
+                )
+            )
             : EditProblems.For(result, bot, Title);
     }
 

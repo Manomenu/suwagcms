@@ -25,6 +25,9 @@ internal sealed class KnowledgeBaseApi(HttpClient client, string bot)
 
     public Task<HttpResponseMessage> Add(string id, string title, string extra = "") => Put(id, Body(title), "?ifRevision=0" + extra);
 
+    public Task<HttpResponseMessage> AddWithLanguage(string id, string title, string? language) =>
+        Put(id, Body(title, language), "?ifRevision=0");
+
     public Task<HttpResponseMessage> Rename(string id, string title, string query = "") => Put(id, Body(title), query);
 
     public Task<HttpResponseMessage> Delete(string id, string query = "") =>
@@ -37,7 +40,9 @@ internal sealed class KnowledgeBaseApi(HttpClient client, string bot)
         await client.GetFromJsonAsync<List<KnowledgeBaseView>>($"/api/bots/{Bot}/knowledge-bases", TestContext.Current.CancellationToken)
         ?? [];
 
-    public static string Body(string title) => $$"""{"title":"{{title}}"}""";
+    // Why: a language left out is left out of the JSON too, so the server's default is what the test sees.
+    public static string Body(string title, string? language = null) =>
+        language is null ? $$"""{"title":"{{title}}"}""" : $$"""{"title":"{{title}}","language":"{{language}}"}""";
 
     public static async Task<KnowledgeBaseView> ViewOf(HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<KnowledgeBaseView>(TestContext.Current.CancellationToken)

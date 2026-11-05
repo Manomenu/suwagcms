@@ -493,7 +493,7 @@ changes:
     <li><code>AC-batch-apply-8</code> <code>--dry-run</code> gives the same mistakes or the same counts as the real command, and leaves the working state unchanged; the real command afterwards gives that answer.</li>
     <li><code>AC-batch-apply-9</code> An old <code>ifRevision</code> refuses the whole file with the current revision; a change without one applies to the latest revision, and an edit changes only the fields it gives.</li>
     <li><code>AC-batch-apply-10</code> A field the API does not know is refused, naming the change and the field; an unreadable file exits 2, naming the line; an empty list says there is nothing to apply and exits 0; a <code>bot</code> other than the one in use is refused, naming both.</li>
-    <li><code>AC-batch-apply-11</code> A file of changes can set an article's language, and <code>en</code> applies without it.</li>
+    <li><code>AC-batch-apply-11</code> A file of changes can set a knowledge base's language, and <code>en</code> applies without it.</li>
     <li><code>AC-batch-apply-12</code> A file and a save of the same bot arriving at the same moment run one after the other: each is checked against the state the other left, and a refused file leaves no trace of itself.</li>
     <li><code>AC-batch-apply-13</code> <code>--json</code> returns the result per change, and the mistakes as a save returns them.</li>
     <li><code>AC-batch-apply-14</code> <code>suwagcms apply</code> has its line in the plugin's main skill, and a separate skill for batch changes starts with a dry run.</li>

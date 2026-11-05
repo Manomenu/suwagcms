@@ -4,7 +4,7 @@ import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 
-import { LANGUAGES, type KnowledgeBase } from "./api";
+import type { KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";
 import { HINTS, fieldOf, type ArticleForm, type FieldName } from "./articleForm";
 import { LinkedTextEditor } from "./LinkedTextEditor";
@@ -93,22 +93,11 @@ export function ArticleFields({
                         </Select>
                     )}
                 </Field>
-                <Field prefix="article" name="language" label="Language" hint={HINTS.language} errors={errorsOf("language")}>
+                <Field prefix="article" name="language" label="Language" hint={HINTS.language} errors={[]}>
                     {(props) => (
-                        <Select
-                            {...props}
-                            className="w-full"
-                            value={form.language}
-                            onChange={(event) => {
-                                onChange({ language: event.currentTarget.value });
-                            }}
-                        >
-                            {LANGUAGES.map((language) => (
-                                <option key={language} value={language}>
-                                    {language}
-                                </option>
-                            ))}
-                        </Select>
+                        <output {...props} className="flex h-9 items-center">
+                            {bases.find((base) => base.id === form.knowledgeBase)?.language ?? "—"}
+                        </output>
                     )}
                 </Field>
             </div>

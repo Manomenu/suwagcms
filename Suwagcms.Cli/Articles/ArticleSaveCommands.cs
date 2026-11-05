@@ -15,7 +15,6 @@ internal static class ArticleSaveCommands
 
     private sealed record Fields(
         Option<string?> KnowledgeBase,
-        Option<string?> Language,
         Option<string?> Title,
         TextInput Content,
         TextInput Guide,
@@ -25,10 +24,10 @@ internal static class ArticleSaveCommands
     // Why: the options are left optional so that a missing one reaches the server, which reports every mistake at once.
     private static Fields FieldOptions() =>
         new(
-            new Option<string?>("--kb") { Description = "The id of the knowledge base the article is in; changing it moves the article." },
-            new Option<string?>("--language")
+            new Option<string?>("--kb")
             {
-                Description = "pl or en. A new article has en when this is left out; an edit keeps the language the article has.",
+                Description =
+                    "The id of the knowledge base the article is in; changing it moves the article, and the article takes the language of the new base.",
             },
             new Option<string?>("--title") { Description = "The article's title." },
             TextInput.Create(
@@ -52,7 +51,6 @@ internal static class ArticleSaveCommands
     private static void AddFields(Command command, Fields fields)
     {
         command.Options.Add(fields.KnowledgeBase);
-        command.Options.Add(fields.Language);
         command.Options.Add(fields.Title);
         fields.Content.AddTo(command);
         fields.Guide.AddTo(command);
@@ -117,7 +115,6 @@ internal static class ArticleSaveCommands
                 }
                 var body = new SaveArticle(
                     parsed.GetValue(fields.KnowledgeBase),
-                    parsed.GetValue(fields.Language),
                     parsed.GetValue(fields.Title),
                     content,
                     guide,
@@ -143,7 +140,13 @@ internal static class ArticleSaveCommands
         var fields = FieldOptions();
         var ifRevision = EditOptions.IfRevision();
         var dryRun = EditOptions.DryRun();
-        var command = new Command("edit", "Change an article: only the options you give change, the other fields stay.") { id };
+        var command = new Command(
+            "edit",
+            "Change an article: only the options you give change, the other fields stay. Its language is its knowledge base's."
+        )
+        {
+            id,
+        };
         AddFields(command, fields);
         command.Options.Add(ifRevision);
         command.Options.Add(dryRun);
@@ -153,7 +156,6 @@ internal static class ArticleSaveCommands
         {
             if (
                 result.GetValue(fields.KnowledgeBase) is null
-                && result.GetValue(fields.Language) is null
                 && result.GetValue(fields.Title) is null
                 && result.GetValue(fields.Description) is null
                 && !fields.Content.Given(result)
@@ -161,7 +163,7 @@ internal static class ArticleSaveCommands
             )
             {
                 result.AddError(
-                    "Nothing to change: give at least one of --kb, --language, --title, --content, --content-file, --guide, --guide-file, --description."
+                    "Nothing to change: give at least one of --kb, --title, --content, --content-file, --guide, --guide-file, --description."
                 );
             }
         });
@@ -189,7 +191,6 @@ internal static class ArticleSaveCommands
                 var current = read.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
                 var body = new SaveArticle(
                     parsed.GetValue(fields.KnowledgeBase) ?? current.KnowledgeBase,
-                    parsed.GetValue(fields.Language) ?? current.Language,
                     parsed.GetValue(fields.Title) ?? current.Title,
                     content ?? current.Content,
                     guide ?? current.LlmGuide,

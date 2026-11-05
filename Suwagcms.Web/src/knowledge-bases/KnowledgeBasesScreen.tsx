@@ -8,7 +8,7 @@ import { emptyForm } from "./knowledgeBaseForm";
 import { KnowledgeBaseForm } from "./KnowledgeBaseForm";
 import { KnowledgeBasesView } from "./KnowledgeBasesView";
 
-type Open = { kind: "add" } | { kind: "rename"; base: KnowledgeBase } | null;
+type Open = { kind: "add" } | { kind: "edit"; base: KnowledgeBase } | null;
 
 /** Loads the knowledge bases of the bot in the address when it opens, so bases added meanwhile from the CLI or another tab are found. */
 export function KnowledgeBasesScreen({ bot }: { bot: string }) {
@@ -43,8 +43,8 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
     }
     if (bases === null) return <p className="text-muted-foreground">Loading knowledge bases…</p>;
 
-    const renamedId = open?.kind === "rename" ? open.base.id : null;
-    const latest = renamedId === null ? undefined : bases.find((base) => base.id === renamedId);
+    const editedId = open?.kind === "edit" ? open.base.id : null;
+    const latest = editedId === null ? undefined : bases.find((base) => base.id === editedId);
 
     function remove(base: KnowledgeBase) {
         setDeleteFailure(null);
@@ -68,8 +68,8 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
             onAdd={() => {
                 setOpen({ kind: "add" });
             }}
-            onRename={(base) => {
-                setOpen({ kind: "rename", base });
+            onEdit={(base) => {
+                setOpen({ kind: "edit", base });
             }}
             onDelete={remove}
             form={
@@ -77,10 +77,14 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
                     {open !== null && (
                         <KnowledgeBaseForm
-                            key={open.kind === "rename" ? open.base.id : "add"}
+                            key={open.kind === "edit" ? open.base.id : "add"}
                             bot={bot}
-                            initial={open.kind === "rename" ? { id: open.base.id, title: open.base.title } : emptyForm()}
-                            editing={open.kind === "rename"}
+                            initial={
+                                open.kind === "edit"
+                                    ? { id: open.base.id, title: open.base.title, language: open.base.language }
+                                    : emptyForm()
+                            }
+                            editing={open.kind === "edit"}
                             revision={latest === undefined ? 0 : revisionOf(latest)}
                             onSaved={() => {
                                 setOpen(null);

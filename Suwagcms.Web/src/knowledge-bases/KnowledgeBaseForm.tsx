@@ -1,18 +1,20 @@
 import { useState } from "react";
 
 import { ApiError } from "@/api/client";
+import { LANGUAGES } from "@/api/languages";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Field } from "@/design/field";
 import { Input } from "@/design/input";
 import { Paper } from "@/design/page";
+import { Select } from "@/design/select";
 
 import { saveKnowledgeBase } from "./api";
-import { fieldOf, mistakesFor, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";
+import { HINTS, fieldOf, mistakesFor, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";
 
 /**
- * The form that adds a knowledge base or renames one. A refusal shows each mistake beside its field and keeps everything typed.
- * `revision` is the latest one the screen knows of the base being renamed (0 when adding).
+ * The form that adds a knowledge base or edits one. A refusal shows each mistake beside its field and keeps everything typed.
+ * `revision` is the latest one the screen knows of the base being edited (0 when adding).
  */
 export function KnowledgeBaseForm({
     bot,
@@ -37,7 +39,7 @@ export function KnowledgeBaseForm({
     function submit(event: React.SyntheticEvent) {
         event.preventDefault();
         setRefusal(null);
-        saveKnowledgeBase(bot, form.id, { title: form.title }, revision)
+        saveKnowledgeBase(bot, form.id, { title: form.title, language: form.language }, revision)
             .then(onSaved)
             .catch((error: unknown) => {
                 setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
@@ -75,6 +77,23 @@ export function KnowledgeBaseForm({
                                 setForm({ ...form, title: event.currentTarget.value });
                             }}
                         />
+                    )}
+                </Field>
+                <Field prefix="knowledge-base" name="language" label="Language" hint={HINTS.language} errors={errorsOf("language")}>
+                    {(props) => (
+                        <Select
+                            {...props}
+                            value={form.language}
+                            onChange={(event) => {
+                                setForm({ ...form, language: event.currentTarget.value });
+                            }}
+                        >
+                            {LANGUAGES.map((language) => (
+                                <option key={language} value={language}>
+                                    {language}
+                                </option>
+                            ))}
+                        </Select>
                     )}
                 </Field>
                 {refusal !== null && refusal.mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}

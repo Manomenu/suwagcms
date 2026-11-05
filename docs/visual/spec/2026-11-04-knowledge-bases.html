@@ -377,8 +377,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A knowledge base is a named group of articles within one bot. People and agents create one, rename it and delete it, in the web, the CLI and the plugin.</p>
-    <p>A base has an <code>id</code> and a <code>title</code> and nothing else: it only groups. References work across all the knowledge bases of a bot, so moving an article between bases breaks nothing.</p>
+    <p>A knowledge base is a named group of articles within one bot. People and agents create one, edit it and delete it, in the web, the CLI and the plugin.</p>
+    <p>A base has an <code>id</code>, a <code>title</code> and a <code>language</code> and nothing else: it groups, and its language is the language of its articles. References work across all the knowledge bases of a bot, so moving an article between bases breaks nothing.</p>
   </div>
   <div class="stats">
     <div><b>9</b><span>criteria</span></div>
@@ -395,12 +395,13 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>Create, rename, list and delete the knowledge bases of one bot, through every door.</li>
+      <li>Create, edit, list and delete the knowledge bases of one bot, through every door.</li>
       <li>Titles a person can tell apart.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Articles: <code>articles</code>.</li>
-      <li>Changing a base's <code>id</code>: <code>resource-rename</code>. “Rename” here changes the title.</li>
+      <li>Changing a base's <code>id</code>: <code>resource-rename</code>. “Edit” here changes the title and the language.</li>
+      <li>What the language means and how it is checked: <code>knowledge-base-language</code>.</li>
       <li>A base that bots search separately, or settings per base: nothing asks for them.</li>
       <li>Availability: articles have it; a base has none.</li>
     </ul></div>
@@ -415,7 +416,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <span class="dim">$</span> suwagcms kb list
   dlaRzeczoznawcow  For valuers
   oferta            Offer</div>
-  <h3>2. Marta renames one in the web</h3>
+  <h3>2. Marta changes the title of one in the web</h3>
   <ol class="steps">
     <li><p>She changes the title “Offer” to “Our offer”. The base keeps the <code>id</code> <code>oferta</code>, so anything that points at it still does.</p></li>
   </ol>
@@ -431,6 +432,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><th>Field</th><th>Rule</th></tr>
     <tr><td><code>id</code></td><td>required; camelCase; unique within the bot; fixed once created</td></tr>
     <tr><td><code>title</code></td><td>required, not blank; unique within the bot, ignoring case and surrounding spaces</td></tr>
+    <tr><td><code>language</code></td><td><code>pl</code> or <code>en</code>; <code>en</code> when none is given; the language of every article in the base</td></tr>
   </table>
   <p>A save of a base behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes: all mistakes at once, a refused save leaves no trace, <code>--dry-run</code> answers without changing anything, and an edit based on an old revision is refused.</p>
   <table>
@@ -447,8 +449,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="wire after"><span class="wf-label">Knowledge bases of rzeczoznawca</span>
     <div class="wf-bar"><b>Knowledge bases</b><span class="wf-grow"></span><span class="wf-btn primary">New knowledge base</span></div>
     <div class="wf-body">
-      <div class="wf-card wf-row"><b class="wf-grow">Our offer</b><code>oferta</code><span class="wf-btn">Rename</span><span class="wf-btn">Delete</span></div>
-      <div class="wf-card wf-row"><b class="wf-grow">For valuers</b><code>dlaRzeczoznawcow</code><span class="wf-btn">Rename</span><span class="wf-btn">Delete</span></div>
+      <div class="wf-card wf-row"><b class="wf-grow">Our offer</b><code>oferta</code><span class="wf-btn">Edit</span><span class="wf-btn">Delete</span></div>
+      <div class="wf-card wf-row"><b class="wf-grow">For valuers</b><code>dlaRzeczoznawcow</code><span class="wf-btn">Edit</span><span class="wf-btn">Delete</span></div>
     </div>
   </div>
 </section>
@@ -457,8 +459,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
     <li>Titles are unique within a bot: two bases with one title would be impossible to tell apart in a filter or a picker, and the refusal costs one rename.</li>
-    <li>README's resource table has no row for a knowledge base, so its fields come from the format sketch in the architecture plan: <code>id</code> and <code>title</code>.</li>
-    <li>Renaming has its own command, <code>suwagcms kb rename</code>, because a base has only a title to change; the other resources use <code>edit</code>. Like every edit, it applies to the revision it just read, and <code>--if-revision</code> overrides that.</li>
+    <li>README's resource table has no row for a knowledge base, so its fields come from the format sketch in the architecture plan and the language feature: <code>id</code>, <code>title</code> and <code>language</code>.</li>
+    <li>Editing a base is <code>suwagcms kb edit</code>, like the other resources: a base has two editable fields, the title and the language, and only the options given change. Like every edit, it applies to the revision it just read, and <code>--if-revision</code> overrides that.</li>
     <li>A repeated title is reported for every base that has it, each naming the others: a saved definition never holds one, so the base being saved is always among them.</li>
   </ul>
 </section>
@@ -467,11 +469,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>Acceptance criteria</h2>
   <ul class="checks">
     <li><code>AC-knowledge-bases-1</code> A base created in the web or with <code>suwagcms kb add</code> appears in both the web list and <code>suwagcms kb list</code>.</li>
-    <li><code>AC-knowledge-bases-2</code> A base's title changes in the web and with <code>suwagcms kb rename</code>, and its <code>id</code> stays the same.</li>
+    <li><code>AC-knowledge-bases-2</code> A base's title changes in the web and with <code>suwagcms kb edit</code>, and its <code>id</code> stays the same.</li>
     <li><code>AC-knowledge-bases-3</code> An empty base can be deleted in the web and with <code>suwagcms kb delete</code>, and is gone from both.</li>
     <li><code>AC-knowledge-bases-4</code> A missing or non-camelCase <code>id</code>, an <code>id</code> the bot already has, a blank title, and a title another base of the bot has (ignoring case and surrounding spaces) are each refused with a mistake and a fix.</li>
     <li><code>AC-knowledge-bases-5</code> The same <code>id</code> and title can exist in two bots, and a base of one bot is not listed for the other.</li>
-    <li><code>AC-knowledge-bases-6</code> A rename or delete based on an old revision is refused, and <code>--dry-run</code> on an add, rename or delete changes nothing.</li>
+    <li><code>AC-knowledge-bases-6</code> An edit or delete based on an old revision is refused, and <code>--dry-run</code> on an add, edit or delete changes nothing.</li>
     <li><code>AC-knowledge-bases-7</code> A bot with no bases shows a screen offering to create the first one, and <code>suwagcms kb list --json</code> returns an empty list with exit 0.</li>
     <li><code>AC-knowledge-bases-8</code> Each <code>suwagcms kb</code> command has its line in the plugin's main skill.</li>
     <li><code>AC-knowledge-bases-9</code> A base with articles cannot be deleted, and the refusal lists them.</li>
