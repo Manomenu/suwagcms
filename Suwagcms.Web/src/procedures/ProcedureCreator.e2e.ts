@@ -313,7 +313,7 @@ test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers
     expect(after.localFacts ?? {}).toEqual({});
 });
 
-test("AC-resource-rename-21: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
+test("AC-resource-rename-2: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     const positions = { ask: { x: 11, y: 22 }, mark: { x: 33, y: 44 }, confirm: { x: 55, y: 66 }, goodbye: { x: 77, y: 88 } };

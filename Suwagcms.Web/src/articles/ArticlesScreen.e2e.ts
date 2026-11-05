@@ -521,7 +521,7 @@ test("AC-loop-guard-1: a link that closes a loop is refused beside the field, wi
     expect(await contentOf(request, bot, "pricing")).toBe("See ");
 });
 
-test("AC-delete-guard-1: an article another article links to is refused for delete in the API and its Delete button is disabled in the web, AC-delete-guard-9", async ({
+test("AC-delete-guard-9: an article another article links to is refused for delete in the API and its Delete button is disabled in the web", async ({
     page,
     request,
 }) => {

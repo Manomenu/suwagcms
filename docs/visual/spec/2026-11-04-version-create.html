@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Creating and pushing are separate on purpose: unfinished work is not sent by accident, and a version can wait until someone has checked it. The frozen document is the public contract with every bot.</p>
   </div>
   <div class="stats">
-    <div><b>18</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -491,7 +491,7 @@ flowchart LR
     <li><code>AC-version-create-12</code> <code>--dry-run</code> lists the same mistakes, or says a version could be created, and creates nothing.</li>
     <li><code>AC-version-create-13</code> The list of versions shows each one's number, date, counts of resources and digest, in the web and with <code>suwagcms versions list</code>, and any one can be read in the web and with <code>suwagcms versions show</code>.</li>
     <li><code>AC-version-create-14</code> Numbers are per bot: a version of one bot does not affect another's numbering or list.</li>
-    <li><code>AC-version-create-16</code> A version is checked against what the bot declares.</li>
+    <li><code>AC-version-create-16</code> A version is checked against the stored declaration, without asking the bot: a block it does not declare or another format version refuses the version, and saves go on.</li>
     <li><code>AC-version-create-17</code> Availability is not part of a version: a version holds nothing about what is off, and turning a resource off gives no reason for a new version.</li>
   </ul>
 </section>

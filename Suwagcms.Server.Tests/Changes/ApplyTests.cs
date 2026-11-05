@@ -396,7 +396,7 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-batch-apply-10")]
+    [Trait("criterion", "AC-batch-apply-19")]
     public async Task An_unreadable_file_exits_2_naming_the_line_and_an_empty_list_says_there_is_nothing_to_apply()
     {
         var scene = await NewScene();

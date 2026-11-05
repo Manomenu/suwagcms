@@ -183,7 +183,7 @@ public sealed class DeclarationValidatorTests
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-13")]
-    public void Given_no_declaration_or_one_that_declares_nothing_the_mistakes_are_the_same_as_without_this_feature()
+    public void Given_no_declaration_or_one_that_declares_nothing_the_mistakes_are_the_same_as_without_one()
     {
         var unfinished = Definition with { Procedures = [] };
         var without = DefinitionValidator.Validate(unfinished, ValidationStage.Version);

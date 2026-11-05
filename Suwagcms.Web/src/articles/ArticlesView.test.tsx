@@ -112,13 +112,6 @@ describe("ArticlesView", () => {
         expect(html).toContain("What a valuation costs");
     });
 
-    it("AC-articles-8: each article has an edit button, and Delete is on the opened article beside what uses it", () => {
-        const html = view(articles);
-
-        expect(html).not.toContain(">Delete<");
-        expect(html.match(/>Edit</g)).toHaveLength(1);
-    });
-
     it("AC-articles-11: the list offers a filter by knowledge base and one by text", () => {
         const html = view(articles);
 

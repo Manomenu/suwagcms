@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>README lets agents change a bot by themselves, and history is part of what makes that safe. The record cannot be edited. It does not yet say who made a change: that waits for <code>cms-identity</code>, listed below as a criterion for later.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
+    <div><b>15</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
@@ -425,7 +425,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </ol>
   <h3>4. A resource older than history</h3>
   <ol class="steps">
-    <li><p><code>rabaty</code> has not changed since before this feature. Its panel says no changes have been recorded since the day history started.</p></li>
+    <li><p><code>rabaty</code> has not changed since history started. Its panel says no changes have been recorded since the day history started.</p></li>
   </ol>
 </section>
 <section data-role="behaviour">
@@ -492,7 +492,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-change-history-13</code> Each resource a file of changes changes gets its own entry, and the entries of one file can be told apart as one batch.</li>
     <li><code>AC-change-history-14</code> A push of an older version is recorded with the version it left and the version it chose.</li>
     <li><code>AC-change-history-15</code> Turning a resource on or off is recorded, as a change outside versions: it holds the old and the new state and no revision.</li>
-    <li><code>AC-change-history-17</code> A change of a resource's <code>id</code> is one entry for that resource, followed by its stable row and never a delete and an add, with the old and new <code>id</code>; each rewritten referrer gets its own entry in the same batch; and the resource's history is found under either <code>id</code>, also when another resource takes the old one.</li>
+    <li><code>AC-change-history-17</code> A change of a resource's <code>id</code> is one entry for that resource, never a delete and an add, with the old and new <code>id</code>, and its history goes on under the new <code>id</code>; each rewritten referrer gets its own entry in the same batch; and the resource's history is found under either <code>id</code>, also when another resource takes the old one.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">

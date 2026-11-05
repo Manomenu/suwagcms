@@ -275,6 +275,7 @@ public sealed class ArticlesTests
 
     [Fact]
     [Trait("criterion", "AC-articles-7")]
+    [Trait("criterion", "AC-delete-guard-10")]
     public async Task Dry_run_on_an_add_an_edit_and_a_delete_asks_for_a_dry_run_and_says_nothing_was_changed()
     {
         var recorder = new Recorder();

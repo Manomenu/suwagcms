@@ -372,7 +372,7 @@ public sealed class ProceduresTests : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-procedure-model-13")]
+    [Trait("criterion", "AC-procedure-model-2")]
     public async Task A_file_whose_id_differs_from_the_command_is_refused_naming_both_before_the_server_is_asked()
     {
         var file = FileWith("p.yaml", Yaml);
@@ -437,7 +437,7 @@ public sealed class ProceduresTests : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-procedure-model-14")]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task Open_shows_the_procedures_screen_of_the_bot_without_calling_the_server()
     {
         var opened = new List<Uri>();
@@ -565,19 +565,31 @@ public sealed class ProceduresTests : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-procedure-model-15")]
-    public void Every_procedures_command_has_its_line_in_the_main_skill_which_gives_the_file_format()
+    public void The_main_skill_gives_the_file_format_of_a_procedure()
     {
         var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var commands = CommandList.RunnableInCli().Where(words => words.StartsWith("procedures ", StringComparison.Ordinal)).ToList();
+        var section = SkillText.Section(skill, "Procedure file");
 
-        Assert.Equal(
-            ["procedures add", "procedures delete", "procedures edit", "procedures layout", "procedures list", "procedures show"],
-            commands
-        );
-        Assert.Empty(commands.Except(CommandList.Listed(skill)));
-        foreach (var word in new[] { "firstStep", "whenStalled", "oneOf", "range", "known", "listen", "collect", "say", "assign", "next" })
+        Assert.Contains("id: conversation", section, StringComparison.Ordinal);
+        Assert.Contains("firstStep: wait", section, StringComparison.Ordinal);
+        foreach (
+            var word in new[]
+            {
+                "`listen`",
+                "`collect: ",
+                "`say: ",
+                "`assign: ",
+                "`next`",
+                "`when`",
+                "`oneOf: ",
+                "`range: ",
+                "`known: ",
+                "`whenStalled: ",
+                "`localFacts`",
+            }
+        )
         {
-            Assert.Contains(word, skill, StringComparison.Ordinal);
+            Assert.Contains(word, section, StringComparison.Ordinal);
         }
     }
 

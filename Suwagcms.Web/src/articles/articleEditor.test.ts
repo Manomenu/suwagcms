@@ -68,7 +68,7 @@ describe("the Markdown the editor reads and writes", () => {
         );
     });
 
-    it("AC-article-links-6: a link written as Markdown is a chip with the id, and the chip shows the current title", () => {
+    it("AC-article-links-6, AC-article-links-4: a link written as Markdown is a chip with the id, and the chip shows the current title", () => {
         const editor = editorOf("See [Old name](cms://article/cennik).");
         const chip = editor.view.dom.querySelector("[data-article-link]");
 
@@ -78,7 +78,7 @@ describe("the Markdown the editor reads and writes", () => {
         editor.destroy();
     });
 
-    it("AC-article-links-6: a cms address in code is not a chip", () => {
+    it("AC-article-links-10: a cms address in code is not a chip", () => {
         const editor = editorOf(SET.inCode);
 
         expect(editor.view.dom.querySelectorAll("[data-article-link]")).toHaveLength(0);

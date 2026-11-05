@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The CMS only holds the definition. The bot makes the call, with secret values from its own environment, and the SDK gives every .NET bot the same meaning of “run this action”: what is sent, what comes back and what counts as a failure. An action never names a fact.</p>
   </div>
   <div class="stats">
-    <div><b>20</b><span>criteria</span></div>
+    <div><b>19</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -532,7 +532,7 @@ implementation:
     <li><code>AC-http-actions-5</code> A method outside the list, a URL that is not absolute http or https, a URL with a user or password, a <code>{name}</code> that is not a parameter and a timeout outside 1 to 60 are each refused with a fix.</li>
     <li><code>AC-http-actions-6</code> A malformed secret name, <code>{secret:…}</code> in a URL, a literal value in a header with a sensitive name, and a literal value in a query parameter with a sensitive name are each refused with a fix showing the reference to write.</li>
     <li><code>AC-http-actions-7</code> A saved action holds its secrets only as names, in the web, in <code>show</code>, in <code>--json</code> and in the API's answers.</li>
-    <li><code>AC-http-actions-8</code> The same bad action is refused with the same codes and messages by the web, the CLI and the validator offline, and the web shows each beside the field its path names.</li>
+    <li><code>AC-http-actions-8</code> The same bad action is refused with the same codes and messages by the server and by the validator offline, and the web shows each beside the field its path names.</li>
     <li><code>AC-http-actions-9</code> <code>--dry-run</code> on an add, edit or delete gives the same answer and changes nothing; an edit or delete based on an old revision is refused with the current one; a field the API does not know is refused, naming it.</li>
     <li><code>AC-http-actions-10</code> An action of one bot is not listed for another, and two bots can each have an action with the same id.</li>
     <li><code>AC-http-actions-11</code> An unused action can be deleted in the web and with <code>suwagcms actions delete</code>, and is gone from both.</li>
@@ -543,7 +543,7 @@ implementation:
     <li><code>AC-http-actions-16</code> Run by the SDK, each situation in “What counts as a failure” returns a failure with its reason and no results, sends at most one request, and sends none when a parameter does not fit or a secret is missing.</li>
     <li><code>AC-http-actions-17</code> An action's own timeout, or 10 seconds without one, ends a call to a test service that does not answer, as a failure saying so.</li>
     <li><code>AC-http-actions-18</code> No reason returned by a run holds a secret's value, even when the test service repeats it in its answer.</li>
-    <li><code>AC-http-actions-19</code> Each <code>suwagcms actions</code> command has its line in the plugin's main skill, which gives the file format and says a secret is written as a reference.</li>
+    <li><code>AC-http-actions-19</code> The plugin's main skill gives the file format of an action and says a secret is written as a reference.</li>
   </ul>
 </section>
 <section data-role="risks">

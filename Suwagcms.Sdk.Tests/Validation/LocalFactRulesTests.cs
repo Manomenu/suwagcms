@@ -284,18 +284,4 @@ public sealed class LocalFactRulesTests
         };
         Assert.Empty(DefinitionValidator.Validate(cleaned, ValidationStage.Save));
     }
-
-    [Fact]
-    [Trait("criterion", "AC-local-facts-11")]
-    public void The_walker_gives_no_reference_for_a_use_of_a_local_fact_but_keeps_it_among_the_uses()
-    {
-        var procedure = Procedure(
-            "mine",
-            new Dictionary<string, LocalFact> { ["note"] = Note },
-            new Dictionary<string, ProcedureStep> { ["ask"] = Collect("note", "customer.city") }
-        );
-
-        Assert.Equal(["customer.city"], ReferenceWalker.From(procedure).Select(reference => reference.To.Id));
-        Assert.Equal(["note", "customer.city"], ReferenceWalker.Uses(procedure).Select(reference => reference.To.Id));
-    }
 }

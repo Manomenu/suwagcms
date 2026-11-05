@@ -27,7 +27,7 @@ public sealed class AvailabilityTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-availability-9")]
+    [Trait("criterion", "AC-availability-1")]
     public async Task A_bot_that_was_told_nothing_has_nothing_off()
     {
         await using var bot = await BotHost.StartAsync(new InMemoryVersionStore());
@@ -196,7 +196,7 @@ public sealed class AvailabilityTests
     public static TheoryData<string> RestartingStores => ["file", "supplied"];
 
     [Fact]
-    [Trait("criterion", "AC-availability-16")]
+    [Trait("criterion", "AC-availability-12")]
     public async Task A_store_that_fails_answers_503_and_the_setting_stays()
     {
         var store = new FlakyStore(new InMemoryVersionStore());

@@ -106,7 +106,7 @@ public sealed class UsageCommandTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-delete-guard-7")]
+    [Trait("criterion", "AC-delete-guard-8")]
     public async Task Usage_of_a_resource_nothing_relates_to_says_so()
     {
         var result = await TestCli.Run(Args("usage", "procedure", "orderValuation"), Recording([], HttpStatusCode.OK, Nothing));

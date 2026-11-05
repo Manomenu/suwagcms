@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>There is no force option: a reference always blocks. In the first cut this protects articles linked from other articles; each later kind of reference joins the same rule.</p>
   </div>
   <div class="stats">
-    <div><b>13</b><span>criteria</span></div>
+    <div><b>12</b><span>criteria</span></div>
     <div><b>4</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -402,7 +402,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>A force delete, or a delete that also removes its references.</li>
       <li>Refusing an edit that breaks a referrer: <code>edit-guard</code>.</li>
-      <li>Deleting a knowledge base with articles: its own deferred criterion in <code>knowledge-bases</code>.</li>
+      <li>Deleting a knowledge base with articles: that is <code>AC-knowledge-bases-9</code>.</li>
       <li>Availability, which never deletes anything.</li>
     </ul></div>
   </div>
@@ -474,9 +474,9 @@ Uses:     article warunki (content)</div>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-delete-guard-1</code> Deleting an article another article links to is refused with <code>reference.missing</code> and the article stays, in the web, through the API and with the CLI.</li>
+    <li><code>AC-delete-guard-1</code> Deleting an article another article links to is refused with <code>reference.missing</code> and the article stays, through the API and with the CLI.</li>
     <li><code>AC-delete-guard-2</code> The refusal lists every referrer, with the field holding the reference and a link to it, not only the first.</li>
-    <li><code>AC-delete-guard-3</code> In the same situation the CLI exits 1, and <code>--json</code> gives the referrers as data.</li>
+    <li><code>AC-delete-guard-3</code> When a delete is refused because something refers to the resource, the CLI exits 1, and <code>--json</code> gives the referrers as data.</li>
     <li><code>AC-delete-guard-4</code> After the last link to an article is removed, that article can be deleted.</li>
     <li><code>AC-delete-guard-5</code> After a referrer is deleted, it no longer blocks its target and no longer shows in the target's “Used by”.</li>
     <li><code>AC-delete-guard-6</code> A delete and a new link to the same article at the same moment never both succeed.</li>

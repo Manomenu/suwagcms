@@ -484,7 +484,7 @@ public sealed class ProcedureRulesTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-procedure-model-6")]
+    [Trait("criterion", "AC-delete-guard-7")]
     public void The_reference_walker_yields_every_fact_a_procedure_names_and_how()
     {
         var references = ReferenceWalker.From(ProcedureSamples.Bot(ProcedureSamples.All)).ToList();

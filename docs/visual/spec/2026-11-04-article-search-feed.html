@@ -467,7 +467,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-article-search-feed-7</code> When the bot's code fails or is slow while handling the news, the route's answer does not wait for it, the state stays correct, and the next change is still told.</li>
     <li><code>AC-article-search-feed-8</code> With two instances sharing a store, an instance that was not pushed to is told the new number after its next poll, and gets the same articles.</li>
     <li><code>AC-article-search-feed-9</code> After a restart with a version in the store, the bot's code is told the current number once; with no version it is told nothing until the first arrives.</li>
-    <li><code>AC-article-search-feed-10</code> With the CMS unreachable, the feed still gives the articles of every held version.</li>
+    <li><code>AC-article-search-feed-10</code> The feed reads only the bot's store, so it needs no CMS: after a restart it still gives the articles of every held version.</li>
     <li><code>AC-article-search-feed-11</code> The SDK gives each article's language, which is its knowledge base's.</li>
     <li><code>AC-article-search-feed-12</code> Making a held version current also tells the bot's code the number.</li>
     <li><code>AC-article-search-feed-13</code> The feed marks each article that is off, and the SDK tells the bot's code when what is off changes, so a search can drop an article at once, without a push.</li>

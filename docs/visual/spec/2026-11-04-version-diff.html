@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It only reads. It answers “what will this version change for customers?” before a push and “what did that version change?” after a bad one, and it is what lets a person or an agent decide on a rollback with facts.</p>
   </div>
   <div class="stats">
-    <div><b>14</b><span>criteria</span></div>
+    <div><b>13</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -480,7 +480,7 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-version-diff-1</code> <code>suwagcms diff 12 14</code> and the web's comparison of the same two versions list the same resources as added, removed and changed, by kind, and list no unchanged resource.</li>
+    <li><code>AC-version-diff-1</code> <code>suwagcms diff 12 14</code> and the web's comparison of the same two versions list the same resources as added, removed and changed, by kind, and list no unchanged resource; a format version that differs is listed like a changed field, and the rest is still compared.</li>
     <li><code>AC-version-diff-2</code> A changed fact, knowledge base or article lists each changed field with its old and new values, and <code>content</code> and <code>llmGuide</code> as lines removed and added.</li>
     <li><code>AC-version-diff-3</code> A changed procedure lists its changed fields, its local facts added, removed or changed, and its steps added, removed or changed, with what changed in each.</li>
     <li><code>AC-version-diff-4</code> A change of a knowledge base's language is listed as a changed field with both values.</li>

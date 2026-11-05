@@ -45,7 +45,7 @@ public sealed class ProcedureLayoutEndpointsTests(TestDatabase database) : IDisp
     }
 
     [Fact]
-    [Trait("criterion", "AC-procedure-creator-13")]
+    [Trait("criterion", "AC-procedure-creator-14")]
     public async Task A_procedure_with_no_stored_positions_reads_an_empty_layout_and_an_empty_put_clears_it()
     {
         var api = await NewBot();
@@ -60,7 +60,7 @@ public sealed class ProcedureLayoutEndpointsTests(TestDatabase database) : IDisp
     }
 
     [Fact]
-    [Trait("criterion", "AC-procedure-creator-12")]
+    [Trait("criterion", "AC-procedure-creator-14")]
     public async Task Deleting_a_procedure_takes_its_layout_with_it()
     {
         var api = await NewBot();

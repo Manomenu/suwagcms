@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The mapping lives in the step, never in the action, so one action serves many procedures and the CMS can check every mapping against the types on both sides.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
+    <div><b>18</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -502,7 +502,7 @@ flowchart TD
     <li><code>AC-action-block-10</code> <code>onFailure</code> naming a missing step, and <code>onFailure</code> on a step with another block, are each refused.</li>
     <li><code>AC-action-block-11</code> At the <code>Version</code> stage the validator reports a step with no <code>action</code> filled in, a parameter not mapped and a missing <code>onFailure</code>; a procedure with only these is saved, and the answer lists them with the CLI exiting 0.</li>
     <li><code>AC-action-block-12</code> A step reached only through <code>onFailure</code> is not reported as unreachable.</li>
-    <li><code>AC-action-block-13</code> The mapping rules give the same mistakes from the server, the CLI and the validator offline.</li>
+    <li><code>AC-action-block-13</code> The mapping rules give the same mistakes from the server and from the validator offline.</li>
     <li><code>AC-action-block-15</code> The lines of <code>suwagcms procedures</code> in the plugin's main skill give the format of the <code>action</code> block.</li>
     <li><code>AC-action-block-16</code> The form of an <code>action</code> step offers the bot's actions, then a row per parameter and result offering only the facts that fit, and a failure edge drawn to a step; the mistakes show in the live list.</li>
     <li><code>AC-action-block-17</code> The “Uses” panel and <code>suwagcms usage</code> of a procedure list the action and each fact a step maps, with the field holding each.</li>

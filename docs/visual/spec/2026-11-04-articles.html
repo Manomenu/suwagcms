@@ -382,7 +382,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>3</b><span>texts with separate jobs</span></div>
-    <div><b>16</b><span>criteria</span></div>
+    <div><b>15</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -480,6 +480,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li>An article's <code>id</code> is unique across the bot and not per base, because references work across its knowledge bases and moving an article must not break them.</li>
     <li><code>content</code> and <code>llmGuide</code> may each be 200,000 characters at most (the recommended answer to the open question, accepted): every save validates the whole definition and every article travels in the version, so one enormous article slows every save and every push; 200,000 is far above any article a model should read at once and low enough to stop a pasted dump. The length is counted in UTF-16 code units, the way .NET counts a string.</li>
     <li>The list's text filter does not read <code>content</code>: it is a way to find an article you know, and scanning every article's text is not needed for that.</li>
+    <li>The limit of 5 s for a save with 5000 articles leaves room: the first measurement was about 200 ms on an idle machine and 2 s on a busy one.</li>
   </ul>
 </section>
 
@@ -500,7 +501,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-articles-12</code> <code>content</code> or <code>llmGuide</code> over the limit is refused with a mistake giving the limit and the length.</li>
     <li><code>AC-articles-13</code> Leaving the editor with unsaved changes asks before discarding them.</li>
     <li><code>AC-articles-15</code> An article of one bot is not visible from the profile of another bot, and two bots can each have an article with the same id.</li>
-    <li><code>AC-articles-16</code> A test on the gate saves a change to a bot with 5000 articles and fails when its fastest of five saves takes more than 5 s; the first measurement was about 200 ms on an idle machine and 2 s on a busy one.</li>
+    <li><code>AC-articles-16</code> A test saves a change to a bot with 5000 articles and fails when its fastest of five saves takes more than 5 s; it runs in CI always, and on a machine when the code that writes changes.</li>
   </ul>
 </section>
 

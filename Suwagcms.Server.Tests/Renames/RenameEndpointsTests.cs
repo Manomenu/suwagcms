@@ -352,6 +352,7 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-resource-rename-19")]
+    [Trait("criterion", "AC-resource-rename-20")]
     public async Task A_procedures_id_changes_conversation_cannot_and_the_prefix_rule_holds_from_either_side()
     {
         var scene = await NewScene();

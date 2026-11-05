@@ -381,8 +381,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It edits the same procedure an agent saves through the CLI, and anything it does the CLI can do too. Where the nodes sit on the screen is not part of the procedure and never reaches a bot.</p>
   </div>
   <div class="stats">
-    <div><b>18</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>19</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -494,7 +494,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-procedure-creator-1</code> Using only the mouse and the forms, an author builds a procedure with <code>listen</code>, <code>collect</code>, <code>say</code> and <code>assign</code> and rules, saves it, and <code>suwagcms procedures show</code> prints that procedure.</li>
+    <li><code>AC-procedure-creator-1</code> Using only the mouse and the forms, an author builds a procedure with <code>listen</code>, <code>collect</code>, <code>say</code> and <code>assign</code> and rules, and saves it; renaming a step renames every place that points at it, and a taken name changes nothing.</li>
     <li><code>AC-procedure-creator-2</code> A procedure saved through the CLI opens in the creator with every step, block and rule as stored, laid out with no overlapping nodes.</li>
     <li><code>AC-procedure-creator-3</code> After a change and without saving, the list of mistakes shows what the validator reports for the drawing, and the mistake goes when the change is undone by hand.</li>
     <li><code>AC-procedure-creator-4</code> Each mistake in the list says whether it refuses a save or only stops a version, gives its fix, and clicking it selects its step or panel.</li>
@@ -507,7 +507,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-procedure-creator-11</code> An edge from a step back to an earlier one can be drawn and saved.</li>
     <li><code>AC-procedure-creator-12</code> Moving a node changes neither the procedure's revision nor its stored definition, and after a reload the node is where it was left.</li>
     <li><code>AC-procedure-creator-13</code> The arrange button lays out the whole graph, and a step with no stored position is placed automatically.</li>
-    <li><code>AC-procedure-creator-14</code> <code>suwagcms procedures layout</code> reads and sets node positions, and has its line in the plugin's main skill.</li>
+    <li><code>AC-procedure-creator-14</code> <code>suwagcms procedures layout</code> reads and sets node positions.</li>
     <li><code>AC-procedure-creator-15</code> <code>suwagcms procedures show --open</code> and <code>suwagcms procedures add --open</code> open that procedure in the creator.</li>
     <li><code>AC-procedure-creator-16</code> When the live check cannot reach the server, the list says so instead of looking empty.</li>
     <li><code>AC-procedure-creator-17</code> Leaving the creator with unsaved changes asks before discarding them.</li>

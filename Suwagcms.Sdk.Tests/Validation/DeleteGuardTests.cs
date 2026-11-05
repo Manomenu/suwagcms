@@ -93,7 +93,7 @@ public sealed class DeleteGuardTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-delete-guard-1")]
+    [Trait("criterion", "AC-article-links-7")]
     public void A_typo_in_a_link_is_still_worded_for_the_referrer_not_as_a_delete()
     {
         var mistake = Assert.Single(Deleting(Bot(Linking("wycena", "[x](cms://article/cenik)")), Cennik));

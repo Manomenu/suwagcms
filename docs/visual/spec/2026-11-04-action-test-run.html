@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The bot makes the call, never the CMS, for HTTP actions as well, because the secrets are only in the bot's environment. A test run is a real call to a real service, so anything other than a <code>GET</code> asks first.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -506,7 +506,7 @@ sequenceDiagram
     <li><code>AC-action-test-run-11</code> A save of the same bot during a run waiting on a slow service completes without waiting for it.</li>
     <li><code>AC-action-test-run-12</code> A <code>GET</code> action runs at once; for another method the web shows a dialog with the method and URL before running, and the CLI without <code>--yes</code> prints them, sends nothing and exits 1.</li>
     <li><code>AC-action-test-run-13</code> While a form holds unsaved changes, the web's <span class="btn">Run</span> is disabled and says to save first.</li>
-    <li><code>AC-action-test-run-14</code> <code>suwagcms actions test</code> with <code>--json</code> returns the outcome, the results, the reason, the status and the time taken, and has its line in the plugin's main skill, which says a test run really calls the service.</li>
+    <li><code>AC-action-test-run-14</code> <code>suwagcms actions test</code> with <code>--json</code> returns the outcome, the results, the reason, the status and the time taken; the plugin's main skill says a test run really calls the service.</li>
     <li><code>AC-action-test-run-16</code> A test run of a code action goes through the bot and runs its code with the given values, asks first as for a non-<code>GET</code> action because the CMS cannot know what it does, and a bot that has no way to run it from the SDK says so.</li>
     <li><code>AC-action-test-run-17</code> A turned-off action can still be tried, and the answer says procedures will not run it while it is off.</li>
   </ul>

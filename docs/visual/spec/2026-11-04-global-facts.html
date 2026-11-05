@@ -383,7 +383,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>3</b><span>fact types</span></div>
     <div><b>14</b><span>criteria</span></div>
-    <div><b>0</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -507,7 +506,7 @@ flowchart LR
     <li><code>AC-global-facts-3</code> A blank or missing description, a missing or unknown type, an enum with fewer than two values or a repeated value, an int without both bounds or with <code>min</code> above <code>max</code>, a text with <code>maxLength</code> not above 0, and a constraint of another type are each refused with a mistake and a fix.</li>
     <li><code>AC-global-facts-4</code> A name that is not camelCase words joined by dots, and a name the bot already has, are each refused with a mistake and a fix.</li>
     <li><code>AC-global-facts-5</code> A save that breaks several rules returns all of them at once, and nothing is saved.</li>
-    <li><code>AC-global-facts-6</code> The same bad fact sent from the web and from the CLI is refused with the same codes and messages, and the web shows each beside the field its path names.</li>
+    <li><code>AC-global-facts-6</code> The same bad fact is refused with the same codes and messages every time, and the web shows each beside the field its path names.</li>
     <li><code>AC-global-facts-7</code> A save with a field the API does not know is refused with a mistake naming the field.</li>
     <li><code>AC-global-facts-8</code> An unused fact can be deleted in the web and with <code>suwagcms facts delete</code>, and is gone from both.</li>
     <li><code>AC-global-facts-9</code> An edit changes the description, constraints or <code>writableBy</code> of a fact; with the CLI, only the options given change.</li>
@@ -517,12 +516,6 @@ flowchart LR
     <li><code>AC-global-facts-13</code> A fact of one bot is not listed for another bot, and two bots can each have a fact with the same name.</li>
     <li><code>AC-global-facts-15</code> The view of a fact shows the procedures that use it, in the web and in <code>suwagcms facts show</code>.</li>
   </ul>
-</section>
-
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <p>None left: the view of a fact showing the procedures that use it moved to <code>procedure-model</code>, where it is built.</p>
 </section>
 
 <section data-role="risks">

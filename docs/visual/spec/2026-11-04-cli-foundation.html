@@ -486,7 +486,7 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <li><code>AC-cli-foundation-6</code> With <code>--json</code>, a refused command prints one JSON document holding the same mistakes with their codes and exits 1.</li>
     <li><code>AC-cli-foundation-7</code> With <code>--json</code>, a successful command prints exactly one JSON document on stdout, parsable with nothing else around it.</li>
     <li><code>AC-cli-foundation-8</code> An unknown command, an unknown option or a missing argument exits 2 and prints the correct usage.</li>
-    <li><code>AC-cli-foundation-9</code> <code>--open</code> opens the page matching the command in the browser; with no browser available it prints the page's address and exits 0.</li>
+    <li><code>AC-cli-foundation-9</code> <code>--open</code> opens the page matching the command in the browser; with no browser available it prints the page's address and exits 0; <code>--open</code> on a command with no page, or together with <code>--json</code>, exits 2.</li>
     <li><code>AC-cli-foundation-10</code> A route the server maps without a command or a stated reason fails the full gate, with a message naming the route and the fix; so does a route naming a command that does not exist.</li>
     <li><code>AC-cli-foundation-11</code> <code>--help</code> on the root command lists every command, and on any command lists its options.</li>
   </ul>
