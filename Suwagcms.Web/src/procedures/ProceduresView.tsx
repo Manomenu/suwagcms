@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import type { Mistake } from "@/api/client";
 
 import { mistakesOf, type ProcedureList } from "./api";
+import { NewProcedureForm } from "./NewProcedureForm";
 
 function Readiness({ count }: { count: number }) {
     return count === 0 ? (
@@ -14,7 +15,7 @@ function Readiness({ count }: { count: number }) {
     );
 }
 
-/** The Procedures screen: each procedure with its description and how many mistakes still stop a version. Read only; the creator is its own feature. */
+/** The Procedures screen: each procedure with its description and how many mistakes still stop a version. Each opens in the creator, and a new one starts there. */
 export function ProceduresView({ bot, list }: { bot: string; list: ProcedureList }) {
     const botMistakes: Mistake[] = list.botNotReady;
     return (
@@ -37,16 +38,23 @@ export function ProceduresView({ bot, list }: { bot: string; list: ProcedureList
                     ))}
                 </ul>
             )}
+            <NewProcedureForm bot={bot} />
             {list.procedures.length === 0 ? (
                 <p className="text-muted-foreground">
-                    No procedures yet. Write one in a YAML file and add it with <code>suwagcms procedures add --file</code>.
+                    No procedures yet. Create one above, or write it in a YAML file and add it with{" "}
+                    <code>suwagcms procedures add --file</code>.
                 </p>
             ) : (
                 <ul className="flex flex-col gap-2">
                     {list.procedures.map((procedure) => (
                         <li key={procedure.id} className="flex items-center gap-3 rounded-lg border p-3">
                             <div className="flex flex-1 flex-col gap-1">
-                                <span className="font-medium">{procedure.id}</span>
+                                <Link
+                                    href={`~/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(procedure.id)}`}
+                                    className="font-medium text-primary underline underline-offset-4"
+                                >
+                                    {procedure.id}
+                                </Link>
                                 <span className="text-sm">{procedure.description}</span>
                             </div>
                             <Readiness count={mistakesOf(procedure)} />

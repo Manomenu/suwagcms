@@ -451,13 +451,129 @@ public sealed class ProceduresTests : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-procedure-creator-15")]
+    public async Task Show_with_open_opens_the_creator_of_that_procedure_without_calling_the_server()
+    {
+        var opened = new List<Uri>();
+        var server = StubServer.Healthy();
+
+        var result = await TestCli.Run(Args("procedures", "show", "orderValuation", "--open"), server, openBrowser: opened.Add);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("http://cms.internal/bots/rzeczoznawca/procedures/orderValuation", Assert.Single(opened).ToString());
+        Assert.Empty(server.Requests);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-creator-15")]
+    public async Task Add_with_open_saves_and_then_opens_the_creator_but_a_refused_add_opens_nothing()
+    {
+        var opened = new List<Uri>();
+        var recorder = new Recorder();
+        var file = FileWith("p.yaml", Yaml);
+
+        var result = await TestCli.Run(
+            Args("procedures", "add", "--file", file, "--open"),
+            recorder.Serving((_, sent) => Echo(sent, "orderValuation")),
+            openBrowser: opened.Add
+        );
+        var refused = await TestCli.Run(
+            Args("procedures", "add", "--file", file, "--open"),
+            StubServer.Answering(HttpStatusCode.UnprocessableEntity, """{"detail":"no","mistakes":[]}"""),
+            openBrowser: opened.Add
+        );
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("PUT", Assert.Single(recorder.Calls).Method);
+        Assert.NotEqual(0, refused.ExitCode);
+        Assert.Equal("http://cms.internal/bots/rzeczoznawca/procedures/orderValuation", Assert.Single(opened).ToString());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-creator-15")]
+    public async Task Add_refuses_open_together_with_a_dry_run()
+    {
+        var result = await TestCli.Run(
+            Args("procedures", "add", "--file", FileWith("p.yaml", Yaml), "--open", "--dry-run"),
+            StubServer.Healthy()
+        );
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("--dry-run and --open", result.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-creator-14")]
+    public async Task Layout_prints_the_stored_positions_and_says_when_there_are_none()
+    {
+        var stored = await TestCli.Run(
+            Args("procedures", "layout", "orderValuation"),
+            StubServer.Answering(HttpStatusCode.OK, """{"positions":{"ask":{"x":10,"y":20.5},"goodbye":{"x":300,"y":0}}}""")
+        );
+        var none = await TestCli.Run(
+            Args("procedures", "layout", "orderValuation"),
+            StubServer.Answering(HttpStatusCode.OK, """{"positions":{}}""")
+        );
+
+        Assert.Contains("ask      10  20.5", stored.Output, StringComparison.Ordinal);
+        Assert.Contains("goodbye  300  0", stored.Output, StringComparison.Ordinal);
+        Assert.Contains("No positions stored", none.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-creator-14")]
+    public async Task Layout_set_keeps_the_other_positions_and_sends_the_whole_map_to_the_layout_route()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(
+            (request, sent) =>
+                request.Method == HttpMethod.Get
+                    ? (HttpStatusCode.OK, """{"positions":{"ask":{"x":1,"y":2}}}""")
+                    : (HttpStatusCode.OK, sent)
+        );
+
+        var result = await TestCli.Run(Args("procedures", "layout", "orderValuation", "--set", "goodbye=300,-4.5"), server);
+
+        Assert.Equal(0, result.ExitCode);
+        var (method, url, body) = recorder.Calls.Last();
+        Assert.Equal("PUT", method);
+        Assert.Equal("/api/bots/rzeczoznawca/procedures/orderValuation/layout", url);
+        Assert.Equal(
+            Canonical(JsonNode.Parse("""{"positions":{"ask":{"x":1,"y":2},"goodbye":{"x":300,"y":-4.5}}}""")),
+            Canonical(JsonNode.Parse(body))
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-creator-14")]
+    public async Task Layout_clear_sends_no_positions_and_a_misspelt_set_is_refused_before_any_call()
+    {
+        var recorder = new Recorder();
+        var cleared = await TestCli.Run(
+            Args("procedures", "layout", "orderValuation", "--clear"),
+            recorder.Serving((_, sent) => (HttpStatusCode.OK, sent.Length == 0 ? """{"positions":{"x":{"x":1,"y":1}}}""" : sent))
+        );
+        var server = StubServer.Healthy();
+        var misspelt = await TestCli.Run(Args("procedures", "layout", "orderValuation", "--set", "ask=12"), server);
+
+        Assert.Equal(0, cleared.ExitCode);
+        Assert.Equal("""{"positions":{}}""", recorder.Calls.Last().Body);
+        Assert.NotEqual(0, misspelt.ExitCode);
+        Assert.Contains("--set <step>=<x>,<y>", misspelt.Error, StringComparison.Ordinal);
+        Assert.Empty(server.Requests);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-procedure-model-15")]
     public void Every_procedures_command_has_its_line_in_the_main_skill_which_gives_the_file_format()
     {
         var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
         var commands = CommandList.RunnableInCli().Where(words => words.StartsWith("procedures ", StringComparison.Ordinal)).ToList();
 
-        Assert.Equal(["procedures add", "procedures delete", "procedures edit", "procedures list", "procedures show"], commands);
+        Assert.Equal(
+            ["procedures add", "procedures delete", "procedures edit", "procedures layout", "procedures list", "procedures show"],
+            commands
+        );
         Assert.Empty(commands.Except(CommandList.Listed(skill)));
         foreach (var word in new[] { "firstStep", "whenStalled", "oneOf", "range", "known", "listen", "collect", "say", "assign", "next" })
         {
