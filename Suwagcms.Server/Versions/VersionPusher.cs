@@ -1,6 +1,6 @@
 using System.Globalization;
 using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
@@ -11,44 +11,178 @@ namespace Suwagcms.Server.Versions;
 // Why: a push reads what it needs, lets go of the database, calls the bot, and only then records; so no lock or transaction ever waits on a bot.
 internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker asker, TimeProvider time)
 {
-    public const string NotLatest = "push.notLatest";
-
     internal sealed record Rejected(int Status, Mistake Mistake);
+
+    private sealed record Target(PushStore.Registered Registered, VersionDetail Version);
+
+    // Why: Left is what the bot's own answer names, and Refused stands for every way a push ends before it reaches the bot.
+    private sealed record Route(PushWay Way, int? Left, PushResult? Refused);
 
     public async Task<(PushResult? Result, Rejected? Rejected)> PushAsync(string bot, int number, CancellationToken cancellationToken)
     {
-        if (await PushStore.FindBotAsync(pool, bot, cancellationToken) is not { } registered)
+        var (target, rejected) = await FindAsync(bot, number, cancellationToken);
+        if (target is null)
         {
-            return (null, new Rejected(StatusCodes.Status404NotFound, EditProblems.UnknownBot(bot)));
-        }
-        if (await VersionStore.FindAsync(pool, bot, number, cancellationToken) is not { } version)
-        {
-            return (
-                null,
-                new Rejected(
-                    StatusCodes.Status404NotFound,
-                    VersionEndpoints.NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(pool, bot, cancellationToken))
-                )
-            );
-        }
-        var latest = await VersionStore.LatestNumberAsync(pool, bot, cancellationToken);
-        if (latest != number)
-        {
-            return (null, new Rejected(StatusCodes.Status422UnprocessableEntity, TooOld(bot, number, latest)));
+            return (null, rejected);
         }
 
-        var (result, reported) = await CannotRunAsync(bot, number, version, cancellationToken) is { } refused
-            ? (refused, false)
-            : Judge(bot, registered, number, await line.PutVersionAsync(registered.Address, number, version.Document, cancellationToken));
+        var route = await ChooseAsync(bot, number, target, cancellationToken);
+        var (result, reported) = route switch
+        {
+            { Refused: { } refused } => (refused, false),
+            { Way: PushWay.Nothing } => (new PushResult(PushOutcome.Succeeded, number, number, null, []), true),
+            { Way: PushWay.MakeCurrent } => await MakeCurrentAsync(bot, number, target, cancellationToken),
+            _ => await SendAsync(bot, number, target, cancellationToken),
+        };
 
         // Why: the record must survive a caller that gives up while the bot was answering, since the bot may have taken the version.
-        await PushStore.RecordAsync(pool, bot, number, result.Outcome, Recorded(result), time.GetUtcNow(), CancellationToken.None);
+        await PushStore.RecordAsync(
+            pool,
+            bot,
+            number,
+            route.Left,
+            result.Outcome,
+            Recorded(result),
+            time.GetUtcNow(),
+            CancellationToken.None
+        );
         if (reported)
         {
             await PushStore.ReportAsync(pool, bot, result.BotHas, time.GetUtcNow(), CancellationToken.None);
         }
         return (result, null);
     }
+
+    public async Task<(PushPlan? Plan, Rejected? Rejected)> PlanAsync(string bot, int number, CancellationToken cancellationToken)
+    {
+        var (target, rejected) = await FindAsync(bot, number, cancellationToken);
+        if (target is null)
+        {
+            return (null, rejected);
+        }
+
+        var route = await ChooseAsync(bot, number, target, cancellationToken);
+        return (
+            new PushPlan(
+                number,
+                route.Left,
+                route.Way,
+                route.Refused?.Reason,
+                route.Refused?.Mistakes ?? [],
+                await ChangesAsync(bot, route.Left, target.Version, number, cancellationToken)
+            ),
+            null
+        );
+    }
+
+    private async Task<(Target? Target, Rejected? Rejected)> FindAsync(string bot, int number, CancellationToken cancellationToken)
+    {
+        if (await PushStore.FindBotAsync(pool, bot, cancellationToken) is not { } registered)
+        {
+            return (null, new Rejected(StatusCodes.Status404NotFound, EditProblems.UnknownBot(bot)));
+        }
+        return await VersionStore.FindAsync(pool, bot, number, cancellationToken) is { } version
+            ? (new Target(registered, version), null)
+            : (null, new Rejected(StatusCodes.Status404NotFound, await NoSuchVersionAsync(bot, number, cancellationToken)));
+    }
+
+    private async Task<Mistake> NoSuchVersionAsync(string bot, int number, CancellationToken cancellationToken)
+    {
+        var kept = (await VersionStore.ListAsync(pool, bot, cancellationToken) ?? []).Select(version => version.Number).ToList();
+        var missing = VersionEndpoints.NoSuchVersion(bot, number, kept.Count == 0 ? null : kept.Max());
+        if (kept.Count == 0)
+        {
+            return missing;
+        }
+        var nearest = kept.OrderBy(version => Math.Abs((long)version - number)).ThenByDescending(version => version).Take(3).Order();
+        return missing with
+        {
+            Message =
+                $"Bot '{bot}' has no version {number}; the nearest it keeps: {string.Join(", ", nearest.Select(version => $"v{version}"))}.",
+        };
+    }
+
+    private async Task<Route> ChooseAsync(string bot, int number, Target target, CancellationToken cancellationToken)
+    {
+        var registered = target.Registered;
+        var reply = await line.ReadStateAsync(registered.Address, cancellationToken);
+        if (reply is BotLine.Reply.Silent)
+        {
+            return new Route(PushWay.Send, null, Judge(bot, registered, number, reply).Result);
+        }
+        // Why: a bot whose state cannot be read is sent the document, and its answer to that says what is wrong.
+        var state = reply is BotLine.Reply.Answer { Status: StatusCodes.Status200OK } answer ? BotLine.StateIn(answer) : null;
+        if (state is not null && state.Bot != bot)
+        {
+            return new Route(PushWay.Send, null, WrongAddress(bot, registered, number, state));
+        }
+
+        if (state?.Current == number)
+        {
+            return new Route(PushWay.Nothing, number, null);
+        }
+        var way = state?.Held.Contains(number) == true ? PushWay.MakeCurrent : PushWay.Send;
+        return new Route(way, state?.Current, await CannotRunAsync(bot, number, target.Version, cancellationToken));
+    }
+
+    private async Task<(PushResult Result, bool Reported)> SendAsync(
+        string bot,
+        int number,
+        Target target,
+        CancellationToken cancellationToken
+    ) =>
+        Judge(
+            bot,
+            target.Registered,
+            number,
+            await line.PutVersionAsync(target.Registered.Address, number, target.Version.Document, cancellationToken)
+        );
+
+    private async Task<(PushResult Result, bool Reported)> MakeCurrentAsync(
+        string bot,
+        int number,
+        Target target,
+        CancellationToken cancellationToken
+    )
+    {
+        var reply = await line.PutCurrentAsync(target.Registered.Address, number, target.Version.Version.Sha256, cancellationToken);
+        return reply switch
+        {
+            // Why: the bot removed the version after it was asked, and sending the document is the way to a version a bot does not hold.
+            BotLine.Reply.Answer { Status: StatusCodes.Status409Conflict } answer
+                when BotLine.RefusalIn(answer)?.Mistakes.Any(mistake => mistake.Code == MistakeCodes.VersionNotHeld) == true =>
+                await SendAsync(bot, number, target, cancellationToken),
+            // Why: a bot on an SDK older than this route can take a version it does not hold, but has no way to go back to one it holds.
+            BotLine.Reply.Answer
+            {
+                Status: StatusCodes.Status404NotFound or StatusCodes.Status405MethodNotAllowed or StatusCodes.Status501NotImplemented,
+            } => (
+                Failed(
+                    number,
+                    null,
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"the bot holds v{number} but has no route to make a held version current. Upgrade the bot's Suwagcms.Sdk, then push again; a new version also reaches it as it is."
+                    ),
+                    []
+                ),
+                false
+            ),
+            _ => Judge(bot, target.Registered, number, reply),
+        };
+    }
+
+    // Why: the same comparison the page and `suwagcms diff` give, from what the bot reports; a number this CMS never created has nothing to compare with.
+    private async Task<VersionComparison?> ChangesAsync(
+        string bot,
+        int? left,
+        VersionDetail version,
+        int number,
+        CancellationToken cancellationToken
+    ) =>
+        left is { } from && from != number && await VersionStore.FindAsync(pool, bot, from, cancellationToken) is { } before
+            ? VersionComparer.Compare(bot, from, number, before.Document, version.Document)
+            : null;
 
     // Why: a push is judged by what the bot declares at this moment; a bot that gives no good answer is left to its own validation, which the push reaches next.
     private async Task<PushResult?> CannotRunAsync(string bot, int number, VersionDetail version, CancellationToken cancellationToken)
@@ -78,15 +212,7 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
             case BotLine.Reply.Answer { Status: >= 200 and < 300 } answer when BotLine.StateIn(answer) is { } state:
                 if (state.Bot != bot)
                 {
-                    return (
-                        Failed(
-                            number,
-                            null,
-                            $"the address {registered.Address} answers as bot '{state.Bot}', not '{bot}'. Register the right address for bot '{bot}'.",
-                            []
-                        ),
-                        false
-                    );
+                    return (WrongAddress(bot, registered, number, state), false);
                 }
                 if (state.Current == number)
                 {
@@ -97,7 +223,7 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
                         number,
                         state.Current,
                         state.Current is { } current
-                            ? $"the bot answered but reports v{current} as current, not v{version}. Making a version the bot already holds current again is a rollback, which a push does not do."
+                            ? $"the bot answered but reports v{current} as current, not v{version}."
                             : $"the bot answered but reports no current version, not v{version}.",
                         []
                     ),
@@ -119,6 +245,14 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
                 throw new InvalidOperationException("a bot's reply is an answer or silence");
         }
     }
+
+    private static PushResult WrongAddress(string bot, PushStore.Registered registered, int number, BotState state) =>
+        Failed(
+            number,
+            null,
+            $"the address {registered.Address} answers as bot '{state.Bot}', not '{bot}'. Register the right address for bot '{bot}'.",
+            []
+        );
 
     private const string CheckBot = "Check that the bot is running and that the CMS can reach it, then push again.";
 
@@ -143,15 +277,4 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
         result.Outcome == PushOutcome.Succeeded
             ? null
             : string.Join(" ", [result.Reason, .. result.Mistakes.Select(mistake => $"{mistake.Message} {mistake.Fix}")]);
-
-    private static Mistake TooOld(string bot, int number, int? latest) =>
-        new(
-            NotLatest,
-            ValidationStage.Save,
-            new ResourceRef(ResourceKind.Definition, bot),
-            "number",
-            string.Create(CultureInfo.InvariantCulture, $"Version {number} of bot '{bot}' is not the latest, which is {latest}."),
-            "Push the latest version; going back to an older one is a rollback, which a push does not do.",
-            []
-        );
 }

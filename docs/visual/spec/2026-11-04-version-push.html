@@ -401,7 +401,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>A slow bot never holds up anyone's editing.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Choosing an older version and rolling back: <code>version-rollback</code>. This spec has no version select and no <code>--version</code>.</li>
+      <li>Choosing another version and rolling back: <code>version-rollback</code> owns the version select and <code>--version</code>.</li>
       <li>Sending availability changes: <code>availability</code>.</li>
       <li>Retrying by itself: a person or an agent decides, and a repeated push is safe.</li>
       <li>A key on the bot's routes, and recording who pushed: they arrive with <code>cms-identity</code> and <code>change-history</code>.</li>
@@ -505,7 +505,6 @@ stateDiagram-v2
     <li>The bot's routes have no key in the first cut (owner's decision), so the request carries none.</li>
     <li>A push waits 30 seconds for a bot, a server setting (accepted assumption: long enough for a bot to validate a whole version; a repeat is safe if a slow bot was still working). Asking a bot for its state waits 5 seconds, because a person waits on the page.</li>
     <li>A push counts as done only when the bot's answer names that version as current: a 200 alone proves nothing, since sending a document the bot already holds changes nothing. A version the bot holds that is not current is not made current by a push; that is version-rollback's route.</li>
-    <li>Only the latest version can be pushed: the route takes the number, but any other number is refused until version-rollback exists.</li>
     <li>Neither a lock nor a transaction is held while the bot is called: the CMS reads what it needs, lets go, calls the bot, and then records the attempt.</li>
   </ul>
 </section>

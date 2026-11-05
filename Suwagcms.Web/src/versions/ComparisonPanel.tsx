@@ -70,6 +70,31 @@ function Resource({ resource }: { resource: ResourceDifference }) {
     );
 }
 
+/** One line of counts for a comparison. */
+export function comparisonLine(comparison: VersionComparison): string {
+    return comparison.resources.length === 0 && comparison.definition.length === 0
+        ? "no differences"
+        : `${Number(comparison.added)} added · ${Number(comparison.removed)} removed · ${Number(comparison.changed)} changed`;
+}
+
+/** Each field and resource a comparison finds changed. */
+export function ComparisonDetails({ comparison }: { comparison: VersionComparison }) {
+    return (
+        <>
+            {comparison.definition.map((field) => (
+                <Field key={field.field} field={field} />
+            ))}
+            {comparison.resources.length > 0 && (
+                <ul className="flex flex-col gap-2">
+                    {comparison.resources.map((resource) => (
+                        <Resource key={`${resource.kind}-${resource.id}`} resource={resource} />
+                    ))}
+                </ul>
+            )}
+        </>
+    );
+}
+
 /** What going from one version to another changes; the select compares the same version with any other. */
 export function ComparisonPanel({
     comparison,
@@ -84,7 +109,6 @@ export function ComparisonPanel({
 }) {
     const from = Number(comparison.from);
     const to = Number(comparison.to);
-    const none = comparison.resources.length === 0 && comparison.definition.length === 0;
     return (
         <Paper className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
@@ -106,25 +130,12 @@ export function ComparisonPanel({
                     </Select>
                 </label>
                 <span className="text-sm font-medium">to v{to}</span>
-                <span className="flex-1 text-sm text-muted-foreground">
-                    {none
-                        ? "no differences"
-                        : `${Number(comparison.added)} added · ${Number(comparison.removed)} removed · ${Number(comparison.changed)} changed`}
-                </span>
+                <span className="flex-1 text-sm text-muted-foreground">{comparisonLine(comparison)}</span>
                 <Button variant="outline" size="sm" onClick={onClose}>
                     Close
                 </Button>
             </div>
-            {comparison.definition.map((field) => (
-                <Field key={field.field} field={field} />
-            ))}
-            {comparison.resources.length > 0 && (
-                <ul className="flex flex-col gap-2">
-                    {comparison.resources.map((resource) => (
-                        <Resource key={`${resource.kind}-${resource.id}`} resource={resource} />
-                    ))}
-                </ul>
-            )}
+            <ComparisonDetails comparison={comparison} />
         </Paper>
     );
 }

@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Rolling back a bot</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 31 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>version-push</code></span>
@@ -377,17 +377,16 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>TL;DR</h2>
   <div class="tldr">
     <p>On a bot's page, <span class="btn">other version: v12 ▾</span> pushes a version other than the latest; <code>suwagcms push --version 12</code> does the same. That is the rollback. It changes only the bot: the working state and the latest version stay as they are.</p>
-    <p><b>The one thing to know:</b> a bot may still hold the chosen version, for a conversation in progress. Sending it again would succeed and change nothing, as <code>bot-runtime-sdk</code> requires. So this feature adds a request of its own that makes a held version current, and the SDK must gain it. A rollback counts as done only when the bot's own answer names the chosen version.</p>
+    <p><b>The one thing to know:</b> a bot may still hold the chosen version, for a conversation in progress. Sending it again would succeed and change nothing, as <code>bot-runtime-sdk</code> requires. So a request of its own makes a held version current. A rollback counts as done only when the bot's own answer names the chosen version.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>5</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>19</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p><code>version-push</code> sends only the latest version, so a bad v14 has no way back except fixing the working state and creating v15, which takes time while customers get wrong answers. README promises a rollback, and calls it the safeguard that lets agents push by themselves.</p>
+  <p>With only the latest version to push, a bad v14 has no way back except fixing the working state and creating v15, which takes time while customers get wrong answers. README promises a rollback, and calls it the safeguard that lets agents push by themselves.</p>
   <p>It cannot simply be an older push. The bot's route treats the same number and document as a repeat, which is what makes a push safe to retry. A customer still talking on v12 keeps v12 in the bot, so at the moment a rollback is needed most, re-sending v12 answers with success and leaves the bot on v14.</p>
 </section>
 <section data-role="goals">
@@ -489,17 +488,17 @@ flowchart TD
   </div>
 </section>
 <section data-role="contract">
-  <h2>Contract: what the SDK must gain</h2>
-  <p><code>bot-runtime-sdk</code> owns this contract, and this feature changes it. The route shape is a proposal; the behaviour above is what is specified.</p>
+  <h2>Contract: the route on the bot</h2>
+  <p><code>bot-runtime-sdk</code> owns this contract; this is the route that makes a held version current.</p>
   <table>
     <tr><th>Route</th><th>Does</th><th>Answers</th></tr>
-    <tr><td><code>PUT /suwagcms/current</code>, body <code>{ "number": 12, "digest": "…" }</code></td><td>makes a held version current; safe to repeat</td><td>the state, as <code>PUT /suwagcms/versions/{number}</code> does; 409 when the bot does not hold it or holds another document under that number; 422 with every mistake when it no longer validates; 503 when the store fails</td></tr>
+    <tr><td><code>PUT /suwagcms/current</code>, body <code>{ "number": 12, "digest": "…" }</code></td><td>makes a held version current; safe to repeat</td><td>the state, as <code>PUT /suwagcms/versions/{number}</code> does; 409 with the code <code>version.notHeld</code> when the bot does not hold it, or <code>version.conflict</code> when it holds another document under that number; 422 with every mistake when it no longer validates; 503 when the store fails</td></tr>
   </table>
   <ul>
     <li><code>AC-bot-runtime-sdk-6</code> stays as it is: re-sending the same number and document changes nothing.</li>
-    <li>The state's schema, <code>bot-runtime.schema.json</code>, and the SDK's README gain the route, so a bot outside .NET can implement it.</li>
+    <li>The schema, <code>bot-runtime.schema.json</code>, and the SDK's README describe the route, so a bot outside .NET can implement it.</li>
     <li>The “current” version stays the last one made current, not the highest number.</li>
-    <li>A new SDK version must reach nuget.org, which the owner publishes. A bot on an older SDK keeps working and can take every version it does not hold.</li>
+    <li>A bot on an older SDK keeps working and can take every version it does not hold.</li>
   </ul>
 </section>
 <section data-role="decisions">
@@ -507,6 +506,11 @@ flowchart TD
   <ul>
     <li>Re-sending stays a repeat, and making current is a separate request: a late retry of an old push must never move a bot off the version it runs.</li>
     <li>The result is judged from the bot's answer about what is current, not from a successful status, because a repeat is also a success.</li>
+    <li>A separate request names the number and digest, so re-sending stays harmless and an old retry cannot move a bot, for the cost of one more route in the contract.</li>
+    <li>The web's select offers all kept versions except the latest and the bot's own: one rule, and no route out of a rollback is closed, since after a rollback to v12, v13 is a sensible place to go.</li>
+    <li>Every push asks the bot for its state first, and chooses by the answer: a version already current needs nothing, a held one is made current, and any other is sent. A bot that does not answer fails the push at once; a bot whose answer cannot be read gets the document, and the answer to that decides.</li>
+    <li><code>--dry-run</code> and the web's question read <code>GET /api/bots/{bot}/versions/{number}/push-plan</code>, which answers the same way a push would go and what it changes, and records nothing.</li>
+    <li>A rollback is an ordinary push in the record of attempts and in history, whose entry names the bot's version before and after it (<code>botVersion</code>) when the bot moved.</li>
     <li>The CLI uses <code>suwagcms push --version n</code>, and not a <code>rollback</code> command, because README's model is one push and the bot's route has no idea of direction.</li>
     <li>The web asks once and the CLI does not: a select is easy to misuse, and an agent has already decided.</li>
   </ul>
@@ -530,41 +534,24 @@ flowchart TD
     <li><code>AC-version-rollback-14</code> <code>--dry-run</code> says whether the version would be sent, made current, or needs nothing, and the bot's state stays as it was; every attempt is recorded and listed with its version, as any push is.</li>
     <li><code>AC-version-rollback-15</code> The published schema of the bot's routes covers the new request and is compared on the gate, and the behaviour tests of the new request pass through the packed <code>Suwagcms.Sdk</code> package, against the default file store and a store supplied by a test.</li>
     <li><code>AC-version-rollback-16</code> <code>suwagcms push --version</code> has its line in the plugin's main skill, which says that this is the rollback and that it changes only the bot.</li>
+    <li><code>AC-version-rollback-17</code> A version using a block the bot no longer runs is refused, naming the block, and the bot keeps what it had.</li>
+    <li><code>AC-version-rollback-18</code> Before a rollback, the page shows what will go back, and <code>--dry-run</code> lists the same changes.</li>
+    <li><code>AC-version-rollback-19</code> A rollback is recorded with the version it left and the version it chose.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>bot-declaration</code>:</b> a version using a block the bot no longer runs is refused, naming the block, and the bot keeps what it had.</li>
-    <li><b>after <code>version-diff</code>:</b> before a rollback, the page shows what will go back, and <code>--dry-run</code> lists the same changes.</li>
     <li><b>after <code>availability</code>:</b> a rollback also sends the current availability, and availability of a resource the chosen version does not hold has no effect.</li>
     <li><b>after <code>cms-identity</code>:</b> the new request needs the bot's key, like the other routes.</li>
-    <li><b>after <code>change-history</code>:</b> a rollback is recorded with the version it left and the version it chose.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>The contract grows after the first cut.</b> Bots outside this repository need the new SDK to go back to a version they hold. Until they upgrade, a rollback there fails with a clear reason exactly when it is urgent. The fix available to them at that moment is a new version that restores the old state.</p></div>
-  <div class="callout warn"><p><b>A rollback can bring back what was removed on purpose.</b> An article deleted for being wrong returns to customers. The page's question and, later, the comparison from <code>version-diff</code> are what warn the person; nothing refuses it, as README accepts.</p></div>
+  <div class="callout risk"><p><b>A bot needs the new route.</b> Bots outside this repository need the new SDK to go back to a version they hold. Until they upgrade, a rollback there fails with a clear reason exactly when it is urgent. The fix available to them at that moment is a new version that restores the old state.</p></div>
+  <div class="callout warn"><p><b>A rollback can bring back what was removed on purpose.</b> An article deleted for being wrong returns to customers. The page's question, with the comparison of what will go back, is what warns the person; nothing refuses it, as README accepts.</p></div>
   <div class="callout assumption"><p>A version made current again counts as current for removal: the SDK never removes it, as it never removes any current version.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>How does a held version become current?</legend>
-      <p class="why">This is the only change here to a public contract that already exists. <code>bot-runtime-sdk</code> requires that re-sending changes nothing, and explicitly leaves a rollback to a held version to this spec. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="own-request"><span><b>A separate request naming the number and digest</b><small>re-sending stays harmless, and an old retry cannot move a bot; costs one more route in the contract</small></span></label>
-      <label><input type="radio" value="resend"><span><b>Re-sending the document makes it current</b><small>no new route, but changes a built criterion, and a late retry could silently roll a bot back</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Which versions does the web's select offer?</legend>
-      <p class="why">README speaks of an older version, but after a rollback to v12, v13 is a sensible place to go and is newer than what the bot has. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="all"><span><b>All kept versions except the latest and the bot's own</b><small>one rule, and no route out of a rollback is closed</small></span></label>
-      <label><input type="radio" value="older"><span><b>Only those older than the bot's</b><small>matches the word rollback, but hides v13 in that case</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

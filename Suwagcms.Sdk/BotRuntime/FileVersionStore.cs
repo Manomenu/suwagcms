@@ -60,6 +60,20 @@ public sealed class FileVersionStore(string directory) : IVersionStore
         }
     }
 
+    public async Task WriteCurrentAsync(int number, CancellationToken cancellationToken)
+    {
+        await Gate.WaitAsync(cancellationToken);
+        try
+        {
+            var pointer = await ReadPointerAsync(cancellationToken);
+            await WritePointerAsync(pointer with { Current = number }, cancellationToken);
+        }
+        finally
+        {
+            Gate.Release();
+        }
+    }
+
     public async Task WriteInUseAsync(IReadOnlyList<int> numbers, CancellationToken cancellationToken)
     {
         await Gate.WaitAsync(cancellationToken);

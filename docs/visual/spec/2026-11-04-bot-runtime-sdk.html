@@ -381,9 +381,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A bot may run in several instances: the SDK writes to a store the bot provides, the other instances poll it, and every instance reports the same state. The default file store is for one instance. The routes have no key yet, so until <code>cms-identity</code> they must be reachable only from a trusted network.</p>
   </div>
   <div class="stats">
-    <div><b>2</b><span>routes on the bot</span></div>
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>3</b><span>routes on the bot</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -405,7 +405,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Running procedures: the bot's engine does that.</li>
       <li>Telling the CMS what the bot supports: <code>bot-declaration</code> adds its route.</li>
-      <li>Availability, and articles for search: see “Criteria after other features”.</li>
+      <li>Availability: see “Criteria after other features”. Articles for search: <code>article-search-feed</code>.</li>
       <li>A key on the routes: the owner decided they stay open on a trusted network until <code>cms-identity</code>.</li>
       <li>A bot fetching versions by itself, for a bot behind a firewall: added when the first such bot appears.</li>
     </ul></div>
@@ -464,7 +464,7 @@ flowchart TB
     <tr><td>a document that does not match its digest</td><td>refused; state unchanged</td></tr>
     <tr><td>the same number and document sent again</td><td>succeeds and changes nothing, so a push can be repeated safely</td></tr>
     <tr><td>the same number with another document</td><td>refused: a version never changes</td></tr>
-    <tr><td>a number lower than the current one</td><td>accepted, and it becomes current: this is what a rollback will use</td></tr>
+    <tr><td>a number lower than the current one</td><td>accepted, and it becomes current, as any version not yet held does</td></tr>
     <tr><td>the store fails during a write</td><td>the route fails with the reason, and the state stays what it was</td></tr>
     <tr><td>the store cannot be read while polling</td><td>the instance keeps serving what it has, and the state route says the store cannot be read</td></tr>
     <tr><td>the bot's code never reports what is in use</td><td>nothing is removed: keeping too much is safe, removing too much is not</td></tr>
@@ -479,6 +479,7 @@ flowchart TB
   <table>
     <tr><th>Route</th><th>Does</th><th>Answers</th></tr>
     <tr><td><code>GET /suwagcms/state</code></td><td>says what the bot has, from the store, so every instance gives the same answer</td><td>bot id, current version or none, versions held, versions in use, and the reason when the store cannot be read</td></tr>
+    <tr><td><code>PUT /suwagcms/current</code></td><td>takes a number and that version's digest, and makes a held version current (<code>version-rollback</code>); safe to repeat</td><td>the state, or a refusal: 409 when it is not held or holds another document, 422 with every mistake when it no longer validates, 503 when the store failed</td></tr>
     <tr><td><code>PUT /suwagcms/versions/{number}</code></td><td>takes a version document and its digest; safe to repeat</td><td>the state, or a refusal with every mistake</td></tr>
   </table>
 </section>
@@ -490,10 +491,10 @@ flowchart TB
     <li>The bot's routes have no key in the first cut (owner's decision): like the CMS they run on a trusted network, and a per-bot key arrives with <code>cms-identity</code>.</li>
     <li>The bot's own code reports versions in use, because only the bot knows when a conversation is over, and an expiry rule in the SDK would end conversations it knows nothing about.</li>
     <li>A bot validates a version itself even though the CMS already did: the same library at both ends costs little, and a bot never runs something it has not checked.</li>
-    <li>The “current” version is the last one accepted, not the highest number, so a rollback needs no special path.</li>
+    <li>The “current” version is the last one made current, not the highest number. A version the bot does not hold becomes current by being sent; one it holds needs <code>PUT /suwagcms/current</code>, as sending it again changes nothing.</li>
     <li>The bot's code reports the versions in use for the whole bot, not per instance: a bot with several instances already keeps its conversations in a shared place and answers in one query, and the SDK needs no way to notice instances that went away.</li>
     <li>A document with another bot's id is an ordinary refusal, like any other invalid document; the bot gives its id when it sets the SDK up.</li>
-    <li>The version document is one JSON object: <code>formatVersion</code>, <code>bot</code>, <code>number</code>, <code>digest</code> and the lists of the definition. The digest is the SHA-256 (lower-case hex) of the document in canonical form: UTF-8 without white space, object members sorted by name, the <code>digest</code> member left out. Same number and same digest is the same document; an identical document sent again for a version that is not current changes nothing, so a rollback to a held version needs its own path in <code>version-rollback</code>.</li>
+    <li>The version document is one JSON object: <code>formatVersion</code>, <code>bot</code>, <code>number</code>, <code>digest</code> and the lists of the definition. The digest is the SHA-256 (lower-case hex) of the document in canonical form: UTF-8 without white space, object members sorted by name, the <code>digest</code> member left out. Same number and same digest is the same document; an identical document sent again for a version that is not current changes nothing, and <code>PUT /suwagcms/current</code>, specified in <code>version-rollback</code>, is what makes it current.</li>
     <li>Refusals answer 422 (invalid document), 409 (the number holds another document) or 503 (the store failed), as Problem Details with the mistakes in <code>mistakes</code>.</li>
   </ul>
 </section>
@@ -517,6 +518,7 @@ flowchart TB
     <li><code>AC-bot-runtime-sdk-14</code> When the store cannot be read while polling, the instance keeps serving what it has, and the state route says the store cannot be read.</li>
     <li><code>AC-bot-runtime-sdk-15</code> The same behaviour tests pass against the default file store and against a store supplied by a test.</li>
     <li><code>AC-bot-runtime-sdk-16</code> The published schema of the state answer and of a refusal is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
+    <li><code>AC-bot-runtime-sdk-17</code> The SDK tells the bot's code about a new version, so it can update its search.</li>
   </ul>
 </section>
 
@@ -525,7 +527,6 @@ flowchart TB
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>availability</code>:</b> a change of availability takes effect at once, also on an older version, and reaches the other instances through the shared store.</li>
-    <li><b>after <code>article-search-feed</code>:</b> the SDK tells the bot's code about a new version, so it can update its search.</li>
     <li><b>after <code>cms-identity</code>:</b> a request to the bot's routes without the bot's key is refused, and the state stays as it was.</li>
   </ul>
 </section>

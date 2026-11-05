@@ -8,6 +8,8 @@ public interface IVersionStore
 
     Task WriteVersionAsync(int number, string document, CancellationToken cancellationToken);
 
+    Task WriteCurrentAsync(int number, CancellationToken cancellationToken);
+
     Task WriteInUseAsync(IReadOnlyList<int> numbers, CancellationToken cancellationToken);
 
     Task RemoveVersionAsync(int number, CancellationToken cancellationToken);

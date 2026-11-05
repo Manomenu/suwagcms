@@ -34,6 +34,16 @@ public sealed class InMemoryVersionStore : IVersionStore
         return Task.CompletedTask;
     }
 
+    public Task WriteCurrentAsync(int number, CancellationToken cancellationToken)
+    {
+        lock (gate)
+        {
+            current = number;
+        }
+
+        return Task.CompletedTask;
+    }
+
     public Task WriteInUseAsync(IReadOnlyList<int> numbers, CancellationToken cancellationToken)
     {
         lock (gate)

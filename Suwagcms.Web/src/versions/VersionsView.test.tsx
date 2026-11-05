@@ -4,7 +4,7 @@ import { Router } from "wouter";
 
 import type { Mistake } from "@/api/client";
 
-import type { BotStatus, PushResult, VersionComparison, VersionDetail, VersionSummary } from "./api";
+import type { BotStatus, PushPlan, PushResult, VersionComparison, VersionDetail, VersionSummary } from "./api";
 import { VersionsView } from "./VersionsView";
 
 const versions: VersionSummary[] = [
@@ -81,6 +81,7 @@ function view(shown: {
     status?: BotStatus | null;
     pushFailure?: PushResult | null;
     comparison?: VersionComparison | null;
+    plan?: PushPlan | null;
 }): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/versions">
@@ -94,6 +95,9 @@ function view(shown: {
                 refused={shown.refused ?? null}
                 shown={shown.shown ?? null}
                 comparison={shown.comparison ?? null}
+                plan={shown.plan ?? null}
+                onPlan={() => undefined}
+                onCancelPlan={() => undefined}
                 onCompare={() => undefined}
                 onCloseComparison={() => undefined}
                 onCreate={() => undefined}
@@ -256,5 +260,46 @@ describe("VersionsView", () => {
         expect(view({ status: { ...answering, has: 14 } })).not.toContain("Compare v");
         expect(view({ status: { ...answering, has: null } })).not.toContain("Compare v");
         expect(view({ status: { ...answering, hasUnknownVersion: true } })).not.toContain("Compare v");
+    });
+
+    it("AC-version-rollback-13: offers the other kept versions in a select beside the main button", () => {
+        const kept = [14, 13, 12, 11].map((number) => ({ ...versions[0], number }) as VersionSummary);
+
+        const html = view({ versions: kept, status: answering });
+
+        expect(html).toContain("other version:");
+        expect(html.indexOf(">v13</option>")).toBeLessThan(html.indexOf(">v11</option>"));
+        expect(html).not.toContain(">v14</option>");
+        expect(html).not.toContain(">v12</option>");
+        expect(html).toContain("Push v13");
+    });
+
+    it("AC-version-rollback-13: asks once, saying the bot's current and chosen versions, and AC-version-rollback-18: what goes back", () => {
+        const html = view({
+            status: answering,
+            plan: {
+                version: 11,
+                botHas: 12,
+                way: "MakeCurrent",
+                problem: null,
+                mistakes: [],
+                changes: {
+                    bot: "rzeczoznawca",
+                    from: 12,
+                    to: 11,
+                    added: 0,
+                    removed: 1,
+                    changed: 0,
+                    definition: [],
+                    resources: [{ kind: "Article", id: "cennik", difference: "Removed", fields: [], parts: [] }],
+                },
+            },
+        });
+
+        expect(html).toContain("The bot goes from v12 to v11.");
+        expect(html).toContain("The working state and the latest version stay as they are.");
+        expect(html).toContain("What goes back: 0 added · 1 removed · 0 changed");
+        expect(html).toContain("cennik");
+        expect(html).toContain("Cancel");
     });
 });

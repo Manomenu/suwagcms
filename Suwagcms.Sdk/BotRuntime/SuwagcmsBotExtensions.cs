@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.BotRuntime;
@@ -22,11 +23,13 @@ public static class SuwagcmsBotExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(botId);
+        services.AddLogging();
         services.AddSingleton(BotDeclaration.Of(botId, declares));
         services.AddSingleton(provider => new VersionRuntime(
             botId,
             store
-                ?? new FileVersionStore(Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, "suwagcms-versions"))
+                ?? new FileVersionStore(Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, "suwagcms-versions")),
+            provider.GetRequiredService<ILogger<VersionRuntime>>()
         ));
         services.AddSingleton<IBotDefinitions>(provider => provider.GetRequiredService<VersionRuntime>());
         services.AddHostedService(provider => new StorePoller(
@@ -56,11 +59,23 @@ public static class SuwagcmsBotExtensions
                     await reader.ReadToEndAsync(cancellationToken),
                     cancellationToken
                 );
-                return refused is null
-                    ? Results.Json(accepted, BotRuntimeJson.Options)
-                    : Results.Json(refused, BotRuntimeJson.Options, ProblemJson, refused.Status);
+                return Answer(accepted, refused);
+            }
+        );
+        group.MapPut(
+            "/current",
+            async (HttpRequest request, VersionRuntime runtime, CancellationToken cancellationToken) =>
+            {
+                using var reader = new StreamReader(request.Body, Encoding.UTF8);
+                var (accepted, refused) = await runtime.MakeCurrentAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken);
+                return Answer(accepted, refused);
             }
         );
         return group;
     }
+
+    private static IResult Answer(BotState? accepted, BotRefusal? refused) =>
+        refused is null
+            ? Results.Json(accepted, BotRuntimeJson.Options)
+            : Results.Json(refused, BotRuntimeJson.Options, ProblemJson, refused.Status);
 }
