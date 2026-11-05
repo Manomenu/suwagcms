@@ -154,3 +154,15 @@ test("AC-version-diff-11: the address --open prints shows the same comparison, a
         bot.server.close();
     }
 });
+
+test("AC-version-export-10: the address export --open prints opens that version", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addConversation(request, bot);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+
+    await page.goto(`/bots/${bot}/versions?open=1`);
+
+    await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible();
+    await expect(page.getByText(`"bot":"${bot}"`)).toBeVisible();
+    await expect(page).toHaveURL(`/bots/${bot}/versions`);
+});

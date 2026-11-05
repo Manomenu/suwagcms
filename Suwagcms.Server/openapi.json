@@ -1460,6 +1460,55 @@
         }
       }
     },
+    "/api/bots/{bot}/versions/{number}/export": {
+      "get": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionExport"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/versions/status": {
       "get": {
         "tags": [
@@ -2109,6 +2158,37 @@
           "Changed"
         ],
         "description": "What happened to a resource, or to a part of one, going from one version to another."
+      },
+      "ExportedFile": {
+        "required": [
+          "kind",
+          "id",
+          "path",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ResourceKind"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        },
+        "description": "One file of an exported version: the resource it holds (no kind for `version.yaml`), where it goes inside the folder, and what the version holds for it."
       },
       "Fact": {
         "required": [
@@ -3153,6 +3233,34 @@
           }
         },
         "description": "One version with its document exactly as stored: the JSON a bot receives, whose sha256 can be checked against it."
+      },
+      "VersionExport": {
+        "required": [
+          "bot",
+          "number",
+          "files"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedFile"
+            }
+          }
+        },
+        "description": "A version split into the files of an export, for reading and searching; nothing takes them back. The same version always gives the same files."
       },
       "VersionSummary": {
         "required": [

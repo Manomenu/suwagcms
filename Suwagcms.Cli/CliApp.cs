@@ -40,6 +40,7 @@ internal static class CliApp
             UsageCommand.Create(options, environment),
             PushCommand.Create(options, environment),
             DiffCommand.Create(options, environment),
+            ExportCommand.Create(options, environment),
             ValidateCommand.Create(options, environment),
         };
         options.AddTo(root);

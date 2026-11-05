@@ -50,7 +50,8 @@ rules into your own: the refusal already says what is wrong and how to fix it.
 ## Never edit local files
 
 A resource of the CMS (a fact, an article, a procedure) is never edited as a local file, and no file in the repository is its
-copy. Change it only with the commands below, so the server's rules apply.
+copy. Change it only with the commands below, so the server's rules apply. The files `suwagcms export` writes are for reading:
+changing them changes nothing.
 
 ## Show a page
 
@@ -108,6 +109,7 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms versions status` - ask the bot which version it has, as the bot answers and never as the CMS last sent it: the latest version, the versions conversations still use, and the recent pushes with their reasons. An unreachable bot shows its last reported version and when; an address that answers as another bot names it.
 - `suwagcms push` - push the latest version to the bot, which then reports the version it holds (`--json` gives the result, the reason and that version). It asks for no confirmation: validation by the bot and rollback are the safeguards, so push when the work calls for it. Exit code `0` when the bot holds the version, also when it already had it (nothing is sent); `1` with the reason when the version does not exist, the bot cannot be reached or does not answer within 30 seconds, or the bot refuses it with every mistake. A repeated push is safe. Only the latest version can be pushed.
 - `suwagcms diff <from> <to>` - say what going from one version to another changes: each resource added, removed or changed, and in a changed one its fields with old and new values, `content` and `llmGuide` as lines removed and added, and a procedure's steps and local facts. It reads two frozen versions only, never the working state or the bot. Exit code `0` also when differences are found; `1` for a number the bot does not have. `--json` gives the same in a fixed order; `--open` opens the comparison in the web app.
+- `suwagcms export [<number>] --out <folder>` - write a version (the latest when no number is given) to a new or empty folder of YAML files for reading and searching with ordinary tools: one file for the version itself and one per fact, knowledge base, article and procedure, in a folder per kind. Changes to those files do nothing: no command takes them back. A folder with anything in it, or a number the bot does not have, is refused with exit code `1`; no `--out` exits `2`. `--json` gives the folder, the version and the count of files per kind; `--open` opens the version in the web app.
 - `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
 
 `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.

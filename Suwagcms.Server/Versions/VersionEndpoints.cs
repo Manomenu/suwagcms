@@ -23,6 +23,7 @@ internal static class VersionEndpoints
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
         routes.MapGet("/bots/{bot}/versions/{from:int}/diff/{to:int}", Diff).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/versions/{number:int}/export", Export).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
         routes.MapGet("/bots/{bot}/versions/status", Status).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
         routes
             .MapPost("/bots/{bot}/versions/{number:int}/push", Push)
@@ -63,6 +64,17 @@ internal static class VersionEndpoints
             extensions: new Dictionary<string, object?> { ["mistakes"] = missing }
         );
     }
+
+    // Why: it only reads the frozen document; writing the files to a folder is the client's business, and nothing takes them back.
+    private static async Task<Results<Ok<VersionExport>, ProblemHttpResult>> Export(
+        string bot,
+        int number,
+        Pool pool,
+        CancellationToken cancellationToken
+    ) =>
+        await VersionStore.FindAsync(pool, bot, number, cancellationToken) is { } found
+            ? TypedResults.Ok(VersionExportSplitter.Split(bot, number, found.Document))
+            : await MissingAsync(pool, bot, number, "The version was not exported.", cancellationToken);
 
     private static async Task<Results<Ok<BotStatus>, ProblemHttpResult>> Status(
         string bot,
@@ -111,11 +123,21 @@ internal static class VersionEndpoints
         {
             return TypedResults.Ok(found);
         }
-        // Why: an unknown bot and an unknown number are told apart, since the fix differs.
-        return await VersionStore.ListAsync(pool, bot, cancellationToken) is null
-            ? EditProblems.For(new EditResult.UnknownBot(), bot, "The version was not shown.")
+        return await MissingAsync(pool, bot, number, "The version was not shown.", cancellationToken);
+    }
+
+    // Why: an unknown bot and an unknown number are told apart, since the fix differs.
+    private static async Task<ProblemHttpResult> MissingAsync(
+        Pool pool,
+        string bot,
+        int number,
+        string title,
+        CancellationToken cancellationToken
+    ) =>
+        await VersionStore.ListAsync(pool, bot, cancellationToken) is null
+            ? EditProblems.For(new EditResult.UnknownBot(), bot, title)
             : TypedResults.Problem(
-                title: "The version was not shown.",
+                title: title,
                 detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
                 statusCode: StatusCodes.Status404NotFound,
                 extensions: new Dictionary<string, object?>
@@ -123,7 +145,6 @@ internal static class VersionEndpoints
                     ["mistakes"] = new[] { NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(pool, bot, cancellationToken)) },
                 }
             );
-    }
 
     private static async Task<Results<Created<VersionCreated>, Ok<VersionCreated>, ProblemHttpResult>> Create(
         string bot,

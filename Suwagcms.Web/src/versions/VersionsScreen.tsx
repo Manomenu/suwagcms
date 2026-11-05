@@ -34,6 +34,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const [location, navigate] = useLocation();
     const fromParam = params.get("from");
     const toParam = params.get("to");
+    const openParam = params.get("open");
 
     const compare = useCallback(
         (from: number, to: number) => {
@@ -75,6 +76,17 @@ export function VersionsScreen({ bot }: { bot: string }) {
         navigate(location, { replace: true });
         compare(Number(fromParam), Number(toParam));
     }, [fromParam, toParam, location, navigate, compare]);
+
+    // Why: `suwagcms export --open` arrives as ?open=<n>; it is taken once and dropped from the address.
+    useEffect(() => {
+        if (openParam === null) return;
+        navigate(location, { replace: true });
+        fetchVersion(bot, Number(openParam))
+            .then(setShown)
+            .catch((error: unknown) => {
+                setFailure(error instanceof Error ? error.message : String(error));
+            });
+    }, [openParam, location, navigate, bot]);
 
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;

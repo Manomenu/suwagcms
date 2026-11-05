@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Exporting a version</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 28 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>version-create</code></span>
@@ -382,7 +382,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>10</b><span>criteria</span></div>
     <div><b>2</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -466,6 +465,8 @@ content: |
   <ul>
     <li>A folder with anything in it is refused rather than overwritten: a file left over from another version would read as part of this one, and deleting a person's files is not this command's business.</li>
     <li>Availability stays out, because it is a live setting and not part of a version.</li>
+    <li>Every resource is a YAML file, articles included: one form, both long texts treated alike, still searchable with <code>grep</code>. A text of several lines is written line by line, unless YAML cannot hold it that way exactly, and then in one quoted line.</li>
+    <li>The read route <code>GET /api/bots/{bot}/versions/{number}/export</code> answers with the version split into its files, as data; the CLI writes them as YAML, and it is what refuses a path outside the folder.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -495,17 +496,6 @@ content: |
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p><b>An export can leave the building.</b> Article text and procedures sit in plain files with no protection from the CMS, including once <code>cms-identity</code> arrives. Whoever runs the command answers for the folder. An export holds no secret values, because a version holds only their names.</p></div>
   <div class="callout warn"><p>People may treat an old export as current. The comment at the top of each file names its version, and the folder cannot be refreshed in place.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Is an article one YAML file, or Markdown with a YAML header?</legend>
-      <p class="why">An article's <code>content</code> is Markdown, and an editor would show a <code>.md</code> file better. But an article has a second long text, <code>llmGuide</code>, that has no natural place in a Markdown body. The architecture page says exports are YAML. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="yaml"><span><b>YAML for every resource</b><small>one form, both long texts treated alike, still searchable with <code>grep</code></small></span></label>
-      <label><input type="radio" value="markdown"><span><b>Markdown with a header for articles</b><small>nicer to read, but one exception, and the guide lands in the header</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>
