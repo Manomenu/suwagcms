@@ -15,6 +15,22 @@ public sealed class MainSkillContentTests
             "Link to an article",
             ["cms://article/<id>", "articles list --text", "reference.missing", "reference.malformed", "reference.loop"]
         ),
+        (
+            "the form of a link to a procedure, that it belongs only in llmGuide and how to find a target",
+            "Link to a procedure",
+            ["cms://procedure/<id>", "and only there", "suwagcms procedures list", "link.procedure.notInGuide"]
+        ),
+        ("the form of the start block", "Procedure file", ["start: <procedure id>", "start.target.conversation"]),
+        (
+            "the form of the inform block and how it differs from say",
+            "Procedure file",
+            ["inform: { instruction: text", "Where\n  `say` sends a fixed text"]
+        ),
+        (
+            "the form of context and when to name an article or write a query",
+            "Procedure file",
+            ["context: { articles: [id, ...], searchQueries: [text, ...] }", "Name an article when", "Write a query when"]
+        ),
         ("the form of localFacts", "Procedure file", ["localFacts:", "one camelCase word", "fact.local.nameClash"]),
         (
             "what --dry-run on an edit answers and who sees a type change",
@@ -51,6 +67,26 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-article-links-12")]
     public void The_main_skill_gives_the_link_form_and_how_to_find_a_target() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("how to link an article", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-article-procedure-links-11")]
+    public void The_main_skill_gives_the_form_of_a_link_to_a_procedure_where_it_belongs_and_how_to_find_a_target() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of a link to a procedure", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-start-block-9")]
+    public void The_main_skill_gives_the_form_of_the_start_block() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of the start block", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-inform-block-9")]
+    public void The_main_skill_gives_the_form_of_the_inform_block_and_how_it_differs_from_say() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of the inform block", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-instruction-context-9")]
+    public void The_main_skill_gives_the_form_of_context_and_when_to_name_an_article_or_write_a_query() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of context", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-edit-guard-16")]

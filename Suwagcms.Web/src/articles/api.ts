@@ -6,6 +6,8 @@ export type Article = components["schemas"]["ArticleView"];
 export type SaveArticle = components["schemas"]["SaveArticle"];
 export type KnowledgeBase = components["schemas"]["KnowledgeBaseView"];
 
+type ProcedureList = components["schemas"]["ProcedureList"];
+
 export interface Filters {
     knowledgeBase: string;
     language: string;
@@ -14,6 +16,10 @@ export interface Filters {
 
 function botPath(bot: string): string {
     return `/bots/${encodeURIComponent(bot)}`;
+}
+
+export function fetchProcedures(bot: string, signal: AbortSignal): Promise<ProcedureList> {
+    return request<ProcedureList>(`${botPath(bot)}/procedures`, { signal });
 }
 
 export function fetchArticles(bot: string, filters: Filters, signal: AbortSignal): Promise<Article[]> {

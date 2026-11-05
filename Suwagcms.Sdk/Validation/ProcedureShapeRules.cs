@@ -12,6 +12,8 @@ internal static class ProcedureShapeRules
         Save(MistakeCodes.StepBlockUnknown, UnknownBlocks),
         Save(MistakeCodes.StepBlockMultiple, MultipleBlocks),
         Save(MistakeCodes.StepMissing, MissingSteps),
+        Save(MistakeCodes.StartTargetConversation, StartsConversation),
+        Save(MistakeCodes.StepInformPointName, PointNames),
     ];
 
     private static Rule Save(string code, Func<Procedure, IEnumerable<Mistake>> check) =>
@@ -68,7 +70,9 @@ internal static class ProcedureShapeRules
                         MistakeCodes.StepBlockUnknown,
                         $"steps.{step.Key}.{key}",
                         $"Step '{step.Key}' has the unknown block '{key}'.",
-                        $"Use one of the blocks: {string.Join(", ", Block.Names)}; next says where to go."
+                        key == "context"
+                            ? "A context belongs on an instruction: move it into whenStalled or into an inform."
+                            : $"Use one of the blocks: {string.Join(", ", Block.Names)}; next says where to go."
                     )
                 )
         );
@@ -113,6 +117,34 @@ internal static class ProcedureShapeRules
             }
         }
     }
+
+    private static IEnumerable<Mistake> StartsConversation(Procedure procedure) =>
+        procedure
+            .Steps.Where(step => step.Value.Start == Procedure.ConversationId)
+            .Select(step =>
+                Make(
+                    procedure,
+                    MistakeCodes.StartTargetConversation,
+                    $"steps.{step.Key}.start",
+                    $"'start' of step '{step.Key}' in '{procedure.Id}' names '{Procedure.ConversationId}', which cannot be started: it is the base of every conversation.",
+                    "End the procedure here instead, by leaving out 'next'."
+                )
+            );
+
+    private static IEnumerable<Mistake> PointNames(Procedure procedure) =>
+        procedure.Steps.SelectMany(step =>
+            (step.Value.Inform?.Points?.Keys ?? [])
+                .Where(name => !ResourceIds.IsCamelCase(name))
+                .Select(name =>
+                    Make(
+                        procedure,
+                        MistakeCodes.StepInformPointName,
+                        $"steps.{step.Key}.inform.points.{name}",
+                        $"The point name '{name}' in 'inform' of step '{step.Key}' is not camelCase.",
+                        $"Rename it to '{ResourceIds.Suggest(name)}'."
+                    )
+                )
+        );
 
     private static Mistake Missing(Procedure procedure, string path, string what) =>
         Make(procedure, MistakeCodes.StepMissing, path, $"{what} names no step of '{procedure.Id}'.", ProcedureMistake.StepList(procedure));

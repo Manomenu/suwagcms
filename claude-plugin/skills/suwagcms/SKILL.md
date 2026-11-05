@@ -75,8 +75,17 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 
 - Find the id with `suwagcms articles list --text <part of the title or id>`; the id is the first column.
 - Write the link as text in `--content` or `--guide` (or their files) of `articles add` or `articles edit`; no other command is needed.
-- A link to an article the bot does not have is refused with `reference.missing`, naming the field and the id; a malformed `cms://` target, or `cms://procedure/…`, is refused with `reference.malformed`; a link that closes a loop of articles, or an article linking to itself, is refused with `reference.loop` and the path, such as `pricing → discounts → pricing`: remove one link on it. `--dry-run` shows it without saving.
+- A link to an article the bot does not have is refused with `reference.missing`, naming the field and the id; a malformed `cms://` target is refused with `reference.malformed`; a link that closes a loop of articles, or an article linking to itself, is refused with `reference.loop` and the path, such as `pricing → discounts → pricing`: remove one link on it. `--dry-run` shows it without saving.
 - Text that only names an article stays plain text and is not protected. A `cms://` address inside a code span or code block, or an ordinary web link, is not a link to an article.
+
+## Link to a procedure
+
+In the `llmGuide` of an article, and only there, a link to a procedure is an ordinary Markdown link whose target is `cms://procedure/<id>`, for
+example `If the customer wants a valuation, start [the valuation](cms://procedure/orderValuation).` The web shows it as a chip with the id.
+
+- Find the id with `suwagcms procedures list`, and write the link as text in `--guide` (or its file) of `articles add` or `articles edit`.
+- In `content`, which a customer reads, it is refused with `link.procedure.notInGuide`; a procedure the bot does not have with `reference.missing`; `conversation` with `link.procedure.conversation`.
+- The link protects the procedure from being deleted, follows a change of its id, and a loop through it is refused (`reference.loop`).
 
 ## Commands
 
@@ -202,13 +211,25 @@ steps:
 ```
 
 - A step holds exactly one block: `listen` (wait for the next message), `collect: [fact, ...]` (ask until the facts are known),
-  `say: text` (send a fixed text), `assign: { fact: value }` (overwrite facts with values you chose). `collect` cannot name a fact
+  `say: text` (send a fixed text), `assign: { fact: value }` (overwrite facts with values you chose), `start` and `inform` (below). `collect` cannot name a fact
   with `writableBy: assign`; every fact named must exist (`suwagcms facts list`) and a value must fit the fact's type.
-- `next` is a step's id, or a list of rules `{ when, to }` tried from the top; the last rule has no `when` and is the default.
+- `start: <procedure id>` starts another procedure of this bot, and the step's `next` is where this one goes on once that one ends. The
+  target must exist (`suwagcms procedures list`); `conversation` cannot be started (`start.target.conversation`), and a loop of starts is
+  refused (`reference.loop`). A blank target is saved and listed as unfinished.
+- `inform: { instruction: text, context: { ... }, points: { name: what must be said } }` has the model tell the customer each point. Where
+  `say` sends a fixed text, inform leaves the words to the model, following the instruction, and the bot checks by name that each point was told.
+  A point name is camelCase (`step.inform.pointName`), and the points keep the order written. No points (`step.inform.empty`), a point with no text
+  (`step.inform.pointBlank`) or a blank instruction (`instruction.blank`) is saved and listed as unfinished. A point is fixed text and names no fact.
+- `next` is a step's id, or a list of rules `{ when, to }` tried from the top; the last rule has no `when` and is the default, and only the last may (`next.default.notLast`).
   A step without `next` ends the procedure. Steps may loop back (a `conversation` returns to its own `listen`).
 - `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)
   or `known: true|false` (any fact).
 - `whenStalled: { instruction: text }` is required when a step collects.
+- An instruction (of `whenStalled` or of an `inform`) can carry `context: { articles: [id, ...], searchQueries: [text, ...] }`: what the model
+  should read before following it. Name an article when you know which one holds the fact: it cannot miss, a wrong id is refused
+  (`reference.missing`) and the article is protected. Write a query when you want what the articles say on a subject without knowing
+  which says it: the CMS stores it as text and never runs it, the bot searches. A blank query (`context.query.blank`) and a query in a
+  bot with no articles (`context.query.noArticles`) are saved and listed as unfinished.
 - `localFacts` (optional) maps a name to a fact that lives inside this procedure: `localFacts: { visitDate: { type: text, description: When to visit, maxLength: 20 } }`.
   The name is one camelCase word with no dots; the type, its constraints (`values` / `min` and `max` / `maxLength`), `description` and `writableBy` are those of a global fact. Steps of the
   procedure name it by that short name, and no other procedure sees it; `facts list` does not list it. A local fact with the name of a global fact is refused with `fact.local.nameClash`, from whichever side was saved second, and removing one that a step still uses is refused with `reference.missing`, listing the steps.

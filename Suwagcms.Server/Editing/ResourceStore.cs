@@ -108,7 +108,7 @@ internal static class ResourceStore
             new CommandDefinition(
                 """
                 INSERT INTO resource (id, bot_id, kind, public_id, revision, body, updated_at)
-                VALUES (@Id, @bot, @kind, @publicId, @Revision, @body::jsonb, @now)
+                VALUES (@Id, @bot, @kind, @publicId, @Revision, @body::json, @now)
                 """,
                 new
                 {
@@ -134,7 +134,7 @@ internal static class ResourceStore
     ) =>
         await connection.ExecuteAsync(
             new CommandDefinition(
-                "UPDATE resource SET public_id = @publicId, revision = @Revision, body = @body::jsonb, updated_at = @now WHERE id = @Id",
+                "UPDATE resource SET public_id = @publicId, revision = @Revision, body = @body::json, updated_at = @now WHERE id = @Id",
                 new
                 {
                     resource.Id,

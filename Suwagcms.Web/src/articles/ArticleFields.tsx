@@ -7,6 +7,7 @@ import { Textarea } from "@/design/textarea";
 import type { KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";
 import { HINTS, fieldOf, type ArticleForm, type FieldName } from "./articleForm";
+import { targetsFor } from "./articlePicker";
 import { LinkedTextEditor } from "./LinkedTextEditor";
 
 /** The fields of the article editor: content, llmGuide and description side by side, each with a tooltip saying who reads it. */
@@ -24,7 +25,7 @@ export function ArticleFields({
     mistakes: Mistake[];
     idLocked: boolean;
     targets: LinkTarget[];
-    onOpenArticle: (id: string) => void;
+    onOpenArticle: (id: string, kind: "article" | "procedure") => void;
     onChange: (change: Partial<ArticleForm>) => void;
 }) {
     const errorsOf = (field: FieldName) =>
@@ -35,7 +36,7 @@ export function ArticleFields({
             hint={HINTS[field]}
             errors={errorsOf(field)}
             value={form[field]}
-            targets={targets}
+            targets={targetsFor(field, targets)}
             selfId={form.id}
             onOpen={onOpenArticle}
             onChange={(markdown) => {

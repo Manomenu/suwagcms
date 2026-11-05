@@ -28,7 +28,7 @@ internal static partial class CmsLinks
     }
 
     // Why: only the id inside a link's target changes, found by position in the original text, so every other byte stays as it was.
-    public static string Rewrite(string markdown, string oldId, string newId)
+    public static string Rewrite(string markdown, string prefix, string oldId, string newId)
     {
         if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
         {
@@ -36,9 +36,9 @@ internal static partial class CmsLinks
         }
         var result = new StringBuilder(markdown);
         var targets = LinkPattern().Matches(WithoutCode(markdown)).Select(match => match.Groups["target"]);
-        foreach (var target in targets.Reverse().Where(target => target.Value == ArticlePrefix + oldId))
+        foreach (var target in targets.Reverse().Where(target => target.Value == prefix + oldId))
         {
-            result.Remove(target.Index + ArticlePrefix.Length, oldId.Length).Insert(target.Index + ArticlePrefix.Length, newId);
+            result.Remove(target.Index + prefix.Length, oldId.Length).Insert(target.Index + prefix.Length, newId);
         }
         return result.ToString();
     }
@@ -72,16 +72,15 @@ internal static partial class CmsLinks
 
     private static CmsLink Classify(string label, string target)
     {
-        if (target.StartsWith(ProcedurePrefix, StringComparison.Ordinal))
+        foreach (var (prefix, form) in new[] { (ArticlePrefix, CmsLinkForm.Article), (ProcedurePrefix, CmsLinkForm.Procedure) })
         {
-            return new CmsLink(label, target, CmsLinkForm.Procedure, string.Empty);
-        }
-        if (target.StartsWith(ArticlePrefix, StringComparison.Ordinal))
-        {
-            var id = target[ArticlePrefix.Length..];
-            if (id.Length > 0 && id.All(char.IsAsciiLetterOrDigit))
+            if (target.StartsWith(prefix, StringComparison.Ordinal))
             {
-                return new CmsLink(label, target, CmsLinkForm.Article, id);
+                var id = target[prefix.Length..];
+                if (id.Length > 0 && id.All(char.IsAsciiLetterOrDigit))
+                {
+                    return new CmsLink(label, target, form, id);
+                }
             }
         }
         return new CmsLink(label, target, CmsLinkForm.Malformed, string.Empty);

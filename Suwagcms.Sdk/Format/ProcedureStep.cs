@@ -14,6 +14,9 @@ public sealed record ProcedureStep
 
     public IReadOnlyDictionary<string, string>? Assign { get; init; }
 
+    public string? Start { get; init; }
+
+    public InformArguments? Inform { get; init; }
     public string? Action { get; init; }
 
     // Why: parameter name to the fact that gives its value; every parameter must be mapped before a version, since a call without its input is broken.
@@ -38,6 +41,8 @@ public sealed record ProcedureStep
                 Collect is null ? null : new CollectBlock(Collect),
                 Say is null ? null : new SayBlock(Say),
                 Assign is null ? null : new AssignBlock(Assign),
+                Start is null ? null : new StartBlock(Start),
+                Inform is null ? null : new InformBlock(Inform),
                 Action is null
                     ? null
                     : new ActionBlock(Action, With ?? new Dictionary<string, string>(), Results ?? new Dictionary<string, string>()),

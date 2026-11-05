@@ -4,12 +4,42 @@ import { labelOf, type LinkTarget } from "./articleLink";
 
 const LIMIT = 20;
 
-/** The articles that match what the author typed after the trigger: by title or id, ignoring case, never the article being edited. */
+// Why: conversation cannot be started, so it is never offered.
+export function linkTargets(
+    articles: { id: string; title: string; knowledgeBase: string }[],
+    procedures: { id: string; description: string }[],
+): LinkTarget[] {
+    return [
+        ...articles.map((article) => ({ id: article.id, title: article.title, knowledgeBase: article.knowledgeBase })),
+        ...procedures
+            .filter((procedure) => procedure.id !== "conversation")
+            .map((procedure) => ({
+                id: procedure.id,
+                title: procedure.id,
+                knowledgeBase: "",
+                kind: "procedure" as const,
+                description: procedure.description,
+            })),
+    ];
+}
+
+// Why: only the guide may hold a link to a procedure, because a customer reads content.
+export function targetsFor(field: "content" | "llmGuide", targets: LinkTarget[]): LinkTarget[] {
+    return field === "llmGuide" ? targets : targets.filter((target) => target.kind !== "procedure");
+}
+
+// Why: a procedure may share its id with the article being edited, and it is not that article.
 export function matching(targets: LinkTarget[], query: string, selfId: string): LinkTarget[] {
     const needle = query.trim().toLowerCase();
     return targets
-        .filter((target) => target.id !== selfId)
-        .filter((target) => needle === "" || target.title.toLowerCase().includes(needle) || target.id.toLowerCase().includes(needle))
+        .filter((target) => target.kind === "procedure" || target.id !== selfId)
+        .filter(
+            (target) =>
+                needle === "" ||
+                target.title.toLowerCase().includes(needle) ||
+                target.id.toLowerCase().includes(needle) ||
+                (target.description ?? "").toLowerCase().includes(needle),
+        )
         .slice(0, LIMIT);
 }
 
@@ -18,6 +48,8 @@ interface Item {
     label: string;
     title: string;
     knowledgeBase: string;
+    kind: "article" | "procedure";
+    description: string;
 }
 
 /** The suggestion of the link: `@` after a space or at a line start opens a list of this bot's articles under the cursor. */
@@ -30,6 +62,8 @@ export function pickerOf(targets: () => LinkTarget[], selfId: () => string): Omi
                 label: labelOf(target.title),
                 title: target.title,
                 knowledgeBase: target.knowledgeBase,
+                kind: target.kind ?? "article",
+                description: target.description ?? "",
             })),
         render: () => {
             let list: HTMLUListElement | null = null;
@@ -41,14 +75,21 @@ export function pickerOf(targets: () => LinkTarget[], selfId: () => string): Omi
                 const props = last;
                 list.replaceChildren(
                     ...(props.items.length === 0
-                        ? [element("li", "px-2 py-1 text-muted-foreground", "No article matches")]
+                        ? [element("li", "px-2 py-1 text-muted-foreground", "Nothing matches")]
                         : props.items.map((item, index) => {
                               const row = element("li", "cursor-pointer rounded px-2 py-1 hover:bg-accent", `${item.title}  `);
                               row.setAttribute("role", "option");
                               row.dataset["articleOption"] = item.id;
                               row.setAttribute("aria-selected", String(index === chosen));
                               row.classList.toggle("bg-accent", index === chosen);
-                              row.append(element("span", "text-xs text-muted-foreground", `${item.id} · ${item.knowledgeBase}`));
+                              row.prepend(element("span", "mr-1 text-xs font-medium text-muted-foreground", item.kind));
+                              row.append(
+                                  element(
+                                      "span",
+                                      "text-xs text-muted-foreground",
+                                      item.kind === "procedure" ? item.description : `${item.id} · ${item.knowledgeBase}`,
+                                  ),
+                              );
                               row.addEventListener("mousedown", (event) => {
                                   event.preventDefault();
                                   props.command(item);
@@ -67,7 +108,7 @@ export function pickerOf(targets: () => LinkTarget[], selfId: () => string): Omi
                 onStart: (props) => {
                     list = document.createElement("ul");
                     list.setAttribute("role", "listbox");
-                    list.setAttribute("aria-label", "Articles to link");
+                    list.setAttribute("aria-label", "What to link");
                     list.className =
                         "fixed z-50 max-h-64 min-w-64 overflow-auto rounded-md border border-border bg-secondary p-1 text-sm text-foreground shadow-md";
                     document.body.append(list);

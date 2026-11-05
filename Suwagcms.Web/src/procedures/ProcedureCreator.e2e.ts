@@ -270,6 +270,122 @@ test("AC-procedure-creator-17: leaving the creator with unsaved changes asks fir
     await expect(page.getByRole("heading", { name: /Procedures of/ })).toBeVisible();
 });
 
+test("AC-procedure-creator-21: a start step is built with its form, which leaves out conversation, and reads back from the server", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(
+        request,
+        bot,
+        "documentsList",
+        { description: "Collects the documents", firstStep: "hello", steps: { hello: { say: "Hi" } } },
+        0,
+    );
+    await agentSaves(request, bot, "orderValuation", { description: "The customer orders a valuation", firstStep: null, steps: {} }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "start" }).click();
+    await node(page, "start").click();
+    const target = page.getByLabel("Start this procedure");
+    await expect(target.getByRole("option")).toHaveText(["(choose)", "documentsList"]);
+    await target.selectOption("documentsList");
+    await expect(node(page, "start")).toContainText("start: documentsList");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(async () => {
+        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+            steps: Record<string, { start?: string }>;
+        };
+        expect(stored.steps["start"]?.start).toBe("documentsList");
+    }).toPass();
+    await page.reload();
+    await node(page, "start").click();
+    await expect(page.getByLabel("Start this procedure")).toHaveValue("documentsList");
+});
+
+test("AC-procedure-creator-22: an inform step is built with its form and reads back from the server with its points in order", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", { description: "The customer orders a valuation", firstStep: null, steps: {} }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "inform" }).click();
+    await node(page, "inform").click();
+    await page.getByLabel("Instruction").fill("Tell the customer what happens next.");
+    await page.getByRole("button", { name: "Add point" }).click();
+    await page.getByLabel("Name of point 1").fill("turnaround");
+    await page.getByLabel("Text of point 1").fill("Ready within 7 working days.");
+    await page.getByRole("button", { name: "Add point" }).click();
+    await page.getByLabel("Name of point 2").fill("a");
+    await page.getByLabel("Text of point 2").fill("Sent by e-mail.");
+    await expect(node(page, "inform")).toContainText("inform: turnaround, a");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(async () => {
+        const raw = await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).text();
+        const stored = JSON.parse(raw) as {
+            steps: Record<string, { inform?: { instruction: string; points: Record<string, string> } }>;
+        };
+        expect(stored.steps["inform"]?.inform?.instruction).toBe("Tell the customer what happens next.");
+        expect(Object.entries(stored.steps["inform"]?.inform?.points ?? {})).toEqual([
+            ["turnaround", "Ready within 7 working days."],
+            ["a", "Sent by e-mail."],
+        ]);
+    }).toPass();
+    await page.reload();
+    await node(page, "inform").click();
+    await expect(page.getByLabel("Name of point 1")).toHaveValue("turnaround");
+    await expect(page.getByLabel("Text of point 2")).toHaveValue("Sent by e-mail.");
+});
+
+test("AC-procedure-creator-20: a context is edited on whenStalled and on an inform, with articles and queries, and reads back from the server", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, { data: { title: "Offer" } })).status()).toBe(200);
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/articles/officeContact?ifRevision=0`, {
+                data: { knowledgeBase: "offer", title: "The office", content: "c", llmGuide: "g", description: "d" },
+            })
+        ).status(),
+    ).toBe(200);
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "The customer orders a valuation",
+            firstStep: "tell",
+            steps: { tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." } } } },
+            whenStalled: { instruction: "Say you could not finish." },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    await page.getByRole("group", { name: "Articles to read" }).getByLabel("The office (officeContact)").check();
+    await page.getByRole("button", { name: "Add search query" }).click();
+    await page.getByLabel("Search query 1", { exact: true }).fill("how long a valuation takes");
+    await node(page, "tell").click();
+    await page.getByRole("button", { name: "Add search query" }).click();
+    await page.getByLabel("Search query 1", { exact: true }).fill("opening hours");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(async () => {
+        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+            whenStalled: { context: unknown };
+            steps: Record<string, { inform?: { context: unknown } }>;
+        };
+        expect(stored.whenStalled.context).toEqual({ articles: ["officeContact"], searchQueries: ["how long a valuation takes"] });
+        expect(stored.steps["tell"]?.inform?.context).toMatchObject({ searchQueries: ["opening hours"] });
+    }).toPass();
+});
+
 test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers it, the save stores it, and the panel removes it again", async ({
     page,
     request,

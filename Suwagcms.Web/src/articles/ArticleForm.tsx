@@ -5,10 +5,11 @@ import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Paper } from "@/design/page";
 
-import { fetchArticles, saveArticle, type KnowledgeBase } from "./api";
+import { fetchArticles, fetchProcedures, saveArticle, type KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";
 import { bodyOf, fieldOf, isDirty, type ArticleForm as FormState } from "./articleForm";
 import { ArticleFields } from "./ArticleFields";
+import { linkTargets } from "./articlePicker";
 
 export const DISCARD_QUESTION = "Discard the changes you have not saved?";
 
@@ -37,7 +38,7 @@ export function ArticleForm({
     onReload: () => void;
     onCancel: () => void;
     onDirtyChange: (dirty: boolean) => void;
-    onOpenArticle: (id: string) => void;
+    onOpenArticle: (id: string, kind: "article" | "procedure") => void;
 }) {
     const [form, setForm] = useState(initial);
     const [refusal, setRefusal] = useState<ApiError | null>(null);
@@ -45,12 +46,15 @@ export function ArticleForm({
     const [targetsFailure, setTargetsFailure] = useState<string | null>(null);
     const dirty = isDirty(form, initial);
 
-    // Why: the picker and the chips need every article of the bot, not the filtered list the screen shows.
+    // Why: the picker and the chips need every article of the bot, not the filtered list the screen shows, and the guide's picker its procedures too.
     useEffect(() => {
         const controller = new AbortController();
-        fetchArticles(bot, { knowledgeBase: "", language: "", text: "" }, controller.signal)
-            .then((articles) => {
-                setTargets(articles.map((article) => ({ id: article.id, title: article.title, knowledgeBase: article.knowledgeBase })));
+        Promise.all([
+            fetchArticles(bot, { knowledgeBase: "", language: "", text: "" }, controller.signal),
+            fetchProcedures(bot, controller.signal),
+        ])
+            .then(([articles, list]) => {
+                setTargets(linkTargets(articles, list.procedures));
             })
             .catch((error: unknown) => {
                 if (!controller.signal.aborted) setTargetsFailure(error instanceof Error ? error.message : String(error));

@@ -292,4 +292,45 @@ public sealed class AvailabilityTests
             StringComparison.Ordinal
         );
     }
+
+    [Theory]
+    [MemberData(nameof(Stores.Kinds), MemberType = typeof(Stores))]
+    [Trait("criterion", "AC-availability-29")]
+    public async Task An_article_a_procedure_names_explicitly_is_still_given_while_it_is_off(string kind)
+    {
+        using var directory = new TempDirectory();
+        await using var bot = await BotHost.StartAsync(Stores.Create(kind, directory));
+        var document = Documents.WithArticles(1, Documents.Article("officeContact"));
+        document["procedures"] = new JsonArray(
+            Documents.Conversation(),
+            new JsonObject
+            {
+                ["id"] = "orderValuation",
+                ["description"] = "Orders a valuation.",
+                ["firstStep"] = "tell",
+                ["steps"] = new JsonObject
+                {
+                    ["tell"] = new JsonObject
+                    {
+                        ["inform"] = new JsonObject
+                        {
+                            ["instruction"] = "Tell where the office is.",
+                            ["context"] = new JsonObject { ["articles"] = new JsonArray("officeContact") },
+                            ["points"] = new JsonObject { ["address"] = "The office is on Main street." },
+                        },
+                    },
+                },
+            }
+        );
+        await bot.PutAsync(1, Documents.Sign(document));
+
+        await SendAsync(bot, Message(1, "officeContact"));
+
+        var definition = await bot.Definitions.GetAsync(1, TestContext.Current.CancellationToken);
+        var named = definition.Procedures.Single(procedure => procedure.Id == "orderValuation").Steps["tell"].Inform?.Context?.Articles;
+        Assert.Equal(["officeContact"], named);
+        Assert.Equal("officeContact", Assert.Single(definition.Articles).Id);
+        Assert.True(bot.Definitions.IsOff(1, ResourceKind.Article, "officeContact"));
+        Assert.True(Assert.Single(await bot.Definitions.GetArticlesAsync(1, TestContext.Current.CancellationToken)).IsOff);
+    }
 }

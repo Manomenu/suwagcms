@@ -24,6 +24,15 @@ public static class ReferenceWalker
                 yield return new Reference(from, path, new ResourceRef(ResourceKind.Article, link.Id), null);
             }
         }
+        // Why: only the guide may hold a link to a procedure, and conversation is refused by a rule of its own, so neither is an edge that a loop or a missing-target rule should also report.
+        foreach (
+            var link in CmsLinks
+                .In(article.LlmGuide)
+                .Where(link => link.Form == CmsLinkForm.Procedure && link.Id != Procedure.ConversationId)
+        )
+        {
+            yield return new Reference(from, "llmGuide", new ResourceRef(ResourceKind.Procedure, link.Id), null);
+        }
     }
 
     // Why: a local fact is contained in its procedure, so a use of one is no reference to another resource and is invisible outside.
@@ -39,15 +48,19 @@ public static class ReferenceWalker
     {
         ArgumentNullException.ThrowIfNull(procedure);
         var from = new ResourceRef(ResourceKind.Procedure, procedure.Id);
+        foreach (var target in procedure.WhenStalled?.Context?.TargetsAt("whenStalled.context") ?? [])
+        {
+            yield return new Reference(from, target.Path, target.To, null);
+        }
         foreach (var (stepName, step) in procedure.Steps)
         {
             foreach (var fact in step.Blocks.SelectMany(block => block.Facts))
             {
                 yield return new Reference(from, $"steps.{stepName}.{fact.Path}", Fact(fact.Name), fact.Use);
             }
-            if (!string.IsNullOrWhiteSpace(step.Action))
+            foreach (var target in step.Blocks.SelectMany(block => block.Targets))
             {
-                yield return new Reference(from, $"steps.{stepName}.action", new ResourceRef(ResourceKind.Action, step.Action), null);
+                yield return new Reference(from, $"steps.{stepName}.{target.Path}", target.To, null);
             }
             var rules = step.Next?.Rules ?? [];
             for (var index = 0; index < rules.Count; index++)
@@ -69,12 +82,16 @@ public static class ReferenceWalker
         {
             return article with { KnowledgeBase = newId };
         }
+        if (target.Kind == ResourceKind.Procedure)
+        {
+            return article with { LlmGuide = CmsLinks.Rewrite(article.LlmGuide, CmsLinks.ProcedurePrefix, target.Id, newId) };
+        }
         return target.Kind != ResourceKind.Article
             ? article
             : article with
             {
-                Content = CmsLinks.Rewrite(article.Content, target.Id, newId),
-                LlmGuide = CmsLinks.Rewrite(article.LlmGuide, target.Id, newId),
+                Content = CmsLinks.Rewrite(article.Content, CmsLinks.ArticlePrefix, target.Id, newId),
+                LlmGuide = CmsLinks.Rewrite(article.LlmGuide, CmsLinks.ArticlePrefix, target.Id, newId),
             };
     }
 
@@ -91,6 +108,20 @@ public static class ReferenceWalker
                     step => step.Value.Action == target.Id ? step.Value with { Action = newId } : step.Value
                 ),
             };
+        }
+        if (target.Kind == ResourceKind.Procedure)
+        {
+            return procedure with
+            {
+                Steps = procedure.Steps.ToDictionary(
+                    step => step.Key,
+                    step => step.Value.Start == target.Id ? step.Value with { Start = newId } : step.Value
+                ),
+            };
+        }
+        if (target.Kind == ResourceKind.Article)
+        {
+            return RewriteArticle(procedure, target.Id, newId);
         }
         if (target.Kind != ResourceKind.GlobalFact || procedure.Locals.ContainsKey(target.Id))
         {
@@ -126,6 +157,33 @@ public static class ReferenceWalker
                             }
                             : step.Value.Next,
                     }
+            ),
+        };
+    }
+
+    // Why: a search query is text that names nothing, so only the articles of a context are rewritten.
+    private static Procedure RewriteArticle(Procedure procedure, string oldId, string newId)
+    {
+        IReadOnlyList<string>? Renamed(IReadOnlyList<string>? ids)
+        {
+            return ids?.Select(id => id == oldId ? newId : id).ToList();
+        }
+        InstructionContext? InContext(InstructionContext? context)
+        {
+            return context is null ? null : context with { Articles = Renamed(context.Articles) };
+        }
+        return procedure with
+        {
+            WhenStalled = procedure.WhenStalled is { } stalled ? stalled with { Context = InContext(stalled.Context) } : null,
+            Steps = procedure.Steps.ToDictionary(
+                step => step.Key,
+                step =>
+                    step.Value.Inform is { } inform
+                        ? step.Value with
+                        {
+                            Inform = inform with { Context = InContext(inform.Context) },
+                        }
+                        : step.Value
             ),
         };
     }

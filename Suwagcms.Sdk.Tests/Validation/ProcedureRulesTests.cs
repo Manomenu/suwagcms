@@ -503,4 +503,38 @@ public sealed class ProcedureRulesTests
             references.Select(reference => (reference.Path, reference.To.Id, reference.Use.GetValueOrDefault())).Order()
         );
     }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-model-17")]
+    public void A_rule_with_no_when_before_the_last_says_the_rules_after_it_never_apply()
+    {
+        var step = new ProcedureStep
+        {
+            Say = "Hi",
+            Next = new NextSteps
+            {
+                Rules =
+                [
+                    new Transition { To = "wait" },
+                    new Transition
+                    {
+                        When = new Dictionary<string, Condition> { ["order.kind"] = new() { Known = true } },
+                        To = "wait",
+                    },
+                    new Transition { To = "wait" },
+                ],
+            },
+        };
+
+        var mistake = Assert.Single(
+            DefinitionValidator.Validate(
+                ProcedureSamples.Bot(ProcedureSamples.WithStep("hello", step, "hello"), Samples.Procedure(Procedure.ConversationId)),
+                ValidationStage.Version
+            ),
+            found => found.Code == MistakeCodes.NextDefaultNotLast
+        );
+
+        Assert.Equal("steps.hello.next[0]", mistake.Path);
+        Assert.Contains("never apply", mistake.Message, StringComparison.Ordinal);
+    }
 }

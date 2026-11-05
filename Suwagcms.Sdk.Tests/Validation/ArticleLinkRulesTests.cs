@@ -86,18 +86,6 @@ public sealed class ArticleLinkRulesTests
         Assert.Contains("[Title](cms://article/<id>)", mistake.Fix, StringComparison.Ordinal);
     }
 
-    [Fact]
-    [Trait("criterion", "AC-article-links-9")]
-    public void A_link_to_a_procedure_is_refused_until_articles_may_link_to_them()
-    {
-        var mistake = Assert.Single(Check(Linking("Ask first.", "Start [the quote](cms://procedure/quote)."), Target("cennik")));
-
-        Assert.Equal(MistakeCodes.ReferenceMalformed, mistake.Code);
-        Assert.Equal("llmGuide", mistake.Path);
-        Assert.Contains("procedure", mistake.Message, StringComparison.Ordinal);
-        Assert.Contains("[Title](cms://article/<id>)", mistake.Fix, StringComparison.Ordinal);
-    }
-
     [Theory]
     [Trait("criterion", "AC-article-links-10")]
     [InlineData("A code span `[x](cms://article/nope)` is text.")]

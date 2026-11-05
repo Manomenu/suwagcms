@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-instruction-context.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-inform-block.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Instruction context</title>
+<title>Inform block</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,11 +360,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Instruction context</h1>
+  <h1>Inform block</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 20 of the suwagcms feature map</span>
+    <span><b>Feature:</b> 19 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>articles</code>, <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
@@ -376,140 +376,128 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>An instruction in a procedure can carry a <code>context</code>: articles named by <code>id</code> and search queries written by the author. They are what the model should read before following the instruction.</p>
-    <p>A named article is a reference, so a missing one is refused on save and later guards protect it. A query is only text: the CMS stores it and never runs it, because the bot, or the search system it uses, does the searching.</p>
+    <p>A step can hold the block <code>inform</code>: an instruction for the agent, with its optional <code>context</code>, and <code>points</code>, a map from a name to what the customer must hear. Where <code>say</code> sends a fixed text, <code>inform</code> leaves the words to the model.</p>
+    <p>The CMS checks the block's form and that an article named in its context exists. Saying the points, and checking each was told, belong to the bot.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>10</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>When a customer gets stuck, <code>whenStalled</code> tells the model to give the office's phone number. That number is already in the article <code>officeContact</code>, so today the author either copies it into the instruction, where it goes stale, or leaves the model to guess. Suwchatbot already reads this <code>context</code> from its files in one shape for every instruction, and the CMS needs the same shape to be able to deliver it, along with a check that a named article exists.</p>
+  <p>After the land register number and the customer's name are collected, the customer must hear when the report will be ready and how it reaches them. With <code>say</code> the text is fixed, in one language, and ignores the conversation. A free answer from the model can leave the turnaround out. <code>inform</code> names each point that must get across, so a bot can check each one was told, and the first bot's engine already runs this shape.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>A fact is written once: an instruction refers to the article holding it.</li>
-      <li>A wrong article name is refused on save, not found in a customer's turn.</li>
-      <li>A step can ask for what the articles say on a subject without knowing which article says it.</li>
+      <li>A step lists what must reach the customer, each point with a name.</li>
+      <li>A real procedure file of the first bot loads through this format unchanged.</li>
+      <li>A half-built step can still be saved, as any other block can.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Running a query, or any index: the CMS builds none (README). A query reaches the bot as text in the version.</li>
-      <li>Delivering the context to the model: bots do that, and the first bot's specs are in its own repository.</li>
-      <li>A query built from the conversation: an author's query is fixed.</li>
-      <li>Context on <code>say</code>: it is a fixed text, with no model.</li>
-      <li>Refusing to delete a named article: <code>delete-guard</code>. Refusing a loop through it: <code>loop-guard</code>. The form in the creator: <code>procedure-creator</code>.</li>
+      <li>Writing the text, or checking what the model said: bots do that, and the first bot's specs are in its own repository.</li>
+      <li>Passing the value of a fact: a customer's fact is already in the conversation, and a constant is written in the point.</li>
+      <li>The rules on <code>context</code>: <code>instruction-context</code>. Refusing to delete or loop through an article it names: <code>delete-guard</code>, <code>loop-guard</code>.</li>
+      <li>The form in the creator: <code>procedure-creator</code>.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent points an instruction at an article</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml
-Saved orderValuation, revision 8.
-<span class="dim">$</span> suwagcms procedures show orderValuation
+  <h3>1. An agent adds a step that tells the customer what happens next</h3>
+  <div class="term"><span class="dim">$</span> suwagcms procedures edit valuationReport --file valuationReport.yaml
+Saved valuationReport, revision 6.
+<span class="dim">$</span> suwagcms procedures show valuationReport
 <span class="dim">…</span>
-whenStalled:
-  instruction: Tell the customer you could not finish and how to reach the office.
-  context:
-    articles: [officeContact]
-    searchQueries:
-      - how long a valuation takes</div>
-  <h3>2. A misspelt article</h3>
-  <div class="term">Refused, 1 mistake:
-  reference.missing  'context' of whenStalled in 'orderValuation' names article 'officeContacts', which this bot does not have. 'suwagcms articles list' shows them.</div>
-  <h3>3. A blank query</h3>
-  <div class="term">Saved orderValuation, revision 9. Not ready for a version, 1 mistake:
-  context.query.blank  'context' of whenStalled in 'orderValuation' has a blank search query. Write the query, or remove it.</div>
+  whatHappensNext:
+    inform:
+      instruction: Thank the customer and tell them what happens next with their valuation report.
+      points:
+        turnaround: The report is ready within 7 working days of the inspection.
+        delivery: The report is sent by e-mail as a PDF.</div>
+  <h3>2. A misspelt article and a point name in the wrong form</h3>
+  <div class="term">Refused, 2 mistakes:
+  reference.missing      'context' of step 'whatHappensNext' in 'valuationReport' names article 'officeContacts', which this bot does not have. 'suwagcms articles list' shows them.
+  step.inform.pointName  The point name 'when_ready' in 'inform' of step 'whatHappensNext' is not camelCase. Rename it to 'whenReady'.</div>
+  <h3>3. A step not finished yet</h3>
+  <div class="term">Saved valuationReport, revision 7. Not ready for a version, 2 mistakes:
+  step.inform.empty   'inform' of step 'whatHappensNext' has no points. List what the customer must hear: points: { name: what must be said }.
+  instruction.blank   'inform' of step 'whatHappensNext' has no instruction. Say what the agent should do with these points.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>The two keys</h3>
-  <p>Every instruction has one shape: a required <code>instruction</code> and an optional <code>context</code>, holding <code>articles</code>, <code>searchQueries</code>, or both. The author picks between them: a named article cannot miss and is checked here, while a query follows the articles as they change, and its result is known only to the bot.</p>
+  <h3>What the block means</h3>
+  <p>When a procedure reaches the step, the bot has the model tell the customer the points, following the instruction, then goes on from <code>next</code> without waiting for a message, as with <code>say</code>. Unlike <code>say</code>, the customer gets the model's words.</p>
   <table>
-    <tr><th></th><th><code>articles</code></th><th><code>searchQueries</code></th></tr>
-    <tr><td>Holds</td><td>ids of this bot's articles, from any knowledge base</td><td>plain text the bot searches with</td></tr>
-    <tr><td>Is a reference</td><td>yes: it blocks deleting the article and follows a change of its <code>id</code></td><td>no: words in a query name nothing, and are not protected</td></tr>
-    <tr><td>Checked by the CMS</td><td>that it exists</td><td>that it is not blank, and that the bot has an article to search</td></tr>
+    <tr><th>Field</th><th>Holds</th><th>Rule</th></tr>
+    <tr><td><code>instruction</code></td><td>what the agent does: the same instruction form as <code>whenStalled</code></td><td>required before a version, not blank</td></tr>
+    <tr><td><code>context</code></td><td>optional: <code>articles</code> and <code>searchQueries</code>, as on every instruction</td><td>the rules of <code>instruction-context</code></td></tr>
+    <tr><td><code>points</code></td><td>a map from a camelCase name to what the customer must hear</td><td>at least one before a version, none blank; the order written is kept</td></tr>
   </table>
   <h3>What is checked when</h3>
   <table>
     <tr><th>Mistake</th><th>Stage</th></tr>
-    <tr><td>an article this bot does not have, including one only another bot has</td><td>Save, with <code>reference.missing</code></td></tr>
-    <tr><td>an article <code>id</code> that is not camelCase</td><td>Save</td></tr>
-    <tr><td>a key <code>context</code> does not have, or <code>context</code> on something that is not an instruction</td><td>Save, on the server: unknown fields are refused on every save</td></tr>
-    <tr><td>a blank query</td><td>Version, as a blank instruction is: work still to do</td></tr>
-    <tr><td>a query in a bot with no articles</td><td>Version: nothing could ever be found (see Open questions)</td></tr>
+    <tr><td>an article this bot does not have, in the context</td><td>Save, with <code>reference.missing</code></td></tr>
+    <tr><td>a point name that is not camelCase</td><td>Save, with <code>step.inform.pointName</code></td></tr>
+    <tr><td>a field the block does not have</td><td>Save, on the server: unknown fields are refused on every save</td></tr>
+    <tr><td>no points</td><td>Version, with <code>step.inform.empty</code></td></tr>
+    <tr><td>a point with no text</td><td>Version, with <code>step.inform.pointBlank</code></td></tr>
+    <tr><td>a blank or missing <code>instruction</code></td><td>Version, with <code>instruction.blank</code></td></tr>
   </table>
   <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing. The rules are in the validator, so they hold offline too.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>no <code>context</code>, or an empty list in it</td><td>accepted, the same as having none</td></tr>
-    <tr><td>one article or query written twice</td><td>accepted, and read back as written; it means one thing to read</td></tr>
-    <tr><td>an article in another knowledge base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
-    <tr><td>saving a query while the bot is down, or no search system exists</td><td>accepted: the CMS calls nothing to store a query</td></tr>
+    <tr><td>a text that looks like a number or a boolean, in YAML</td><td>read as text: a point is always text</td></tr>
+    <tr><td><code>inform</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
+    <tr><td><code>next</code> on an <code>inform</code> step</td><td>the same rules as on any step; with none, the procedure ends</td></tr>
   </table>
 </section>
 <section data-role="data">
   <h2>Format</h2>
-  <p>This is part of the public contract with bots, and it matches the shape Suwchatbot's reader already loads. It adds an optional field, so it does not raise <code>formatVersion</code>.</p>
+  <p>This is part of the public contract with bots, in the shape the first bot's engine reads.</p>
   <script type="text/x-code" data-file="in a procedure" data-lang="yaml">
-whenStalled:
-  instruction: Tell the customer you could not finish and how to reach the office.
-  context:
-    articles: [officeContact]
-    searchQueries:
-      - how long a valuation takes
+whatHappensNext:
+  inform:
+    instruction: Thank the customer and tell them what happens next.
+    context:
+      articles: [deliveryTimes]
+      searchQueries: [how a report is sent]
+    points:
+      turnaround: The report is ready within 7 working days of the inspection.
+      delivery: The report is sent by e-mail as a PDF.
+  next: wait
   </script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>The same shape on every instruction: an instruction loads into one model, so a later block cannot define it differently.</li>
-    <li>The CMS only stores a query: testing it would need an index or a call to the bot, and the CMS builds no index and does not read a bot's content to save an edit.</li>
-    <li><code>context</code> names articles only, not procedures: a procedure is not something to read. A guide may name one with a link: <code>article-procedure-links</code>.</li>
+    <li>The set of blocks is fixed and defined in the SDK, so this block has the shape the first bot's engine runs, and that engine can consume the SDK's definition instead of its own.</li>
+    <li>No points and a blank text or instruction are <code>Version</code> mistakes, for the reason <code>procedure-model</code> gives: they are work still to do. A wrong name breaks the form, so it is a <code>Save</code> mistake.</li>
+    <li>The instruction is required, as on <code>whenStalled</code>: without it a bot would have to invent how to phrase the step, and two bots would do it differently.</li>
+    <li>What the model should read goes in the context, and an article named there is the reference; a point holds the words that must get across. A point names no fact, since a customer's fact is already in the conversation.</li>
+    <li>Points are a map, not a list, because a bot reports by name which point was told. The store keeps the keys as written, so the map's order survives.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-instruction-context-1</code> A <code>whenStalled</code> with an instruction, articles and search queries, saved with <code>suwagcms procedures add --file</code>, reads back as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
-    <li><code>AC-instruction-context-2</code> An instruction with no <code>context</code>, with an empty one, or with empty lists is accepted, and <code>context</code> holding only one of the two keys is accepted.</li>
-    <li><code>AC-instruction-context-3</code> An article this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming where the context is; an article in another knowledge base of this bot is accepted.</li>
-    <li><code>AC-instruction-context-4</code> An article <code>id</code> that is not camelCase, a key <code>context</code> does not have, and <code>context</code> on a block with no instruction are each refused with a mistake and a fix.</li>
-    <li><code>AC-instruction-context-5</code> A blank query is saved, and the answer lists it among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports it.</li>
-    <li><code>AC-instruction-context-6</code> A query in a bot with no articles is reported as a <code>Version</code> mistake, and the mistake goes once the bot has an article.</li>
-    <li><code>AC-instruction-context-7</code> A save holding a query succeeds with no bot reachable and no outside call made, and the query reads back byte for byte.</li>
-    <li><code>AC-instruction-context-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
-    <li><code>AC-instruction-context-9</code> The plugin's main skill gives the form of <code>context</code> and says when to name an article and when to write a query.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>inform-block</code>:</b> the instruction of an <code>inform</code> takes a <code>context</code>, under the same rules as on <code>whenStalled</code>.</li>
+    <li><code>AC-inform-block-1</code> A procedure with an <code>inform</code> step holding an instruction, a context and points, saved with <code>suwagcms procedures add --file</code>, reads back with all of them and its <code>next</code>, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-inform-block-2</code> An article in the context that this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step; an article in another knowledge base of this bot is accepted.</li>
+    <li><code>AC-inform-block-5</code> A save holding several bad names, articles and point names alike, returns a mistake for each at once.</li>
+    <li><code>AC-inform-block-6</code> An <code>inform</code> with no points, one with a blank point, and one with a blank or missing instruction, are each saved, and the answer lists them among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports them.</li>
+    <li><code>AC-inform-block-7</code> An <code>inform</code> beside another block in one step is refused, a save with a field the block does not have is refused naming the field, and the mistakes that list the blocks now name <code>inform</code>.</li>
+    <li><code>AC-inform-block-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
+    <li><code>AC-inform-block-9</code> The plugin's main skill gives the form of the block and how it differs from <code>say</code>.</li>
+    <li><code>AC-inform-block-11</code> A point name that is not camelCase is refused with <code>step.inform.pointName</code> and the name to use.</li>
+    <li><code>AC-inform-block-12</code> Copies of the first bot's procedure files, <code>conversation.yaml</code> and <code>valuationReport.yaml</code> among them, read by the CLI's file reader, are accepted by the validator at stage <code>Version</code> given matching facts and a declaration of the blocks that bot runs, with the points in the order written.</li>
+    <li><code>AC-inform-block-13</code> The points of an <code>inform</code> read back from the server in the order written.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p>A query can find the wrong text without anyone in the CMS noticing, and what it finds changes whenever articles do. The CMS cannot run it, so this is left to the bot's own tests. An author who wants certainty names the article.</p></div>
-  <div class="callout assumption"><p>Suwchatbot refuses a named article that does not exist, a blank query and a query in a bot with no articles when it starts. The stages here are chosen so that a version it receives passes those checks.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Is a query in a bot with no articles a mistake?</legend>
-      <p class="why">Suwchatbot refuses it when it starts, so a version with one would fail there. But a bot may feed an external search system with data the CMS does not hold, where a query could find something with no article in the CMS. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="version"><span><b>Yes, a <code>Version</code> mistake</b><small>a bot fails at the push instead of at load, which is the earlier and clearer place; it is easy to lift if a real bot needs it</small></span></label>
-      <label><input type="radio" value="allow"><span><b>No: the CMS does not judge queries</b><small>fits a bot with its own search data, but the first bot refuses such a version only when it loads it</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout risk"><p><b>An action's result has no way to the customer yet.</b> A point is fixed text and names no fact. The first bot's <code>inform-step</code> spec leaves this to its first real need; when that comes, an optional field can arrive without raising <code>formatVersion</code>.</p></div>
+  <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

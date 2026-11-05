@@ -414,4 +414,51 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
         Assert.NotNull(usage);
         Assert.Empty(usage.Uses);
     }
+
+    [Fact]
+    [Trait("criterion", "AC-resource-rename-24")]
+    public async Task Changing_a_procedures_id_rewrites_each_start_that_targets_it()
+    {
+        var scene = await NewScene();
+        Assert.Equal(HttpStatusCode.OK, (await scene.Api.Add("documentsList", """{"description":"D"}""")).StatusCode);
+        var starter = """{"description":"D","firstStep":"go","steps":{"go":{"start":"documentsList","next":"bye"},"bye":{"say":"Bye"}}}""";
+        Assert.Equal(HttpStatusCode.OK, (await scene.Api.Add("orderValuation", starter)).StatusCode);
+
+        Assert.Equal(HttpStatusCode.OK, (await scene.Rename("procedures", "documentsList", "documents")).StatusCode);
+
+        var step = (await scene.Read("procedures", "orderValuation")).GetProperty("steps").GetProperty("go");
+        Assert.Equal("documents", step.GetProperty("start").GetString());
+        Assert.Equal("bye", step.GetProperty("next").GetString());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-resource-rename-26")]
+    public async Task Changing_an_articles_id_rewrites_each_context_and_a_query_holding_those_words_stays_as_it_is()
+    {
+        var scene = await NewScene();
+        await scene.AddArticle("cennik");
+        var context = """{"articles":["cennik"],"searchQueries":["cennik of the office"]}""";
+        var body =
+            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","points":{"prices":"The prices."},"context":CONTEXT}}},"whenStalled":{"instruction":"Say so.","context":CONTEXT}}""".Replace(
+                "CONTEXT",
+                context,
+                StringComparison.Ordinal
+            );
+        Assert.Equal(HttpStatusCode.OK, (await scene.Api.Add("orderValuation", body)).StatusCode);
+
+        Assert.Equal(HttpStatusCode.OK, (await scene.Rename("articles", "cennik", "priceList")).StatusCode);
+
+        var read = await scene.Read("procedures", "orderValuation");
+        foreach (
+            var found in new[]
+            {
+                read.GetProperty("whenStalled").GetProperty("context"),
+                read.GetProperty("steps").GetProperty("tell").GetProperty("inform").GetProperty("context"),
+            }
+        )
+        {
+            Assert.Equal("priceList", found.GetProperty("articles")[0].GetString());
+            Assert.Equal("cennik of the office", found.GetProperty("searchQueries")[0].GetString());
+        }
+    }
 }

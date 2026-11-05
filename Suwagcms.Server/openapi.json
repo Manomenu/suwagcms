@@ -3863,6 +3863,56 @@
         },
         "description": "A page of history, newest first. Next is the `before` that asks for the next page, empty on the last; Since is when history started, so an empty page can say no change has been recorded since then."
       },
+      "InformArguments": {
+        "type": "object",
+        "properties": {
+          "instruction": {
+            "type": "string"
+          },
+          "context": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InstructionContext"
+              }
+            ]
+          },
+          "points": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "InstructionContext": {
+        "type": "object",
+        "properties": {
+          "articles": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "searchQueries": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "JsonElement": { },
       "KnowledgeBaseView": {
         "required": [
@@ -4186,6 +4236,22 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "inform": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InformArguments"
+              }
+            ]
           },
           "action": {
             "type": [
@@ -4887,6 +4953,16 @@
         "properties": {
           "instruction": {
             "type": "string"
+          },
+          "context": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InstructionContext"
+              }
+            ]
           }
         }
       },

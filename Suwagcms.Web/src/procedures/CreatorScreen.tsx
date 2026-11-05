@@ -3,14 +3,27 @@ import { useEffect, useState } from "react";
 import { fetchDeclaration } from "@/api/declaration";
 import { Alert } from "@/design/alert";
 
-import { fetchActions, fetchFacts, fetchLayout, fetchProcedure, type ActionView, type Fact, type ProcedureDetail } from "./api";
+import {
+    fetchActions,
+    fetchArticles,
+    fetchFacts,
+    fetchLayout,
+    fetchProcedure,
+    fetchProcedures,
+    type ActionView,
+    type Fact,
+    type ProcedureDetail,
+} from "./api";
 import { Creator } from "./Creator";
+import type { LinkableArticle } from "./draft";
 import type { Positions } from "./layout";
 import { offeredBlocks, type OfferedBlocks } from "./offeredBlocks";
 
 interface Loaded {
     detail: ProcedureDetail;
     facts: Fact[];
+    procedures: string[];
+    articles: LinkableArticle[];
     actions: ActionView[];
     stored: Positions;
     offered: OfferedBlocks;
@@ -28,14 +41,18 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
             fetchProcedure(bot, id, controller.signal),
             fetchFacts(bot, controller.signal),
             fetchLayout(bot, id, controller.signal),
+            fetchProcedures(bot, controller.signal),
+            fetchArticles(bot, controller.signal),
             // Why: the last answer, not a new ask: opening a form must not wait on a bot.
             fetchDeclaration(bot, controller.signal, false),
             fetchActions(bot, controller.signal),
         ])
-            .then(([detail, facts, layout, declaration, actions]) => {
+            .then(([detail, facts, layout, list, articles, declaration, actions]) => {
                 setLoaded({
                     detail,
                     facts,
+                    procedures: list.procedures.map((procedure) => procedure.id),
+                    articles: articles.map((article) => ({ id: article.id, title: article.title })),
                     actions,
                     offered: offeredBlocks(declaration),
                     stored: Object.fromEntries(
@@ -65,6 +82,8 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
             id={id}
             initial={loaded.detail}
             facts={loaded.facts}
+            procedures={loaded.procedures}
+            articles={loaded.articles}
             actions={loaded.actions}
             stored={loaded.stored}
             offered={loaded.offered}

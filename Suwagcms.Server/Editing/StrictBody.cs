@@ -74,7 +74,7 @@ internal static class StrictBody
                         target,
                         (exception.Path ?? "$").Replace("$.", "", StringComparison.Ordinal),
                         $"The body does not fit: {exception.Message}",
-                        "Fix the value at the path: numbers are whole numbers, lists hold strings."
+                        "Fix the value at the path: numbers are whole numbers, lists hold strings, and a field the format does not have is removed."
                     ),
                 ]
             );

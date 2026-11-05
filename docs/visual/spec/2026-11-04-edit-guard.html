@@ -381,7 +381,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>18</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -501,13 +500,6 @@ Refused, 1 mistake:
     <li><code>AC-edit-guard-16</code> The plugin's main skill says that <code>--dry-run</code> on an edit answers “what would this change break?”, and that only the server sees a type change.</li>
     <li><code>AC-edit-guard-17</code> The same refusals hold for a local fact when a save of its procedure would break a step of that procedure: removing a value, changing the type, narrowing, or setting <code>writableBy: assign</code>.</li>
     <li><code>AC-edit-guard-18</code> Removing or retyping an action's parameter or result that a procedure's step maps is refused, listing each step; a fact mapped to a parameter or a result counts as a use, so its type cannot change.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>inform-block</code>:</b> a fact named in an <code>inform</code> counts as a use, so its type cannot change.</li>
   </ul>
 </section>
 <section data-role="risks">

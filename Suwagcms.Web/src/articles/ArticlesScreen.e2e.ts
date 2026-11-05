@@ -28,14 +28,14 @@ async function addArticle(
     request: APIRequestContext,
     bot: string,
     id: string,
-    extra: { knowledgeBase?: string; title?: string; description?: string; content?: string } = {},
+    extra: { knowledgeBase?: string; title?: string; description?: string; content?: string; llmGuide?: string } = {},
 ): Promise<void> {
     const response = await request.put(`/api/bots/${bot}/articles/${id}?ifRevision=0`, {
         data: {
             knowledgeBase: extra.knowledgeBase ?? "offer",
             title: extra.title ?? "Price list",
             content: extra.content ?? "What a valuation costs.",
-            llmGuide: "Ask which kind of property first.",
+            llmGuide: extra.llmGuide ?? "Ask which kind of property first.",
             description: extra.description ?? "What a valuation costs",
         },
     });
@@ -367,7 +367,7 @@ test("AC-article-links-1: choosing an article in the picker puts a chip with its
     await page.locator('[data-markdown-editor="content"]').getByRole("button", { name: "Insert link" }).click();
     await page.keyboard.type("cen");
     await page
-        .getByRole("listbox", { name: "Articles to link" })
+        .getByRole("listbox", { name: "What to link" })
         .getByRole("option", { name: /Price list/ })
         .click();
     await page.keyboard.type("now.");
@@ -389,7 +389,7 @@ test("AC-article-links-2: the picker lists the articles of every base of this bo
     await addArticle(request, bot, "wycena", { title: "Valuation" });
     await addArticle(request, other, "secret", { title: "Secret price" });
     await openEditor(page, bot, "wycena");
-    const options = page.getByRole("listbox", { name: "Articles to link" }).getByRole("option");
+    const options = page.getByRole("listbox", { name: "What to link" }).getByRole("option");
 
     await page.getByRole("textbox", { name: "content" }).click();
     await page.locator('[data-markdown-editor="content"]').getByRole("button", { name: "Insert link" }).click();
@@ -406,7 +406,7 @@ test("AC-article-links-2: the picker lists the articles of every base of this bo
     await page.keyboard.press("Backspace");
     await page.keyboard.press("Backspace");
     await page.keyboard.type("secret");
-    await expect(page.getByText("No article matches")).toBeVisible();
+    await expect(page.getByText("Nothing matches")).toBeVisible();
 });
 
 test("AC-article-links-3: opening an article with links and saving another field leaves its text as stored", async ({ page, request }) => {
@@ -512,7 +512,7 @@ test("AC-loop-guard-1: a link that closes a loop is refused beside the field, wi
     await page.locator('[data-markdown-editor="content"]').getByRole("button", { name: "Insert link" }).click();
     await page.keyboard.type("disc");
     await page
-        .getByRole("listbox", { name: "Articles to link" })
+        .getByRole("listbox", { name: "What to link" })
         .getByRole("option", { name: /Discounts/ })
         .click();
     await page.getByRole("button", { name: "Save" }).click();
@@ -646,4 +646,54 @@ test("AC-resource-rename-12: a dialog opened at an old revision is refused with 
 
     await expect(dialog).toContainText("it is now revision 2");
     await expect(dialog.getByRole("button", { name: "Change id" })).toBeDisabled();
+});
+
+test("AC-article-procedure-links-1: in the guide the picker offers a procedure, the chip shows its id, the saved text holds the link, and the chip opens the procedure", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "wycena", { title: "Valuation", llmGuide: "If so, start " });
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/procedures/orderValuation?ifRevision=0`, {
+                data: { description: "The customer orders a valuation" },
+            })
+        ).status(),
+    ).toBe(200);
+    await openEditor(page, bot, "wycena");
+
+    await page.getByRole("textbox", { name: "llmGuide" }).click();
+    await page.keyboard.press("Control+End");
+    await page.locator('[data-markdown-editor="llmGuide"]').getByRole("button", { name: "Insert link" }).click();
+    await page.keyboard.type("orderV");
+    await page
+        .getByRole("listbox", { name: "What to link" })
+        .getByRole("option", { name: /procedure.*orderValuation/ })
+        .click();
+    const chip = page.locator('[data-markdown-editor="llmGuide"] [data-procedure-link="orderValuation"]');
+    await expect(chip).toHaveText("orderValuation");
+
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByRole("textbox", { name: "llmGuide" })).toHaveCount(0);
+    const stored = (await (await request.get(`/api/bots/${bot}/articles/wycena`)).json()) as { llmGuide: string };
+    expect(stored.llmGuide).toContain("[orderValuation](cms://procedure/orderValuation)");
+
+    await openEditor(page, bot, "wycena");
+    await page.locator('[data-markdown-editor="llmGuide"] [data-procedure-link="orderValuation"]').click();
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation$`));
+});
+
+test("AC-article-procedure-links-2: the picker in content offers no procedure", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "wycena", { title: "Valuation", content: "See " });
+    await request.put(`/api/bots/${bot}/procedures/orderValuation?ifRevision=0`, { data: { description: "D" } });
+    await openEditor(page, bot, "wycena");
+
+    await page.getByRole("textbox", { name: "content" }).click();
+    await page.keyboard.press("Control+End");
+    await page.locator('[data-markdown-editor="content"]').getByRole("button", { name: "Insert link" }).click();
+    await page.keyboard.type("orderValuation");
+
+    await expect(page.getByRole("listbox", { name: "What to link" })).toContainText("Nothing matches");
 });

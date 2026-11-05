@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-start-block.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-instruction-context.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Start block</title>
+<title>Instruction context</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Start block</h1>
+  <h1>Instruction context</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 18 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>procedure-model</code></span>
+    <span><b>Feature:</b> 20 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>articles</code>, <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,129 +376,122 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A step can hold a new block, <code>start: documentsList</code>, which starts another procedure of the same bot. It is the format's equivalent of Rasa's <code>call</code>, and it makes a reference from one procedure to another.</p>
-    <p>The CMS checks that the target exists and refuses <code>conversation</code> as a target, since that is the base of every conversation. Running the block belongs to the bot.</p>
+    <p>An instruction in a procedure can carry a <code>context</code>: articles named by <code>id</code> and search queries written by the author. They are what the model should read before following the instruction.</p>
+    <p>A named article is a reference, so a missing one is refused on save and later guards protect it. A query is only text: the CMS stores it and never runs it, because the bot, or the search system it uses, does the searching.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>10</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>Two procedures that need the same part, such as collecting a land register number, must each copy its steps today, and the copies drift apart. README therefore has a <code>start</code> block. Because the target is named by <code>id</code>, the CMS can check it, which free text or a convention could not do.</p>
+  <p>When a customer gets stuck, <code>whenStalled</code> tells the model to give the office's phone number. That number is already in the article <code>officeContact</code>, so today the author either copies it into the instruction, where it goes stale, or leaves the model to guess. Suwchatbot already reads this <code>context</code> from its files in one shape for every instruction, and the CMS needs the same shape to be able to deliver it, along with a check that a named article exists.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>A step names another procedure as its one block, and the format says what that means.</li>
-      <li>A target that does not exist, or may not be started, is refused on save.</li>
-      <li>A half-built step can still be saved, as any other block can.</li>
+      <li>A fact is written once: an instruction refers to the article holding it.</li>
+      <li>A wrong article name is refused on save, not found in a customer's turn.</li>
+      <li>A step can ask for what the articles say on a subject without knowing which article says it.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Running the block: bots run procedures, and the first bot's specs are in its own repository.</li>
-      <li>Passing values to the started procedure: global facts are shared, and local facts are invisible by design.</li>
-      <li>Refusing a loop through <code>start</code>: <code>loop-guard</code>. Refusing to delete a target: <code>delete-guard</code>.</li>
-      <li>The form in the creator: <code>procedure-creator</code>. Offering the block only to bots that declare it: <code>bot-declaration</code>.</li>
-      <li>A limit on how deep starts may nest: no rule here can know what a bot can hold.</li>
+      <li>Running a query, or any index: the CMS builds none (README). A query reaches the bot as text in the version.</li>
+      <li>Delivering the context to the model: bots do that, and the first bot's specs are in its own repository.</li>
+      <li>A query built from the conversation: an author's query is fixed.</li>
+      <li>Context on <code>say</code>: it is a fixed text, with no model.</li>
+      <li>Refusing to delete a named article: <code>delete-guard</code>. Refusing a loop through it: <code>loop-guard</code>. The form in the creator: <code>procedure-creator</code>.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent reuses a procedure</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml   <span class="dim"># step getDocuments starts documentsList</span>
-Saved orderValuation, revision 5.
+  <h3>1. An agent points an instruction at an article</h3>
+  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml
+Saved orderValuation, revision 8.
 <span class="dim">$</span> suwagcms procedures show orderValuation
 <span class="dim">…</span>
-  getDocuments:
-    start: documentsList
-    next: confirm</div>
-  <h3>2. A typo in the target</h3>
+whenStalled:
+  instruction: Tell the customer you could not finish and how to reach the office.
+  context:
+    articles: [officeContact]
+    searchQueries:
+      - how long a valuation takes</div>
+  <h3>2. A misspelt article</h3>
   <div class="term">Refused, 1 mistake:
-  reference.missing  'start' of step 'getDocuments' in 'orderValuation' names procedure 'documentList', which this bot does not have. Procedures: conversation, documentsList, orderValuation.</div>
-  <h3>3. The base procedure as a target</h3>
-  <div class="term">Refused, 1 mistake:
-  start.target.conversation  'start' of step 'back' in 'orderValuation' names 'conversation', which cannot be started: it is the base of every conversation. End the procedure here instead, by leaving out 'next'.</div>
+  reference.missing  'context' of whenStalled in 'orderValuation' names article 'officeContacts', which this bot does not have. 'suwagcms articles list' shows them.</div>
+  <h3>3. A blank query</h3>
+  <div class="term">Saved orderValuation, revision 9. Not ready for a version, 1 mistake:
+  context.query.blank  'context' of whenStalled in 'orderValuation' has a blank search query. Write the query, or remove it.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>What the block means</h3>
-  <p>When a procedure reaches the step, the bot starts the target. When the target ends, the procedure goes on from the step's <code>next</code>, or ends if there is none. The target has its own local facts and sees none of the starter's. <code>next</code> follows the same rules as on any step, with rules on facts included, and those facts may have been written by the target if they are global.</p>
+  <h3>The two keys</h3>
+  <p>Every instruction has one shape: a required <code>instruction</code> and an optional <code>context</code>, holding <code>articles</code>, <code>searchQueries</code>, or both. The author picks between them: a named article cannot miss and is checked here, while a query follows the articles as they change, and its result is known only to the bot.</p>
+  <table>
+    <tr><th></th><th><code>articles</code></th><th><code>searchQueries</code></th></tr>
+    <tr><td>Holds</td><td>ids of this bot's articles, from any knowledge base</td><td>plain text the bot searches with</td></tr>
+    <tr><td>Is a reference</td><td>yes: it blocks deleting the article and follows a change of its <code>id</code></td><td>no: words in a query name nothing, and are not protected</td></tr>
+    <tr><td>Checked by the CMS</td><td>that it exists</td><td>that it is not blank, and that the bot has an article to search</td></tr>
+  </table>
   <h3>What is checked when</h3>
   <table>
     <tr><th>Mistake</th><th>Stage</th></tr>
-    <tr><td>a target that is not a camelCase <code>id</code></td><td>Save</td></tr>
-    <tr><td>a target this bot does not have, including one only another bot has</td><td>Save, with <code>reference.missing</code></td></tr>
-    <tr><td>the target <code>conversation</code></td><td>Save, with <code>start.target.conversation</code></td></tr>
-    <tr><td>a blank target</td><td>Version, like an empty <code>collect</code>: an author can add the step before filling it in</td></tr>
+    <tr><td>an article this bot does not have, including one only another bot has</td><td>Save, with <code>reference.missing</code></td></tr>
+    <tr><td>an article <code>id</code> that is not camelCase</td><td>Save</td></tr>
+    <tr><td>a key <code>context</code> does not have, or <code>context</code> on something that is not an instruction</td><td>Save, on the server: unknown fields are refused on every save</td></tr>
+    <tr><td>a blank query</td><td>Version, as a blank instruction is: work still to do</td></tr>
+    <tr><td>a query in a bot with no articles</td><td>Version: nothing could ever be found</td></tr>
   </table>
-  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing, as <code>procedure-model</code> says. The rules are in the validator, so they hold offline too.</p>
+  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing. The rules are in the validator, so they hold offline too.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a step of <code>conversation</code> starts a procedure</td><td>allowed: it is only the target that is restricted</td></tr>
-    <tr><td>a target with its own <code>Version</code> mistakes</td><td>the save is accepted; the working state may be unfinished, and those mistakes stop a version anyway</td></tr>
-    <tr><td>two procedures start one target</td><td>allowed</td></tr>
-    <tr><td><code>start</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
-    <tr><td>a procedure starting itself, or a longer loop</td><td>refused by <code>loop-guard</code>, not here</td></tr>
+    <tr><td>no <code>context</code>, or an empty list in it</td><td>accepted, the same as having none</td></tr>
+    <tr><td>one article or query written twice</td><td>accepted, and read back as written; it means one thing to read</td></tr>
+    <tr><td>an article in another knowledge base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
+    <tr><td>saving a query while the bot is down, or no search system exists</td><td>accepted: the CMS calls nothing to store a query</td></tr>
   </table>
 </section>
 <section data-role="data">
   <h2>Format</h2>
-  <p>This is part of the public contract with bots.</p>
+  <p>This is part of the public contract with bots, and it matches the shape Suwchatbot's reader already loads. It adds an optional field, so it does not raise <code>formatVersion</code>.</p>
   <script type="text/x-code" data-file="in a procedure" data-lang="yaml">
-getDocuments:
-  start: documentsList
-  next:
-    - when: { documents.complete: { oneOf: [yes] } }
-      to: confirm
-    - to: askAgain
+whenStalled:
+  instruction: Tell the customer you could not finish and how to reach the office.
+  context:
+    articles: [officeContact]
+    searchQueries:
+      - how long a valuation takes
   </script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>A scalar target, like <code>say</code>, and not a mapping: the block has one thing to say, and nothing to map, since an action's mapping exists only because actions never name facts.</li>
-    <li><code>next</code> applies after the target ends, as with Rasa's <code>call</code>: a step's <code>next</code> always says where the procedure goes after its block, and this keeps that true.</li>
-    <li>A blank target is a <code>Version</code> mistake and a wrong one a <code>Save</code> mistake, for the reason <code>procedure-model</code> gives: the first is work still to do, and the second breaks a reference.</li>
+    <li>The same shape on every instruction: an instruction loads into one model, so a later block cannot define it differently.</li>
+    <li>The CMS only stores a query: testing it would need an index or a call to the bot, and the CMS builds no index and does not read a bot's content to save an edit.</li>
+    <li><code>context</code> names articles only, not procedures: a procedure is not something to read. A guide may name one with a link: <code>article-procedure-links</code>.</li>
+    <li>A query in a bot with no articles is a <code>Version</code> mistake: a bot fails at the push instead of at load, which is the earlier and clearer place, and it is easy to lift if a real bot needs it.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-start-block-1</code> A procedure with a <code>start</code> step, saved with <code>suwagcms procedures add --file</code>, reads back with the block and its <code>next</code> as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
-    <li><code>AC-start-block-2</code> A target this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step and listing this bot's procedures.</li>
-    <li><code>AC-start-block-3</code> The target <code>conversation</code> is refused with <code>start.target.conversation</code> and a fix, whichever procedure holds the step.</li>
-    <li><code>AC-start-block-4</code> A target that is not a camelCase <code>id</code> is refused with a mistake and a fix.</li>
-    <li><code>AC-start-block-5</code> A blank target is saved, and the answer lists it among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports it.</li>
-    <li><code>AC-start-block-6</code> A <code>start</code> beside another block in one step is refused, and the mistakes that list the blocks now name <code>start</code>.</li>
-    <li><code>AC-start-block-7</code> A step of <code>conversation</code> can start another procedure, two procedures can start one target, and a target with <code>Version</code> mistakes of its own can be saved as a target.</li>
-    <li><code>AC-start-block-8</code> The validator on its own reports each of these mistakes with the same code.</li>
-    <li><code>AC-start-block-9</code> The plugin's main skill gives the form of the block.</li>
+    <li><code>AC-instruction-context-1</code> A <code>whenStalled</code> with an instruction, articles and search queries, saved with <code>suwagcms procedures add --file</code>, reads back as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-instruction-context-2</code> An instruction with no <code>context</code>, with an empty one, or with empty lists is accepted, and <code>context</code> holding only one of the two keys is accepted.</li>
+    <li><code>AC-instruction-context-3</code> An article this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming where the context is; an article in another knowledge base of this bot is accepted.</li>
+    <li><code>AC-instruction-context-4</code> An article <code>id</code> that is not camelCase, a key <code>context</code> does not have, and <code>context</code> on a block with no instruction are each refused with a mistake and a fix.</li>
+    <li><code>AC-instruction-context-5</code> A blank query is saved, and the answer lists it among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports it.</li>
+    <li><code>AC-instruction-context-6</code> A query in a bot with no articles is reported as a <code>Version</code> mistake, and the mistake goes once the bot has an article.</li>
+    <li><code>AC-instruction-context-7</code> A save holding a query succeeds with no bot reachable and no outside call made, and the query reads back byte for byte.</li>
+    <li><code>AC-instruction-context-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
+    <li><code>AC-instruction-context-9</code> The plugin's main skill gives the form of <code>context</code> and says when to name an article and when to write a query.</li>
+    <li><code>AC-instruction-context-10</code> The instruction of an <code>inform</code> takes a context, under the same rules as on <code>whenStalled</code>.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>The first bot has no such block yet.</b> Suwchatbot's specs say a procedure cannot start another one, and its stack starts procedures only from a message. Until a bot declares <code>start</code>, nothing runs it, and <code>bot-declaration</code> keeps it out of what that bot is offered.</p></div>
-  <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What does a <code>start</code> do when its target is turned off?</legend>
-      <p class="why">README says the model cannot start a procedure that is off, and that an article named explicitly is still delivered, but it does not say what an explicit <code>start</code> does. This spec only fixes the meaning for bots; <code>availability</code> holds its criterion. It assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="runs"><span><b>It still starts: off limits only the model</b><small>matches the rule for articles, and a procedure never stops halfway because of a switch elsewhere</small></span></label>
-      <label><input type="radio" value="next"><span><b>It is skipped, and the procedure goes on from <code>next</code></b><small>a stronger switch, but the facts the target should have written stay empty, and every branch after it must cope</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Does <code>next</code> wait until the target ends?</legend>
-      <p class="why">README maps Rasa's <code>call</code> to <code>start</code>, and <code>call</code> returns to the caller. Suwchatbot's stack has another idea of what comes back on top. This is the format's meaning, so it is costly to change later. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="after"><span><b>Yes: the starter goes on from <code>next</code> once the target ends</b><small>it is what makes a shared part reusable, and it is what README's mapping says</small></span></label>
-      <label><input type="radio" value="handoff"><span><b>No: <code>start</code> ends the starter and hands over</b><small>simpler for a bot, but a <code>start</code> could then have no <code>next</code>, and shared parts could not return</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout risk"><p>A query can find the wrong text without anyone in the CMS noticing, and what it finds changes whenever articles do. The CMS cannot run it, so this is left to the bot's own tests. An author who wants certainty names the article.</p></div>
+  <div class="callout assumption"><p>Suwchatbot today checks the form of a named article and that a query is not blank, and has no articles to check against. The stages here are chosen so that a version it receives passes those checks.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

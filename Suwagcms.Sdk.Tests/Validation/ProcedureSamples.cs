@@ -137,6 +137,21 @@ internal static class ProcedureSamples
                         },
                         ["none"] = new JsonObject(),
                         ["blank"] = new JsonObject { ["say"] = " " },
+                        ["toBase"] = new JsonObject { ["start"] = "conversation" },
+                        ["informNothing"] = new JsonObject { ["inform"] = new JsonObject { ["instruction"] = " " } },
+                        ["informBadly"] = new JsonObject
+                        {
+                            ["inform"] = new JsonObject
+                            {
+                                ["instruction"] = "Say it.",
+                                ["points"] = new JsonObject { ["Bad Name"] = " " },
+                            },
+                        },
+                        ["defaultFirst"] = new JsonObject
+                        {
+                            ["say"] = "x",
+                            ["next"] = new JsonArray(new JsonObject { ["to"] = "mark" }, new JsonObject { ["to"] = "ask" }),
+                        },
                         ["emptyAssign"] = new JsonObject { ["assign"] = new JsonObject() },
                         ["ask"] = new JsonObject
                         {
@@ -174,7 +189,11 @@ internal static class ProcedureSamples
                     ["id"] = "noFirstStep",
                     ["description"] = "d",
                     ["steps"] = new JsonObject { ["ask"] = new JsonObject { ["collect"] = new JsonArray("order.kind") } },
-                    ["whenStalled"] = new JsonObject { ["instruction"] = " " },
+                    ["whenStalled"] = new JsonObject
+                    {
+                        ["instruction"] = " ",
+                        ["context"] = new JsonObject { ["searchQueries"] = new JsonArray("how long", " ") },
+                    },
                 },
                 new JsonObject
                 {

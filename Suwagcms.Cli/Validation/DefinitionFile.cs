@@ -75,14 +75,16 @@ internal static class DefinitionFile
         }
         if (value is "" or "~" or "null")
         {
-            return key == "listen" ? new JsonObject() : null;
+            return key == "listen" ? new JsonObject()
+                : parent == "points" ? ""
+                : null;
         }
-        if (parent != "assign" && Booleans.Contains(key, StringComparer.Ordinal) && value is "true" or "false")
+        if (parent is not ("assign" or "points") && Booleans.Contains(key, StringComparer.Ordinal) && value is "true" or "false")
         {
             return value == "true";
         }
         return
-            parent != "assign"
+            parent is not ("assign" or "points")
             && Numbers.Contains(key, StringComparer.Ordinal)
             && int.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number)
             ? number

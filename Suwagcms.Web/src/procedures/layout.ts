@@ -12,7 +12,8 @@ const RULE_ROW = 24;
 const PADDING = 12;
 
 function blockLines(step: Step): number {
-    return [step.listen, step.collect, step.say, step.assign, step.action].filter((block) => block !== undefined).length;
+    return [step.listen, step.collect, step.say, step.assign, step.start, step.inform, step.action].filter((block) => block !== undefined)
+        .length;
 }
 
 function ruleRows(step: Step): number {

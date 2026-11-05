@@ -24,7 +24,19 @@ import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
 import { type ActionView, fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
-import { addStep, connect, deleteStep, disconnect, edgesOf, factsSeen, stepOrder, toSave, type BlockName, type Draft } from "./draft";
+import {
+    addStep,
+    connect,
+    deleteStep,
+    disconnect,
+    edgesOf,
+    factsSeen,
+    stepOrder,
+    toSave,
+    type BlockName,
+    type Draft,
+    type LinkableArticle,
+} from "./draft";
 import type { OfferedBlocks } from "./offeredBlocks";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
 import { MistakeList } from "./MistakeList";
@@ -97,6 +109,8 @@ function CreatorBody({
     id,
     initial,
     facts,
+    procedures,
+    articles,
     actions,
     stored,
     offered,
@@ -105,6 +119,8 @@ function CreatorBody({
     id: string;
     initial: ProcedureDetail;
     facts: Fact[];
+    procedures: string[];
+    articles: LinkableArticle[];
     actions: ActionView[];
     offered: OfferedBlocks;
     stored: Positions;
@@ -339,9 +355,12 @@ function CreatorBody({
                         <StepForm
                             key={selected}
                             bot={bot}
+                            id={id}
                             name={selected}
                             draft={draft}
                             facts={factsSeen(draft, facts)}
+                            procedures={procedures}
+                            articles={articles}
                             actions={actions}
                             edit={edit}
                             onRenamed={setSelected}
@@ -355,6 +374,7 @@ function CreatorBody({
                             bot={bot}
                             id={id}
                             draft={draft}
+                            articles={articles}
                             usage={usage}
                             history={history}
                             availability={availability}
@@ -389,6 +409,8 @@ export function Creator(props: {
     id: string;
     initial: ProcedureDetail;
     facts: Fact[];
+    procedures: string[];
+    articles: LinkableArticle[];
     actions: ActionView[];
     stored: Positions;
     offered: OfferedBlocks;
