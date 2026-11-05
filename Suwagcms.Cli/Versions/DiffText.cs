@@ -63,8 +63,8 @@ internal static class DiffText
         {
             ResourceKind.GlobalFact => "fact",
             ResourceKind.KnowledgeBase => "knowledge base",
-            ResourceKind.Article or ResourceKind.Action or ResourceKind.Procedure or ResourceKind.Definition => kind.ToString()
-                .ToLowerInvariant(),
+            ResourceKind.Article or ResourceKind.Action or ResourceKind.Procedure or ResourceKind.Persona or ResourceKind.Definition =>
+                kind.ToString().ToLowerInvariant(),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 }

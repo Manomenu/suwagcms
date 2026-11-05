@@ -58,8 +58,32 @@ internal static class ChangeEntries
         );
     }
 
-    private static JsonObject Fields(StoredResource? resource) =>
-        resource is null ? [] : JsonNode.Parse(ResourceKinds.Write(resource.Record))?.AsObject() ?? [];
+    private static JsonObject Fields(StoredResource? resource)
+    {
+        var fields = resource is null ? [] : JsonNode.Parse(ResourceKinds.Write(resource.Record))?.AsObject() ?? [];
+        return resource?.Record is Persona ? PersonaFields(fields) : fields;
+    }
+
+    // Why: each part of the scope is a text of its own, so an entry names the part and its lines, not one object holding all three.
+    private static JsonObject PersonaFields(JsonObject stored)
+    {
+        var flat = new JsonObject();
+        foreach (var (name, value) in stored)
+        {
+            if (value is JsonObject parts)
+            {
+                foreach (var (part, text) in parts)
+                {
+                    flat[$"{name}.{part}"] = text?.DeepClone();
+                }
+            }
+            else
+            {
+                flat[name] = value?.DeepClone();
+            }
+        }
+        return flat;
+    }
 
     private static List<FieldChange> Changed(JsonObject old, JsonObject fresh, bool renamed) =>
         [

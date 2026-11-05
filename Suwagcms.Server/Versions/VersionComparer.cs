@@ -9,6 +9,8 @@ namespace Suwagcms.Server.Versions;
 // Why: it reads the two documents as data, not as records, so a field the format gains later shows as a difference without a change here.
 internal static class VersionComparer
 {
+    private const string PersonaMember = "persona";
+
     private static readonly (string List, ResourceKind Kind, string Key)[] Kinds =
     [
         ("facts", ResourceKind.GlobalFact, "name"),
@@ -18,7 +20,9 @@ internal static class VersionComparer
         ("procedures", ResourceKind.Procedure, "id"),
     ];
 
-    private static readonly string[] NeverDifferences = ["bot", "number", "digest"];
+    private static readonly string[] NeverDifferences = ["bot", "number", "digest", PersonaMember];
+
+    private static readonly string[] PersonaTexts = ["personality", "scope.inScope", "scope.outOfScope", "scope.whenOutOfScope"];
 
     private static readonly string[] LongTexts = ["content", "llmGuide"];
 
@@ -33,7 +37,10 @@ internal static class VersionComparer
             Without(fresh, NeverDifferences.Concat(Kinds.Select(kind => kind.List))),
             ""
         );
-        var resources = Kinds.SelectMany(kind => Resources(kind.Kind, kind.Key, old[kind.List], fresh[kind.List])).ToList();
+        var resources = Kinds
+            .SelectMany(kind => Resources(kind.Kind, kind.Key, old[kind.List], fresh[kind.List]))
+            .Concat(PersonaDifference(old[PersonaMember], fresh[PersonaMember]))
+            .ToList();
         return new VersionComparison(
             bot,
             from,
@@ -92,6 +99,28 @@ internal static class VersionComparer
             }
         }
     }
+
+    // Why: one member, not a list, and its texts are what a person wrote line by line, so even a persona added or removed says its lines.
+    private static IEnumerable<ResourceDifference> PersonaDifference(JsonNode? before, JsonNode? after)
+    {
+        if (JsonNode.DeepEquals(before, after))
+        {
+            yield break;
+        }
+        var difference =
+            before is null ? Difference.Added
+            : after is null ? Difference.Removed
+            : Difference.Changed;
+        var fields = PersonaTexts
+            .Select(path => (Path: path, Old: PersonaText(before, path), New: PersonaText(after, path)))
+            .Where(text => text.Old != text.New)
+            .Select(text => new FieldDifference(text.Path, null, null, LineComparer.Compare(text.Old, text.New)))
+            .ToList();
+        yield return new ResourceDifference(ResourceKind.Persona, Persona.PublicId, difference, fields, []);
+    }
+
+    private static string? PersonaText(JsonNode? persona, string path) =>
+        path.Split('.').Aggregate(persona, (node, name) => node?[name])?.GetValue<string>();
 
     private static IEnumerable<PartDifference> Parts(string part, JsonNode? before, JsonNode? after)
     {

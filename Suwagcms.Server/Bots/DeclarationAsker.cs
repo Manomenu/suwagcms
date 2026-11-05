@@ -154,7 +154,8 @@ internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider tim
         [
             .. DeclarationValidator
                 .CheckDefinition(ResourceKinds.Assemble(resources), declaration)
-                .Where(mistake => mistake.Code != MistakeCodes.DeclarationFormatVersion),
+                // Why: a missing persona is no step the bot cannot run, and creating a version says it where it can be filled in.
+                .Where(mistake => mistake.Code is not (MistakeCodes.DeclarationFormatVersion or MistakeCodes.PersonaRequired)),
         ];
     }
 }

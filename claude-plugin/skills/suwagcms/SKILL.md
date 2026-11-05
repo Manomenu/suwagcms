@@ -129,22 +129,47 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 - `suwagcms versions create [--dry-run]` - validate the bot's whole working state and freeze it as the next numbered version, which never changes. Refused (exit code `1`) with every mistake while anything is unfinished, and when nothing has changed since the latest version. It never contacts the bot; `suwagcms push` sends it. `--dry-run` answers the same, creates nothing and uses no number.
 - `suwagcms versions show <number>` - show one version with its document exactly as stored; `--json` gives it with its digest.
 - `suwagcms versions status` - ask the bot which version it has, as the bot answers and never as the CMS last sent it: the latest version, the versions conversations still use, and the recent pushes with their reasons. An unreachable bot shows its last reported version and when; an address that answers as another bot names it.
+- `suwagcms persona show` - print the persona of the bot as YAML with its line breaks and its revision, or say that it is empty; `persona edit --file` takes it back with every text unchanged; `--json` gives the texts exactly as stored; `--open` opens the Persona page in the web app.
+- `suwagcms persona edit --file <file> [--if-revision n] [--dry-run]` - replace the whole persona with a YAML or JSON file (see Persona below). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it.
 - `suwagcms apply <file> [--dry-run]` - apply a YAML or JSON file of changes all or nothing: every mistake comes back at once, each with its change's position in `change`, and the order inside the file does not matter. Start with `--dry-run`; the `suwagcms-batch` skill has the file's form and the steps. Exit code `0` also for an empty list, `2` for an unreadable file, naming the line.
 - `suwagcms availability list` - list every article, procedure and action with whether it is on or off, and say whether the bot has the setting, from the bot's own answer. A resource never touched is on; `--json` gives them as data.
 - `suwagcms availability off <kind> <id> [--yes] [--dry-run]` - with `<kind>` article, procedure or action: turn a resource off; a live setting that takes effect at once, without a version or a push, also in conversations on older versions. It prints what uses the resource first: a resource in use needs `--yes`, and without it nothing changes and the exit code is `1`. References stay valid. If the bot does not confirm, the change stays saved, the exit code is `1` and the reason says what to do. `--dry-run` prints the list and what would change, and changes nothing. `conversation` cannot be turned off; facts and knowledge bases have no availability.
 - `suwagcms availability on <kind> <id> [--dry-run]` - turn a resource on again, at once and with no question; the same delivery and exit code as `off`.
 - `suwagcms availability send` - send everything that is off to the bot again, after it was not delivered; the CMS never retries by itself. Exit code `1` when the bot does not confirm. With several instances of a bot, the others pick up a change at their next poll.
 - `suwagcms history [--limit n] [--before id]` - list every change to the bot, newest first, one page at a time (50 unless `--limit` says otherwise): when, what and the changed fields with their old and new values, also creating and pushing a version. `--before` takes the id the last page says to go on from; `--json` gives the entries; `--open` opens the bot's History page. It says what and when, never who, and no command can change it.
-- `suwagcms history <kind> <id> [--limit n] [--before id]` - with `<kind>` fact, kb, article, procedure or version: the same for one resource, also after it is deleted, with what it held last; `--open` opens the page of its history. A resource with no entries says no change has been recorded since history started.
+- `suwagcms history <kind> <id> [--limit n] [--before id]` - with `<kind>` fact, kb, article, procedure, or version (`suwagcms history persona` takes no id): the same for one resource, also after it is deleted, with what it held last; `--open` opens the page of its history. A resource with no entries says no change has been recorded since history started.
 - `suwagcms push [--version n] [--dry-run]` - push the latest version to the bot, which then reports the version it holds (`--json` gives the result, the reason and that version). A version the bot already holds is made current without being sent again. It asks for no confirmation: validation by the bot and rollback are the safeguards, so push when the work calls for it. Exit code `0` when the bot holds the version as current, also when it already had it (nothing is sent); `1` with the reason when the version does not exist (naming the nearest kept numbers), the bot cannot be reached or does not answer within 30 seconds, the bot refuses it with every mistake, or it names another version. A repeated push is safe.
 - `suwagcms push --version <n>` - this is the rollback: push a kept version other than the latest. It changes only the bot: the working state and the latest version stay as they are, resources deleted since come back to customers but stay deleted in the CMS, and conversations in progress finish on their version; `suwagcms push` goes forward again. `--dry-run` says whether the version would be sent, made current or needs nothing, lists what it changes, and leaves the bot as it is. A bot holding the version on an SDK without the route fails saying to upgrade it.
 - `suwagcms diff <from> <to>` - say what going from one version to another changes: each resource added, removed or changed, and in a changed one its fields with old and new values, `content` and `llmGuide` as lines removed and added, and a procedure's steps and local facts. It reads two frozen versions only, never the working state or the bot. Exit code `0` also when differences are found; `1` for a number the bot does not have. `--json` gives the same in a fixed order; `--open` opens the comparison in the web app.
 - `suwagcms export [<number>] --out <folder>` - write a version (the latest when no number is given) to a new or empty folder of YAML files for reading and searching with ordinary tools: one file for the version itself and one per fact, knowledge base, article and procedure, in a folder per kind. Changes to those files do nothing: no command takes them back. A folder with anything in it, or a number the bot does not have, is refused with exit code `1`; no `--out` exits `2`. `--json` gives the folder, the version and the count of files per kind; `--open` opens the version in the web app.
 - `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
 
-`actions add`, `actions edit`, `actions delete`, `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
+`actions add`, `actions edit`, `actions delete`, `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `persona edit`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
+
+## Persona
+
+A bot has one persona: `personality` says how it talks and `scope` what it talks about. Read it with `suwagcms persona show` and change it
+with `suwagcms persona edit --file <file>`; the file, YAML or JSON, replaces the whole persona, so what it leaves out becomes empty:
+
+```yaml
+personality: |
+  You are the customer service of a property appraiser.
+  Answer in the language the customer writes in.
+scope:
+  inScope: |
+    Property valuations by this appraiser
+  outOfScope: |
+    Legal, tax or investment advice
+  whenOutOfScope: |
+    Decline in one short sentence
+```
+
+- A YAML block such as `personality: |` keeps its line breaks, and every text is stored exactly as written. A text of only white space counts as empty; each is at most 20,000 characters (`persona.text.tooLong`). A field the format does not know is refused, naming it.
+- It reaches the bot only with a version: after a save, `suwagcms versions create` and `suwagcms push`. An empty persona, or an empty part of one, is left out of the version.
+- It cannot be renamed, deleted or turned off: to remove what it says, clear the fields. These texts are plain, so nothing in them refers to an article, a fact or a procedure.
+- A bot that declares `persona: required` gets `persona.required` when a version without one is created or pushed; saves go on.
 
 ## Before a push
 

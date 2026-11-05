@@ -78,6 +78,10 @@ internal static class DeclarationText
         yield return string.Create(CultureInfo.InvariantCulture, $"  format {declaration.FormatVersion}");
         yield return $"  blocks {string.Join(", ", declaration.Blocks)}";
         yield return $"  actions {(declaration.CodeActions.Count == 0 ? "none" : string.Join(", ", declaration.CodeActions.Select(action => action.Id)))}";
+        if (declaration.Persona is { } persona)
+        {
+            yield return $"  persona {persona}";
+        }
         if (formatFix is not null)
         {
             yield return formatFix;

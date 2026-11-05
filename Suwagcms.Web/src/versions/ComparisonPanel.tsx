@@ -11,6 +11,7 @@ const KINDS: Record<ResourceDifference["kind"], string> = {
     Article: "article",
     Procedure: "procedure",
     Action: "action",
+    Persona: "persona",
     Definition: "definition",
 };
 

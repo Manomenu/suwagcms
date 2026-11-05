@@ -13,8 +13,9 @@ internal static class LineComparer
 
     public static IReadOnlyList<TextLine> Compare(string? before, string? after)
     {
-        var old = (before ?? "").Split('\n');
-        var fresh = (after ?? "").Split('\n');
+        // Why: a text that is not there has no lines, where an empty text has one empty line; a new text must not read as an empty line removed.
+        var old = before?.Split('\n') ?? [];
+        var fresh = after?.Split('\n') ?? [];
         var start = 0;
         while (start < old.Length && start < fresh.Length && old[start] == fresh[start])
         {

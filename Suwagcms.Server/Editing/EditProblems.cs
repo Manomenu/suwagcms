@@ -138,7 +138,8 @@ internal static class EditProblems
     private static Mistake Stale(EditResult.Stale stale)
     {
         var noun = ResourceKinds.Noun(stale.Target.Kind);
-        if (stale.Expected == 0)
+        // Why: a persona is there before anyone saves it, so revision 0 means "I read it empty", and a save since then makes it out of date, not taken.
+        if (stale.Expected == 0 && stale.Target.Kind != ResourceKind.Persona)
         {
             return Make(
                 ResourceExists,

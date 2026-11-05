@@ -66,6 +66,7 @@ public static class DeleteGuard
             ResourceKind.Article => "article",
             ResourceKind.Procedure => "procedure",
             ResourceKind.Action => "action",
+            ResourceKind.Persona => "persona",
             ResourceKind.Definition => "definition",
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };

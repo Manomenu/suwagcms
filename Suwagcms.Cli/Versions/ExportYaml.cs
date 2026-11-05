@@ -37,11 +37,12 @@ internal static class ExportYaml
             ResourceKind.Article => $"suwagcms articles edit {file.Id}",
             ResourceKind.Procedure => $"suwagcms procedures edit {file.Id} --file <file>",
             ResourceKind.Action => $"suwagcms actions edit {file.Id} --file <file>",
+            ResourceKind.Persona => "suwagcms persona edit --file <file>",
             ResourceKind.Definition => throw new ArgumentOutOfRangeException(nameof(file), "an export has no such file"),
             _ => throw new ArgumentOutOfRangeException(nameof(file), "unknown kind of resource"),
         };
 
-    private static string Yaml(JsonElement value)
+    public static string Yaml(JsonElement value)
     {
         using var text = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
         var settings = EmitterSettings.Default.WithBestWidth(int.MaxValue).WithNewLine("\n");

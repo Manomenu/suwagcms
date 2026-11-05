@@ -485,6 +485,40 @@
           "id"
         ]
       }
+    },
+    "persona": {
+      "type": "object",
+      "properties": {
+        "personality": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scope": {
+          "type": "object",
+          "properties": {
+            "inScope": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "outOfScope": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "whenOutOfScope": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      }
     }
   },
   "required": [

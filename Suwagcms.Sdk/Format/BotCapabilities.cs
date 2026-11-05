@@ -8,4 +8,7 @@ public sealed record BotCapabilities
     public required IReadOnlyList<string> Blocks { get; init; }
 
     public IReadOnlyList<CodeAction> CodeActions { get; init; } = [];
+
+    // Why: left out, the bot takes a version with or without a persona; BotDeclaration.PersonaRequired has the CMS refuse one without.
+    public string? Persona { get; init; }
 }

@@ -10,4 +10,5 @@ public enum ResourceKind
     Article,
     Action,
     Procedure,
+    Persona,
 }

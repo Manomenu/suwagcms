@@ -38,12 +38,16 @@ builder.Services.AddSuwagcmsBot("rzeczoznawca", declares: new BotCapabilities
     FormatVersion = BotDefinition.CurrentFormatVersion,
     Blocks = ["listen", "collect", "say", "assign", "action"],       // what your engine runs: there is no default
     CodeActions = [new CodeAction { Id = "lookupPolicy", Description = "Finds a policy" }],
+    Persona = BotDeclaration.PersonaRequired,                        // optional: a version without a persona is then refused
 });
 ```
 
 The CMS then builds and pushes only versions that fit it. Without `declares` the route answers `declaresNothing: true` and nothing
 is checked against the bot, so a bot that is not ready to say still works. The answer's shape is in `bot-runtime.schema.json`.
 A bot outside .NET serves the same route and validates a definition through the CMS with `POST /api/validate` (`suwagcms validate`).
+
+A version may hold a `persona`: `personality`, and `scope` with `inScope`, `outOfScope` and `whenOutOfScope`, each one text with its line
+breaks. `GetAsync` gives it as `BotDefinition.Persona`, null when the version has none; what the bot does with it is its own concern.
 
 The bot's code uses `IBotDefinitions`:
 

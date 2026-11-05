@@ -67,6 +67,12 @@ function Declared({ status }: { status: DeclarationStatus }) {
                     </span>
                 ))}
             </dd>
+            {declaration.persona === "required" && (
+                <>
+                    <dt className="text-muted-foreground">Persona</dt>
+                    <dd>Required: a version without one is refused</dd>
+                </>
+            )}
         </dl>
     );
 }

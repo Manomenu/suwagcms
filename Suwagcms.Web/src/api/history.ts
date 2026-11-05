@@ -7,7 +7,7 @@ import type { components } from "./openapi";
 type HistoryPage = components["schemas"]["HistoryPage"];
 export type HistoryEntry = components["schemas"]["HistoryEntry"];
 
-export type HistoryCollection = "facts" | "knowledge-bases" | "articles" | "procedures" | "actions" | "versions";
+export type HistoryCollection = "facts" | "knowledge-bases" | "articles" | "procedures" | "actions" | "persona" | "versions";
 
 const COLLECTIONS: Record<string, HistoryCollection> = {
     fact: "facts",
@@ -15,6 +15,7 @@ const COLLECTIONS: Record<string, HistoryCollection> = {
     article: "articles",
     procedure: "procedures",
     action: "actions",
+    persona: "persona",
     version: "versions",
 };
 

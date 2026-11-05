@@ -1574,6 +1574,132 @@
         }
       }
     },
+    "/api/bots/{bot}/persona": {
+      "get": {
+        "tags": [
+          "PersonaEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonaView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "PersonaEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavePersona"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonaView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/versions": {
       "get": {
         "tags": [
@@ -2399,7 +2525,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|knowledge-bases|articles|procedures|actions|versions)$",
+              "pattern": "^(facts|knowledge-bases|articles|procedures|actions|persona|versions)$",
               "type": "string"
             }
           },
@@ -3122,6 +3248,12 @@
             "items": {
               "$ref": "#/components/schemas/CodeAction"
             }
+          },
+          "persona": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -4097,6 +4229,64 @@
         },
         "description": "A part of a procedure that differs: a step or a local fact, by name, with what changed in it."
       },
+      "PersonaScope": {
+        "type": "object",
+        "properties": {
+          "inScope": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "outOfScope": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "whenOutOfScope": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PersonaView": {
+        "required": [
+          "personality",
+          "scope",
+          "revision"
+        ],
+        "type": "object",
+        "properties": {
+          "personality": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "scope": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PersonaScope"
+              }
+            ]
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A bot's persona as the API shows it: its texts, null when empty, and the revision to send back to guard an edit, 0 before the first save."
+      },
       "ProcedureDetail": {
         "required": [
           "id",
@@ -4671,7 +4861,7 @@
             }
           }
         },
-        "description": "A resource that differs between two versions, by kind and id; only a changed one lists fields and parts."
+        "description": "A resource that differs between two versions, by kind and id; only a changed one lists fields and parts, and a persona always lists the lines of its texts."
       },
       "ResourceKind": {
         "enum": [
@@ -4680,7 +4870,8 @@
           "KnowledgeBase",
           "Article",
           "Action",
-          "Procedure"
+          "Procedure",
+          "Persona"
         ]
       },
       "ResourceRef": {
@@ -4895,6 +5086,32 @@
           }
         },
         "description": "What saving a knowledge base takes: its title and its language; the id comes from the address. A title left out is refused by the server; a language left out is en."
+      },
+      "SavePersona": {
+        "required": [
+          "personality",
+          "scope"
+        ],
+        "type": "object",
+        "properties": {
+          "personality": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "scope": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PersonaScope"
+              }
+            ]
+          }
+        },
+        "description": "What saving a persona takes: the whole of it, each text exactly as written. A text left out, empty or only white space is no text."
       },
       "SaveProcedure": {
         "required": [
@@ -5296,6 +5513,9 @@
     },
     {
       "name": "ActionEndpoints"
+    },
+    {
+      "name": "PersonaEndpoints"
     },
     {
       "name": "VersionEndpoints"

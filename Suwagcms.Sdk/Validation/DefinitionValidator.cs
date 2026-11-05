@@ -21,6 +21,7 @@ public static class DefinitionValidator
         .. ProcedureFactRules.All,
         .. ActionStepRules.All,
         .. ProcedureVersionRules.All,
+        .. PersonaRules.All,
     ];
 
     public static IReadOnlyList<Mistake> Validate(BotDefinition definition, ValidationStage stage)

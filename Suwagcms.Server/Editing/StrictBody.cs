@@ -21,9 +21,17 @@ internal static class StrictBody
         NumberHandling = JsonNumberHandling.Strict,
     };
 
+    public static Task<(T? Body, IReadOnlyList<Mistake> Mistakes)> ReadAsync<T>(
+        Stream body,
+        ResourceRef target,
+        CancellationToken cancellationToken
+    )
+        where T : class => ReadAsync(body, target, root => Read<T>(root, target), cancellationToken);
+
     public static async Task<(T? Body, IReadOnlyList<Mistake> Mistakes)> ReadAsync<T>(
         Stream body,
         ResourceRef target,
+        Func<JsonElement, (T? Body, IReadOnlyList<Mistake> Mistakes)> read,
         CancellationToken cancellationToken
     )
         where T : class
@@ -40,7 +48,7 @@ internal static class StrictBody
 
         using (document)
         {
-            return Read<T>(document.RootElement, target);
+            return read(document.RootElement);
         }
     }
 

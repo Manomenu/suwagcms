@@ -22,6 +22,7 @@ internal static class ResourceKinds
             ResourceKind.Article => typeof(Article),
             ResourceKind.Procedure => typeof(Procedure),
             ResourceKind.Action => typeof(BotAction),
+            ResourceKind.Persona => typeof(Persona),
             ResourceKind.Definition => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
@@ -37,6 +38,7 @@ internal static class ResourceKinds
             ResourceKind.Procedure => "procedure",
             ResourceKind.Definition => "definition",
             ResourceKind.Action => "action",
+            ResourceKind.Persona => "persona",
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
@@ -49,6 +51,7 @@ internal static class ResourceKinds
             ResourceKind.Article => "article",
             ResourceKind.Procedure => "procedure",
             ResourceKind.Action => "action",
+            ResourceKind.Persona => "persona",
             ResourceKind.Definition => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
@@ -69,8 +72,16 @@ internal static class ResourceKinds
             Articles = [.. all.Where(item => item.Target.Kind == ResourceKind.Article).Select(item => (Article)item.Record)],
             Actions = [.. all.Where(item => item.Target.Kind == ResourceKind.Action).Select(item => (BotAction)item.Record)],
             Procedures = [.. all.Where(item => item.Target.Kind == ResourceKind.Procedure).Select(item => (Procedure)item.Record)],
+            Persona = PersonaOf(all),
         };
     }
+
+    // Why: a persona cleared keeps its row and its revision, and an empty one is no persona: a version holds none and a bot that requires one is told so.
+    public static Persona? PersonaOf(IEnumerable<StoredResource> resources) =>
+        resources
+            .Where(item => item.Target.Kind == ResourceKind.Persona)
+            .Select(item => (Persona)item.Record)
+            .FirstOrDefault(persona => persona.HasText());
 
     public static object WithId(object record, string id) =>
         record switch

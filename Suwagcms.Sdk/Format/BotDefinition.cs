@@ -15,4 +15,6 @@ public sealed record BotDefinition
     public IReadOnlyList<BotAction> Actions { get; init; } = [];
 
     public IReadOnlyList<Procedure> Procedures { get; init; } = [];
+
+    public Persona? Persona { get; init; }
 }

@@ -17,6 +17,8 @@ internal static class VersionExportSplitter
         ("procedures", ResourceKind.Procedure, "procedures", "id"),
     ];
 
+    private const string PersonaMember = "persona";
+
     private static readonly string[] Envelope = ["bot", "number", "formatVersion", "digest"];
 
     public static VersionExport Split(string bot, int number, string document)
@@ -31,13 +33,17 @@ internal static class VersionExportSplitter
                 files.Add(new ExportedFile(kind.Kind, id, $"{kind.Folder}/{id}.yaml", Element(resource)));
             }
         }
+        if (root[PersonaMember] is JsonObject persona)
+        {
+            files.Add(new ExportedFile(ResourceKind.Persona, Persona.PublicId, $"{PersonaMember}.yaml", Element(persona)));
+        }
         return new VersionExport(bot, number, files);
     }
 
     // Why: a list the export has no folder for yet stays in version.yaml, so a version's content is never lost from its export.
     private static JsonObject WithEnvelopeFirst(JsonObject root)
     {
-        var inFolders = Kinds.Select(kind => kind.List).ToHashSet(StringComparer.Ordinal);
+        var inFolders = Kinds.Select(kind => kind.List).Append(PersonaMember).ToHashSet(StringComparer.Ordinal);
         var head = new JsonObject();
         foreach (var name in Envelope)
         {

@@ -3,6 +3,8 @@ namespace Suwagcms.Sdk.Format;
 // Why: the answer of GET /suwagcms/declaration and an input of the validator; every field has a default so that a bad answer lists all its mistakes instead of stopping at the first.
 public sealed record BotDeclaration
 {
+    public const string PersonaRequired = "required";
+
     public string Bot { get; init; } = "";
 
     public bool DeclaresNothing { get; init; }
@@ -13,6 +15,8 @@ public sealed record BotDeclaration
 
     public IReadOnlyList<CodeAction> CodeActions { get; init; } = [];
 
+    public string? Persona { get; init; }
+
     public static BotDeclaration Of(string bot, BotCapabilities? capabilities) =>
         capabilities is null
             ? new BotDeclaration { Bot = bot, DeclaresNothing = true }
@@ -22,5 +26,6 @@ public sealed record BotDeclaration
                 FormatVersion = capabilities.FormatVersion,
                 Blocks = capabilities.Blocks,
                 CodeActions = capabilities.CodeActions,
+                Persona = capabilities.Persona,
             };
 }

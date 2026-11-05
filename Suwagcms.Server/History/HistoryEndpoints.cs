@@ -22,6 +22,7 @@ internal static class HistoryEndpoints
         ["articles"] = ResourceKinds.Word(ResourceKind.Article),
         ["procedures"] = ResourceKinds.Word(ResourceKind.Procedure),
         ["actions"] = ResourceKinds.Word(ResourceKind.Action),
+        ["persona"] = ResourceKinds.Word(ResourceKind.Persona),
         ["versions"] = HistoryStore.VersionKind,
     };
 
@@ -29,7 +30,10 @@ internal static class HistoryEndpoints
     {
         routes.MapGet("/bots/{bot}/history", OfBot).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
         routes
-            .MapGet("/bots/{bot}/{kind:regex(^(facts|knowledge-bases|articles|procedures|actions|versions)$)}/{id}/history", OfResource)
+            .MapGet(
+                "/bots/{bot}/{kind:regex(^(facts|knowledge-bases|articles|procedures|actions|persona|versions)$)}/{id}/history",
+                OfResource
+            )
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
     }
 
