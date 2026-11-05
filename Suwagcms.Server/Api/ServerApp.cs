@@ -8,6 +8,7 @@ using Suwagcms.Server.Editing;
 using Suwagcms.Server.Facts;
 using Suwagcms.Server.Health;
 using Suwagcms.Server.KnowledgeBases;
+using Suwagcms.Server.ProcedureLayouts;
 using Suwagcms.Server.Procedures;
 using Suwagcms.Server.Versions;
 
@@ -44,6 +45,7 @@ internal static class ServerApp
         api.MapKnowledgeBases();
         api.MapProcedures();
         api.MapVersions();
+        api.MapProcedureLayouts();
         return app;
     }
 }

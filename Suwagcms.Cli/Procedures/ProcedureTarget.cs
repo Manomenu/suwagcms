@@ -20,6 +20,10 @@ internal sealed record ProcedureTarget(BotTarget Inner)
 
     public string ProcedurePath(string id) => $"{ProceduresPath}/{Uri.EscapeDataString(id)}";
 
+    public string LayoutPath(string id) => $"{ProcedurePath(id)}/layout";
+
+    public Uri CreatorPage(string id) => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/procedures/{Uri.EscapeDataString(id)}");
+
     public Uri Page => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/procedures");
 
     public static async Task<(ProcedureTarget? Target, int ExitCode)> ResolveAsync(
@@ -32,6 +36,9 @@ internal sealed record ProcedureTarget(BotTarget Inner)
         var (inner, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
         return (inner is null ? null : new ProcedureTarget(inner), exit);
     }
+
+    public Task<int> OpenAsync(Uri page, ParseResult parsed) =>
+        WebPage.ShowAsync(page, parsed.InvocationConfiguration.Output, parsed.InvocationConfiguration.Error, Machine.OpenBrowser);
 
     public Task<int> FailedAsync(ServerAnswer answer, CancellationToken cancellationToken) => Inner.FailedAsync(answer, cancellationToken);
 

@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.Text.Json;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts;
 
 namespace Suwagcms.Cli.Procedures;
@@ -12,23 +11,18 @@ internal static class ProceduresCommand
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
-        new("procedures", "List, show, add, edit and delete the procedures of a bot.")
+        new(
+            "procedures",
+            "List, show, add, edit and delete the procedures of a bot, and read or set where the web creator draws their steps."
+        )
         {
             CreateList(options, environment),
             CreateShow(options, environment),
             ProcedureSaveCommands.CreateAdd(options, environment),
             ProcedureSaveCommands.CreateEdit(options, environment),
             CreateDelete(options, environment),
+            ProcedureLayoutCommand.Create(options, environment),
         };
-
-    private static void RefuseOpenWithJson(Command command, GlobalOptions options) =>
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Json) && result.GetValue(options.Open))
-            {
-                result.AddError("--json and --open cannot be used together: one prints the data, the other opens the page.");
-            }
-        });
 
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)
     {
@@ -36,7 +30,7 @@ internal static class ProceduresCommand
             "list",
             "List the procedures of the bot, and what stops each from becoming a version (or --open the Procedures screen in the web app)."
         );
-        RefuseOpenWithJson(command, options);
+        EditOptions.RefuseOpenWithJson(command, options);
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
@@ -47,7 +41,7 @@ internal static class ProceduresCommand
                 }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.Page, parsed);
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.ProceduresPath, cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)
@@ -66,12 +60,12 @@ internal static class ProceduresCommand
         var id = new Argument<string>("id") { Description = "The procedure's id, like orderValuation." };
         var command = new Command(
             "show",
-            "Show one procedure as YAML (or JSON with --json), both accepted back by `procedures edit --file`."
+            "Show one procedure as YAML (or JSON with --json), both accepted back by `procedures edit --file`, or --open it in the web creator."
         )
         {
             id,
         };
-        RefuseOpenWithJson(command, options);
+        EditOptions.RefuseOpenWithJson(command, options);
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
@@ -82,7 +76,7 @@ internal static class ProceduresCommand
                 }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.CreatorPage(parsed.GetRequiredValue(id)), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
@@ -167,12 +161,4 @@ internal static class ProceduresCommand
         );
         return command;
     }
-
-    private static Task<int> Open(ProcedureTarget target, ParseResult parsed) =>
-        WebPage.ShowAsync(
-            target.Page,
-            parsed.InvocationConfiguration.Output,
-            parsed.InvocationConfiguration.Error,
-            target.Machine.OpenBrowser
-        );
 }

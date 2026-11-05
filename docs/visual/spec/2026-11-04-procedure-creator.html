@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Procedure creator</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 15 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>procedure-model</code></span>
@@ -383,7 +383,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>17</b><span>criteria</span></div>
     <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -486,6 +485,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li>An explicit Save, not saving as you go: a half-drawn graph with a dangling edge would be refused every few seconds, and the revision would churn under other editors.</li>
     <li>The live list asks the server through a dry run instead of running rules in the browser, so it can never disagree with the save.</li>
     <li>Positions stay out of the procedure: moving a node is not a change to the bot's behaviour, and two identical procedures must produce identical versions.</li>
+    <li>Save is a button, not autosave: the question of the draft was answered with its recommended option, an accepted assumption of the owner. The live list gives the feedback, a half-drawn state stays private, and revisions mean something.</li>
+    <li>Positions live in their own table, <code>procedure_layout</code>, one row per procedure that goes with it when it is deleted. They have their own routes and are never read by the editor, so no revision, version or stored definition holds them.</li>
+    <li>The steps come back from the server in the order its database keeps them, not the author's. The creator derives a stable order from the graph (from the first step along the edges, then the rest by name) and the format does not change.</li>
   </ul>
 </section>
 
@@ -527,17 +529,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="callout warn"><p>A dry run after each change sends the procedure to the server often. It runs under the bot's lock like any save, so it needs to be brief and spaced out; the plan decides how, and no criterion fixes a timing.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Save with a button, or as the author goes?</legend>
-      <p class="why">It decides how the creator feels, and how often other editors meet a changed revision. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="button"><span><b>An explicit Save button</b><small>the live list gives the feedback, a half-drawn state stays private, and revisions mean something</small></span></label>
-      <label><input type="radio" value="auto"><span><b>Save automatically when the drawing has no <code>Save</code> mistake</b><small>nothing to forget, but other editors see half-done work and get refused more often</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

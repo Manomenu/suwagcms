@@ -42,6 +42,15 @@ internal sealed class ProcedureApi(HttpClient client, FactApi facts)
     public Task<HttpResponseMessage> Get(string id) =>
         client.GetAsync($"/api/bots/{Bot}/procedures/{id}", TestContext.Current.CancellationToken);
 
+    public Task<HttpResponseMessage> GetLayout(string id) =>
+        client.GetAsync($"/api/bots/{Bot}/procedures/{id}/layout", TestContext.Current.CancellationToken);
+
+    public async Task<HttpResponseMessage> PutLayout(string id, string json)
+    {
+        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        return await client.PutAsync($"/api/bots/{Bot}/procedures/{id}/layout", content, TestContext.Current.CancellationToken);
+    }
+
     public async Task<ProcedureList> List() =>
         await client.GetFromJsonAsync<ProcedureList>($"/api/bots/{Bot}/procedures", TestContext.Current.CancellationToken)
         ?? throw new InvalidOperationException("no list");

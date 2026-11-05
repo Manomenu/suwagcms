@@ -24,12 +24,22 @@ internal static class ProcedureSaveCommands
     {
         var file = FileOption();
         var dryRun = DryRunOption();
-        var command = new Command("add", "Add a procedure to the bot from a YAML or JSON file that holds the whole of it.")
+        var command = new Command(
+            "add",
+            "Add a procedure to the bot from a YAML or JSON file that holds the whole of it, and with --open show it in the web creator."
+        )
         {
             file,
             dryRun,
         };
-        RefuseOpen(command, options, "add");
+        EditOptions.RefuseOpenWithJson(command, options);
+        command.Validators.Add(result =>
+        {
+            if (result.GetValue(options.Open) && result.GetValue(dryRun))
+            {
+                result.AddError("--dry-run and --open cannot be used together: a dry run saves nothing, so there is no procedure to open.");
+            }
+        });
         command.SetAction(
             async (parsed, cancellationToken) =>
             {
@@ -57,7 +67,10 @@ internal static class ProcedureSaveCommands
                     Body(document),
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "add", cancellationToken);
+                var reported = await ReportSavedAsync(target, answer, dry, "add", cancellationToken);
+                return reported == ExitCodes.Done && parsed.GetValue(options.Open)
+                    ? await target.OpenAsync(target.CreatorPage(id), parsed)
+                    : reported;
             }
         );
         return command;
