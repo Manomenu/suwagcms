@@ -192,3 +192,20 @@ test("AC-edit-guard-11: a refused edit shows the mistake beside its field with a
     await usedBy.getByRole("link", { name: "orderValuation" }).click();
     await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation$`));
 });
+
+test("AC-resource-rename-5: Change id on a fact renames it, with dots, and opens it at its new name", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addCity(request, bot);
+    await page.goto(`/bots/${bot}/facts`);
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+
+    await page.getByRole("button", { name: "Change id" }).click();
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("client.town");
+    await expect(dialog).toContainText("This rewrites nothing else.");
+    await dialog.getByRole("button", { name: "Change id" }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('[data-field="name"] input')).toHaveValue("client.town");
+    expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(404);
+});

@@ -599,3 +599,51 @@ test("the controls of one row of the article form share their top and height", a
     expect(row[1]).toEqual(row[0]);
     expect(row[2]).toEqual(row[0]);
 });
+
+test("AC-resource-rename-2: Change id lists the referrers before it is confirmed, rewrites them, and leaves the author on the article at its new id", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { knowledgeBase: "offer", title: "Price list" });
+    await addArticle(request, bot, "wycena", {
+        knowledgeBase: "offer",
+        title: "Valuation",
+        content: "See the [Price list](cms://article/cennik).",
+    });
+    await openEditor(page, bot, "cennik");
+
+    await page.getByRole("button", { name: "Change id" }).click();
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("Bad Id");
+    await expect(dialog).toContainText("'Bad Id' is not an article id");
+    await expect(dialog.getByRole("button", { name: "Change id" })).toBeDisabled();
+
+    await dialog.getByLabel("New id").fill("priceList");
+    await expect(dialog).toContainText("This rewrites 1 referrer");
+    await expect(dialog).toContainText("wycena content, 1 link");
+    expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(200);
+    await dialog.getByRole("button", { name: "Change id" }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("wycena");
+    await expect(page.getByLabel("Title")).toHaveValue("Price list");
+    expect(await contentOf(request, bot, "wycena")).toBe("See the [Price list](cms://article/priceList).");
+    expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
+});
+
+test("AC-resource-rename-12: a dialog opened at an old revision is refused with the current one", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik", { knowledgeBase: "offer", title: "Price list" });
+    await openEditor(page, bot, "cennik");
+    await page.getByRole("button", { name: "Change id" }).click();
+    const stored = (await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()) as Record<string, unknown>;
+    const { id: _id, revision: _revision, language: _language, ...body } = stored;
+    expect((await request.put(`/api/bots/${bot}/articles/cennik`, { data: { ...body, title: "Prices" } })).status()).toBe(200);
+
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("priceList");
+
+    await expect(dialog).toContainText("it is now revision 2");
+    await expect(dialog.getByRole("button", { name: "Change id" })).toBeDisabled();
+});

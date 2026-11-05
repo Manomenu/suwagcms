@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { renamer } from "@/api/rename";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
+import { Button } from "@/design/button";
+import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { UsagePanel } from "@/design/usagePanel";
 
 import { deleteFact, fetchFact, fetchFacts, revisionOf, type Fact } from "./api";
@@ -19,10 +22,14 @@ export function FactsScreen({ bot }: { bot: string }) {
     const [failure, setFailure] = useState<string | null>(null);
     const [open, setOpen] = useState<Open>(null);
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+    const [changingId, setChangingId] = useState(false);
     const [location, navigate] = useLocation();
     const [params] = useSearchParams();
     const openParam = params.get("open");
     const usage = useUsage(bot, "facts", open?.kind === "edit" ? open.fact.name : null);
+    const openFact = open?.kind === "edit" ? open.fact : null;
+    const openRevision = openFact === null ? 0 : revisionOf(facts?.find((fact) => fact.name === openFact.name) ?? openFact);
+    const changer = useMemo(() => renamer(bot, "facts", openFact?.name ?? "", openRevision), [bot, openFact?.name, openRevision]);
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -95,6 +102,36 @@ export function FactsScreen({ bot }: { bot: string }) {
             form={
                 <>
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
+                    {open?.kind === "edit" && (
+                        <div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setChangingId(true);
+                                }}
+                            >
+                                Change id
+                            </Button>
+                        </div>
+                    )}
+                    {changingId && open?.kind === "edit" && (
+                        <ChangeIdDialog
+                            noun="fact"
+                            id={open.fact.name}
+                            preview={changer.preview}
+                            apply={changer.apply}
+                            onChanged={(name) => {
+                                setChangingId(false);
+                                setOpen(null);
+                                load();
+                                navigate(`${location}?open=${encodeURIComponent(name)}`);
+                            }}
+                            onCancel={() => {
+                                setChangingId(false);
+                            }}
+                        />
+                    )}
                     {open?.kind === "edit" && (
                         <UsagePanel
                             usage={usage.usage}

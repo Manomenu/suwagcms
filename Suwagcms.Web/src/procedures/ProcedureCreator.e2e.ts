@@ -310,3 +310,23 @@ test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers
     const after = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { localFacts: unknown };
     expect(after.localFacts ?? {}).toEqual({});
 });
+
+test("AC-resource-rename-21: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    const positions = { ask: { x: 11, y: 22 }, mark: { x: 33, y: 44 }, confirm: { x: 55, y: 66 }, goodbye: { x: 77, y: 88 } };
+    expect((await request.put(`/api/bots/${bot}/procedures/orderValuation/layout`, { data: { positions } })).status()).toBe(200);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    await expect(page.locator("[data-step]")).toHaveCount(4);
+
+    await page.getByRole("button", { name: "Change id" }).click();
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("valuation");
+    await expect(dialog).toContainText("This rewrites nothing else.");
+    await dialog.getByRole("button", { name: "Change id" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/valuation$`));
+    await expect(page.getByRole("heading", { name: /Creator: valuation/ })).toBeVisible();
+    const layout = (await (await request.get(`/api/bots/${bot}/procedures/valuation/layout`)).json()) as { positions: unknown };
+    expect(layout.positions).toEqual(positions);
+});

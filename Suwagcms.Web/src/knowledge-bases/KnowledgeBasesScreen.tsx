@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "@/api/client";
+import { renamer } from "@/api/rename";
 import { Alert } from "@/design/alert";
+import { Button } from "@/design/button";
+import { ChangeIdDialog } from "@/design/changeIdDialog";
 
 import { deleteKnowledgeBase, fetchKnowledgeBases, revisionOf, type KnowledgeBase } from "./api";
 import { emptyForm } from "./knowledgeBaseForm";
@@ -16,6 +19,11 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
     const [failure, setFailure] = useState<string | null>(null);
     const [open, setOpen] = useState<Open>(null);
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+    const [changingId, setChangingId] = useState(false);
+    const openId = open?.kind === "edit" ? open.base.id : "";
+    const shown = bases?.find((base) => base.id === openId);
+    const openRevision = shown === undefined ? 0 : revisionOf(shown);
+    const changer = useMemo(() => renamer(bot, "knowledge-bases", openId, openRevision), [bot, openId, openRevision]);
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -75,6 +83,38 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
             form={
                 <>
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
+                    {open?.kind === "edit" && (
+                        <div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => {
+                                    setChangingId(true);
+                                }}
+                            >
+                                Change id
+                            </Button>
+                        </div>
+                    )}
+                    {changingId && open?.kind === "edit" && (
+                        <ChangeIdDialog
+                            noun="knowledge base"
+                            id={open.base.id}
+                            preview={changer.preview}
+                            apply={changer.apply}
+                            onChanged={(id) => {
+                                setChangingId(false);
+                                void fetchKnowledgeBases(bot, new AbortController().signal).then((list) => {
+                                    setBases(list);
+                                    const base = list.find((other) => other.id === id);
+                                    setOpen(base === undefined ? null : { kind: "edit", base });
+                                });
+                            }}
+                            onCancel={() => {
+                                setChangingId(false);
+                            }}
+                        />
+                    )}
                     {open !== null && (
                         <KnowledgeBaseForm
                             key={open.kind === "edit" ? open.base.id : "add"}

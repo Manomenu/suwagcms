@@ -12,6 +12,7 @@ internal static class EditProblems
     public const string ResourceMissing = "resource.missing";
     public const string ResourceExists = "resource.exists";
     public const string ResourceStale = "resource.stale";
+    public const string ResourceSameId = "resource.sameId";
 
     public static ProblemHttpResult For(EditResult result, string bot, string title) =>
         result switch
@@ -44,6 +45,33 @@ internal static class EditProblems
             "Check the bot's id, or register the bot first.",
             []
         );
+
+    public static Mistake SameId(ResourceRef target) =>
+        new(
+            ResourceSameId,
+            ValidationStage.Save,
+            target,
+            IdField(target),
+            $"The {ResourceKinds.Noun(target.Kind)} '{target.Id}' already has this id, so nothing would change.",
+            "Give another id.",
+            []
+        );
+
+    public static Mistake Taken(ResourceRef target, ResourceRef wanted) =>
+        new(
+            MistakeCodes.DuplicateId,
+            ValidationStage.Save,
+            target,
+            IdField(target),
+            $"This bot already has {Noun(wanted)} '{wanted.Id}'.",
+            $"Choose another id, or delete that {ResourceKinds.Noun(wanted.Kind)} first.",
+            [new RelatedResource(wanted, IdField(wanted))]
+        );
+
+    private static string IdField(ResourceRef target) => target.Kind == ResourceKind.GlobalFact ? "name" : "id";
+
+    private static string Noun(ResourceRef target) =>
+        target.Kind == ResourceKind.Article ? "an article" : $"a {ResourceKinds.Noun(target.Kind)}";
 
     private static Mistake Stale(EditResult.Stale stale)
     {

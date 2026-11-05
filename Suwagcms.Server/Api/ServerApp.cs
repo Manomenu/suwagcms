@@ -10,6 +10,7 @@ using Suwagcms.Server.Health;
 using Suwagcms.Server.KnowledgeBases;
 using Suwagcms.Server.ProcedureLayouts;
 using Suwagcms.Server.Procedures;
+using Suwagcms.Server.Renames;
 using Suwagcms.Server.Usage;
 using Suwagcms.Server.Versions;
 
@@ -51,6 +52,7 @@ internal static class ServerApp
         api.MapProcedures();
         api.MapVersions();
         api.MapUsage();
+        api.MapRenames();
         api.MapProcedureLayouts();
         return app;
     }

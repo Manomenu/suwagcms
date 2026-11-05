@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Changing an id</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 17 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>article-links</code></span>
@@ -380,9 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Only the target of a link changes: the rest of each referrer's text stays exactly as it was, and versions already created keep the old <code>id</code>. Plain text naming a resource is not a reference, so it is left alone.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
-    <div><b>10</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>21</b><span>criteria</span></div>
+    <div><b>6</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -441,7 +440,8 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <tr><th>Kind</th><th>What is rewritten</th></tr>
     <tr><td>article</td><td>each link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles</td></tr>
     <tr><td>knowledge base</td><td>the <code>knowledgeBase</code> of each of its articles</td></tr>
-    <tr><td>global fact</td><td>its <code>name</code>; what uses it arrives with later features, see below</td></tr>
+    <tr><td>global fact</td><td>its <code>name</code>, in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it</td></tr>
+    <tr><td>procedure</td><td>its <code>id</code>; <code>conversation</code> cannot change its id</td></tr>
   </table>
   <p>Each later kind of resource and reference joins this list through “Criteria after other features”. Changing a title is not this operation, and the knowledge-base screen's existing “Rename” stays a change of title, so here the web's action is called “Change id”.</p>
   <h3>What a rewrite touches</h3>
@@ -487,6 +487,8 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
+    <li>A rename does not wait for edits that are open: each referrer gets a new revision, so those saves are refused as stale, the same protection every edit has; work stays on the screen, and no link can come back.</li>
+    <li>The renamed resource keeps its row and its next revision, so what hangs on the row, such as a procedure's node positions, stays with it.</li>
     <li>One command for every kind, <code>suwagcms rename &lt;kind&gt; &lt;id&gt; &lt;newId&gt;</code>, in the shape of <code>suwagcms usage &lt;kind&gt; &lt;id&gt;</code>: the behaviour is one, and each new kind only adds a word.</li>
     <li>Labels stay as written: a label holds a title, not an <code>id</code>, and a version already fills in the current title.</li>
     <li>A rewrite bumps each referrer's revision: its text did change, and a stale save would otherwise put the old link back or be refused for a reason nobody could see.</li>
@@ -512,21 +514,21 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <li><code>AC-resource-rename-15</code> After the change the old <code>id</code> can be taken by a new resource, and a link to the old <code>id</code> before that is refused with <code>reference.missing</code>.</li>
     <li><code>AC-resource-rename-16</code> <code>suwagcms rename --open</code> opens the resource's page at its new address.</li>
     <li><code>AC-resource-rename-17</code> <code>suwagcms rename</code> has its line in the plugin's main skill.</li>
+    <li><code>AC-resource-rename-18</code> Changing a fact's name also rewrites it in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it.</li>
+    <li><code>AC-resource-rename-19</code> A procedure's <code>id</code> can be changed, and <code>conversation</code> cannot change its <code>id</code>, since the format requires it as the base of every conversation; a new <code>id</code> that a global fact's name starts with, followed by a dot, is refused, and so is a fact's new name starting with a procedure's <code>id</code> and a dot.</li>
+    <li><code>AC-resource-rename-20</code> A fact's new name that a local fact already has is refused.</li>
+    <li><code>AC-resource-rename-21</code> A procedure's node positions stay after its <code>id</code> changes.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>procedure-model</code>:</b> changing a fact's name also rewrites it in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it.</li>
-    <li><b>after <code>procedure-model</code>:</b> a procedure's <code>id</code> can be changed, and <code>conversation</code> cannot change its <code>id</code>, since the format requires it as the base of every conversation; a new <code>id</code> that a global fact's name starts with, followed by a dot, is refused, and so is a fact's new name starting with a procedure's <code>id</code> and a dot.</li>
-    <li><b>after <code>local-facts</code>:</b> a fact's new name that a local fact already has is refused.</li>
     <li><b>after <code>start-block</code>:</b> changing a procedure's <code>id</code> rewrites each <code>start</code> that targets it.</li>
     <li><b>after <code>inform-block</code>:</b> changing an article's <code>id</code> or a fact's name rewrites each <code>inform</code> that names it.</li>
     <li><b>after <code>instruction-context</code>:</b> changing an article's <code>id</code> rewrites each <code>context</code> that names it; a search query holding those words is text and stays as it is.</li>
     <li><b>after <code>article-procedure-links</code>:</b> changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
     <li><b>after <code>action-block</code>:</b> changing an action's <code>id</code> rewrites each <code>action</code> step, and changing a fact's name rewrites it in each step's mapping of parameters and results.</li>
-    <li><b>after <code>procedure-creator</code>:</b> a procedure's node positions stay after its <code>id</code> changes.</li>
     <li><b>after <code>availability</code>:</b> a resource turned off stays off after its <code>id</code> changes, also for conversations on a version that still holds the old <code>id</code>.</li>
   </ul>
 </section>
@@ -534,17 +536,6 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p>Availability is live and reaches conversations on older versions, while those versions hold the old <code>id</code>. A switch sent only under the new <code>id</code> would miss them, so <code>availability</code> has to answer for this. The deferred item above is the check.</p></div>
   <div class="callout warn"><p>Plain text that mentions the old <code>id</code> stays behind, and so does a label an author wrote by hand. README accepts this: plain text is not protected.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should a rename be refused while it would make open edits stale?</legend>
-      <p class="why">Each referrer gets a new revision, so anyone with one open is refused when they save, and has to reload. The CMS has no notion of who has what open, and no identity yet. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="stale"><span><b>No: rename, and those saves are refused as stale</b><small>the same protection every edit has; work stays on the screen, and no link can come back</small></span></label>
-      <label><input type="radio" value="merge"><span><b>Rewrite the link inside the incoming stale save</b><small>nobody has to reload, but saves stop being judged on what the author saw</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

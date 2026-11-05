@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { renamer } from "@/api/rename";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
+import { Button } from "@/design/button";
+import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 import { UsagePanel } from "@/design/usagePanel";
 
@@ -32,11 +35,15 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     const [open, setOpen] = useState<Open>(null);
     const [dirty, setDirty] = useState(false);
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+    const [changingId, setChangingId] = useState(false);
     const [location, navigate] = useLocation();
     const [params] = useSearchParams();
     const openParam = params.get("open");
     useLeaveGuard(dirty, DISCARD_QUESTION);
     const usage = useUsage(bot, "articles", open?.kind === "edit" ? open.article.id : null);
+    const openId = open?.kind === "edit" ? open.article.id : "";
+    const openRevision = open?.kind === "edit" ? revisionOf(open.article) : 0;
+    const changer = useMemo(() => renamer(bot, "articles", openId, openRevision), [bot, openId, openRevision]);
 
     const fail = useCallback((signal: AbortSignal) => {
         return (error: unknown) => {
@@ -159,6 +166,38 @@ export function ArticlesScreen({ bot }: { bot: string }) {
             form={
                 <>
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
+                    {open?.kind === "edit" && (
+                        <div className="flex items-center gap-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={dirty}
+                                onClick={() => {
+                                    setChangingId(true);
+                                }}
+                            >
+                                Change id
+                            </Button>
+                            {dirty && <span className="text-sm text-muted-foreground">Save your changes first.</span>}
+                        </div>
+                    )}
+                    {changingId && open?.kind === "edit" && (
+                        <ChangeIdDialog
+                            noun="article"
+                            id={open.article.id}
+                            preview={changer.preview}
+                            apply={changer.apply}
+                            onChanged={(id) => {
+                                setChangingId(false);
+                                setOpen(null);
+                                reload();
+                                navigate(`${location}?open=${encodeURIComponent(id)}`);
+                            }}
+                            onCancel={() => {
+                                setChangingId(false);
+                            }}
+                        />
+                    )}
                     {open?.kind === "edit" && (
                         <UsagePanel
                             usage={usage.usage}
