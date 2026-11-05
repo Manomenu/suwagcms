@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using Dapper;
 
 namespace Suwagcms.Server.Tests.Articles;
@@ -20,6 +22,13 @@ public sealed class ArticleScaleTests(TestDatabase database) : IDisposable
     [Trait("criterion", "AC-articles-16")]
     public async Task A_save_to_a_bot_with_5000_articles_finishes_within_the_limit()
     {
+        // Why: seeding 5000 articles costs about 8 s, over the quick gate's budget; CI always runs this, a machine when the code of a save changes.
+        var passed = Path.Combine(RepositoryRoot(), ".artifacts", $"article-scale-{InputsHash()}");
+        if (Environment.GetEnvironmentVariable("CI") is null && File.Exists(passed))
+        {
+            return;
+        }
+
         _ = database.Pool;
         var api = await ArticleApi.NewBotAsync(app.CreateClient());
         await using (var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken))
@@ -54,5 +63,42 @@ public sealed class ArticleScaleTests(TestDatabase database) : IDisposable
             fastest.TotalMilliseconds < LimitMilliseconds,
             $"A save to a bot with {Articles} articles took {fastest.TotalMilliseconds:F0} ms at its fastest; the limit is {LimitMilliseconds} ms."
         );
+        Directory.CreateDirectory(Path.GetDirectoryName(passed) ?? RepositoryRoot());
+        await File.WriteAllTextAsync(passed, "", TestContext.Current.CancellationToken);
+    }
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Suwagcms.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new InvalidOperationException("The repository root was not found.");
+    }
+
+    private static string InputsHash()
+    {
+        var root = RepositoryRoot();
+        var folders = new[]
+        {
+            "Suwagcms.Sdk/Format",
+            "Suwagcms.Sdk/Validation",
+            "Suwagcms.Server/Editing",
+            "Suwagcms.Server/Articles",
+            "Suwagcms.Server.Tests/Articles",
+        };
+        var files = folders
+            .SelectMany(folder => Directory.EnumerateFiles(Path.Combine(root, folder), "*.cs", SearchOption.AllDirectories))
+            .Order(StringComparer.Ordinal);
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        foreach (var file in files)
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes(Path.GetRelativePath(root, file)));
+            hash.AppendData(File.ReadAllBytes(file));
+        }
+
+        return Convert.ToHexStringLower(hash.GetHashAndReset());
     }
 }
