@@ -173,6 +173,46 @@ public sealed class LoopRulesTests
         Assert.Empty(Loops(Bot(Linking("a", Link("b")), Linking("b")) with { Procedures = [procedure] }));
     }
 
+    private static Procedure Starting(string id, string target) =>
+        Samples.Procedure(id) with
+        {
+            FirstStep = "go",
+            Steps = new Dictionary<string, ProcedureStep> { ["go"] = new() { Start = target } },
+        };
+
+    [Fact]
+    [Trait("criterion", "AC-loop-guard-12")]
+    public void A_loop_between_procedures_through_start_is_refused_with_the_steps_on_the_path()
+    {
+        var mistake = Assert.Single(
+            Loops(Bot() with { Procedures = [Starting("two", "three"), Starting("one", "two"), Starting("three", "one")] })
+        );
+
+        Assert.Contains("one → two → three → one", mistake.Message, StringComparison.Ordinal);
+        Assert.Equal(new ResourceRef(ResourceKind.Procedure, "one"), mistake.Resource);
+        Assert.Equal("steps.go.start", mistake.Path);
+        Assert.Equal(
+            [("two", "steps.go.start"), ("three", "steps.go.start")],
+            mistake.Related.Select(related => (related.Resource.Id, related.Location))
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-loop-guard-13")]
+    public void A_procedure_starting_itself_is_refused() =>
+        Assert.Contains(
+            "one → one",
+            Assert.Single(Loops(Bot() with { Procedures = [Starting("one", "one")] })).Message,
+            StringComparison.Ordinal
+        );
+
+    [Fact]
+    [Trait("criterion", "AC-loop-guard-12")]
+    public void Two_procedures_starting_one_target_are_not_a_loop() =>
+        Assert.Empty(
+            Loops(Bot() with { Procedures = [Starting("one", "shared"), Starting("two", "shared"), Samples.Procedure("shared")] })
+        );
+
     [Fact]
     [Trait("criterion", "AC-loop-guard-7")]
     public void A_chain_of_5000_articles_closed_into_a_ring_is_found_in_one_pass_within_the_limit()

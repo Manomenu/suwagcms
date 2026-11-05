@@ -93,6 +93,42 @@ public sealed class DeleteGuardTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-13")]
+    public void A_procedure_another_one_starts_is_refused_listing_the_starter_with_the_step()
+    {
+        var target = new ResourceRef(ResourceKind.Procedure, "documentsList");
+        var after = ProcedureSamples.Bot(ProcedureSamples.WithStep("get", new ProcedureStep { Start = "documentsList" }));
+
+        var mistake = Assert.Single(Deleting(after, target));
+
+        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(target, mistake.Resource);
+        Assert.Equal(
+            new RelatedResource(new ResourceRef(ResourceKind.Procedure, "orderValuation"), "steps.get.start"),
+            Assert.Single(mistake.Related)
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-delete-guard-17")]
+    public void An_article_a_context_names_is_refused_listing_each_instruction_that_names_it()
+    {
+        var context = new InstructionContext { Articles = ["cennik"] };
+        var procedure = ProcedureSamples.WithStep("tell", new ProcedureStep { Inform = new InformArguments { Context = context } }) with
+        {
+            WhenStalled = new StallInstruction { Instruction = "Say it.", Context = context },
+        };
+
+        var mistake = Assert.Single(Deleting(ProcedureSamples.Bot(procedure), Cennik));
+
+        Assert.Equal(Cennik, mistake.Resource);
+        Assert.Equal(
+            ["steps.tell.inform.context.articles[0]", "whenStalled.context.articles[0]"],
+            mistake.Related.Select(related => related.Location)
+        );
+    }
+
+    [Fact]
     [Trait("criterion", "AC-article-links-7")]
     public void A_typo_in_a_link_is_still_worded_for_the_referrer_not_as_a_delete()
     {

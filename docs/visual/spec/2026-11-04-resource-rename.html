@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Only the target of a link changes: the rest of each referrer's text stays exactly as it was, and versions already created keep the old <code>id</code>. Plain text naming a resource is not a reference, so it is left alone.</p>
   </div>
   <div class="stats">
-    <div><b>21</b><span>criteria</span></div>
-    <div><b>4</b><span>criteria after other features</span></div>
+    <div><b>24</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -518,16 +517,9 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <li><code>AC-resource-rename-20</code> A new <code>id</code> or name that conflicts is refused: a fact's new name that a local fact already has, a procedure's new <code>id</code> that a global fact's name starts with, followed by a dot, and a fact's new name starting with a procedure's <code>id</code> and a dot.</li>
     <li><code>AC-resource-rename-21</code> A procedure's node positions stay after its <code>id</code> changes.</li>
     <li><code>AC-resource-rename-23</code> Changing an action's <code>id</code> rewrites each <code>action</code> step, and changing a fact's name rewrites it in each step's mapping of parameters and results.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>start-block</code>:</b> changing a procedure's <code>id</code> rewrites each <code>start</code> that targets it.</li>
-    <li><b>after <code>inform-block</code>:</b> changing an article's <code>id</code> or a fact's name rewrites each <code>inform</code> that names it.</li>
-    <li><b>after <code>instruction-context</code>:</b> changing an article's <code>id</code> rewrites each <code>context</code> that names it; a search query holding those words is text and stays as it is.</li>
-    <li><b>after <code>article-procedure-links</code>:</b> changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
+    <li><code>AC-resource-rename-24</code> Changing a procedure's <code>id</code> rewrites each <code>start</code> that targets it.</li>
+    <li><code>AC-resource-rename-26</code> Changing an article's <code>id</code> rewrites each context that names it; a search query holding those words is text and stays as it is.</li>
+    <li><code>AC-resource-rename-27</code> Changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
   </ul>
 </section>
 <section data-role="risks">

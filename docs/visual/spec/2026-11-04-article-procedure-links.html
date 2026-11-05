@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-start-block.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-article-procedure-links.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Start block</title>
+<title>Links to procedures</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Start block</h1>
+  <h1>Links to procedures</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 18 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>procedure-model</code></span>
+    <span><b>Feature:</b> 21 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>article-links</code>, <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,129 +376,119 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A step can hold a new block, <code>start: documentsList</code>, which starts another procedure of the same bot. It is the format's equivalent of Rasa's <code>call</code>, and it makes a reference from one procedure to another.</p>
-    <p>The CMS checks that the target exists and refuses <code>conversation</code> as a target, since that is the base of every conversation. Running the block belongs to the bot.</p>
+    <p>An article's <code>llmGuide</code> can link to a procedure, so the guide can tell the model when to start it: <code>If the customer wants a valuation, start [the valuation](cms://procedure/orderValuation).</code> An author inserts it from the picker and sees a chip, and an agent writes the same Markdown.</p>
+    <p>Only the guide may hold such a link. In <code>content</code>, which is for the customer, it is refused, as is a link to a procedure this bot does not have, or to <code>conversation</code>.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>12</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>Two procedures that need the same part, such as collecting a land register number, must each copy its steps today, and the copies drift apart. README therefore has a <code>start</code> block. Because the target is named by <code>id</code>, the CMS can check it, which free text or a convention could not do.</p>
+  <p>SmartRouter disguises procedures as articles and names them in free text, so a renamed procedure leaves the guide pointing at nothing, and nobody is told. After <code>article-links</code>, a <code>cms://procedure/</code> link is refused outright, and a guide can only name a procedure in words. README decides that an article may reference a procedure, through a link from the picker in its guide, so that this reference can be checked and protected like any other.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>A step names another procedure as its one block, and the format says what that means.</li>
-      <li>A target that does not exist, or may not be started, is refused on save.</li>
-      <li>A half-built step can still be saved, as any other block can.</li>
+      <li>An author never types an <code>id</code>: the guide's picker also offers the bot's procedures.</li>
+      <li>An agent writes one plain link form, the same as for articles.</li>
+      <li>A link to a procedure that does not exist cannot be saved.</li>
+      <li>What a customer reads can never hold a link to a procedure.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Running the block: bots run procedures, and the first bot's specs are in its own repository.</li>
-      <li>Passing values to the started procedure: global facts are shared, and local facts are invisible by design.</li>
-      <li>Refusing a loop through <code>start</code>: <code>loop-guard</code>. Refusing to delete a target: <code>delete-guard</code>.</li>
-      <li>The form in the creator: <code>procedure-creator</code>. Offering the block only to bots that declare it: <code>bot-declaration</code>.</li>
-      <li>A limit on how deep starts may nest: no rule here can know what a bot can hold.</li>
+      <li>Starting the procedure: the model and the bot do that, and the first bot's specs are in its own repository.</li>
+      <li>Refusing to delete a linked procedure: <code>delete-guard</code>. Refusing a loop through the link: <code>loop-guard</code>.</li>
+      <li>Rewriting the link when a procedure's <code>id</code> changes: <code>resource-rename</code>.</li>
+      <li>Stopping the model from starting a procedure that is off: <code>availability</code>.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent reuses a procedure</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml   <span class="dim"># step getDocuments starts documentsList</span>
-Saved orderValuation, revision 5.
-<span class="dim">$</span> suwagcms procedures show orderValuation
-<span class="dim">…</span>
-  getDocuments:
-    start: documentsList
-    next: confirm</div>
-  <h3>2. A typo in the target</h3>
+  <h3>1. Marta links a guide to a procedure</h3>
+  <ol class="steps">
+    <li><p>In the <code>llmGuide</code> of <code>wycena</code>, she chooses <span class="btn">Insert link</span> and types <code>val</code>. The picker shows the procedure <code>orderValuation</code>, with its description, marked as a procedure, among the matching articles.</p></li>
+    <li><p>She picks it. A chip <span class="tag accent">orderValuation</span> appears in the text, and she saves.</p></li>
+    <li><p>The stored guide reads <code>If the customer wants a valuation, start [orderValuation](cms://procedure/orderValuation).</code></p></li>
+  </ol>
+  <h3>2. An agent adds the same link</h3>
+  <div class="term"><span class="dim">$</span> suwagcms procedures list
+conversation    The base of every conversation
+orderValuation  The customer orders a valuation of a property
+<span class="dim">$</span> suwagcms articles edit wycena --guide-file wycena-guide.md   <span class="dim"># holds [the valuation](cms://procedure/orderValuation)</span></div>
+  <h3>3. The link is in the wrong field</h3>
   <div class="term">Refused, 1 mistake:
-  reference.missing  'start' of step 'getDocuments' in 'orderValuation' names procedure 'documentList', which this bot does not have. Procedures: conversation, documentsList, orderValuation.</div>
-  <h3>3. The base procedure as a target</h3>
+  link.procedure.notInGuide  content of 'wycena' links to procedure 'orderValuation'. A customer reads content, so it cannot start anything. Move the link to llmGuide.</div>
+  <h3>4. A typo in an id</h3>
   <div class="term">Refused, 1 mistake:
-  start.target.conversation  'start' of step 'back' in 'orderValuation' names 'conversation', which cannot be started: it is the base of every conversation. End the procedure here instead, by leaving out 'next'.</div>
+  reference.missing  llmGuide of 'wycena' links to procedure 'orderValuatoin', which this bot does not have. 'suwagcms procedures list' shows them.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>What the block means</h3>
-  <p>When a procedure reaches the step, the bot starts the target. When the target ends, the procedure goes on from the step's <code>next</code>, or ends if there is none. The target has its own local facts and sees none of the starter's. <code>next</code> follows the same rules as on any step, with rules on facts included, and those facts may have been written by the target if they are global.</p>
-  <h3>What is checked when</h3>
+  <h3>The link form</h3>
+  <p>A link is a standard Markdown link whose target is <code>cms://procedure/&lt;id&gt;</code>. Everything <code>article-links</code> says about links holds here: the <code>id</code> counts, text in a code span or block is text, and plain words naming a procedure are not a reference. Only the fields differ.</p>
   <table>
-    <tr><th>Mistake</th><th>Stage</th></tr>
-    <tr><td>a target that is not a camelCase <code>id</code></td><td>Save</td></tr>
-    <tr><td>a target this bot does not have, including one only another bot has</td><td>Save, with <code>reference.missing</code></td></tr>
-    <tr><td>the target <code>conversation</code></td><td>Save, with <code>start.target.conversation</code></td></tr>
-    <tr><td>a blank target</td><td>Version, like an empty <code>collect</code>: an author can add the step before filling it in</td></tr>
+    <tr><th>Text</th><th>Result</th></tr>
+    <tr><td><code>[the valuation](cms://procedure/orderValuation)</code> in <code>llmGuide</code></td><td>a reference</td></tr>
+    <tr><td>the same in <code>content</code></td><td>refused with <code>link.procedure.notInGuide</code></td></tr>
+    <tr><td>the same in a code span or block, in either field</td><td>not a reference; not refused</td></tr>
+    <tr><td>the same in <code>description</code> or <code>title</code></td><td>not a reference: those fields are not Markdown, so the text stays as it is</td></tr>
+    <tr><td>the words “start the valuation”</td><td>not a reference: plain text, not protected</td></tr>
   </table>
-  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing, as <code>procedure-model</code> says. The rules are in the validator, so they hold offline too.</p>
+  <h3>On save</h3>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a step of <code>conversation</code> starts a procedure</td><td>allowed: it is only the target that is restricted</td></tr>
-    <tr><td>a target with its own <code>Version</code> mistakes</td><td>the save is accepted; the working state may be unfinished, and those mistakes stop a version anyway</td></tr>
-    <tr><td>two procedures start one target</td><td>allowed</td></tr>
-    <tr><td><code>start</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
-    <tr><td>a procedure starting itself, or a longer loop</td><td>refused by <code>loop-guard</code>, not here</td></tr>
+    <tr><td>a procedure this bot does not have, including one only another bot has</td><td>refused with <code>reference.missing</code>; the same in the validator offline</td></tr>
+    <tr><td>a malformed target, such as <code>cms://procedure/</code></td><td>refused with a mistake giving the right form</td></tr>
+    <tr><td>the target <code>conversation</code></td><td>refused: it cannot be started</td></tr>
+    <tr><td>a procedure with <code>Version</code> mistakes</td><td>allowed: the working state may be unfinished</td></tr>
+    <tr><td>several bad links in one save</td><td>all reported at once</td></tr>
+    <tr><td>one guide linking to a procedure and to articles</td><td>allowed</td></tr>
   </table>
+  <h3>The picker and the chip</h3>
+  <p>In <code>llmGuide</code> the picker lists this bot's articles and its procedures, except <code>conversation</code>, and marks which is which. It narrows as the author types an <code>id</code>, a title or a procedure's description. In <code>content</code> it lists articles only. A procedure has no title, so its chip shows its <code>id</code>, whatever the stored label says. Clicking a chip's link opens the procedure, and deleting a chip removes the link from the text.</p>
+  <p>The CLI and plugin have the same ability without a picker: <code>suwagcms procedures list</code> finds the target, and the plugin's main skill gives the link form.</p>
 </section>
-<section data-role="data">
-  <h2>Format</h2>
-  <p>This is part of the public contract with bots.</p>
-  <script type="text/x-code" data-file="in a procedure" data-lang="yaml">
-getDocuments:
-  start: documentsList
-  next:
-    - when: { documents.complete: { oneOf: [yes] } }
-      to: confirm
-    - to: askAgain
-  </script>
+<section data-role="ui">
+  <h2>Editor</h2>
+  <div class="wire after"><span class="wf-label">llmGuide, with a link to a procedure</span>
+    <div class="wf-bar"><b>llmGuide</b><span class="wf-grow"></span><span class="wf-btn">Insert link</span></div>
+    <div class="wf-body">
+      <p>If the customer wants a valuation, start <span class="tag accent wf-new">orderValuation</span>.</p>
+      <div class="wf-card wf-new"><span class="wf-input">val</span><p><span class="tag">procedure</span> orderValuation <span class="wf-muted">The customer orders a valuation of a property</span></p><p><span class="tag">article</span> Valuation terms <span class="wf-muted">warunkiWyceny · oferta</span></p></div>
+    </div>
+  </div>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>A scalar target, like <code>say</code>, and not a mapping: the block has one thing to say, and nothing to map, since an action's mapping exists only because actions never name facts.</li>
-    <li><code>next</code> applies after the target ends, as with Rasa's <code>call</code>: a step's <code>next</code> always says where the procedure goes after its block, and this keeps that true.</li>
-    <li>A blank target is a <code>Version</code> mistake and a wrong one a <code>Save</code> mistake, for the reason <code>procedure-model</code> gives: the first is work still to do, and the second breaks a reference.</li>
+    <li>The chip shows the <code>id</code> rather than the stored label: a procedure has no title that a chip could show instead, and it stays right after a change of <code>id</code>.</li>
+    <li>The label of a link to a procedure stays as written, including in a version: only the model reads a guide, so no customer can meet an old name, and the rule that fills in current titles has no title to use here.</li>
+    <li>A guide cannot link to <code>conversation</code>: the base of every conversation is already running, so such a link can only mislead the model. It is refused with <code>link.procedure.conversation</code>, and the picker leaves it out.</li>
+    <li>The article's link form is reused unchanged, so a bot that does nothing special still gets readable text, and an agent has one form to learn.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-start-block-1</code> A procedure with a <code>start</code> step, saved with <code>suwagcms procedures add --file</code>, reads back with the block and its <code>next</code> as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
-    <li><code>AC-start-block-2</code> A target this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step and listing this bot's procedures.</li>
-    <li><code>AC-start-block-3</code> The target <code>conversation</code> is refused with <code>start.target.conversation</code> and a fix, whichever procedure holds the step.</li>
-    <li><code>AC-start-block-4</code> A target that is not a camelCase <code>id</code> is refused with a mistake and a fix.</li>
-    <li><code>AC-start-block-5</code> A blank target is saved, and the answer lists it among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports it.</li>
-    <li><code>AC-start-block-6</code> A <code>start</code> beside another block in one step is refused, and the mistakes that list the blocks now name <code>start</code>.</li>
-    <li><code>AC-start-block-7</code> A step of <code>conversation</code> can start another procedure, two procedures can start one target, and a target with <code>Version</code> mistakes of its own can be saved as a target.</li>
-    <li><code>AC-start-block-8</code> The validator on its own reports each of these mistakes with the same code.</li>
-    <li><code>AC-start-block-9</code> The plugin's main skill gives the form of the block.</li>
+    <li><code>AC-article-procedure-links-1</code> In <code>llmGuide</code>, choosing a procedure in the picker inserts a chip showing its <code>id</code>, and the saved text holds <code>[label](cms://procedure/id)</code> at that place.</li>
+    <li><code>AC-article-procedure-links-2</code> The picker in <code>llmGuide</code> lists this bot's articles and procedures, marked by kind, narrows by <code>id</code>, title or a procedure's description as the author types, leaves out <code>conversation</code>, and shows no procedure of another bot; the picker in <code>content</code> lists no procedure.</li>
+    <li><code>AC-article-procedure-links-3</code> A link to a procedure in <code>content</code> is refused with <code>link.procedure.notInGuide</code>, with the fix, on the server and in the validator offline.</li>
+    <li><code>AC-article-procedure-links-4</code> A link to a procedure this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the field and the id, on the server and in the validator offline.</li>
+    <li><code>AC-article-procedure-links-5</code> A malformed <code>cms://procedure/</code> target is refused with a mistake giving the right form.</li>
+    <li><code>AC-article-procedure-links-6</code> A link to <code>conversation</code> is refused with a mistake saying it cannot be started.</li>
+    <li><code>AC-article-procedure-links-7</code> A link to a procedure with <code>Version</code> mistakes is accepted.</li>
+    <li><code>AC-article-procedure-links-8</code> A <code>cms://procedure/</code> address in a code span or block, in <code>description</code> or in <code>title</code>, and plain text naming a procedure, are not treated as references and are not refused.</li>
+    <li><code>AC-article-procedure-links-9</code> An article whose guide links to a procedure, opened in the web and saved, keeps the link and all its Markdown: the stored text is the same as before, and a link written through the CLI shows as a chip.</li>
+    <li><code>AC-article-procedure-links-10</code> Clicking a chip's link opens the procedure, and removing a chip removes the link from the saved text.</li>
+    <li><code>AC-article-procedure-links-11</code> The plugin's main skill gives the link form, says it belongs only in <code>llmGuide</code>, and says how to find a target.</li>
+    <li><code>AC-article-procedure-links-12</code> In a version, a link to a procedure is exactly as stored, with its label as written, and only links to articles get the current title.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>The first bot has no such block yet.</b> Suwchatbot's specs say a procedure cannot start another one, and its stack starts procedures only from a message. Until a bot declares <code>start</code>, nothing runs it, and <code>bot-declaration</code> keeps it out of what that bot is offered.</p></div>
-  <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What does a <code>start</code> do when its target is turned off?</legend>
-      <p class="why">README says the model cannot start a procedure that is off, and that an article named explicitly is still delivered, but it does not say what an explicit <code>start</code> does. This spec only fixes the meaning for bots; <code>availability</code> holds its criterion. It assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="runs"><span><b>It still starts: off limits only the model</b><small>matches the rule for articles, and a procedure never stops halfway because of a switch elsewhere</small></span></label>
-      <label><input type="radio" value="next"><span><b>It is skipped, and the procedure goes on from <code>next</code></b><small>a stronger switch, but the facts the target should have written stay empty, and every branch after it must cope</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Does <code>next</code> wait until the target ends?</legend>
-      <p class="why">README maps Rasa's <code>call</code> to <code>start</code>, and <code>call</code> returns to the caller. Suwchatbot's stack has another idea of what comes back on top. This is the format's meaning, so it is costly to change later. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="after"><span><b>Yes: the starter goes on from <code>next</code> once the target ends</b><small>it is what makes a shared part reusable, and it is what README's mapping says</small></span></label>
-      <label><input type="radio" value="handoff"><span><b>No: <code>start</code> ends the starter and hands over</b><small>simpler for a bot, but a <code>start</code> could then have no <code>next</code>, and shared parts could not return</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout assumption"><p>Reading a link in a guide as “the model may start this procedure” is left to the bot, through what it hands to the model. README says only that availability stops it, even from a guide. The CMS delivers the text with the link as it stands.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

@@ -136,8 +136,12 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     }
 
     // Why: a chip opens the article it links to in the same editor, after the same question about unsaved changes.
-    function openLinked(id: string) {
+    function openLinked(id: string, kind: "article" | "procedure") {
         if (!confirmDiscard()) return;
+        if (kind === "procedure") {
+            navigate(`~/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(id)}`);
+            return;
+        }
         fetchArticle(bot, id, new AbortController().signal)
             .then((article) => {
                 setOpen({ kind: "edit", article });

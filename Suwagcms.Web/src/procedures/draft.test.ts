@@ -5,6 +5,7 @@ import {
     FAILURE,
     factsThatFit,
     addRule,
+    addPoint,
     addStep,
     canRemoveRule,
     collectable,
@@ -17,13 +18,18 @@ import {
     fromDetail,
     markFirst,
     removeLocalFact,
+    removePoint,
     removeRule,
+    renamePoint,
     renameStep,
     setBlock,
+    startable,
     setLocalFact,
     stepOrder,
     toSave,
     valuesOffered,
+    withStallText,
+    withStored,
     type Draft,
 } from "./draft";
 
@@ -125,6 +131,51 @@ describe("the draft", () => {
 
         expect(draft.steps["collect"]?.next).toEqual([{ when: {}, to: "collect" }, { to: "say" }]);
         expect(edgesOf(draft).map((edge) => `${edge.id}->${edge.target}`)).toEqual(["collect:rule-0->collect", "collect:rule-1->say"]);
+    });
+
+    it("AC-procedure-creator-21: a start step keeps its target, and conversation and the procedure itself are not offered", () => {
+        let draft = addStep(empty(), "start").draft;
+        expect(toSave(draft).steps).toEqual({ start: { start: "" } });
+        draft = setBlock(draft, "start", { start: "documentsList" });
+        const saved = toSave(draft);
+
+        expect(saved.steps).toEqual({ start: { start: "documentsList" } });
+        expect(startable(["conversation", "documentsList", "orderValuation"], "orderValuation")).toEqual(["documentsList"]);
+    });
+
+    it("AC-procedure-creator-22: an inform keeps its instruction and its points in order, an untouched one goes back as stored, and a renamed point keeps its place", () => {
+        let draft = addStep(empty(), "inform").draft;
+        expect(toSave(draft).steps).toEqual({ inform: { inform: { instruction: "" } } });
+        draft = setBlock(draft, "inform", { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } });
+
+        expect(toSave(draft).steps).toEqual({ inform: { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } } });
+        const stored = fromDetail({
+            ...detail,
+            steps: { tell: { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } } },
+        });
+        expect(Object.keys(stored.steps["tell"]?.inform?.points ?? {})).toEqual(["zebra", "alpha"]);
+        expect(toSave(stored).steps).toEqual({ tell: { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } } });
+        expect(Object.keys(renamePoint({ zebra: "Z", alpha: "A" }, "zebra", "yak"))).toEqual(["yak", "alpha"]);
+        expect(renamePoint({ zebra: "Z", alpha: "A" }, "zebra", "alpha")).toEqual({ zebra: "Z", alpha: "A" });
+        expect(addPoint({ point2: "x" })).toEqual({ point2: "x", point3: "" });
+        expect(addPoint({ point2: "x", point3: "y" })).toEqual({ point2: "x", point3: "y", point4: "" });
+        expect(removePoint({ zebra: "Z", alpha: "A" }, "zebra")).toEqual({ alpha: "A" });
+        expect(withStored(["a", "b"], ["c", "a"])).toEqual(["a", "b", "c"]);
+    });
+
+    it("AC-procedure-creator-20: a context on whenStalled and on an inform goes back as stored, and emptying the text keeps a context", () => {
+        const context = { articles: ["officeContact"], searchQueries: ["how long", " "] };
+        const draft = fromDetail({
+            ...detail,
+            whenStalled: { instruction: "Say it.", context },
+            steps: { tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." }, context } } },
+        });
+
+        expect(toSave(draft).whenStalled).toEqual({ instruction: "Say it.", context });
+        expect(toSave(draft).steps).toEqual({ tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." }, context } } });
+        expect(withStallText(draft.whenStalled, "")).toEqual({ instruction: "", context });
+        expect(withStallText({ instruction: "Say it." }, "")).toBeNull();
+        expect(withStallText(null, "Say it.")).toEqual({ instruction: "Say it." });
     });
 
     it("AC-procedure-creator-8: range is offered only for an int fact, and oneOf offers an enum's values", () => {

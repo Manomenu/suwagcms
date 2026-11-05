@@ -380,8 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Availability is a live setting outside versions. The CMS sends it to one instance of the bot at once, with no push, the others pick it up at their next poll, and it applies to every conversation, also those on an older version. If the bot cannot be reached, the page says the change is saved and not delivered, because “off” is often an emergency and nobody should believe it too early.</p>
   </div>
   <div class="stats">
-    <div><b>27</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>28</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -563,14 +563,14 @@ sequenceDiagram
     <li><code>AC-availability-25</code> A renamed resource keeps its setting, and the SDK says it is off, also for an older version that holds it under its old <code>id</code>.</li>
     <li><code>AC-availability-26</code> An action, HTTP or in code, can be turned off and on like an article, with its setting kept when its <code>id</code> changes, and the Actions screen shows its state; the rest of a code action stays read-only.</li>
     <li><code>AC-availability-28</code> For a step running a turned-off action, the SDK says on any version that the action is off and still gives the step with its <code>onFailure</code> step.</li>
-    <li><code>AC-availability-29</code> A delete and a change of one resource at the same moment run one after the other.</li>
+    <li><code>AC-availability-29</code> The SDK gives an article a procedure names explicitly even while it is off: the version still holds it and the answer says it is off.</li>
+    <li><code>AC-availability-30</code> A delete and a change of one resource at the same moment run one after the other.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>inform-block</code>, <code>instruction-context</code>:</b> the SDK gives an article a procedure names explicitly even while it is off.</li>
     <li><b>after <code>cms-identity</code>:</b> the request carries the bot's key, and a wrong key shows as not delivered, saying how to fix it.</li>
   </ul>
 </section>

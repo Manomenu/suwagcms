@@ -1,3 +1,4 @@
+using System.Globalization;
 using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.Validation;
@@ -9,10 +10,16 @@ internal static class ProcedureVersionRules
         For(MistakeCodes.ProcedureFirstStepMissing, FirstStep),
         For(MistakeCodes.StepBlockMissing, NoBlock),
         For(MistakeCodes.StepBlockEmpty, EmptyBlocks),
+        For(MistakeCodes.StepInformEmpty, InformsNothing),
+        For(MistakeCodes.StepInformPointBlank, BlankPoints),
+        For(MistakeCodes.InstructionBlank, InformBlank),
         For(MistakeCodes.StepUnreachable, Unreachable),
         For(MistakeCodes.NextDefaultMissing, NoDefault),
+        For(MistakeCodes.NextDefaultNotLast, DefaultNotLast),
         For(MistakeCodes.ProcedureNoWhenStalled, NoWhenStalled),
         For(MistakeCodes.ProcedureInstructionBlank, BlankInstruction),
+        For(MistakeCodes.ContextQueryBlank, BlankQueries),
+        ProcedureMistake.For(MistakeCodes.ContextQueryNoArticles, ValidationStage.Version, QueriesWithNothingToSearch),
         new Rule(MistakeCodes.BotConversationMissing, ValidationStage.Version, NoConversation),
     ];
 
@@ -62,6 +69,47 @@ internal static class ProcedureVersionRules
                 .OfType<Mistake>()
         );
 
+    private static IEnumerable<Mistake> InformsNothing(Procedure procedure) =>
+        procedure
+            .Steps.Where(step => step.Value.Inform is { } inform && (inform.Points?.Count ?? 0) == 0)
+            .Select(step =>
+                Make(
+                    procedure,
+                    MistakeCodes.StepInformEmpty,
+                    $"steps.{step.Key}.inform",
+                    $"'inform' of step '{step.Key}' has no points.",
+                    "List what the customer must hear: points: { name: what must be said }."
+                )
+            );
+
+    private static IEnumerable<Mistake> BlankPoints(Procedure procedure) =>
+        procedure.Steps.SelectMany(step =>
+            (step.Value.Inform?.Points ?? new Dictionary<string, string?>())
+                .Where(point => !ProcedureMistake.Given(point.Value))
+                .Select(point =>
+                    Make(
+                        procedure,
+                        MistakeCodes.StepInformPointBlank,
+                        $"steps.{step.Key}.inform.points.{point.Key}",
+                        $"Point '{point.Key}' of 'inform' of step '{step.Key}' has no text.",
+                        "Write what the customer must hear after the point's name."
+                    )
+                )
+        );
+
+    private static IEnumerable<Mistake> InformBlank(Procedure procedure) =>
+        procedure
+            .Steps.Where(step => step.Value.Inform is { } inform && !ProcedureMistake.Given(inform.Instruction))
+            .Select(step =>
+                Make(
+                    procedure,
+                    MistakeCodes.InstructionBlank,
+                    $"steps.{step.Key}.inform.instruction",
+                    $"'inform' of step '{step.Key}' has no instruction.",
+                    "Say what the agent should do with these points."
+                )
+            );
+
     private static IEnumerable<Mistake> Unreachable(Procedure procedure)
     {
         if (ProcedureMistake.ExistingFirstStep(procedure) is not { } first)
@@ -107,6 +155,26 @@ internal static class ProcedureVersionRules
                 )
             );
 
+    private static IEnumerable<Mistake> DefaultNotLast(Procedure procedure) =>
+        procedure.Steps.SelectMany(step =>
+            (step.Value.Next?.Rules ?? [])
+                .SkipLast(1)
+                .Select((rule, index) => (rule, index))
+                .Where(item => item.rule.When is not { Count: > 0 })
+                .Select(item =>
+                    Make(
+                        procedure,
+                        MistakeCodes.NextDefaultNotLast,
+                        string.Create(CultureInfo.InvariantCulture, $"steps.{step.Key}.next[{item.index}]"),
+                        string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"Rule {item.index + 1} of step '{step.Key}' has no 'when' but is not the last one, so the rules after it never apply."
+                        ),
+                        "Move it to the end or give it a 'when'."
+                    )
+                )
+        );
+
     private static IEnumerable<Mistake> NoWhenStalled(Procedure procedure)
     {
         if (procedure.WhenStalled is null && procedure.Steps.Values.Any(step => step.Collect is not null))
@@ -134,6 +202,56 @@ internal static class ProcedureVersionRules
             );
         }
     }
+
+    private sealed record ContextAt(string Path, string Where, InstructionContext Context);
+
+    // Why: every instruction has one shape, so the rules on a context read each one the same way.
+    private static IEnumerable<ContextAt> Contexts(Procedure procedure)
+    {
+        if (procedure.WhenStalled?.Context is { } stalled)
+        {
+            yield return new ContextAt("whenStalled.context", $"'context' of whenStalled in '{procedure.Id}'", stalled);
+        }
+        foreach (var (name, step) in procedure.Steps)
+        {
+            if (step.Inform?.Context is { } context)
+            {
+                yield return new ContextAt($"steps.{name}.inform.context", $"'context' of step '{name}' in '{procedure.Id}'", context);
+            }
+        }
+    }
+
+    private static IEnumerable<Mistake> BlankQueries(Procedure procedure) =>
+        Contexts(procedure)
+            .SelectMany(found =>
+                (found.Context.SearchQueries ?? [])
+                    .Select((query, index) => (query, index))
+                    .Where(item => !ProcedureMistake.Given(item.query))
+                    .Select(item =>
+                        Make(
+                            procedure,
+                            MistakeCodes.ContextQueryBlank,
+                            string.Create(CultureInfo.InvariantCulture, $"{found.Path}.searchQueries[{item.index}]"),
+                            $"{found.Where} has a blank search query.",
+                            "Write the query, or remove it."
+                        )
+                    )
+            );
+
+    private static IEnumerable<Mistake> QueriesWithNothingToSearch(BotDefinition definition, Procedure procedure) =>
+        definition.Articles.Count > 0
+            ? []
+            : Contexts(procedure)
+                .Where(found => (found.Context.SearchQueries ?? []).Any(ProcedureMistake.Given))
+                .Select(found =>
+                    Make(
+                        procedure,
+                        MistakeCodes.ContextQueryNoArticles,
+                        $"{found.Path}.searchQueries",
+                        $"{found.Where} has a search query, and this bot has no articles to search.",
+                        "Add an article to the bot, or remove the query."
+                    )
+                );
 
     private static IEnumerable<Mistake> NoConversation(BotDefinition definition)
     {

@@ -383,7 +383,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>4</b><span>blocks</span></div>
     <div><b>3</b><span>condition kinds</span></div>
-    <div><b>15</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -543,6 +543,7 @@ whenStalled:
     <li><code>AC-procedure-model-13</code> <code>--dry-run</code> on a save gives the same answer and changes nothing, and a stale edit based on an old revision is refused.</li>
     <li><code>AC-procedure-model-14</code> The web and <code>suwagcms procedures list</code> list a bot's procedures with their description and how many mistakes stop a version.</li>
     <li><code>AC-procedure-model-15</code> The plugin's main skill gives the file format of a procedure.</li>
+    <li><code>AC-procedure-model-17</code> A rule with no <code>when</code> that is not the last rule of a step is a <code>Version</code> mistake, <code>next.default.notLast</code>, saying that the rules after it never apply.</li>
   </ul>
 </section>
 

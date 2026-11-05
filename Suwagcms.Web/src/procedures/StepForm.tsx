@@ -7,7 +7,10 @@ import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 
 import type { ActionView, Fact } from "./api";
+import { Checklist } from "./Checklist";
+import { ContextForm } from "./ContextForm";
 import {
+    addPoint,
     addRule,
     collectable,
     connect,
@@ -16,10 +19,16 @@ import {
     FAILURE,
     factsThatFit,
     markFirst,
+    removePoint,
+    renamePoint,
     renameStep,
     setBlock,
+    startable,
     valuesOffered,
+    withStored,
     type Draft,
+    type Inform,
+    type LinkableArticle,
     type Step,
 } from "./draft";
 import { RuleEditor, TargetSelect } from "./RuleEditor";
@@ -58,27 +67,12 @@ function CollectForm({
     onChange: (facts: string[]) => void;
 }) {
     const offered = collectable(facts);
-    // Why: a fact the step already names stays visible even when it is not offered, so opening a procedure never hides what is stored.
-    const names = [...offered.map((fact) => fact.name), ...picked.filter((name) => !offered.some((fact) => fact.name === name))];
-    if (names.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
-    return (
-        <fieldset className="flex flex-col gap-1">
-            <legend className="text-sm font-medium">Collect these facts</legend>
-            {names.map((name) => (
-                <label key={name} className="flex items-center gap-2 text-sm">
-                    <input
-                        type="checkbox"
-                        className="accent-primary"
-                        checked={picked.includes(name)}
-                        onChange={(event) => {
-                            onChange(event.target.checked ? [...picked, name] : picked.filter((other) => other !== name));
-                        }}
-                    />
-                    {name}
-                </label>
-            ))}
-        </fieldset>
+    const names = withStored(
+        offered.map((fact) => fact.name),
+        picked,
     );
+    if (names.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
+    return <Checklist legend="Collect these facts" names={names} picked={picked} onChange={onChange} />;
 }
 
 function AssignForm({
@@ -166,6 +160,110 @@ function AssignForm({
                 </Select>
             )}
         </fieldset>
+    );
+}
+
+function StartForm({ target, offered, onChange }: { target: string; offered: string[]; onChange: (start: string) => void }) {
+    // Why: a target the step already names stays visible even when it is not offered, so opening a procedure never hides what is stored.
+    const options = offered.includes(target) || target === "" ? offered : [target, ...offered];
+    return (
+        <label className="flex flex-col gap-1 text-sm font-medium">
+            Start this procedure
+            <Select
+                className="w-full"
+                value={target}
+                onChange={(event) => {
+                    onChange(event.target.value);
+                }}
+            >
+                <option value="">(choose)</option>
+                {options.map((id) => (
+                    <option key={id} value={id}>
+                        {id}
+                    </option>
+                ))}
+            </Select>
+        </label>
+    );
+}
+
+function PointsForm({ points, onChange }: { points: Record<string, string>; onChange: (points: Record<string, string>) => void }) {
+    const entries = Object.entries(points);
+    return (
+        <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium">Points the customer must hear</legend>
+            {entries.map(([name, text], index) => (
+                // Why: a point's name is what is being typed, so its place in the list is what keeps the field focused.
+                <div key={index} className="flex items-start gap-1">
+                    <Input
+                        aria-label={`Name of point ${index + 1}`}
+                        className="w-32 shrink-0"
+                        value={name}
+                        onChange={(event) => {
+                            onChange(renamePoint(points, name, event.target.value));
+                        }}
+                    />
+                    <Textarea
+                        aria-label={`Text of point ${index + 1}`}
+                        value={text}
+                        onChange={(event) => {
+                            onChange({ ...points, [name]: event.target.value });
+                        }}
+                    />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove point ${index + 1}`}
+                        onClick={() => {
+                            onChange(removePoint(points, name));
+                        }}
+                    >
+                        ✕
+                    </Button>
+                </div>
+            ))}
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                    onChange(addPoint(points));
+                }}
+            >
+                Add point
+            </Button>
+        </fieldset>
+    );
+}
+
+function InformForm({ inform, articles, onChange }: { inform: Inform; articles: LinkableArticle[]; onChange: (inform: Inform) => void }) {
+    return (
+        <div className="flex flex-col gap-3">
+            <label className="flex flex-col gap-1 text-sm font-medium">
+                Instruction
+                <Textarea
+                    placeholder="What the agent does with these points"
+                    value={inform.instruction}
+                    onChange={(event) => {
+                        onChange({ ...inform, instruction: event.target.value });
+                    }}
+                />
+            </label>
+            <PointsForm
+                points={inform.points ?? {}}
+                onChange={(points) => {
+                    onChange({ ...inform, points });
+                }}
+            />
+            <ContextForm
+                context={inform.context}
+                articles={articles}
+                onChange={(context) => {
+                    onChange({ ...inform, context });
+                }}
+            />
+        </div>
     );
 }
 
@@ -294,9 +392,12 @@ function ActionStepForm({
 /** The form of the selected step: its name, its blocks and its next. Every control writes into the draft; none of them judges it. */
 export function StepForm({
     bot,
+    id,
     name,
     draft,
     facts,
+    procedures,
+    articles,
     actions,
     edit,
     onRenamed,
@@ -304,9 +405,12 @@ export function StepForm({
     onLeave,
 }: {
     bot: string;
+    id: string;
     name: string;
     draft: Draft;
     facts: Fact[];
+    procedures: string[];
+    articles: LinkableArticle[];
     actions: ActionView[];
     edit: (change: (draft: Draft) => Draft) => void;
     onRenamed: (name: string) => void;
@@ -386,6 +490,24 @@ export function StepForm({
                     onLeave={onLeave}
                     onChange={(assign) => {
                         edit((current) => setBlock(current, name, { assign }));
+                    }}
+                />
+            )}
+            {step.start !== undefined && (
+                <StartForm
+                    target={step.start}
+                    offered={startable(procedures, id)}
+                    onChange={(start) => {
+                        edit((current) => setBlock(current, name, { start }));
+                    }}
+                />
+            )}
+            {step.inform && (
+                <InformForm
+                    inform={step.inform}
+                    articles={articles}
+                    onChange={(inform) => {
+                        edit((current) => setBlock(current, name, { inform }));
                     }}
                 />
             )}

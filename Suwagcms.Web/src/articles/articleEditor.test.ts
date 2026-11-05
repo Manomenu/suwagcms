@@ -8,6 +8,7 @@ import type { LinkTarget } from "./articleLink";
 const targets: LinkTarget[] = [
     { id: "cennik", title: "Prices", knowledgeBase: "offer" },
     { id: "wycena", title: "Valuation", knowledgeBase: "faq" },
+    { id: "orderValuation", title: "orderValuation", knowledgeBase: "", kind: "procedure", description: "Orders" },
 ];
 
 function editorOf(markdown: string, opened: string[] = []): Editor {
@@ -99,6 +100,59 @@ describe("the Markdown the editor reads and writes", () => {
         });
 
         expect(editor.getMarkdown()).toBe("See .");
+        editor.destroy();
+    });
+
+    it("AC-article-procedure-links-1: a procedure chosen in the picker is stored as a link at that place, with its id as the label", () => {
+        const editor = editorOf("Start ");
+        editor.commands.focus("end");
+        editor.commands.insertContent({ type: "articleLink", attrs: { id: "orderValuation", label: "orderValuation", kind: "procedure" } });
+
+        expect(editor.getMarkdown()).toBe("Start [orderValuation](cms://procedure/orderValuation)");
+        editor.destroy();
+    });
+
+    it("AC-article-procedure-links-9: a guide link written elsewhere is a chip with the id, and the text comes back as it was with all its Markdown", () => {
+        const guide = "# Guide\n\n- If so, start [the valuation](cms://procedure/orderValuation).\n- See [Old](cms://article/cennik).";
+        const editor = editorOf(guide);
+        const chip = editor.view.dom.querySelector("[data-procedure-link]");
+
+        expect(chip?.getAttribute("data-procedure-link")).toBe("orderValuation");
+        expect(chip?.textContent).toBe("orderValuation");
+        expect(editor.getMarkdown()).toBe(guide);
+        editor.destroy();
+    });
+
+    it("AC-article-procedure-links-8: a procedure address in code is not a chip", () => {
+        const editor = editorOf("Code `[x](cms://procedure/orderValuation)` stays.");
+
+        expect(editor.view.dom.querySelectorAll("[data-procedure-link]")).toHaveLength(0);
+        expect(editor.getMarkdown()).toBe("Code `[x](cms://procedure/orderValuation)` stays.");
+        editor.destroy();
+    });
+
+    it("AC-article-procedure-links-10: clicking a chip opens the procedure and removing the chip removes the link from the text", () => {
+        const opened: string[] = [];
+        const editor = new Editor({
+            extensions: extensionsOf({
+                targets: () => targets,
+                selfId: () => "wycena",
+                onOpen: (id, kind) => opened.push(`${kind}:${id}`),
+            }),
+            content: "Start [it](cms://procedure/orderValuation).",
+            contentType: "markdown",
+        });
+        editor.view.dom.querySelector<HTMLElement>("[data-procedure-link]")?.click();
+        expect(opened).toEqual(["procedure:orderValuation"]);
+
+        editor.commands.command(({ tr, state }) => {
+            state.doc.descendants((node, position) => {
+                if (node.type.name === "articleLink") tr.delete(position, position + node.nodeSize);
+            });
+            return true;
+        });
+
+        expect(editor.getMarkdown()).toBe("Start .");
         editor.destroy();
     });
 });

@@ -2,8 +2,8 @@
 // in the shape the server accepts, and the server's dry run says what is wrong with it.
 import type { Fact, ProcedureDetail, SaveProcedure } from "./api";
 
-export type BlockName = "listen" | "collect" | "say" | "assign" | "action";
-export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "action"];
+export type BlockName = "listen" | "collect" | "say" | "assign" | "start" | "inform" | "action";
+export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "start", "inform", "action"];
 
 export interface Condition {
     oneOf?: string[];
@@ -19,11 +19,28 @@ export interface Rule {
     to: string;
 }
 
+export interface Context {
+    articles?: string[];
+    searchQueries?: string[];
+}
+
+export interface Instruction {
+    instruction: string;
+    context?: Context;
+}
+
+export interface Inform extends Instruction {
+    points?: Record<string, string>;
+}
+
 export interface Step {
     listen?: true;
     collect?: string[];
     say?: string;
     assign?: Record<string, string>;
+    /** The id of the procedure this step starts. */
+    start?: string;
+    inform?: Inform;
     /** The id of the action this step runs; "" until one is chosen. */
     action?: string;
     /** Parameter name to the fact that gives its value. */
@@ -41,7 +58,7 @@ export type LocalFact = NonNullable<SaveProcedure["localFacts"]>[string];
 export interface Draft {
     description: string;
     firstStep: string | null;
-    whenStalled: string | null;
+    whenStalled: Instruction | null;
     steps: Record<string, Step>;
     localFacts: Record<string, LocalFact>;
 }
@@ -68,12 +85,36 @@ function ruleOf(raw: unknown): Rule {
     return rest;
 }
 
+function instructionOf(wire: NonNullable<ProcedureDetail["whenStalled"]>): Instruction {
+    const context = wire.context;
+    return {
+        instruction: wire.instruction ?? "",
+        ...(context
+            ? {
+                  context: {
+                      ...(context.articles ? { articles: [...context.articles] } : {}),
+                      ...(context.searchQueries ? { searchQueries: [...context.searchQueries] } : {}),
+                  },
+              }
+            : {}),
+    };
+}
+
+function informOf(wire: NonNullable<Wire["inform"]>): Inform {
+    return {
+        ...instructionOf({ instruction: wire.instruction ?? "", context: wire.context ?? null }),
+        ...(wire.points ? { points: { ...wire.points } } : {}),
+    };
+}
+
 function stepOf(wire: Wire): Step {
     const step: Step = {};
     if (wire.listen) step.listen = true;
     if (wire.collect) step.collect = [...wire.collect];
     if (wire.say != null) step.say = wire.say;
     if (wire.assign) step.assign = { ...wire.assign };
+    if (wire.start != null) step.start = wire.start;
+    if (wire.inform) step.inform = informOf(wire.inform);
     if (wire.action != null) step.action = wire.action;
     if (wire.with) step.with = { ...wire.with };
     if (wire.results) step.results = { ...wire.results };
@@ -88,7 +129,7 @@ export function fromDetail(detail: ProcedureDetail): Draft {
     return {
         description: detail.description,
         firstStep: detail.firstStep,
-        whenStalled: detail.whenStalled?.instruction ?? null,
+        whenStalled: detail.whenStalled ? instructionOf(detail.whenStalled) : null,
         steps: Object.fromEntries(Object.entries(detail.steps).map(([name, wire]) => [name, stepOf(wire)])),
         localFacts: detail.localFacts ?? {},
     };
@@ -99,7 +140,7 @@ export function toSave(draft: Draft): SaveProcedure {
     return {
         description: draft.description,
         firstStep: draft.firstStep,
-        whenStalled: draft.whenStalled === null ? null : { instruction: draft.whenStalled },
+        whenStalled: draft.whenStalled,
         steps: Object.fromEntries(
             Object.entries(draft.steps).map(([name, step]) => [
                 name,
@@ -108,6 +149,8 @@ export function toSave(draft: Draft): SaveProcedure {
                     ...(step.collect ? { collect: step.collect } : {}),
                     ...(step.say === undefined ? {} : { say: step.say }),
                     ...(step.assign ? { assign: step.assign } : {}),
+                    ...(step.start === undefined ? {} : { start: step.start }),
+                    ...(step.inform ? { inform: step.inform } : {}),
                     ...(step.action === undefined ? {} : { action: step.action }),
                     ...(step.with ? { with: step.with } : {}),
                     ...(step.results ? { results: step.results } : {}),
@@ -226,6 +269,8 @@ export function addStep(draft: Draft, block: BlockName): { draft: Draft; name: s
         collect: { collect: [] },
         say: { say: "" },
         assign: { assign: {} },
+        start: { start: "" },
+        inform: { inform: { instruction: "" } },
         action: { action: "" },
     };
     return { draft: { ...draft, steps: { ...draft.steps, [name]: empty[block] } }, name };
@@ -368,6 +413,33 @@ export function collectable(facts: Fact[]): Fact[] {
     return facts.filter((fact) => fact.writableBy !== "assign");
 }
 
+/** An article a block or a context may name: the id is what is stored, the title what the author sees. */
+export interface LinkableArticle {
+    id: string;
+    title: string;
+}
+
+/** The text of a whenStalled as typed: emptying it removes the instruction, unless a context would be lost with it. */
+export function withStallText(whenStalled: Instruction | null, text: string): Instruction | null {
+    if (text === "" && !whenStalled?.context) return null;
+    return { ...whenStalled, instruction: text };
+}
+
+export function articleLabel(articles: LinkableArticle[], id: string): string {
+    const title = articles.find((article) => article.id === id)?.title;
+    return title === undefined ? id : `${title} (${id})`;
+}
+
+/** The procedures a start may target: not the base of every conversation, and not the procedure itself, which would be a loop. */
+export function startable(procedures: string[], self: string): string[] {
+    return procedures.filter((id) => id !== "conversation" && id !== self);
+}
+
+/** What a form lists: what it offers, then whatever the step already names, so opening a procedure never hides what is stored. */
+export function withStored(offered: string[], stored: string[]): string[] {
+    return [...offered, ...stored.filter((name) => !offered.includes(name))];
+}
+
 export function valuesOffered(fact: Pick<Fact, "type" | "values"> | undefined): string[] | null {
     return fact?.type === "enum" ? (fact.values ?? []) : null;
 }
@@ -387,4 +459,24 @@ function holds(target: ContractField, source: ContractField): boolean {
 /** The facts a row of an action step offers: every value the source can hold must fit the target, so a parameter takes from a fact and a result writes to one. */
 export function factsThatFit(kind: "with" | "results", field: ContractField, facts: Fact[]): Fact[] {
     return facts.filter((fact) => (kind === "with" ? holds(field, fact) : holds(fact, field)));
+}
+
+function freePointName(points: Record<string, string>): string {
+    let number = Object.keys(points).length + 1;
+    while (`point${number}` in points) number++;
+    return `point${number}`;
+}
+
+export function addPoint(points: Record<string, string>): Record<string, string> {
+    return { ...points, [freePointName(points)]: "" };
+}
+
+// Why: a name another point already has is not taken, because the map could not hold both.
+export function renamePoint(points: Record<string, string>, name: string, newName: string): Record<string, string> {
+    if (newName in points) return points;
+    return Object.fromEntries(Object.entries(points).map(([key, text]) => [key === name ? newName : key, text]));
+}
+
+export function removePoint(points: Record<string, string>, name: string): Record<string, string> {
+    return Object.fromEntries(Object.entries(points).filter(([key]) => key !== name));
 }

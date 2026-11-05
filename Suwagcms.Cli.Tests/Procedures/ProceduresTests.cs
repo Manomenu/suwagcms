@@ -98,7 +98,7 @@ public sealed class ProceduresTests : IDisposable
             {
                 continue;
             }
-            foreach (var field in new[] { "listen", "collect", "say", "assign", "next" })
+            foreach (var field in new[] { "listen", "collect", "say", "assign", "start", "inform", "next" })
             {
                 block[field] ??= null;
             }
@@ -562,6 +562,199 @@ public sealed class ProceduresTests : IDisposable
         Assert.NotEqual(0, misspelt.ExitCode);
         Assert.Contains("--set <step>=<x>,<y>", misspelt.Error, StringComparison.Ordinal);
         Assert.Empty(server.Requests);
+    }
+
+    private const string StartYaml = """
+        id: orderValuation
+        description: The customer orders a valuation of a property.
+        firstStep: getDocuments
+        steps:
+          getDocuments:
+            start: documentsList
+            next: confirm
+          confirm:
+            say: Thank you.
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-start-block-1")]
+    public async Task A_start_step_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(
+            (request, body) =>
+                request.Method == HttpMethod.Get ? Echo(Wire(StartYaml).ToJsonString(), "orderValuation") : Echo(body, "orderValuation", 2)
+        );
+
+        var yaml = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", StartYaml)), server);
+        var json = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.json", Wire(StartYaml).ToJsonString())), server);
+        var shown = await TestCli.Run(Args("procedures", "show", "orderValuation"), server);
+        var edited = await TestCli.Run(Args("procedures", "edit", "orderValuation", "--file", FileWith("s.yaml", shown.Output)), server);
+
+        Assert.Equal((0, 0, 0, 0), (yaml.ExitCode, json.ExitCode, shown.ExitCode, edited.ExitCode));
+        var sent = JsonNode.Parse(recorder.Calls[0].Body);
+        Assert.Equal("documentsList", At(sent, "steps", "getDocuments", "start").GetValue<string>());
+        Assert.Equal("confirm", At(sent, "steps", "getDocuments", "next").GetValue<string>());
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[^1].Body)));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-start-block-5")]
+    public async Task A_start_left_blank_in_yaml_is_sent_as_blank_saved_and_listed_as_a_version_mistake_with_exit_0()
+    {
+        const string blank = """
+            id: orderValuation
+            description: d
+            firstStep: get
+            steps:
+              get:
+                start:
+            """;
+        const string notReady = """
+            [{"code":"step.block.empty","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.get.start",
+              "message":"In step 'get', start names no procedure.","fix":"Write the id of the procedure to start: start: documentsList.","related":[]}]
+            """;
+        var recorder = new Recorder();
+        var server = recorder.Serving((_, body) => Echo(body, "orderValuation", 1, notReady));
+
+        var result = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", blank)), server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("", At(JsonNode.Parse(recorder.Calls[0].Body), "steps", "get", "start").GetValue<string>());
+        Assert.Contains("step.block.empty", result.Output, StringComparison.Ordinal);
+    }
+
+    private const string InformYaml = """
+        id: orderValuation
+        description: The customer orders a valuation of a property.
+        firstStep: whatHappensNext
+        steps:
+          whatHappensNext:
+            inform:
+              instruction: Tell the customer where to bring the documents.
+              context:
+                articles: [zebraRules, officeContact]
+              points:
+                turnaround: The report is ready within 7 working days.
+                delivery: 5
+            next: wait
+          wait:
+            listen:
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-inform-block-1")]
+    public async Task An_inform_step_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(
+            (request, body) =>
+                request.Method == HttpMethod.Get ? Echo(Wire(InformYaml).ToJsonString(), "orderValuation") : Echo(body, "orderValuation", 2)
+        );
+
+        var yaml = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", InformYaml)), server);
+        var json = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.json", Wire(InformYaml).ToJsonString())), server);
+        var shown = await TestCli.Run(Args("procedures", "show", "orderValuation"), server);
+        var edited = await TestCli.Run(Args("procedures", "edit", "orderValuation", "--file", FileWith("s.yaml", shown.Output)), server);
+
+        Assert.Equal((0, 0, 0, 0), (yaml.ExitCode, json.ExitCode, shown.ExitCode, edited.ExitCode));
+        var sent = JsonNode.Parse(recorder.Calls[0].Body);
+        var inform = At(sent, "steps", "whatHappensNext", "inform");
+        Assert.Equal("Tell the customer where to bring the documents.", At(inform, "instruction").GetValue<string>());
+        Assert.Equal(["zebraRules", "officeContact"], At(inform, "context", "articles").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(["turnaround", "delivery"], At(inform, "points").AsObject().Select(point => point.Key));
+        Assert.Equal("5", At(inform, "points", "delivery").GetValue<string>());
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[^1].Body)));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-inform-block-6")]
+    public async Task An_inform_with_nothing_filled_in_is_sent_with_a_blank_instruction_and_its_mistakes_exit_0()
+    {
+        const string blank = """
+            id: orderValuation
+            description: d
+            firstStep: tell
+            steps:
+              tell:
+                inform:
+                  instruction:
+            """;
+        const string notReady = """
+            [{"code":"step.inform.empty","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.tell.inform",
+              "message":"'inform' of step 'tell' has no points.","fix":"List what the customer must hear: points: { name: what must be said }.","related":[]},
+             {"code":"instruction.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.tell.inform.instruction",
+              "message":"'inform' of step 'tell' has no instruction.","fix":"Say what the agent should do with these points.","related":[]}]
+            """;
+        var recorder = new Recorder();
+        var server = recorder.Serving((_, body) => Echo(body, "orderValuation", 1, notReady));
+
+        var result = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", blank)), server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("", At(JsonNode.Parse(recorder.Calls[0].Body), "steps", "tell", "inform", "instruction").GetValue<string>());
+        Assert.Contains("step.inform.empty", result.Output, StringComparison.Ordinal);
+        Assert.Contains("instruction.blank", result.Output, StringComparison.Ordinal);
+    }
+
+    private const string ContextYaml = """
+        id: orderValuation
+        description: The customer orders a valuation of a property.
+        firstStep: wait
+        steps:
+          wait:
+            listen:
+        whenStalled:
+          instruction: Tell the customer you could not finish and how to reach the office.
+          context:
+            articles: [officeContact]
+            searchQueries:
+              - how long a valuation takes
+              - "42"
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-instruction-context-1")]
+    public async Task A_when_stalled_with_a_context_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(
+            (request, body) =>
+                request.Method == HttpMethod.Get
+                    ? Echo(Wire(ContextYaml).ToJsonString(), "orderValuation")
+                    : Echo(body, "orderValuation", 2)
+        );
+
+        var yaml = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", ContextYaml)), server);
+        var json = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.json", Wire(ContextYaml).ToJsonString())), server);
+        var shown = await TestCli.Run(Args("procedures", "show", "orderValuation"), server);
+        var edited = await TestCli.Run(Args("procedures", "edit", "orderValuation", "--file", FileWith("s.yaml", shown.Output)), server);
+
+        Assert.Equal((0, 0, 0, 0), (yaml.ExitCode, json.ExitCode, shown.ExitCode, edited.ExitCode));
+        var sent = JsonNode.Parse(recorder.Calls[0].Body);
+        var context = At(sent, "whenStalled", "context");
+        Assert.Equal(["officeContact"], At(context, "articles").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(["how long a valuation takes", "42"], At(context, "searchQueries").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
+        Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[^1].Body)));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-instruction-context-5")]
+    public async Task A_blank_query_saved_with_the_cli_is_listed_as_a_version_mistake_with_exit_0()
+    {
+        const string notReady = """
+            [{"code":"context.query.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"whenStalled.context.searchQueries[0]",
+              "message":"'context' of whenStalled in 'orderValuation' has a blank search query.","fix":"Write the query, or remove it.","related":[]}]
+            """;
+        var server = new Recorder().Serving((_, body) => Echo(body, "orderValuation", 1, notReady));
+
+        var result = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", ContextYaml)), server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("context.query.blank", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

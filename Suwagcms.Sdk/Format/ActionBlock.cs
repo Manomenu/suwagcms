@@ -14,6 +14,9 @@ public sealed record ActionBlock(
             .Select(entry => new BlockFact(entry.Value, $"with.{entry.Key}", FactUse.Parameter))
             .Concat(Results.Select(entry => new BlockFact(entry.Value, $"results.{entry.Key}", FactUse.Result)));
 
+    public override IEnumerable<BlockTarget> Targets =>
+        string.IsNullOrWhiteSpace(ActionId) ? [] : [new BlockTarget(new ResourceRef(ResourceKind.Action, ActionId), "action")];
+
     public override BlockGap? Gap =>
         string.IsNullOrWhiteSpace(ActionId)
             ? new BlockGap("action names no action.", "Write the id of the action to run: action: checkServiceability.")

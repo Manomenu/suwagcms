@@ -2,7 +2,7 @@ namespace Suwagcms.Sdk.Validation;
 
 internal static class FactNames
 {
-    public static bool IsValid(string name) => name.Split('.').All(ResourceIds.IsCamelCase);
+    public static bool IsValid(string? name) => name is not null && name.Split('.').All(ResourceIds.IsCamelCase);
 
-    public static string Suggest(string name) => string.Join('.', name.Split('.').Select(ResourceIds.Suggest));
+    public static string Suggest(string? name) => string.Join('.', (name ?? "").Split('.').Select(ResourceIds.Suggest));
 }

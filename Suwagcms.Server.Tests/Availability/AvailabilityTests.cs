@@ -517,7 +517,7 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-availability-29")]
+    [Trait("criterion", "AC-availability-30")]
     public async Task A_delete_and_a_change_of_one_resource_at_the_same_moment_run_one_after_the_other()
     {
         await using var scene = await SceneAsync();

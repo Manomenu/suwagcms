@@ -447,7 +447,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><th>Situation</th><th>Result</th></tr>
     <tr><td>a link to an article this bot does not have, including another bot's article</td><td>refused with <code>reference.missing</code>; the same in the validator offline</td></tr>
     <tr><td>a malformed <code>cms://</code> target, such as <code>cms://article/</code> or <code>cms://page/x</code></td><td>refused with a mistake giving the right form</td></tr>
-    <tr><td><code>cms://procedure/…</code></td><td>refused until <code>article-procedure-links</code> exists; afterwards only in <code>llmGuide</code></td></tr>
+    <tr><td><code>cms://procedure/…</code></td><td>only in <code>llmGuide</code>: <code>article-procedure-links</code></td></tr>
     <tr><td>several bad links in one save</td><td>all reported at once</td></tr>
     <tr><td>a link to an article in another base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
     <tr><td>two articles that link to each other</td><td>a loop, which <code>loop-guard</code> refuses, also when both arrive in one file of changes</td></tr>
@@ -490,7 +490,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-article-links-5</code> Clicking a chip's link opens the target article, and removing a chip removes the link from the saved text.</li>
     <li><code>AC-article-links-6</code> A link written through the CLI as Markdown is shown as a chip in the web.</li>
     <li><code>AC-article-links-7</code> A link to an article this bot does not have is refused with <code>reference.missing</code>, naming the field and the id, also when another bot has it, on the server and in the validator offline.</li>
-    <li><code>AC-article-links-9</code> A malformed <code>cms://</code> target, and a <code>cms://procedure/</code> target, are each refused with a mistake giving the right form.</li>
+    <li><code>AC-article-links-9</code> A malformed <code>cms://</code> target is refused with a mistake giving the right form.</li>
     <li><code>AC-article-links-10</code> A <code>cms://</code> address in a code span or code block, plain text naming an article, and an ordinary web link are not treated as references.</li>
     <li><code>AC-article-links-11</code> A link to an article in another knowledge base of the same bot is accepted.</li>
     <li><code>AC-article-links-12</code> The plugin's main skill gives the link form and how to find a target.</li>

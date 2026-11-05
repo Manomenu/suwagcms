@@ -8,10 +8,7 @@ import "./articleEditor.css";
 import { extensionsOf } from "./articleEditor";
 import { openPicker, type LinkTarget } from "./articleLink";
 
-/**
- * A Markdown text with links to other articles as chips. It reports Markdown only when the author changes the text, so a text
- * that was opened and not touched is never rewritten.
- */
+// Why: it reports Markdown only when the author changes the text, so a text that was opened and not touched is never rewritten.
 export function LinkedTextEditor({
     label,
     value,
@@ -29,7 +26,7 @@ export function LinkedTextEditor({
     targets: LinkTarget[];
     selfId: string;
     onChange: (markdown: string) => void;
-    onOpen: (id: string) => void;
+    onOpen: (id: string, kind: "article" | "procedure") => void;
 }) {
     // Why: the editor is created once, so what it reads while it lives is kept in one object that every render brings up to date.
     const [live] = useState(() => ({ targets, selfId, onChange, onOpen }));
@@ -40,8 +37,8 @@ export function LinkedTextEditor({
         extensionsOf({
             targets: () => live.targets,
             selfId: () => live.selfId,
-            onOpen: (target) => {
-                live.onOpen(target);
+            onOpen: (target, kind) => {
+                live.onOpen(target, kind);
             },
         }),
     );

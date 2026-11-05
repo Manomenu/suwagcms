@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-inform-block.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-start-block.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inform block</title>
+<title>Start block</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Inform block</h1>
+  <h1>Start block</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 19 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>articles</code>, <code>procedure-model</code></span>
+    <span><b>Feature:</b> 18 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,148 +376,114 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A step can hold a new block, <code>inform</code>, naming the articles and facts to pass on to the customer, with an instruction saying how. Where <code>say</code> sends a fixed text, <code>inform</code> lets the model say it in its own words.</p>
-    <p>The CMS checks that everything named exists in this bot, and an article or fact named this way becomes a reference that protects its target. Saying it, and checking it was said, belong to the bot.</p>
+    <p>A step can hold a new block, <code>start: documentsList</code>, which starts another procedure of the same bot. It is the format's equivalent of Rasa's <code>call</code>, and it makes a reference from one procedure to another.</p>
+    <p>The CMS checks that the target exists and refuses <code>conversation</code> as a target, since that is the base of every conversation. Running the block belongs to the bot.</p>
   </div>
   <div class="stats">
     <div><b>9</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>After the land register number and the customer's name are collected, the customer must hear where to bring the documents, and that address is already in the article <code>officeContact</code>. With <code>say</code> the author copies it into the procedure as fixed text, in one language, and it goes stale when the article changes. A free answer from the model can leave it out. <code>inform</code> names the article by <code>id</code>, so the procedure holds a reference, not a copy, that the CMS can check and protect.</p>
+  <p>Two procedures that need the same part, such as collecting a land register number, must each copy its steps today, and the copies drift apart. README therefore has a <code>start</code> block. Because the target is named by <code>id</code>, the CMS can check it, which free text or a convention could not do.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>A step names what must reach the customer, by reference.</li>
-      <li>Anything named that does not exist is refused on save.</li>
+      <li>A step names another procedure as its one block, and the format says what that means.</li>
+      <li>A target that does not exist, or may not be started, is refused on save.</li>
       <li>A half-built step can still be saved, as any other block can.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Writing the text, or checking what the model said: bots do that, and the first bot's specs are in its own repository.</li>
-      <li>Background the model reads but need not pass on, and search queries: <code>instruction-context</code>.</li>
-      <li>Refusing a loop through <code>inform</code>: <code>loop-guard</code>. Refusing to delete what it names: <code>delete-guard</code>.</li>
-      <li>The form in the creator: <code>procedure-creator</code>.</li>
-      <li>Checking that a fact has a value when the step is reached: only a running conversation knows.</li>
+      <li>Running the block: bots run procedures, and the first bot's specs are in its own repository.</li>
+      <li>Passing values to the started procedure: global facts are shared, and local facts are invisible by design.</li>
+      <li>Refusing a loop through <code>start</code>: <code>loop-guard</code>. Refusing to delete a target: <code>delete-guard</code>.</li>
+      <li>The form in the creator: <code>procedure-creator</code>. Offering the block only to bots that declare it: <code>bot-declaration</code>.</li>
+      <li>A limit on how deep starts may nest: no rule here can know what a bot can hold.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent adds a step that tells the customer where to go</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml
-Saved orderValuation, revision 6.
+  <h3>1. An agent reuses a procedure</h3>
+  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml   <span class="dim"># step getDocuments starts documentsList</span>
+Saved orderValuation, revision 5.
 <span class="dim">$</span> suwagcms procedures show orderValuation
 <span class="dim">…</span>
-  whatHappensNext:
-    inform:
-      instruction: Tell the customer where to bring the documents.
-      articles: [officeContact]
-      facts: [customer.city]
-    next: wait</div>
-  <h3>2. A missing article and a missing fact</h3>
-  <div class="term">Refused, 2 mistakes:
-  reference.missing  'inform' of step 'whatHappensNext' in 'orderValuation' names article 'officeContacts', which this bot does not have. 'suwagcms articles list' shows them.
-  reference.missing  'inform' of step 'whatHappensNext' in 'orderValuation' names fact 'customer.cty', which this bot does not have. Facts: customer.city, order.kind.</div>
-  <h3>3. A step not finished yet</h3>
-  <div class="term">Saved orderValuation, revision 7. Not ready for a version, 2 mistakes:
-  step.inform.empty        'inform' of step 'whatHappensNext' names nothing to pass on. Add an article or a fact.
-  instruction.blank        'inform' of step 'whatHappensNext' has no instruction. Say how to pass this on.</div>
+  getDocuments:
+    start: documentsList
+    next: confirm</div>
+  <h3>2. A typo in the target</h3>
+  <div class="term">Refused, 1 mistake:
+  reference.missing  'start' of step 'getDocuments' in 'orderValuation' names procedure 'documentList', which this bot does not have. Procedures: conversation, documentsList, orderValuation.</div>
+  <h3>3. The base procedure as a target</h3>
+  <div class="term">Refused, 1 mistake:
+  start.target.conversation  'start' of step 'back' in 'orderValuation' names 'conversation', which cannot be started: it is the base of every conversation. End the procedure here instead, by leaving out 'next'.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
   <h3>What the block means</h3>
-  <p>When a procedure reaches the step, the bot has the model pass on the named articles and facts following the instruction, then goes on from <code>next</code> without waiting for a message, as with <code>say</code>. Unlike <code>say</code>, the customer gets the model's words.</p>
-  <table>
-    <tr><th>Field</th><th>Holds</th><th>Rule</th></tr>
-    <tr><td><code>instruction</code></td><td>how to pass it on: the same instruction form as <code>whenStalled</code></td><td>required before a version, not blank</td></tr>
-    <tr><td><code>articles</code></td><td>ids of articles of this bot, from any knowledge base</td><td>each must exist on save; order is kept</td></tr>
-    <tr><td><code>facts</code></td><td>names of facts this procedure sees</td><td>each must exist on save; order is kept</td></tr>
-  </table>
+  <p>When a procedure reaches the step, the bot starts the target. When the target ends, the procedure goes on from the step's <code>next</code>, or ends if there is none. The target has its own local facts and sees none of the starter's. <code>next</code> follows the same rules as on any step, with rules on facts included, and those facts may have been written by the target if they are global.</p>
   <h3>What is checked when</h3>
   <table>
     <tr><th>Mistake</th><th>Stage</th></tr>
-    <tr><td>an article or fact this bot does not have, including one only another bot has</td><td>Save, with <code>reference.missing</code></td></tr>
-    <tr><td>an <code>id</code> or fact name not in the right form</td><td>Save</td></tr>
-    <tr><td>a field the block does not have</td><td>Save, on the server: unknown fields are refused on every save</td></tr>
-    <tr><td>neither an article nor a fact; a blank or missing <code>instruction</code></td><td>Version</td></tr>
+    <tr><td>a target that is not a camelCase <code>id</code></td><td>Save</td></tr>
+    <tr><td>a target this bot does not have, including one only another bot has</td><td>Save, with <code>reference.missing</code></td></tr>
+    <tr><td>the target <code>conversation</code></td><td>Save, with <code>start.target.conversation</code></td></tr>
+    <tr><td>a blank target</td><td>Version, like an empty <code>collect</code>: an author can add the step before filling it in</td></tr>
   </table>
-  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing. The rules are in the validator, so they hold offline too.</p>
+  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing, as <code>procedure-model</code> says. The rules are in the validator, so they hold offline too.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a fact with any <code>writableBy</code>, including <code>assign</code></td><td>allowed: naming it is the author's choice to pass it on; the model still cannot write it (see Open questions)</td></tr>
-    <tr><td>the same article or fact named twice</td><td>accepted, and read back as written; it means one thing to pass on</td></tr>
-    <tr><td>an article in another knowledge base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
-    <tr><td><code>inform</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
-    <tr><td><code>next</code> on an <code>inform</code> step</td><td>the same rules as on any step; with none, the procedure ends</td></tr>
+    <tr><td>a step of <code>conversation</code> starts a procedure</td><td>allowed: it is only the target that is restricted</td></tr>
+    <tr><td>a target with its own <code>Version</code> mistakes</td><td>the save is accepted; the working state may be unfinished, and those mistakes stop a version anyway</td></tr>
+    <tr><td>two procedures start one target</td><td>allowed</td></tr>
+    <tr><td><code>start</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
+    <tr><td>a procedure starting itself, or a longer loop</td><td>refused by <code>loop-guard</code>, not here</td></tr>
   </table>
 </section>
 <section data-role="data">
   <h2>Format</h2>
   <p>This is part of the public contract with bots.</p>
   <script type="text/x-code" data-file="in a procedure" data-lang="yaml">
-whatHappensNext:
-  inform:
-    instruction: Tell the customer where to bring the documents.
-    articles: [officeContact]
-    facts: [customer.city]
-  next: wait
+getDocuments:
+  start: documentsList
+  next:
+    - when: { documents.complete: { oneOf: [yes] } }
+      to: confirm
+    - to: askAgain
   </script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>The block lists articles and facts, as README and the feature map say. What must be said that neither holds belongs in an article, which keeps one place for what is true.</li>
-    <li>An empty block and a blank instruction are <code>Version</code> mistakes, for the reason <code>procedure-model</code> gives: they are work still to do. A name with no target breaks a reference, so it is a <code>Save</code> mistake.</li>
-    <li>The instruction is required, as on <code>whenStalled</code>: without it a bot would have to invent how to phrase the step, and two bots would do it differently.</li>
+    <li>A scalar target, like <code>say</code>, and not a mapping: the block has one thing to say, and nothing to map, since an action's mapping exists only because actions never name facts.</li>
+    <li><code>next</code> applies after the target ends, as with Rasa's <code>call</code>: a step's <code>next</code> always says where the procedure goes after its block, and this keeps that true.</li>
+    <li>A blank target is a <code>Version</code> mistake and a wrong one a <code>Save</code> mistake, for the reason <code>procedure-model</code> gives: the first is work still to do, and the second breaks a reference.</li>
+    <li>A <code>start</code> whose target is turned off still starts: off limits only the model, as it does for an article named explicitly, and a procedure never stops halfway because of a switch elsewhere.</li>
+    <li>The starter goes on from <code>next</code> once the target ends: it is what makes a shared part reusable, and what README's mapping of Rasa's <code>call</code> says.</li>
+    <li>A target of <code>conversation</code> is refused by its own rule and is no edge in the reference graph, so it is one mistake and never also a loop.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-inform-block-1</code> A procedure with an <code>inform</code> step naming articles and facts, saved with <code>suwagcms procedures add --file</code>, reads back with its instruction, its lists in the order written, and its <code>next</code>, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
-    <li><code>AC-inform-block-2</code> An article this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step; an article in another knowledge base of this bot is accepted.</li>
-    <li><code>AC-inform-block-3</code> A fact this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step and listing the facts this procedure sees.</li>
-    <li><code>AC-inform-block-4</code> A fact with <code>writableBy</code> <code>assign</code>, <code>set</code> or <code>correct</code> can each be named.</li>
-    <li><code>AC-inform-block-5</code> A save holding several bad names returns a mistake for each at once.</li>
-    <li><code>AC-inform-block-6</code> An <code>inform</code> naming nothing, and one with a blank or missing instruction, are each saved, and the answer lists them among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports them.</li>
-    <li><code>AC-inform-block-7</code> An <code>inform</code> beside another block in one step is refused, a save with a field the block does not have is refused naming the field, and the mistakes that list the blocks now name <code>inform</code>.</li>
-    <li><code>AC-inform-block-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
-    <li><code>AC-inform-block-9</code> The plugin's main skill gives the form of the block and how it differs from <code>say</code>.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>local-facts</code>:</b> <code>inform</code> can pass on a local fact of its procedure by short name, and a local fact of another procedure is refused with <code>reference.missing</code>.</li>
+    <li><code>AC-start-block-1</code> A procedure with a <code>start</code> step, saved with <code>suwagcms procedures add --file</code>, reads back with the block and its <code>next</code> as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-start-block-2</code> A target this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step and listing this bot's procedures.</li>
+    <li><code>AC-start-block-3</code> The target <code>conversation</code> is refused with <code>start.target.conversation</code> and a fix, whichever procedure holds the step.</li>
+    <li><code>AC-start-block-4</code> A target that is not a camelCase <code>id</code> is refused with a mistake and a fix.</li>
+    <li><code>AC-start-block-5</code> A blank target is saved, and the answer lists it among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports it.</li>
+    <li><code>AC-start-block-6</code> A <code>start</code> beside another block in one step is refused, and the mistakes that list the blocks now name <code>start</code>.</li>
+    <li><code>AC-start-block-7</code> A step of <code>conversation</code> can start another procedure, two procedures can start one target, and a target with <code>Version</code> mistakes of its own can be saved as a target.</li>
+    <li><code>AC-start-block-8</code> The validator on its own reports each of these mistakes with the same code.</li>
+    <li><code>AC-start-block-9</code> The plugin's main skill gives the form of the block.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>Suwchatbot's draft of this block differs.</b> Its <code>inform-step</code> spec, still with an open question on this, lists named <code>points</code> and leaves out facts, while its <code>procedure-building-blocks</code> expects facts. The CMS owns the format, so this spec follows README; whichever way that question is settled, the two must agree before a bot runs the block.</p></div>
+  <div class="callout risk"><p><b>The first bot has no such block yet.</b> Suwchatbot's specs say a procedure cannot start another one, and its stack starts procedures only from a message. Until a bot declares <code>start</code>, nothing runs it, and <code>bot-declaration</code> keeps it out of what that bot is offered.</p></div>
   <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Can <code>inform</code> pass on a fact with <code>writableBy: assign</code>?</legend>
-      <p class="why">README says the model never sees such a fact, and yet that is where an action's result usually lands, and telling the customer that result is the main use of naming a fact at all. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="allow"><span><b>Yes: naming it is the author's explicit choice</b><small>the model sees the value only at this step and still cannot write it; README's sentence would then read “the model never sees it unless a step passes it on”</small></span></label>
-      <label><input type="radio" value="refuse"><span><b>No: refused on save</b><small>keeps README's sentence as it is, but an action's result could never reach the customer except through <code>say</code>, which holds fixed text</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Does the block also take named <code>points</code>, as Suwchatbot's draft does?</legend>
-      <p class="why">Points are short named texts a bot can check one by one (“turnaround”, “delivery”), which gives its delivery check something to check. README and the feature map list only articles and facts. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="not-now"><span><b>Not now: articles and facts only</b><small>what is true lives in one place; an optional field can arrive later without raising <code>formatVersion</code>, if Suwchatbot settles on it</small></span></label>
-      <label><input type="radio" value="points"><span><b>Yes: <code>points</code> as a third optional list</b><small>ready for that draft, but truths would be written inside procedures again</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

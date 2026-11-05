@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-article-procedure-links.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-inform-block.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Links to procedures</title>
+<title>Inform block</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Links to procedures</h1>
+  <h1>Inform block</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 21 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>article-links</code>, <code>procedure-model</code></span>
+    <span><b>Feature:</b> 19 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>articles</code>, <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,137 +376,128 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>An article's <code>llmGuide</code> can link to a procedure, so the guide can tell the model when to start it: <code>If the customer wants a valuation, start [the valuation](cms://procedure/orderValuation).</code> An author inserts it from the picker and sees a chip, and an agent writes the same Markdown.</p>
-    <p>Only the guide may hold such a link. In <code>content</code>, which is for the customer, it is refused, as is a link to a procedure this bot does not have, or to <code>conversation</code>.</p>
+    <p>A step can hold the block <code>inform</code>: an instruction for the agent, with its optional <code>context</code>, and <code>points</code>, a map from a name to what the customer must hear. Where <code>say</code> sends a fixed text, <code>inform</code> leaves the words to the model.</p>
+    <p>The CMS checks the block's form and that an article named in its context exists. Saying the points, and checking each was told, belong to the bot.</p>
   </div>
   <div class="stats">
-    <div><b>11</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>10</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>SmartRouter disguises procedures as articles and names them in free text, so a renamed procedure leaves the guide pointing at nothing, and nobody is told. After <code>article-links</code>, a <code>cms://procedure/</code> link is refused outright, and a guide can only name a procedure in words. README decides that an article may reference a procedure, through a link from the picker in its guide, so that this reference can be checked and protected like any other.</p>
+  <p>After the land register number and the customer's name are collected, the customer must hear when the report will be ready and how it reaches them. With <code>say</code> the text is fixed, in one language, and ignores the conversation. A free answer from the model can leave the turnaround out. <code>inform</code> names each point that must get across, so a bot can check each one was told, and the first bot's engine already runs this shape.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>An author never types an <code>id</code>: the guide's picker also offers the bot's procedures.</li>
-      <li>An agent writes one plain link form, the same as for articles.</li>
-      <li>A link to a procedure that does not exist cannot be saved.</li>
-      <li>What a customer reads can never hold a link to a procedure.</li>
+      <li>A step lists what must reach the customer, each point with a name.</li>
+      <li>A real procedure file of the first bot loads through this format unchanged.</li>
+      <li>A half-built step can still be saved, as any other block can.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Starting the procedure: the model and the bot do that, and the first bot's specs are in its own repository.</li>
-      <li>Refusing to delete a linked procedure: <code>delete-guard</code>. Refusing a loop through the link: <code>loop-guard</code>.</li>
-      <li>Rewriting the link when a procedure's <code>id</code> changes: <code>resource-rename</code>.</li>
-      <li>Stopping the model from starting a procedure that is off: <code>availability</code>.</li>
+      <li>Writing the text, or checking what the model said: bots do that, and the first bot's specs are in its own repository.</li>
+      <li>Passing the value of a fact: the block has no field for one. A point is text, and what else a bot tells a customer is the bot's concern.</li>
+      <li>The rules on <code>context</code>: <code>instruction-context</code>. Refusing to delete or loop through an article it names: <code>delete-guard</code>, <code>loop-guard</code>.</li>
+      <li>The form in the creator: <code>procedure-creator</code>.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. Marta links a guide to a procedure</h3>
-  <ol class="steps">
-    <li><p>In the <code>llmGuide</code> of <code>wycena</code>, she chooses <span class="btn">Insert link</span> and types <code>val</code>. The picker shows the procedure <code>orderValuation</code>, with its description, marked as a procedure, among the matching articles.</p></li>
-    <li><p>She picks it. A chip <span class="tag accent">orderValuation</span> appears in the text, and she saves.</p></li>
-    <li><p>The stored guide reads <code>If the customer wants a valuation, start [orderValuation](cms://procedure/orderValuation).</code></p></li>
-  </ol>
-  <h3>2. An agent adds the same link</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures list
-conversation    The base of every conversation
-orderValuation  The customer orders a valuation of a property
-<span class="dim">$</span> suwagcms articles edit wycena --guide-file wycena-guide.md   <span class="dim"># holds [the valuation](cms://procedure/orderValuation)</span></div>
-  <h3>3. The link is in the wrong field</h3>
-  <div class="term">Refused, 1 mistake:
-  link.procedure.notInGuide  content of 'wycena' links to procedure 'orderValuation'. A customer reads content, so it cannot start anything. Move the link to llmGuide.</div>
-  <h3>4. A typo in an id</h3>
-  <div class="term">Refused, 1 mistake:
-  reference.missing  llmGuide of 'wycena' links to procedure 'orderValuatoin', which this bot does not have. 'suwagcms procedures list' shows them.</div>
+  <h3>1. An agent adds a step that tells the customer what happens next</h3>
+  <div class="term"><span class="dim">$</span> suwagcms procedures edit valuationReport --file valuationReport.yaml
+Saved valuationReport, revision 6.
+<span class="dim">$</span> suwagcms procedures show valuationReport
+<span class="dim">…</span>
+  whatHappensNext:
+    inform:
+      instruction: Thank the customer and tell them what happens next with their valuation report.
+      points:
+        turnaround: The report is ready within 7 working days of the inspection.
+        delivery: The report is sent by e-mail as a PDF.</div>
+  <h3>2. A misspelt article and a point name in the wrong form</h3>
+  <div class="term">Refused, 2 mistakes:
+  reference.missing      'context' of step 'whatHappensNext' in 'valuationReport' names article 'officeContacts', which this bot does not have. 'suwagcms articles list' shows them.
+  step.inform.pointName  The point name 'when_ready' in 'inform' of step 'whatHappensNext' is not camelCase. Rename it to 'whenReady'.</div>
+  <h3>3. A step not finished yet</h3>
+  <div class="term">Saved valuationReport, revision 7. Not ready for a version, 2 mistakes:
+  step.inform.empty   'inform' of step 'whatHappensNext' has no points. List what the customer must hear: points: { name: what must be said }.
+  instruction.blank   'inform' of step 'whatHappensNext' has no instruction. Say what the agent should do with these points.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>The link form</h3>
-  <p>A link is a standard Markdown link whose target is <code>cms://procedure/&lt;id&gt;</code>. Everything <code>article-links</code> says about links holds here: the <code>id</code> counts, text in a code span or block is text, and plain words naming a procedure are not a reference. Only the fields differ.</p>
+  <h3>What the block means</h3>
+  <p>When a procedure reaches the step, the bot has the model tell the customer the points, following the instruction, then goes on from <code>next</code> without waiting for a message, as with <code>say</code>. Unlike <code>say</code>, the customer gets the model's words.</p>
   <table>
-    <tr><th>Text</th><th>Result</th></tr>
-    <tr><td><code>[the valuation](cms://procedure/orderValuation)</code> in <code>llmGuide</code></td><td>a reference</td></tr>
-    <tr><td>the same in <code>content</code></td><td>refused with <code>link.procedure.notInGuide</code></td></tr>
-    <tr><td>the same in a code span or block, in either field</td><td>not a reference; not refused</td></tr>
-    <tr><td>the same in <code>description</code> or <code>title</code></td><td>not a reference: those fields are not Markdown, so the text stays as it is</td></tr>
-    <tr><td>the words “start the valuation”</td><td>not a reference: plain text, not protected</td></tr>
+    <tr><th>Field</th><th>Holds</th><th>Rule</th></tr>
+    <tr><td><code>instruction</code></td><td>what the agent does: the same instruction form as <code>whenStalled</code></td><td>required before a version, not blank</td></tr>
+    <tr><td><code>context</code></td><td>optional: <code>articles</code> and <code>searchQueries</code>, as on every instruction</td><td>the rules of <code>instruction-context</code></td></tr>
+    <tr><td><code>points</code></td><td>a map from a camelCase name to what the customer must hear</td><td>at least one before a version, none blank; the order written is kept</td></tr>
   </table>
-  <h3>On save</h3>
+  <h3>What is checked when</h3>
+  <table>
+    <tr><th>Mistake</th><th>Stage</th></tr>
+    <tr><td>an article this bot does not have, in the context</td><td>Save, with <code>reference.missing</code></td></tr>
+    <tr><td>a point name that is not camelCase</td><td>Save, with <code>step.inform.pointName</code></td></tr>
+    <tr><td>a field the block does not have</td><td>Save, on the server: unknown fields are refused on every save</td></tr>
+    <tr><td>no points</td><td>Version, with <code>step.inform.empty</code></td></tr>
+    <tr><td>a point with no text</td><td>Version, with <code>step.inform.pointBlank</code></td></tr>
+    <tr><td>a blank or missing <code>instruction</code></td><td>Version, with <code>instruction.blank</code></td></tr>
+  </table>
+  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing. The rules are in the validator, so they hold offline too.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a procedure this bot does not have, including one only another bot has</td><td>refused with <code>reference.missing</code>; the same in the validator offline</td></tr>
-    <tr><td>a malformed target, such as <code>cms://procedure/</code></td><td>refused with a mistake giving the right form</td></tr>
-    <tr><td>the target <code>conversation</code></td><td>refused: it cannot be started (see Open questions)</td></tr>
-    <tr><td>a procedure with <code>Version</code> mistakes</td><td>allowed: the working state may be unfinished</td></tr>
-    <tr><td>several bad links in one save</td><td>all reported at once</td></tr>
-    <tr><td>one guide linking to a procedure and to articles</td><td>allowed</td></tr>
+    <tr><td>a text that looks like a number or a boolean, in YAML</td><td>read as text: a point is always text</td></tr>
+    <tr><td><code>inform</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
+    <tr><td><code>next</code> on an <code>inform</code> step</td><td>the same rules as on any step; with none, the procedure ends</td></tr>
   </table>
-  <h3>The picker and the chip</h3>
-  <p>In <code>llmGuide</code> the picker lists this bot's articles and its procedures, except <code>conversation</code>, and marks which is which. It narrows as the author types an <code>id</code>, a title or a procedure's description. In <code>content</code> it lists articles only. A procedure has no title, so its chip shows its <code>id</code>, whatever the stored label says. Clicking a chip's link opens the procedure, and deleting a chip removes the link from the text.</p>
-  <p>The CLI and plugin have the same ability without a picker: <code>suwagcms procedures list</code> finds the target, and the plugin's main skill gives the link form.</p>
 </section>
-<section data-role="ui">
-  <h2>Editor</h2>
-  <div class="wire after"><span class="wf-label">llmGuide, with a link to a procedure</span>
-    <div class="wf-bar"><b>llmGuide</b><span class="wf-grow"></span><span class="wf-btn">Insert link</span></div>
-    <div class="wf-body">
-      <p>If the customer wants a valuation, start <span class="tag accent wf-new">orderValuation</span>.</p>
-      <div class="wf-card wf-new"><span class="wf-input">val</span><p><span class="tag">procedure</span> orderValuation <span class="wf-muted">The customer orders a valuation of a property</span></p><p><span class="tag">article</span> Valuation terms <span class="wf-muted">warunkiWyceny · oferta</span></p></div>
-    </div>
-  </div>
+<section data-role="data">
+  <h2>Format</h2>
+  <p>This is part of the public contract with bots, in the shape the first bot's engine reads.</p>
+  <script type="text/x-code" data-file="in a procedure" data-lang="yaml">
+whatHappensNext:
+  inform:
+    instruction: Thank the customer and tell them what happens next.
+    context:
+      articles: [deliveryTimes]
+      searchQueries: [how a report is sent]
+    points:
+      turnaround: The report is ready within 7 working days of the inspection.
+      delivery: The report is sent by e-mail as a PDF.
+  next: wait
+  </script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>The chip shows the <code>id</code> rather than the stored label: a procedure has no title that a chip could show instead, and it stays right after a change of <code>id</code>.</li>
-    <li>The label of a link to a procedure stays as written, including in a version: only the model reads a guide, so no customer can meet an old name, and the rule that fills in current titles has no title to use here.</li>
-    <li>The article's link form is reused unchanged, so a bot that does nothing special still gets readable text, and an agent has one form to learn.</li>
+    <li>The set of blocks is fixed and defined in the SDK, so this block has the shape the first bot's engine runs, and that engine can consume the SDK's definition instead of its own.</li>
+    <li>No points and a blank text or instruction are <code>Version</code> mistakes, for the reason <code>procedure-model</code> gives: they are work still to do. A wrong name breaks the form, so it is a <code>Save</code> mistake.</li>
+    <li>The instruction is required, as on <code>whenStalled</code>: without it a bot would have to invent how to phrase the step, and two bots would do it differently.</li>
+    <li>What the model should read goes in the context, and an article named there is the reference; a point holds the words that must get across. A point names no fact: it is text the CMS stores and delivers as written, so no check ties its words to a fact.</li>
+    <li>Points are a map, not a list, because a bot reports by name which point was told. The store keeps the keys as written, so the map's order survives.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-article-procedure-links-1</code> In <code>llmGuide</code>, choosing a procedure in the picker inserts a chip showing its <code>id</code>, and the saved text holds <code>[label](cms://procedure/id)</code> at that place.</li>
-    <li><code>AC-article-procedure-links-2</code> The picker in <code>llmGuide</code> lists this bot's articles and procedures, marked by kind, narrows by <code>id</code>, title or a procedure's description as the author types, leaves out <code>conversation</code>, and shows no procedure of another bot; the picker in <code>content</code> lists no procedure.</li>
-    <li><code>AC-article-procedure-links-3</code> A link to a procedure in <code>content</code> is refused with <code>link.procedure.notInGuide</code>, with the fix, on the server and in the validator offline.</li>
-    <li><code>AC-article-procedure-links-4</code> A link to a procedure this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the field and the id, on the server and in the validator offline.</li>
-    <li><code>AC-article-procedure-links-5</code> A malformed <code>cms://procedure/</code> target is refused with a mistake giving the right form.</li>
-    <li><code>AC-article-procedure-links-6</code> A link to <code>conversation</code> is refused with a mistake saying it cannot be started.</li>
-    <li><code>AC-article-procedure-links-7</code> A link to a procedure with <code>Version</code> mistakes is accepted.</li>
-    <li><code>AC-article-procedure-links-8</code> A <code>cms://procedure/</code> address in a code span or block, in <code>description</code> or in <code>title</code>, and plain text naming a procedure, are not treated as references and are not refused.</li>
-    <li><code>AC-article-procedure-links-9</code> An article whose guide links to a procedure, opened in the web and saved, keeps the link and all its Markdown: the stored text is the same as before, and a link written through the CLI shows as a chip.</li>
-    <li><code>AC-article-procedure-links-10</code> Clicking a chip's link opens the procedure, and removing a chip removes the link from the saved text.</li>
-    <li><code>AC-article-procedure-links-11</code> The plugin's main skill gives the link form, says it belongs only in <code>llmGuide</code>, and says how to find a target.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>version-create</code>:</b> in a version, a link to a procedure is exactly as stored, with its label as written, and only links to articles get the current title.</li>
+    <li><code>AC-inform-block-1</code> A procedure with an <code>inform</code> step holding an instruction, a context and points, saved with <code>suwagcms procedures add --file</code>, reads back with all of them and its <code>next</code>, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-inform-block-2</code> An article in the context that this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step; an article in another knowledge base of this bot is accepted.</li>
+    <li><code>AC-inform-block-5</code> A save holding several bad names, articles and point names alike, returns a mistake for each at once.</li>
+    <li><code>AC-inform-block-6</code> An <code>inform</code> with no points, one with a blank point, and one with a blank or missing instruction, are each saved, and the answer lists them among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports them.</li>
+    <li><code>AC-inform-block-7</code> An <code>inform</code> beside another block in one step is refused, a save with a field the block does not have is refused naming the field, and the mistakes that list the blocks now name <code>inform</code>.</li>
+    <li><code>AC-inform-block-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
+    <li><code>AC-inform-block-9</code> The plugin's main skill gives the form of the block and how it differs from <code>say</code>.</li>
+    <li><code>AC-inform-block-11</code> A point name that is not camelCase is refused with <code>step.inform.pointName</code> and the name to use.</li>
+    <li><code>AC-inform-block-12</code> Copies of the first bot's procedure files, <code>conversation.yaml</code> and <code>valuationReport.yaml</code> among them, read by the CLI's file reader, are accepted by the validator at stage <code>Version</code> given matching facts and a declaration of the blocks that bot runs, with the points in the order written.</li>
+    <li><code>AC-inform-block-13</code> The points of an <code>inform</code> read back from the server in the order written.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout assumption"><p>Reading a link in a guide as “the model may start this procedure” is left to the bot, through what it hands to the model. README says only that availability stops it, even from a guide. The CMS delivers the text with the link as it stands.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Can a guide link to <code>conversation</code>?</legend>
-      <p class="why">README says <code>conversation</code> cannot be the target of <code>start</code>, but does not mention links. Suwchatbot treats an attempt to start it as a failure, and a link in a guide exists to start something. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="refuse"><span><b>No: refused, and the picker leaves it out</b><small>the base of every conversation is already running, so such a link can only mislead the model</small></span></label>
-      <label><input type="radio" value="allow"><span><b>Yes: any procedure of this bot</b><small>one rule fewer, with the failure left for a bot to find in a customer's turn</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout risk"><p><b>A point cannot hold a value known only when the bot runs,</b> such as an action's result: it is fixed text and names no fact. The first bot's <code>inform-step</code> spec leaves this to its first real need; when that comes, an optional field can arrive without raising <code>formatVersion</code>.</p></div>
+  <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>
