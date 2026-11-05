@@ -52,6 +52,22 @@ bot's database, say). The SDK writes versions and the reported numbers to it, th
 (`pollInterval`), and `GET /suwagcms/state` answers from it, so every instance says the same. The default `FileVersionStore`
 is for one instance; `InMemoryVersionStore` is for tests.
 
+**Running an HTTP action.** Actions are defined in the CMS and reach the bot in a version; your engine decides when to run one, and
+`HttpActionRunner` makes the call the same way for every bot:
+
+```csharp
+using var runner = new HttpActionRunner();
+ActionOutcome outcome = await runner.RunAsync(action, new Dictionary<string, string> { ["address"] = "Polna 3, Suwałki" });
+```
+
+A `{name}` in the URL is filled in URL-encoded; the other parameters go as a query string for `GET` and `DELETE` and as one JSON object
+otherwise. Each result is the member of its name at the top level of the JSON answer; with no results declared any 2xx is a success.
+A parameter that does not fit, a secret not found, no connection, no answer within the action's `timeoutSeconds` (10 by default), an
+answer outside 2xx (redirects included) or results that do not fit give a failure with a `Reason` and no results, and there are no
+retries. A secret written `{secret:CRM_TOKEN}` is read from the variable `SUWAGCMS_SECRET_CRM_TOKEN`, so the bot's owner chooses what a
+definition can reach; pass your own `findSecret` to look elsewhere. A secret's value is masked in everything the outcome holds. A bot
+outside .NET does the same, by the same contract.
+
 **The routes have no key yet.** Anyone who can reach the bot can replace its definition, and the bot id check only stops a
 mistyped address. Until the CMS has identity, expose `/suwagcms/*` to a trusted network only.
 

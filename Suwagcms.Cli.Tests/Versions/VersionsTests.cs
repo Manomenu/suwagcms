@@ -40,7 +40,7 @@ public sealed class VersionsTests
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(("GET", "/api/bots/rzeczoznawca/versions"), Assert.Single(recorder.Calls));
         var lines = result.Output.ReplaceLineEndings("\n").TrimEnd().Split('\n');
-        Assert.Equal("v14  2026-11-04 21:40  3 facts, 1 knowledge bases, 12 articles, 2 procedures  3f9a…c21e", lines[0]);
+        Assert.Equal("v14  2026-11-04 21:40  3 facts, 1 knowledge bases, 12 articles, 2 procedures, 0 actions  3f9a…c21e", lines[0]);
         Assert.StartsWith(
             "v13  2026-11-02 09:12  3 facts, 1 knowledge bases, 11 articles, 2 procedures",
             lines[1],

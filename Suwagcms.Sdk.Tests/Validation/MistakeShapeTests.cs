@@ -24,6 +24,7 @@ public sealed class MistakeShapeTests
         "{\"formatVersion\":3}",
         "{\"formatVersion\":1,\"facts\":[1]}",
         "{\"formatVersion\":1,\"articles\":[{\"id\":\"a\"},{\"id\":\"a\"}]}",
+        "{\"formatVersion\":1,\"actions\":[{\"id\":\"Bad Id\",\"description\":\" \",\"parameters\":{\"Bad Name\":{\"type\":\"text\",\"description\":\"d\",\"maxLength\":1}}},{\"id\":\"h\",\"description\":\"d\",\"implementation\":{\"http\":{\"method\":\"GRAB\",\"url\":\"ftp://u:p@x\",\"timeoutSeconds\":99,\"headers\":{\"Authorization\":\"plain\",\"X-Bad\":\"{secret:lower}\",\"Bad Name\":\"x\"}}}},{\"id\":\"u\",\"description\":\"d\",\"implementation\":{\"http\":{\"method\":\"GET\",\"url\":\"https://u:p@x/{none}/{secret:A}?token=1\"}}}]}",
         "{\"formatVersion\":1,\"actions\":[{\"id\":\"a\"},{\"id\":\"a\"}],\"procedures\":[{\"id\":\"p\",\"description\":\"d\"},{\"id\":\"p\",\"description\":\"d\"}],\"knowledgeBases\":[{\"id\":\"k\"},{\"id\":\"k\"}],\"facts\":[{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3},{\"name\":\"f\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3}]}",
         "{\"formatVersion\":1,\"facts\":[{\"name\":\"Bad Name\",\"type\":\"blob\",\"description\":\" \",\"writableBy\":\"nobody\",\"values\":[\"a\"],\"min\":1},{\"name\":\"w\",\"type\":\"text\",\"description\":\"d\",\"maxLength\":3,\"values\":[\"a\"]}]}",
         ProcedureSamples.EveryMistake,

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Suwagcms.Server.Actions;
 using Suwagcms.Server.Articles;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Changes;
@@ -55,6 +56,7 @@ internal static class ServerApp
         api.MapFacts();
         api.MapKnowledgeBases();
         api.MapProcedures();
+        api.MapActions();
         api.MapVersions();
         api.MapUsage();
         api.MapRenames();

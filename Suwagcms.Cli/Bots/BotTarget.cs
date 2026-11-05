@@ -18,6 +18,7 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
         {
             "GlobalFact" => new Uri(PageOf("facts"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
             "Article" => new Uri(PageOf("articles"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
+            "Action" => new Uri(PageOf("actions"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
             "Procedure" => new Uri(Address, $"bots/{Uri.EscapeDataString(Bot)}/procedures/{Uri.EscapeDataString(id)}").AbsoluteUri,
             _ => null,
         };

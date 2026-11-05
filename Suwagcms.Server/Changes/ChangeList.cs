@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
+using Suwagcms.Server.Actions;
 using Suwagcms.Server.Articles;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Facts;
@@ -31,6 +32,7 @@ internal static class ChangeList
         [ResourceKinds.Word(ResourceKind.GlobalFact)] = ResourceKind.GlobalFact,
         [ResourceKinds.Word(ResourceKind.KnowledgeBase)] = ResourceKind.KnowledgeBase,
         [ResourceKinds.Word(ResourceKind.Article)] = ResourceKind.Article,
+        [ResourceKinds.Word(ResourceKind.Action)] = ResourceKind.Action,
         [ResourceKinds.Word(ResourceKind.Procedure)] = ResourceKind.Procedure,
     };
 
@@ -224,9 +226,15 @@ internal static class ChangeList
                 body => ProcedureMapping.ToRecord(id, body),
                 ProcedureMapping.Merged
             ),
-            ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
-                $"{kind} is not a kind of a file of changes."
+            ResourceKind.Action => Made<SaveAction, BotAction>(
+                verb,
+                target,
+                element,
+                ifRevision,
+                body => ActionMapping.ToRecord(id, body),
+                ActionMapping.Merged
             ),
+            ResourceKind.Definition => throw new InvalidOperationException($"{kind} is not a kind of a file of changes."),
             _ => throw new ArgumentOutOfRangeException(nameof(node)),
         };
         return made is null

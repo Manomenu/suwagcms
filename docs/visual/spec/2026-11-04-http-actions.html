@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>HTTP actions</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 22 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>bot-profiles</code>, <code>sdk-validator</code></span>
@@ -382,12 +382,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>19</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>A procedure often needs something only another system knows, such as whether an address is served. Without actions in the CMS, each such call is code in the bot, with a deployment for each change, and nothing a procedure's author can see or check. The format has a place for actions, holding only an id.</p>
+  <p>A procedure often needs something only another system knows, such as whether an address is served. Without actions in the CMS, each such call is code in the bot, with a deployment for each change, and nothing a procedure's author can see or check.</p>
   <p>The tempting shortcuts each cost something later. An action that writes facts itself can serve one procedure only, and the CMS cannot check it, which is what README leaves out of Rasa. A secret typed into a definition travels into every version, export and diff.</p>
 </section>
 <section data-role="goals">
@@ -500,7 +499,7 @@ Refused, 1 mistake:
 id: checkServiceability
 description: Checks whether we serve an address.
 parameters:
-  address: { type: text, maxLength: 200, description: Street, number and city. }
+  address: { type: text, maxLength: 200, description: "Street, number and city." }
 results:
   serviceable: { type: enum, values: [yes, no], description: Whether we serve it. }
 implementation:
@@ -516,10 +515,12 @@ implementation:
   <ul>
     <li>The bot runs actions, not the CMS (README), so saving, showing or versioning an action never calls its URL.</li>
     <li>The SDK runs an HTTP action rather than leaving that to each bot's engine: the definition is a public format, and without one runner two bots could send the same action differently. The engine still decides when to run it and what to do next.</li>
-    <li>Results come only from the top level of the answer, which keeps the format small; see Open questions.</li>
+    <li>Results come only from the top level of the answer, which keeps the format small; as decided below.</li>
     <li>Secrets go in headers only, because URLs end up in logs; a service that wants a secret in its URL sits behind a code action.</li>
     <li>Any answer outside 2xx is a failure, with no status mapping per action, as ElevenLabs' tool node routes on success or failure only.</li>
     <li>Parameter and result descriptions are required, like those of facts, because a later reader of a mapping has nothing else to go on.</li>
+    <li>A result comes only from the top level of the answer: a nested service sits behind a code action, and an optional field can be added later without a new format version.</li>
+    <li>A definition reaches only variables with a prefix: <code>CRM_TOKEN</code> reads <code>SUWAGCMS_SECRET_CRM_TOKEN</code>, and a bot may supply its own way to find a secret, so the bot's owner chooses what the CMS can name.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -555,28 +556,10 @@ implementation:
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>Whoever can edit an action can send a bot's secret to any address.</b> A definition names the URL and the secret, and the bot obeys, with no identity in the CMS yet. README accepts a trusted network until <code>cms-identity</code>; the second open question below narrows what a definition can reach, and a version only reaches a bot through a push.</p></div>
+  <div class="callout risk"><p><b>Whoever can edit an action can send a bot's secret to any address.</b> A definition names the URL and the secret, and the bot obeys, with no identity in the CMS yet. README accepts a trusted network until <code>cms-identity</code>; the prefix decided above narrows what a definition can reach, and a version only reaches a bot through a push.</p></div>
   <div class="callout warn"><p><b>Refusing by header name is a net with holes.</b> A secret in a header called <code>X-Customer</code>, or in the URL's path, gets through. The check catches the usual mistake, and the form's hint and the plugin's skill say the rest.</p></div>
   <div class="callout warn"><p><b>A bot outside .NET implements this contract itself</b> and could read it differently. Its tests are its own, tied to the format's version.</p></div>
 </section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>How does a result come out of an answer?</legend>
-      <p class="why">Real services often nest their answers. This decides how much of the format has to be public from the start, and adding later is safe, while removing is not. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="top"><span><b>Top-level members only, for now</b><small>smallest format; a nested service sits behind a code action, and an optional field can be added without a new format version</small></span></label>
-      <label><input type="radio" value="pointer"><span><b>An optional JSON Pointer on each result now</b><small>reaches nested answers with no code, at the cost of one more thing in the public format</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Which names in the bot's environment can a definition reach?</legend>
-      <p class="why">README says a secret is a name resolved in the bot's environment. With no limit, a definition could send out <code>DATABASE_URL</code> or anything else the bot's process holds. This spec's criteria hold under either answer.</p>
-      <label data-recommended><input type="radio" value="prefix"><span><b>Only variables with a prefix: <code>CRM_TOKEN</code> reads <code>SUWAGCMS_SECRET_CRM_TOKEN</code>, and a bot may supply its own way to find a secret</b><small>the bot's owner chooses what the CMS can name; one more line in a deployment</small></span></label>
-      <label><input type="radio" value="any"><span><b>Any variable of that name</b><small>simplest, but everything in the bot's environment is reachable from a definition</small></span></label>
-    </fieldset>
-  </form>
-</section>
-
 <!-- CONTENT END -->
 </main>
 </div>

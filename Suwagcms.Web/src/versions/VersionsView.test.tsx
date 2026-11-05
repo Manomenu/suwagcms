@@ -15,6 +15,7 @@ const versions: VersionSummary[] = [
         knowledgeBases: 1,
         articles: 12,
         procedures: 2,
+        actions: 0,
         sha256: `3f9a${"0".repeat(56)}c21e`,
     },
     {
@@ -24,6 +25,7 @@ const versions: VersionSummary[] = [
         knowledgeBases: 1,
         articles: 11,
         procedures: 2,
+        actions: 0,
         sha256: `b07d${"0".repeat(56)}1a44`,
     },
 ];
@@ -129,6 +131,7 @@ describe("VersionsView", () => {
             knowledgeBases: 1,
             articles: 12,
             procedures: 2,
+            actions: 0,
             sha256: `3f9a${"0".repeat(56)}c21e`,
         };
         const html = view({ shown: { version: opened, document: '{"formatVersion":1}' } });

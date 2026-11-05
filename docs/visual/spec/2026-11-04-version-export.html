@@ -380,8 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The export goes one way. The CMS is the single source of truth, so changing those files does nothing, each file says so, and no command takes them back.</p>
   </div>
   <div class="stats">
-    <div><b>10</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>11</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -482,13 +482,13 @@ content: |
     <li><code>AC-version-export-8</code> An <code>id</code> that would write outside the folder is refused, naming it, and nothing is written.</li>
     <li><code>AC-version-export-9</code> Exporting changes nothing in the CMS and sends no request to the bot.</li>
     <li><code>AC-version-export-10</code> <code>--json</code> returns the folder, the version and the count of files per kind; <code>--open</code> opens the version's web page; <code>suwagcms export</code> has its line in the plugin's main skill.</li>
+    <li><code>AC-version-export-11</code> An export covers actions, with secrets only as the references the version holds, never their values.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>http-actions</code>:</b> an export covers actions, with secrets only as the references the version holds, never their values.</li>
     <li><b>after <code>availability</code>:</b> an export holds no availability.</li>
   </ul>
 </section>

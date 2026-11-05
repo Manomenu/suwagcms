@@ -108,6 +108,11 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
 - `suwagcms procedures layout <id> [--set <step>=<x>,<y>]... [--clear]` - show where the web creator draws each step, set some positions, or forget them all so the creator arranges the graph itself. Positions are no part of the procedure: no revision changes and no version holds them.
 - `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
+- `suwagcms actions list` - list the actions of the bot with the implementation of each; `--open` opens the Actions screen in the web app.
+- `suwagcms actions show <id>` - show one action as YAML (or JSON with `--json`) with its revision and the procedures that use it; both are accepted back by `actions edit --file`.
+- `suwagcms actions add --file <file>` - add an action from a YAML or JSON file that holds the whole of it (see Action file below). A secret is written as a reference, `{secret:NAME}`, never as its value. The CMS never calls the action's URL: the bot does.
+- `suwagcms actions edit <id> --file <file> [--if-revision n]` - replace an action with the whole of a file.
+- `suwagcms actions delete <id> [--if-revision n]` - delete an action that no procedure uses.
 - `suwagcms usage <kind> <id>` - with `<kind>` fact, article or procedure: show what uses a resource ("Used by") and what it uses ("Uses"), each with the field that holds the reference; `--json` gives both as data. Ask it before a delete; it changes nothing.
 - `suwagcms rename <kind> <id> <newId> [--if-revision n] [--dry-run]` - with `<kind>` fact, kb, article or procedure: change a resource's id and rewrite every reference to it, all or nothing: a link's target in `content` and `llmGuide` (its label and all other text stay byte for byte), an article's `knowledgeBase`, a fact's name in each `collect`, `assign` and `when`. Each rewritten resource gets a new revision, so a save based on an older one is refused; versions already created keep the old id, and plain text naming the resource is not changed. `conversation` cannot change its id. `--dry-run` lists each referrer and field; `--json` gives them as data; `--open` opens the resource at its new address.
 - `suwagcms versions list` - list the versions of the bot, newest first, with date, counts of resources and digest; `--open` opens the Versions screen in the web app.
@@ -122,7 +127,7 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms export [<number>] --out <folder>` - write a version (the latest when no number is given) to a new or empty folder of YAML files for reading and searching with ordinary tools: one file for the version itself and one per fact, knowledge base, article and procedure, in a folder per kind. Changes to those files do nothing: no command takes them back. A folder with anything in it, or a number the bot does not have, is refused with exit code `1`; no `--out` exits `2`. `--json` gives the folder, the version and the count of files per kind; `--open` opens the version in the web app.
 - `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
 
-`facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
+`actions add`, `actions edit`, `actions delete`, `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
 
@@ -130,6 +135,28 @@ Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <comma
 
 Show what a push will change first: `suwagcms versions status` gives the version the bot has and the latest, and
 `suwagcms diff <has> <latest>` compares them. Say what it changes for customers, then push.
+
+## Action file
+
+An action is a contract and a call: the file holds one whole action in YAML or JSON. It never names a fact: a procedure's step maps its parameters and results.
+
+```yaml
+id: checkServiceability
+description: Checks whether we serve an address.
+parameters:
+  address: { type: text, maxLength: 200, description: "Street, number and city." }
+results:
+  serviceable: { type: enum, values: [yes, no], description: Whether we serve it. }
+implementation:
+  http:
+    method: POST                       # GET, POST, PUT, PATCH or DELETE
+    url: https://crm.internal/check    # absolute; each {name} in it is a parameter
+    timeoutSeconds: 20                 # 1 to 60, 10 when left out
+    headers:
+      Authorization: Bearer {secret:CRM_TOKEN}
+```
+
+A parameter or a result is typed like a fact (`enum` with `values`, `int` with `min` and `max`, `text` with `maxLength`), and each needs a description. A secret is a name resolved in the bot's environment: `{secret:CRM_TOKEN}` reads `SUWAGCMS_SECRET_CRM_TOKEN` there. It goes in a header only. A literal value in a header named like a credential (`Authorization`, `Cookie`, or holding `key`, `token`, `secret`, `password` or `auth`) or in a query parameter so named is refused with `action.secret.literal`; that net has holes, so never put a secret anywhere else either. `GET` and `DELETE` send the parameters not in the URL as a query string, the others as one JSON object; a result is the member of that name at the top level of the JSON answer.
 
 ## Procedure file
 
