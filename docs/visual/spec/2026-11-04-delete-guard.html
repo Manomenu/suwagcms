@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-delete-guard.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-delete-guard.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Delete guard</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 11 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>article-links</code></span>
@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>There is no force option: a reference always blocks. In the first cut this protects articles linked from other articles; each later kind of reference joins the same rule.</p>
   </div>
   <div class="stats">
-    <div><b>11</b><span>criteria</span></div>
+    <div><b>12</b><span>criteria</span></div>
     <div><b>5</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -485,6 +485,7 @@ Uses:     article warunki (content)</div>
     <li><code>AC-delete-guard-9</code> In the web, Delete on a referenced resource is disabled, with the reason beside it.</li>
     <li><code>AC-delete-guard-10</code> <code>--dry-run</code> on a delete gives the same refusal or answer, and nothing changes.</li>
     <li><code>AC-delete-guard-11</code> <code>suwagcms usage</code> has its line in the plugin's main skill.</li>
+    <li><code>AC-delete-guard-12</code> A fact a procedure uses cannot be deleted: the refusal lists every procedure and the step and field that name it.</li>
   </ul>
 </section>
 
@@ -492,7 +493,7 @@ Uses:     article warunki (content)</div>
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>procedure-model</code>:</b> a fact used in a procedure cannot be deleted.</li>
+    <li><b>after <code>inform-block</code>:</b> a fact named in an inform cannot be deleted.</li>
     <li><b>after <code>start-block</code>:</b> a procedure another one starts cannot be deleted.</li>
     <li><b>after <code>inform-block</code>, <code>instruction-context</code>:</b> an article a procedure points at cannot be deleted.</li>
     <li><b>after <code>article-procedure-links</code>:</b> a procedure named in an article's guide cannot be deleted.</li>

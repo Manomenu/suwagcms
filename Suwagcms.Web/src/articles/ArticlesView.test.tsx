@@ -39,7 +39,6 @@ function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase
                 onFilters={() => undefined}
                 onAdd={() => undefined}
                 onEdit={() => undefined}
-                onDelete={() => undefined}
                 onLeave={() => undefined}
             />
         </Router>,
@@ -88,10 +87,10 @@ describe("ArticlesView", () => {
         expect(html).toContain("What a valuation costs");
     });
 
-    it("AC-articles-8: each article has a delete button and an edit button", () => {
+    it("AC-articles-8: each article has an edit button, and Delete is on the opened article beside what uses it", () => {
         const html = view(articles);
 
-        expect(html.match(/>Delete</g)).toHaveLength(1);
+        expect(html).not.toContain(">Delete<");
         expect(html.match(/>Edit</g)).toHaveLength(1);
     });
 

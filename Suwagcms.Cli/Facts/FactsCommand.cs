@@ -91,7 +91,10 @@ internal static class FactsCommand
         var name = new Argument<string>("name") { Description = "The fact's name, like customer.city." };
         var ifRevision = EditOptions.IfRevision();
         var dryRun = EditOptions.DryRun();
-        var command = new Command("delete", "Delete a global fact. Nothing checks yet whether a procedure uses it.")
+        var command = new Command(
+            "delete",
+            "Delete a global fact. Refused while a procedure uses it, with every place listed; `usage fact <name>` shows them first."
+        )
         {
             name,
             ifRevision,

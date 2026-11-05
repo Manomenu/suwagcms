@@ -13,14 +13,12 @@ export function FactsView({
     form,
     onAdd,
     onEdit,
-    onDelete,
 }: {
     bot: string;
     facts: Fact[];
     form: ReactNode;
     onAdd: () => void;
     onEdit: (fact: Fact) => void;
-    onDelete: (fact: Fact) => void;
 }) {
     return (
         <main className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
@@ -58,15 +56,6 @@ export function FactsView({
                                 }}
                             >
                                 Edit
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    onDelete(fact);
-                                }}
-                            >
-                                Delete
                             </Button>
                         </li>
                     ))}

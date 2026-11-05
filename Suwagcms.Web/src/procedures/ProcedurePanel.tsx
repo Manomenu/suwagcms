@@ -1,11 +1,25 @@
+import { usageHref, type UsageState } from "@/api/usage";
 import { Field } from "@/design/field";
 import { Input } from "@/design/input";
 import { Textarea } from "@/design/textarea";
+import { UsagePanel } from "@/design/usagePanel";
 
 import type { Draft } from "./draft";
 
 /** The fields of the procedure itself, shown when no step is selected. */
-export function ProcedurePanel({ id, draft, edit }: { id: string; draft: Draft; edit: (change: (draft: Draft) => Draft) => void }) {
+export function ProcedurePanel({
+    bot,
+    id,
+    draft,
+    usage,
+    edit,
+}: {
+    bot: string;
+    id: string;
+    draft: Draft;
+    usage: UsageState;
+    edit: (change: (draft: Draft) => Draft) => void;
+}) {
     return (
         <section aria-label="Procedure" className="flex flex-col gap-3">
             <h2 className="text-lg font-semibold">Procedure: {id}</h2>
@@ -43,6 +57,7 @@ export function ProcedurePanel({ id, draft, edit }: { id: string; draft: Draft; 
                     />
                 )}
             </Field>
+            <UsagePanel usage={usage.usage} failure={usage.failure} hrefOf={(entry) => usageHref(bot, entry)} />
             <p className="text-sm text-muted-foreground">Select a step on the graph to edit it.</p>
         </section>
     );

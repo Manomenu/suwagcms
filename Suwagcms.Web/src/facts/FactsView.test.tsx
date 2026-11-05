@@ -51,14 +51,7 @@ const facts: Fact[] = [
 function view(list: Fact[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/facts">
-            <FactsView
-                bot="rzeczoznawca"
-                facts={list}
-                form={null}
-                onAdd={() => undefined}
-                onEdit={() => undefined}
-                onDelete={() => undefined}
-            />
+            <FactsView bot="rzeczoznawca" facts={list} form={null} onAdd={() => undefined} onEdit={() => undefined} />
         </Router>,
     );
 }
@@ -89,10 +82,10 @@ describe("FactsView", () => {
         expect(html.match(/Used by:/g)).toHaveLength(1);
     });
 
-    it("AC-global-facts-8: each fact has a delete button and an edit button", () => {
+    it("AC-global-facts-8: each fact has an edit button, and Delete is on the opened fact beside what uses it", () => {
         const html = view(facts);
 
-        expect(html.match(/>Delete</g)).toHaveLength(3);
+        expect(html).not.toContain(">Delete<");
         expect(html.match(/>Edit</g)).toHaveLength(3);
     });
 

@@ -158,7 +158,8 @@ test("AC-articles-8: an article deleted in the web is gone from the list and fro
     await addArticle(request, bot, "priceList");
     await page.goto(`/bots/${bot}/articles`);
 
-    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Delete" }).click();
+    await page.getByRole("listitem").filter({ hasText: "priceList" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("button", { name: "Delete" }).click();
 
     await expect(page.getByText("No articles yet.")).toBeVisible();
     expect((await request.get(`/api/bots/${bot}/articles/priceList`)).status()).toBe(404);
@@ -305,7 +306,8 @@ test("AC-article-language-7: two articles in different languages with one title 
     await addArticle(request, bot, "pricing", { language: "en", title: "Cennik" });
     await page.goto(`/bots/${bot}/articles`);
 
-    await page.getByRole("listitem").filter({ hasText: "pricing" }).getByRole("button", { name: "Delete" }).click();
+    await page.getByRole("listitem").filter({ hasText: "pricing" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("button", { name: "Delete" }).click();
 
     await expect(page.getByRole("listitem")).toHaveCount(1);
     await expect(page.getByRole("listitem")).toContainText("cennik · offer · pl");
@@ -502,4 +504,59 @@ test("AC-loop-guard-1: a link that closes a loop is refused beside the field, wi
 
     await expect(page.locator('[data-field="content"]')).toContainText("discounts → pricing → discounts");
     expect(await contentOf(request, bot, "pricing")).toBe("See ");
+});
+
+test("AC-delete-guard-1: an article another article links to is refused for delete in the API and its Delete button is disabled in the web, AC-delete-guard-9", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik");
+    await addArticle(request, bot, "wycena", { content: "See [it](cms://article/cennik)." });
+
+    const refused = await request.delete(`/api/bots/${bot}/articles/cennik`);
+    expect(refused.status()).toBe(422);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("listitem").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+
+    await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
+    await expect(page.getByText("Used in 1 place. Remove that reference first.")).toBeVisible();
+    expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(200);
+});
+
+test("AC-delete-guard-7: the panels list who uses the article and what it uses as working links, and say so when there are none", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "warunki");
+    await addArticle(request, bot, "cennik", { content: "See [w](cms://article/warunki)." });
+    await addArticle(request, bot, "wycena", { content: "See [c](cms://article/cennik)." });
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("listitem").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("wycena");
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("content");
+    await expect(page.getByRole("region", { name: "Uses" })).toContainText("warunki");
+    await page.getByRole("region", { name: "Used by" }).getByRole("link", { name: "wycena" }).click();
+
+    await expect(page.getByLabel("Id", { exact: true })).toHaveValue("wycena");
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("Nothing uses this.");
+});
+
+test("AC-delete-guard-4: after the last link is removed in the web the article can be deleted", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik");
+    await addArticle(request, bot, "wycena", { content: "See [it](cms://article/cennik)." });
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("listitem").filter({ hasText: "wycena" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByLabel(/^content/).fill("No link now.");
+    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("listitem").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("Nothing uses this.");
+    await page.getByRole("button", { name: "Delete" }).click();
+
+    await expect(page.getByRole("listitem")).toHaveCount(1);
+    expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
 });

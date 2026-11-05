@@ -14,6 +14,7 @@ import {
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { Link, useLocation } from "wouter";
 
+import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 
@@ -87,6 +88,7 @@ function CreatorBody({
     const flow = useReactFlow();
     const { draft } = state;
     const check = useLiveCheck(bot, id, state.revision, draft);
+    const usage = useUsage(bot, "procedures", id, state.revision);
     const dirty = isDirty(state);
     const drawn = useMemo(() => placed(draft, positions), [draft, positions]);
     // Why: a step is placed automatically once, and then stays, so drawing an edge never shuffles a graph the author is looking at.
@@ -299,7 +301,7 @@ function CreatorBody({
                             onLeave={leave}
                         />
                     ) : (
-                        <ProcedurePanel id={id} draft={draft} edit={edit} />
+                        <ProcedurePanel bot={bot} id={id} draft={draft} usage={usage} edit={edit} />
                     )}
                     <MistakeList
                         check={check}
