@@ -67,6 +67,7 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         var kept = after.Values.Select(item => item.Id).ToHashSet();
         foreach (var gone in before.Values.Where(item => !kept.Contains(item.Id)).Where(_ => !dryRun))
         {
+            await ResourceStore.CountAvailabilityChangeAsync(connection, transaction, bot, gone.Id, cancellationToken);
             await ResourceStore.DeleteAsync(connection, transaction, gone.Id, cancellationToken);
         }
         foreach (var becomes in after.Values.Where(item => !ReferenceEquals(item, before.GetValueOrDefault(item.Target))))
@@ -84,6 +85,12 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
             {
                 await ResourceStore.InsertAsync(connection, transaction, bot, becomes, now, cancellationToken);
             }
+        }
+
+        foreach (var rename in changes.OfType<Rename>().Where(_ => !dryRun))
+        {
+            await ResourceStore.RememberFormerIdAsync(connection, transaction, bot, before[rename.Target], cancellationToken);
+            await ResourceStore.CountAvailabilityChangeAsync(connection, transaction, bot, before[rename.Target].Id, cancellationToken);
         }
 
         if (dryRun)

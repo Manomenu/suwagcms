@@ -41,27 +41,6 @@ internal static class UsageEndpoints
         {
             return EditProblems.For(new EditResult.Missing(target), bot, Title);
         }
-        // Why: the lists are computed from the definition by the walker, the same one the delete guard uses, so the panels and a refusal cannot disagree.
-        // Why: a base lists its own articles on its screen, so that edge is no entry in these panels.
-        var references = ReferenceWalker
-            .From(ResourceKinds.Assemble(stored))
-            .Where(reference => reference.To.Kind != ResourceKind.KnowledgeBase)
-            .ToList();
-        return TypedResults.Ok(
-            new UsageView(
-                Links(references.Where(reference => reference.To == target), reference => reference.From),
-                Links(references.Where(reference => reference.From == target), reference => reference.To)
-            )
-        );
+        return TypedResults.Ok(ResourceUsage.Of(stored, target));
     }
-
-    private static List<UsageLink> Links(IEnumerable<Reference> references, Func<Reference, ResourceRef> other) =>
-        [
-            .. references
-                .Select(reference => new UsageLink(ResourceKinds.Noun(other(reference).Kind), other(reference).Id, reference.Path))
-                .Distinct()
-                .OrderBy(link => link.Kind, StringComparer.Ordinal)
-                .ThenBy(link => link.Id, StringComparer.Ordinal)
-                .ThenBy(link => link.Field, StringComparer.Ordinal),
-        ];
 }

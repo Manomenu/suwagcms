@@ -381,9 +381,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A bot may run in several instances: the SDK writes to a store the bot provides, the other instances poll it, and every instance reports the same state. The default file store is for one instance. The routes have no key yet, so until <code>cms-identity</code> they must be reachable only from a trusted network.</p>
   </div>
   <div class="stats">
-    <div><b>2</b><span>routes on the bot</span></div>
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>4</b><span>routes on the bot</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -405,7 +405,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Running procedures: the bot's engine does that.</li>
       <li>Telling the CMS what the bot supports: <code>bot-declaration</code> adds its route.</li>
-      <li>Availability, and articles for search: see “Criteria after other features”.</li>
+      <li>Articles for search: see “Criteria after other features”.</li>
       <li>A key on the routes: the owner decided they stay open on a trusted network until <code>cms-identity</code>.</li>
       <li>A bot fetching versions by itself, for a bot behind a firewall: added when the first such bot appears.</li>
     </ul></div>
@@ -455,6 +455,7 @@ flowchart TB
     <tr><td>asks for the current version, when a conversation starts</td><td>gives its number, or says there is none yet</td></tr>
     <tr><td>asks for a version's definition by number, on any later turn</td><td>gives it, loading it from the store if this instance does not hold it</td></tr>
     <tr><td>reports which versions its open conversations use, across all its instances</td><td>removes versions neither current nor in use</td></tr>
+    <tr><td>asks whether a resource is off, on the version of its conversation</td><td>answers from the setting in the store, as <code>availability</code> describes</td></tr>
   </table>
   <h3>Edge cases</h3>
   <table>
@@ -517,6 +518,7 @@ flowchart TB
     <li><code>AC-bot-runtime-sdk-14</code> When the store cannot be read while polling, the instance keeps serving what it has, and the state route says the store cannot be read.</li>
     <li><code>AC-bot-runtime-sdk-15</code> The same behaviour tests pass against the default file store and against a store supplied by a test.</li>
     <li><code>AC-bot-runtime-sdk-16</code> The published schema of the state answer and of a refusal is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
+    <li><code>AC-bot-runtime-sdk-17</code> A change of availability takes effect at once, also on an older version, and reaches the other instances through the shared store.</li>
   </ul>
 </section>
 
@@ -524,7 +526,6 @@ flowchart TB
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>availability</code>:</b> a change of availability takes effect at once, also on an older version, and reaches the other instances through the shared store.</li>
     <li><b>after <code>article-search-feed</code>:</b> the SDK tells the bot's code about a new version, so it can update its search.</li>
     <li><b>after <code>cms-identity</code>:</b> a request to the bot's routes without the bot's key is refused, and the state stays as it was.</li>
   </ul>

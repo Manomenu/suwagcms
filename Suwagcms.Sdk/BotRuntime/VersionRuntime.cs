@@ -25,6 +25,13 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
         return loaded.GetOrAdd(number, Parse(json));
     }
 
+    public bool IsOff(int version, ResourceKind kind, string id) =>
+        Volatile
+            .Read(ref view)
+            .State.Availability?.Off.Any(item =>
+                item.Kind == kind && item.Id == id && (item.UpToVersion is not { } upTo || version <= upTo)
+            ) == true;
+
     public async Task ReportInUseAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(numbers);
@@ -113,6 +120,41 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
         }
     }
 
+    public async Task<(BotState? Accepted, BotRefusal? Refused)> TakeAvailabilityAsync(string json, CancellationToken cancellationToken)
+    {
+        var (message, mistakes) = AvailabilityIntake.Read(json);
+        if (message is null)
+        {
+            return (null, Refusal(422, "The availability was refused.", $"{mistakes.Count} mistake(s) in the message.", mistakes));
+        }
+
+        await writes.WaitAsync(cancellationToken);
+        try
+        {
+            try
+            {
+                await store.WriteAvailabilityAsync(message, cancellationToken);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                return (null, Refusal(503, "The store failed.", $"The availability was not stored: {exception.Message}", []));
+            }
+
+            var current = await RefreshAsync(cancellationToken);
+            if (current.Error is not null && message.Number >= (current.State.Availability?.Number ?? 0))
+            {
+                // Why: the write succeeded, so this instance and its answer already go by it even though the store cannot be read back.
+                current = Publish(current with { State = current.State with { Availability = message } });
+            }
+
+            return (Answer(current), null);
+        }
+        finally
+        {
+            writes.Release();
+        }
+    }
+
     // Why: keeping too much is safe, removing too much is not: nothing goes before the bot has reported once.
     private async Task SweepAsync(VersionStoreState state, CancellationToken cancellationToken)
     {
@@ -146,6 +188,7 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
             Held = from.State.Held,
             InUse = from.State.InUse ?? [],
             StoreError = from.Error,
+            Availability = from.State.Availability ?? BotAvailability.Nothing,
         };
 
     private static BotDefinition Parse(string json) =>

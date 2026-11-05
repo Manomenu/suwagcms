@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Serialization;
 using Suwagcms.Server.Articles;
+using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Changes;
 using Suwagcms.Server.Database;
@@ -39,6 +40,7 @@ internal static class ServerApp
         builder.Services.AddOptions<PushOptions>().BindConfiguration("Push");
         builder.Services.AddHttpClient<BotLine>(client => client.Timeout = Timeout.InfiniteTimeSpan);
         builder.Services.AddTransient<DeclarationAsker>();
+        builder.Services.AddTransient<AvailabilitySender>();
         builder.Services.AddTransient<VersionPusher>();
         builder.Services.AddTransient<BotStatusReader>();
         builder.Services.AddOpenApi();
@@ -61,6 +63,7 @@ internal static class ServerApp
         api.MapProcedureLayouts();
         api.MapChanges();
         api.MapHistory();
+        api.MapAvailability();
         return app;
     }
 }

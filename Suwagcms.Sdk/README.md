@@ -14,7 +14,7 @@ It holds the definition format (`Suwagcms.Sdk.Format`, JSON schema in `definitio
 ```csharp
 builder.Services.AddSuwagcmsBot("rzeczoznawca");   // the bot's own id; versions are kept in files under the content root
 var app = builder.Build();
-app.MapSuwagcmsBot();                              // GET /suwagcms/state, GET /suwagcms/declaration, PUT /suwagcms/versions/{number}
+app.MapSuwagcmsBot();                              // GET /suwagcms/state, GET /suwagcms/declaration, PUT /suwagcms/versions/{number}, PUT /suwagcms/availability
 ```
 
 The CMS pushes a version with `PUT /suwagcms/versions/{number}`: one JSON object with `formatVersion`, `bot`, `number`,
@@ -22,7 +22,7 @@ The CMS pushes a version with `PUT /suwagcms/versions/{number}`: one JSON object
 stage), checks the bot id, the number and the digest, and loads it without a restart. A refusal is Problem Details with every
 mistake in `mistakes` (422 invalid, 409 the number holds another document, 503 the store failed) and changes nothing.
 Sending the same document again succeeds and changes nothing; a lower number is accepted and becomes current.
-`GET /suwagcms/state` answers `bot`, `current` (null before the first version), `held`, `inUse` and `storeError`. The shapes
+`GET /suwagcms/state` answers `bot`, `current` (null before the first version), `held`, `inUse`, `storeError` and `availability`. The shapes
 are in `bot-runtime.schema.json`, so a bot outside .NET can implement the same routes.
 
 **What the bot supports.** State it in the setup, and the CMS asks for it with `GET /suwagcms/declaration` once the bot is running:
@@ -44,12 +44,15 @@ The bot's code uses `IBotDefinitions`:
 
 - `CurrentNumber`: the number a new conversation starts on (null before the first version); keep it with the conversation.
 - `GetAsync(number)`: the definition of that version, also on an instance that was not pushed to.
+- `IsOff(number, kind, id)`: whether a resource is turned off, for a conversation on that version. Off is a live setting outside versions: `GetAsync` still gives the resource, and what off means is your engine's to carry out.
 - `ReportInUseAsync(numbers)`: the versions your open conversations use, **across all instances of the bot**. Versions neither
   current nor reported are removed; until the first report nothing is. When a conversation expires is your decision.
 
+**What is off.** The CMS sends `PUT /suwagcms/availability` with `number` and `off`, the whole set: each item has `kind` (`Article`, `Procedure` or `Action`), `id`, and for a former id of a renamed resource `upToVersion`, the last version it counts in. A lower number changes nothing and the same message twice changes nothing, so a late message cannot undo a newer one. The answer is the state, which reports the setting under `availability`; a refusal has the same shape as for a version (422, or 503 when the store failed).
+
 **Several instances.** Pass a store they all reach: `AddSuwagcmsBot(id, store)` with your own `IVersionStore` (a table in the
-bot's database, say). The SDK writes versions and the reported numbers to it, the other instances read it every five seconds
-(`pollInterval`), and `GET /suwagcms/state` answers from it, so every instance says the same. The default `FileVersionStore`
+bot's database, say). The SDK writes versions, the reported numbers and what is off to it, the other instances read it every five seconds
+(`pollInterval`), and `GET /suwagcms/state` answers from it, so every instance says the same. Your store's `WriteAvailabilityAsync` must keep a message only if its number is not lower than the one held, in one step, since the instances have no lock in common, and `ReadStateAsync` must give it back. A change delivered to one instance reaches the others at their next poll, not sooner. The default `FileVersionStore`
 is for one instance; `InMemoryVersionStore` is for tests.
 
 **The routes have no key yet.** Anyone who can reach the bot can replace its definition, and the bot id check only stops a

@@ -60,6 +60,7 @@ public static class MistakeCodes
     public const string VersionNumber = "version.number";
     public const string VersionDigest = "version.digest";
     public const string VersionConflict = "version.conflict";
+    public const string AvailabilityInvalid = "availability.invalid";
     public const string DeclarationInvalid = "declaration.invalid";
     public const string DeclarationBot = "declaration.bot";
     public const string DeclarationFormatMissing = "declaration.formatVersion.missing";

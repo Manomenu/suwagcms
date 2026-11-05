@@ -2092,6 +2092,238 @@
           }
         }
       }
+    },
+    "/api/bots/{bot}/availability": {
+      "get": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ask",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/availability/send": {
+      "post": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityDelivery"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/availability/{kind}/{id}/off": {
+      "post": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/availability/{kind}/{id}/on": {
+      "post": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2162,6 +2394,135 @@
           }
         },
         "description": "An article of a bot as the API shows it: the format's fields, the language of its knowledge base (read only, derived), and the revision to send back to guard an edit."
+      },
+      "AvailabilityAnswer": {
+        "required": [
+          "kind",
+          "id",
+          "off",
+          "changed",
+          "usedBy",
+          "delivery"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "off": {
+            "type": "boolean"
+          },
+          "changed": {
+            "type": "boolean"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageLink"
+            }
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/AvailabilityDelivery"
+          }
+        },
+        "description": "The result of turning a resource on or off, or with a dry run what it would be: `Changed` is false when it already was so; `UsedBy` is what uses it, listed when turning off; `Delivery` says whether the bot has it."
+      },
+      "AvailabilityDelivery": {
+        "required": [
+          "state",
+          "number",
+          "botNumber",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/AvailabilityDeliveryState"
+          },
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "botNumber": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Whether the bot has the CMS's setting, from the bot's own answer: the CMS's `Number`, the one the bot reports (null when it gave none), and when not delivered the `Reason`, which says what to do."
+      },
+      "AvailabilityDeliveryState": {
+        "enum": [
+          "Confirmed",
+          "NotDelivered",
+          "NotAsked"
+        ],
+        "description": "What the bot's own answer says about the setting: `Confirmed` it reports the CMS's number, `NotDelivered` it does not or could not be asked, `NotAsked` nobody asked it, as with nothing ever turned off or a dry run."
+      },
+      "AvailabilityItem": {
+        "required": [
+          "kind",
+          "id",
+          "off"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "off": {
+            "type": "boolean"
+          }
+        },
+        "description": "One resource that has availability: its kind (article or procedure), its id, and whether it is off; a resource never touched is on."
+      },
+      "AvailabilityView": {
+        "required": [
+          "number",
+          "resources",
+          "delivery"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityItem"
+            }
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/AvailabilityDelivery"
+          }
+        },
+        "description": "The bot's setting in the CMS: its number, every resource that has availability, and whether the bot has it."
       },
       "Bot": {
         "required": [
@@ -4158,6 +4519,9 @@
     },
     {
       "name": "HistoryEndpoints"
+    },
+    {
+      "name": "AvailabilityEndpoints"
     }
   ]
 }

@@ -2,6 +2,7 @@ using System.Globalization;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
+using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
@@ -9,7 +10,7 @@ using Suwagcms.Server.Editing;
 namespace Suwagcms.Server.Versions;
 
 // Why: a push reads what it needs, lets go of the database, calls the bot, and only then records; so no lock or transaction ever waits on a bot.
-internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker asker, TimeProvider time)
+internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker asker, AvailabilitySender availability, TimeProvider time)
 {
     public const string NotLatest = "push.notLatest";
 
@@ -37,8 +38,9 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
             return (null, new Rejected(StatusCodes.Status422UnprocessableEntity, TooOld(bot, number, latest)));
         }
 
-        var (result, reported) = await CannotRunAsync(bot, number, version, cancellationToken) is { } refused
-            ? (refused, false)
+        var (result, reported) =
+            await CannotRunAsync(bot, number, version, cancellationToken) is { } refused ? (refused, false)
+            : await AvailabilityMissedAsync(bot, registered.Address, number, cancellationToken) is { } missed ? (missed, false)
             : Judge(bot, registered, number, await line.PutVersionAsync(registered.Address, number, version.Document, cancellationToken));
 
         // Why: the record must survive a caller that gives up while the bot was answering, since the bot may have taken the version.
@@ -49,6 +51,21 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
         }
         return (result, null);
     }
+
+    // Why: the whole set goes first, which repairs a missed change, and a new version never runs without it.
+    private async Task<PushResult?> AvailabilityMissedAsync(string bot, string address, int number, CancellationToken cancellationToken) =>
+        await availability.SendBeforePushAsync(bot, address, cancellationToken)
+            is { State: not AvailabilityDeliveryState.Confirmed } delivery
+            ? Failed(
+                number,
+                null,
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"what is turned off did not reach the bot, so v{number} was not sent: {delivery.Reason}"
+                ),
+                []
+            )
+            : null;
 
     // Why: a push is judged by what the bot declares at this moment; a bot that gives no good answer is left to its own validation, which the push reaches next.
     private async Task<PushResult?> CannotRunAsync(string bot, int number, VersionDetail version, CancellationToken cancellationToken)
