@@ -16,6 +16,7 @@ just                      # every recipe, grouped
 just db up                # PostgreSQL on localhost:5563 (container suwagcms-postgres)
 just server               # the API on http://127.0.0.1:6330 (dotnet watch)
 just web                  # the web app on http://localhost:3330, proxies /api to the server
+just tmux-dev start       # db, server and web in one tmux session (stop: just tmux-dev stop)
 just e2e                  # browser tests (own server, own database, own ports; not part of the gate)
 just logs                 # why did it fail? last warnings/errors of the newest server log (see below)
 just api-types            # regenerate Suwagcms.Web/src/api/openapi.d.ts after changing a record the API exposes
