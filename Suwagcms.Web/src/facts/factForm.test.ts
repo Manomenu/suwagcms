@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Mistake } from "@/api/client";
 
 import type { Fact } from "./api";
-import { bodyOf, emptyForm, fieldOf, formOf } from "./factForm";
+import { bodyOf, emptyForm, fieldOf, formOf, referrerPlace } from "./factForm";
 
 function mistake(code: string, path: string): Mistake {
     return { code, path, message: "m", fix: "f", stage: "Save", resource: { kind: "GlobalFact", id: "x" }, related: [] };
@@ -72,5 +72,14 @@ describe("fieldOf", () => {
     it("a mistake no field owns has no field", () => {
         expect(fieldOf(mistake("resource.stale", "revision"))).toBeNull();
         expect(fieldOf(mistake("save.invalid", "$"))).toBeNull();
+    });
+});
+
+describe("where a refusal points", () => {
+    it("AC-edit-guard-11: a place in a procedure reads as its step and block, and any other place as the server names it", () => {
+        expect(referrerPlace("steps.ask.next[0].when.order.kind")).toBe("step ask (when)");
+        expect(referrerPlace("steps.ask.collect[0]")).toBe("step ask (collect)");
+        expect(referrerPlace("steps.mark.assign.order.kind")).toBe("step mark (assign)");
+        expect(referrerPlace("content")).toBe("content");
     });
 });

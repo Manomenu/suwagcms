@@ -147,11 +147,12 @@ internal static class ProcedureFactRules
         {
             yield return string.Create(CultureInfo.InvariantCulture, $"range of '{fact.Name}' has min {range.Min} above max {range.Max}.");
         }
-        else if (range.Min > fact.Max || range.Max < fact.Min)
+        // Why: a bound the fact cannot reach means the condition says more than it can ever hold, so any such bound is a mistake, not only a range wholly outside.
+        else if (range.Min < fact.Min || range.Min > fact.Max || range.Max < fact.Min || range.Max > fact.Max)
         {
             yield return string.Create(
                 CultureInfo.InvariantCulture,
-                $"range {range.Min}..{range.Max} of '{fact.Name}' holds no value the fact can take."
+                $"range {range.Min}..{range.Max} of '{fact.Name}' has a bound the fact cannot take."
             );
         }
     }
@@ -176,9 +177,9 @@ internal static class ProcedureFactRules
         }
     }
 
-    private sealed record ConditionAt(string Path, string Fact, Condition Condition);
+    internal sealed record ConditionAt(string Path, string Fact, Condition Condition);
 
-    private static IEnumerable<ConditionAt> Conditions(Procedure procedure) =>
+    internal static IEnumerable<ConditionAt> Conditions(Procedure procedure) =>
         procedure.Steps.SelectMany(step =>
             (step.Value.Next?.Rules ?? []).SelectMany(
                 (rule, index) =>

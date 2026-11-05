@@ -289,7 +289,9 @@ public sealed class ProcedureRulesTests
     [InlineData(9, 3)]
     [InlineData(50, null)]
     [InlineData(null, 0)]
-    public void A_range_no_value_of_the_fact_satisfies_is_refused(int? min, int? max)
+    [InlineData(5, 200)]
+    [InlineData(0, 5)]
+    public void A_range_with_a_bound_the_fact_cannot_take_is_refused(int? min, int? max)
     {
         var mistake = Assert.Single(
             Check(

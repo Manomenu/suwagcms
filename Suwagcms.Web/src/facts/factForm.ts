@@ -62,6 +62,13 @@ export function fieldOf(mistake: Mistake): FieldName | null {
     return FIELDS.find((field) => field === root) ?? null;
 }
 
+/** A place inside a procedure as an author finds it: the step and the block; any other place as the server names it. */
+export function referrerPlace(location: string): string {
+    const match = /^steps\.([^.]+)\.([^.[]+)/.exec(location);
+    if (match === null) return location;
+    return `step ${match[1] ?? ""} (${match[2] === "next" ? "when" : (match[2] ?? "")})`;
+}
+
 export function constraintOf(fact: Fact): string {
     if (fact.type === "enum") return `enum: ${(fact.values ?? []).join(", ")}`;
     if (fact.type === "int") return `int, ${fact.min ?? "?"} to ${fact.max ?? "?"}`;

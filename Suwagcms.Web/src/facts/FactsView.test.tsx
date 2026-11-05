@@ -100,7 +100,7 @@ describe("FactsView", () => {
 describe("FactFields", () => {
     function fields(mistakes: Mistake[], type = "enum"): string {
         return renderToStaticMarkup(
-            <FactFields form={{ ...emptyForm(), type }} mistakes={mistakes} nameLocked={false} onChange={() => undefined} />,
+            <FactFields bot="b" form={{ ...emptyForm(), type }} mistakes={mistakes} nameLocked={false} onChange={() => undefined} />,
         );
     }
 

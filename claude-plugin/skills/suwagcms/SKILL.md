@@ -47,6 +47,12 @@ Exit code `1` means the server refused the change and lists every mistake at onc
 (with `--json`, in `mistakes`). Fix all of them, then try once more. Do not work around a refusal and do not copy the server's
 rules into your own: the refusal already says what is wrong and how to fix it.
 
+## What would this change break?
+
+`--dry-run` on an edit answers "what would this change break?" with the same refusal or answer as the real edit, and changes
+nothing. An edit of a fact that would leave a step invalid is refused at that edit, naming the fact and every step that relies on it,
+with no force option: `fact.enum.valueInUse` (a removed value a `when` or `assign` uses), `fact.range.inUse` (a narrowed `min`, `max` or `maxLength` that a value or bound falls outside), `fact.writableBy.inUse` (`assign` on a fact a `collect` names) and `fact.type.inUse` (any change of type while a procedure uses the fact, even if each use would still fit). Only the server sees a type change, because it compares with the stored fact: the validator alone, offline, cannot. A global fact cannot be named `<procedureId>.<anything>` (`fact.name.procedurePrefix`).
+
 ## Never edit local files
 
 A resource of the CMS (a fact, an article, a procedure) is never edited as a local file, and no file in the repository is its

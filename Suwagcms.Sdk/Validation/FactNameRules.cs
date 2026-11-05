@@ -5,7 +5,26 @@ namespace Suwagcms.Sdk.Validation;
 // Why: a name must mean one thing inside a procedure, and these rules look at the result of a save, so the order of two saves never decides whether it does.
 internal static class FactNameRules
 {
-    public static IReadOnlyList<Rule> All { get; } = [new(MistakeCodes.FactLocalNameClash, ValidationStage.Save, LocalNameClashes)];
+    public static IReadOnlyList<Rule> All { get; } =
+    [
+        new(MistakeCodes.FactLocalNameClash, ValidationStage.Save, LocalNameClashes),
+        new(MistakeCodes.FactNameProcedurePrefix, ValidationStage.Save, ProcedurePrefixes),
+    ];
+
+    private static IEnumerable<Mistake> ProcedurePrefixes(BotDefinition definition) =>
+        definition.Facts.SelectMany(fact =>
+            definition
+                .Procedures.Where(procedure => fact.Name.StartsWith($"{procedure.Id}.", StringComparison.Ordinal))
+                .Select(procedure => new Mistake(
+                    MistakeCodes.FactNameProcedurePrefix,
+                    ValidationStage.Save,
+                    new ResourceRef(ResourceKind.GlobalFact, fact.Name),
+                    "name",
+                    $"'{fact.Name}' starts with procedure id '{procedure.Id}', which is how a local fact of that procedure is named outside it.",
+                    "Choose another name.",
+                    [new RelatedResource(new ResourceRef(ResourceKind.Procedure, procedure.Id), "id")]
+                ))
+        );
 
     private static IEnumerable<Mistake> LocalNameClashes(BotDefinition definition) =>
         definition.Facts.SelectMany(fact =>

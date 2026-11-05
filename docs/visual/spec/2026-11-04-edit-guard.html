@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Edit guard</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 16 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>global-facts</code>, <code>procedure-model</code></span>
@@ -380,9 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>An agent asks “what would this change break?” with a dry run and gets the same answer. There is no force option: the author changes the steps first, or leaves the fact as it is.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -474,6 +473,8 @@ Refused, 1 mistake:
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
+    <li>Any bound of a <code>range</code> outside the fact blocks a narrowing, as it stops a procedure's save: the condition says what the author really expects, and otherwise it would silently mean less.</li>
+    <li>The rules judge the new definition and give their ordinary mistakes offline; the server, which also has the old definition, words the mistakes an edit caused for that edit.</li>
     <li>A type change is refused for any use, as README says, although a <code>collect</code> might survive it: the model would be asked for a different kind of value in a procedure written for the old one, and no rule can tell whether that still makes sense.</li>
     <li>One mistake per broken thing, listing its referrers, as the delete guard does: an author reads one cause with its list instead of one line per step.</li>
     <li>The prefix rule looks at the result, so it also stops a new procedure <code>customer</code> when the fact <code>customer.city</code> exists; otherwise the order of two saves would decide whether a name is ambiguous.</li>
@@ -498,13 +499,13 @@ Refused, 1 mistake:
     <li><code>AC-edit-guard-14</code> A fact edit and a procedure save at the same moment that together would break a referrer never both succeed.</li>
     <li><code>AC-edit-guard-15</code> A procedure of another bot using a fact of the same name does not block the edit.</li>
     <li><code>AC-edit-guard-16</code> The plugin's main skill says that <code>--dry-run</code> on an edit answers “what would this change break?”, and that only the server sees a type change.</li>
+    <li><code>AC-edit-guard-17</code> The same refusals hold for a local fact when a save of its procedure would break a step of that procedure: removing a value, changing the type, narrowing, or setting <code>writableBy: assign</code>.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>local-facts</code>:</b> the same refusals hold for a local fact when a save of its procedure would break a step of that procedure: removing a value, changing the type, narrowing, or setting <code>writableBy: assign</code>.</li>
     <li><b>after <code>inform-block</code>:</b> a fact named in an <code>inform</code> counts as a use, so its type cannot change.</li>
     <li><b>after <code>action-block</code>:</b> removing or retyping an action's parameter or result that a procedure's step maps is refused, listing each step; a fact mapped to a parameter or a result counts as a use, so its type cannot change.</li>
   </ul>
@@ -512,17 +513,6 @@ Refused, 1 mistake:
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout warn"><p>A coding agent validating offline will not see a <code>fact.type.inUse</code> refusal until it saves. A dry run against the server shows it, and the plugin's main skill says so.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Does a <code>range</code> condition wider than a narrowed fact block the narrowing?</legend>
-      <p class="why">README says an edit is refused when a condition “falls outside” the new range. A condition <code>range: { min: 5, max: 200 }</code> on a fact narrowed to 1–100 still works for 5–100 but cannot be true above that. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="bound"><span><b>Yes: any bound outside the new range blocks it</b><small>the same rule <code>procedure-model</code> applies to a value the fact can never take; the condition says what the author really expects</small></span></label>
-      <label><input type="radio" value="overlap"><span><b>Only when the whole condition falls outside</b><small>fewer refusals, but a condition silently means less than it says</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>
