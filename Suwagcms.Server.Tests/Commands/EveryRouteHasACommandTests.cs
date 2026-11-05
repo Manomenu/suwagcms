@@ -45,6 +45,11 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["GET /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures show"),
         ["PUT /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures add"),
         ["DELETE /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures delete"),
+        ["GET /api/bots/{bot}/actions"] = Coverage.Cli("actions list"),
+        ["GET /api/bots/{bot}/actions/{id}"] = Coverage.Cli("actions show"),
+        ["PUT /api/bots/{bot}/actions/{id}"] = Coverage.Cli("actions add"),
+        ["DELETE /api/bots/{bot}/actions/{id}"] = Coverage.Cli("actions delete"),
+        ["POST /api/bots/{bot}/actions/{id}/test"] = Coverage.Cli("actions test"),
         ["GET /api/bots/{bot}/{kind}/{id}/usage"] = Coverage.Cli("usage"),
         ["POST /api/bots/{bot}/{kind}/{id}/rename"] = Coverage.Cli("rename"),
         ["GET /api/bots/{bot}/versions"] = Coverage.Cli("versions list"),
@@ -54,11 +59,16 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["GET /api/bots/{bot}/versions/{number}/export"] = Coverage.Cli("export"),
         ["GET /api/bots/{bot}/versions/status"] = Coverage.Cli("versions status"),
         ["POST /api/bots/{bot}/versions/{number}/push"] = Coverage.Cli("push"),
+        ["GET /api/bots/{bot}/versions/{number}/push-plan"] = Coverage.Cli("push"),
         ["GET /api/bots/{bot}/procedures/{id}/layout"] = Coverage.Cli("procedures layout"),
         ["PUT /api/bots/{bot}/procedures/{id}/layout"] = Coverage.Cli("procedures layout"),
         ["POST /api/bots/{bot}/changes"] = Coverage.Cli("apply"),
         ["GET /api/bots/{bot}/history"] = Coverage.Cli("history"),
         ["GET /api/bots/{bot}/{kind}/{id}/history"] = Coverage.Cli("history"),
+        ["GET /api/bots/{bot}/availability"] = Coverage.Cli("availability list"),
+        ["POST /api/bots/{bot}/availability/send"] = Coverage.Cli("availability send"),
+        ["POST /api/bots/{bot}/availability/{kind}/{id}/off"] = Coverage.Cli("availability off"),
+        ["POST /api/bots/{bot}/availability/{kind}/{id}/on"] = Coverage.Cli("availability on"),
     };
 
     public void Dispose() => app.Dispose();

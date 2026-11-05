@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;
@@ -38,6 +39,25 @@ internal static class ResourceStore
                 cancellationToken: cancellationToken
             )
         );
+
+    // Why: a stored declaration was judged when it arrived, so what cannot be read now counts as none; null means the bot declares nothing.
+    public static async Task<BotDeclaration?> DeclaredAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
+        string bot,
+        CancellationToken cancellationToken
+    )
+    {
+        var text = await connection.ExecuteScalarAsync<string?>(
+            new CommandDefinition(
+                "SELECT declaration FROM bot WHERE id = @bot",
+                new { bot },
+                transaction,
+                cancellationToken: cancellationToken
+            )
+        );
+        return text is null ? null : DeclarationValidator.ParseJson(text).Declaration;
+    }
 
     public static async Task<List<StoredResource>> LoadAsync(
         NpgsqlConnection connection,
@@ -123,6 +143,52 @@ internal static class ResourceStore
                     body = ResourceKinds.Write(resource.Record),
                     now,
                 },
+                transaction,
+                cancellationToken: cancellationToken
+            )
+        );
+
+    // Why: a version keeps the id it was created with, so a switch must also reach the versions holding this one; they are those up to the latest now, and none when there is no version yet.
+    public static async Task RememberFormerIdAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string bot,
+        StoredResource resource,
+        CancellationToken cancellationToken
+    ) =>
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                """
+                INSERT INTO resource_former_id (resource_id, public_id, up_to_version)
+                SELECT @Id, @publicId, max(number) FROM bot_version WHERE bot_id = @bot HAVING max(number) IS NOT NULL
+                ON CONFLICT (resource_id, public_id) DO UPDATE SET up_to_version = EXCLUDED.up_to_version
+                """,
+                new
+                {
+                    resource.Id,
+                    publicId = resource.Target.Id,
+                    bot,
+                },
+                transaction,
+                cancellationToken: cancellationToken
+            )
+        );
+
+    // Why: deleting or renaming a resource that is off changes the set the bot should hold, so the number goes up and the page says the bot does not have it yet, with no bot called from a save.
+    public static async Task CountAvailabilityChangeAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string bot,
+        Guid id,
+        CancellationToken cancellationToken
+    ) =>
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                """
+                UPDATE bot SET availability_number = availability_number + 1
+                WHERE id = @bot AND EXISTS (SELECT 1 FROM availability WHERE resource_id = @id)
+                """,
+                new { bot, id },
                 transaction,
                 cancellationToken: cancellationToken
             )

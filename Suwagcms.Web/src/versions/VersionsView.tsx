@@ -1,13 +1,24 @@
+import { useState } from "react";
+
 import type { Mistake } from "@/api/client";
 import { Alert } from "@/design/alert";
 import { Anchor } from "@/design/anchor";
 import { Button } from "@/design/button";
 import { Page, Paper } from "@/design/page";
+import { Select } from "@/design/select";
 import { Table } from "@/design/table";
 
-import { numberOf, type BotStatus, type PushResult, type VersionComparison, type VersionDetail, type VersionSummary } from "./api";
-import { ComparisonPanel } from "./ComparisonPanel";
-import { statusView, whenOf } from "./pushStatus";
+import {
+    numberOf,
+    type BotStatus,
+    type PushPlan,
+    type PushResult,
+    type VersionComparison,
+    type VersionDetail,
+    type VersionSummary,
+} from "./api";
+import { ComparisonDetails, comparisonLine, ComparisonPanel } from "./ComparisonPanel";
+import { otherVersions, statusView, whenOf } from "./pushStatus";
 
 /** The Resource kinds a mistake can name, and the screen that edits each; the bot as a whole (no conversation) is mended among the procedures. */
 const SCREENS: Record<Mistake["resource"]["kind"], string> = {
@@ -31,6 +42,73 @@ function digestOf(sha256: string): string {
     return `${sha256.slice(0, 4)}…${sha256.slice(-4)}`;
 }
 
+/** The rollback's choice beside the main button: a version in a select, and the button that asks before pushing it. */
+function OtherVersion({ numbers, pushing, onPlan }: { numbers: number[]; pushing: boolean; onPlan: (number: number) => void }) {
+    const [picked, setPicked] = useState<number | null>(null);
+    const chosen = picked !== null && numbers.includes(picked) ? picked : numbers[0];
+    if (chosen === undefined) return null;
+    return (
+        <>
+            <label className="flex items-center gap-2 text-sm font-medium">
+                other version:
+                <Select
+                    value={chosen}
+                    onChange={(event) => {
+                        setPicked(Number(event.target.value));
+                    }}
+                >
+                    {numbers.map((number) => (
+                        <option key={number} value={number}>
+                            v{number}
+                        </option>
+                    ))}
+                </Select>
+            </label>
+            <Button
+                variant="outline"
+                disabled={pushing}
+                onClick={() => {
+                    onPlan(chosen);
+                }}
+            >
+                Push v{chosen}
+            </Button>
+        </>
+    );
+}
+
+/** The one question before a rollback: where the bot goes, what stays, and what going there changes. */
+function PushQuestion({ plan, onPush, onCancel }: { plan: PushPlan; onPush: (number: number) => void; onCancel: () => void }) {
+    const version = Number(plan.version);
+    return (
+        <div className="flex flex-col gap-2 rounded-md border border-border p-3">
+            <p className="text-sm">
+                The bot goes {plan.botHas === null ? "" : `from v${Number(plan.botHas)} `}to v{version}. The working state and the latest
+                version stay as they are. Conversations in progress finish on their version.
+            </p>
+            {plan.problem !== null && <p className="text-sm text-destructive">{plan.problem}</p>}
+            {plan.changes !== null && (
+                <>
+                    <p className="text-sm font-medium">What goes back: {comparisonLine(plan.changes)}</p>
+                    <ComparisonDetails comparison={plan.changes} />
+                </>
+            )}
+            <div className="flex items-center gap-2">
+                <Button
+                    onClick={() => {
+                        onPush(version);
+                    }}
+                >
+                    Push v{version}
+                </Button>
+                <Button variant="outline" onClick={onCancel}>
+                    Cancel
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 /** The Versions screen: create a version, the mistakes that stopped one with a link to each resource, and the versions, newest first. */
 export function VersionsView({
     bot,
@@ -41,8 +119,11 @@ export function VersionsView({
     refused,
     shown,
     comparison,
+    plan,
     onCompare,
     onCloseComparison,
+    onPlan,
+    onCancelPlan,
     onPush,
     onCreate,
     onOpen,
@@ -56,8 +137,11 @@ export function VersionsView({
     refused: Mistake[] | null;
     shown: VersionDetail | null;
     comparison: VersionComparison | null;
+    plan: PushPlan | null;
     onCompare: (from: number, to: number) => void;
     onCloseComparison: () => void;
+    onPlan: (number: number) => void;
+    onCancelPlan: () => void;
     onPush: (number: number) => void;
     onCreate: () => void;
     onOpen: (version: VersionSummary) => void;
@@ -76,7 +160,7 @@ export function VersionsView({
         >
             {status !== null && bots !== null && (
                 <Paper className="flex flex-col gap-2">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                         <p className={`flex-1 font-medium ${bots.problem ? "text-destructive" : ""}`}>{bots.headline}</p>
                         {bots.compare && (
                             <Button
@@ -98,7 +182,9 @@ export function VersionsView({
                                 {pushing ? "Pushing…" : bots.push.label}
                             </Button>
                         )}
+                        <OtherVersion numbers={otherVersions(versions.map(numberOf), status)} pushing={pushing} onPlan={onPlan} />
                     </div>
+                    {plan !== null && <PushQuestion plan={plan} onPush={onPush} onCancel={onCancelPlan} />}
                     {bots.notes.map((note) => (
                         <p key={note} className="text-sm text-muted-foreground">
                             {note}
@@ -182,7 +268,7 @@ export function VersionsView({
                                     </td>
                                     <td className="text-muted-foreground">
                                         {version.facts} facts, {version.knowledgeBases} knowledge bases, {version.articles} articles,{" "}
-                                        {version.procedures} procedures
+                                        {version.procedures} procedures, {version.actions} actions
                                     </td>
                                     <td>
                                         <code className="text-muted-foreground" title={version.sha256}>

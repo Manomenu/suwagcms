@@ -1,5 +1,7 @@
 using System.CommandLine;
+using Suwagcms.Cli.Actions;
 using Suwagcms.Cli.Articles;
+using Suwagcms.Cli.Availability;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Changes;
 using Suwagcms.Cli.Connection;
@@ -39,12 +41,14 @@ internal static class CliApp
             ArticlesCommand.Create(options, environment),
             KnowledgeBasesCommand.Create(options, environment),
             ProceduresCommand.Create(options, environment),
+            ActionsCommand.Create(options, environment),
             VersionsCommand.Create(options, environment),
             UsageCommand.Create(options, environment),
             RenameCommand.Create(options, environment),
             PushCommand.Create(options, environment),
             ApplyCommand.Create(options, environment),
             HistoryCommand.Create(options, environment),
+            AvailabilityCommand.Create(options, environment),
             DiffCommand.Create(options, environment),
             ExportCommand.Create(options, environment),
             ValidateCommand.Create(options, environment),

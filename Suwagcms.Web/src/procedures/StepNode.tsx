@@ -2,7 +2,7 @@ import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 
 import { cn } from "@/design/classNames";
 
-import { handlesOf, type Condition, type Step } from "./draft";
+import { FAILURE, handlesOf, type Condition, type Step } from "./draft";
 import { nodeSize } from "./layout";
 
 interface StepData extends Record<string, unknown> {
@@ -20,6 +20,7 @@ function blocksOf(step: Step): string[] {
         ...(step.collect ? [`collect: ${step.collect.join(", ") || "nothing yet"}`] : []),
         ...(step.say !== undefined ? [`say: ${step.say || "nothing yet"}`] : []),
         ...(step.assign ? [`assign: ${Object.keys(step.assign).join(", ") || "nothing yet"}`] : []),
+        ...(step.action === undefined ? [] : [`action: ${step.action || "nothing yet"}`]),
     ];
 }
 
@@ -71,8 +72,14 @@ export function StepNode({ data, selected }: NodeProps<StepFlowNode>) {
                     </div>
                 ))}
             </div>
+            {step.action !== undefined && (
+                <div className="relative mt-auto h-6 truncate border-t border-input px-2 text-xs leading-6 text-destructive">
+                    on failure →
+                    <Handle type="source" position={Position.Right} id={FAILURE} />
+                </div>
+            )}
             {Array.isArray(step.next) ? (
-                <div className="mt-auto flex flex-col">
+                <div className="flex flex-col">
                     {step.next.map((rule, index) => (
                         <div key={handles[index]} className="relative h-6 truncate border-t border-input px-2 text-xs leading-6">
                             {ruleLabel(rule.when)} →

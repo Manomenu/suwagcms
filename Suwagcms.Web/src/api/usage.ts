@@ -7,7 +7,7 @@ import type { components } from "./openapi";
 type Usage = components["schemas"]["UsageView"];
 export type UsageLink = components["schemas"]["UsageLink"];
 
-export type UsageCollection = "facts" | "articles" | "procedures";
+export type UsageCollection = "facts" | "articles" | "procedures" | "actions";
 
 function fetchUsage(bot: string, collection: UsageCollection, id: string, signal: AbortSignal): Promise<Usage> {
     return request<Usage>(`/bots/${encodeURIComponent(bot)}/${collection}/${encodeURIComponent(id)}/usage`, { signal });
@@ -18,7 +18,8 @@ export function usageHref(bot: string, link: UsageLink): string {
     const base = `~/bots/${encodeURIComponent(bot)}`;
     const id = encodeURIComponent(link.id);
     if (link.kind === "procedure") return `${base}/procedures/${id}`;
-    return `${base}/${link.kind === "fact" ? "facts" : "articles"}?open=${id}`;
+    const collection = link.kind === "fact" ? "facts" : link.kind === "action" ? "actions" : "articles";
+    return `${base}/${collection}?open=${id}`;
 }
 
 export interface UsageState {

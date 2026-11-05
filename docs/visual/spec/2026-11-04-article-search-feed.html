@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Articles for the bot's search</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 33 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>version-push</code></span>
@@ -380,9 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The CMS builds no index and knows nothing of models or embeddings. This is SDK behaviour only: there is no web, CLI or plugin action, because no person or agent in the CMS does anything here.</p>
   </div>
   <div class="stats">
-    <div><b>10</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>13</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -450,6 +448,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
+    <li>A bot's code cannot hold back a version until its search is ready: the news comes after the version is current. A push stays simple and independent of the search, and a bot that needs an exact match can build its index earlier, or search by version.</li>
+    <li>The bot's code hears through <code>IBotDefinitions.OnCurrentChanged</code>, and reads through <code>GetArticlesAsync</code>. Each piece of news runs on its own task, so listeners may overlap and go by the number; there is no CMS route.</li>
     <li>The CMS builds no search index (README), so it needs no knowledge of models or stores.</li>
     <li>The feed gives whole articles rather than an agreed “search form”, because what to embed differs per bot.</li>
     <li>News is told per instance and not once per bot: the SDK has no way to elect one instance, and a bot with an in-memory index needs it on every instance.</li>
@@ -468,33 +468,15 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-article-search-feed-8</code> With two instances sharing a store, an instance that was not pushed to is told the new number after its next poll, and gets the same articles.</li>
     <li><code>AC-article-search-feed-9</code> After a restart with a version in the store, the bot's code is told the current number once; with no version it is told nothing until the first arrives.</li>
     <li><code>AC-article-search-feed-10</code> With the CMS unreachable, the feed still gives the articles of every held version.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>availability</code>:</b> the SDK says which articles are off, and tells the bot's code when that changes, so a search can drop an article at once, without a push.</li>
-    <li><b>after <code>knowledge-base-language</code>:</b> the SDK gives each article's language, which is its knowledge base's.</li>
-    <li><b>after <code>version-rollback</code>:</b> making a held version current also tells the bot's code the number.</li>
+    <li><code>AC-article-search-feed-11</code> The SDK gives each article's language, which is its knowledge base's.</li>
+    <li><code>AC-article-search-feed-12</code> Making a held version current also tells the bot's code the number.</li>
+    <li><code>AC-article-search-feed-13</code> The feed marks each article that is off, and the SDK tells the bot's code when what is off changes, so a search can drop an article at once, without a push.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>A search can lag behind the version.</b> Just after a push, a new conversation on v14 may search an index still built from v12, and find an article v14 no longer holds. The bot reads articles by <code>id</code> from its version, so it would find nothing there rather than the old text. Closing this gap is up to the bot; see Open questions.</p></div>
-  <div class="callout assumption"><p><code>Suwagcms.Sdk</code>'s <code>Article</code> today holds only <code>id</code>; <code>articles</code> brings the other fields into the format, and this feature only gives them out.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Can a bot's code hold back a version until its search is ready?</legend>
-      <p class="why">Training an index can take minutes, while a push waits about 30 seconds for the bot. Holding back would close the lag above, but would make a push's result depend on a search system the CMS knows nothing about. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="never"><span><b>No: the news comes after the version is current</b><small>a push stays simple and independent of the search; a bot that needs an exact match can build its index earlier, or search by version</small></span></label>
-      <label><input type="radio" value="hold"><span><b>Yes: the code may finish first</b><small>no lag, but a slow search fails pushes, and instances may disagree for minutes</small></span></label>
-    </fieldset>
-  </form>
-</section>
+  <div class="callout risk"><p><b>A search can lag behind the version.</b> Just after a push, a new conversation on v14 may search an index still built from v12, and find an article v14 no longer holds. The bot reads articles by <code>id</code> from its version, so it would find nothing there rather than the old text. Closing this gap is up to the bot.</p></div>
+  </section>
 <!-- CONTENT END -->
 </main>
 </div>

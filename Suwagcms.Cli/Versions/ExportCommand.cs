@@ -153,13 +153,14 @@ internal static class ExportCommand
             export.Files.Count(file => file.Kind == ResourceKind.GlobalFact),
             export.Files.Count(file => file.Kind == ResourceKind.KnowledgeBase),
             export.Files.Count(file => file.Kind == ResourceKind.Article),
-            export.Files.Count(file => file.Kind == ResourceKind.Procedure)
+            export.Files.Count(file => file.Kind == ResourceKind.Procedure),
+            export.Files.Count(file => file.Kind == ResourceKind.Action)
         );
         return await target.Run.Report.DoneAsync(
             new ExportDocument(folder, target.Bot, version, counts),
             string.Create(
                 CultureInfo.InvariantCulture,
-                $"Exported v{version} of {target.Bot} to {folder}: {counts.Facts} facts, {counts.KnowledgeBases} knowledge bases, {counts.Articles} articles, {counts.Procedures} procedures"
+                $"Exported v{version} of {target.Bot} to {folder}: {counts.Facts} facts, {counts.KnowledgeBases} knowledge bases, {counts.Articles} articles, {counts.Procedures} procedures, {counts.Actions} actions"
             )
         );
     }

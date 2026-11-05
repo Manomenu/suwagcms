@@ -8,5 +8,6 @@ public sealed record VersionSummary(
     int KnowledgeBases,
     int Articles,
     int Procedures,
+    int Actions,
     string Sha256
 );

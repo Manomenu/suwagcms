@@ -13,11 +13,13 @@ public static class DefinitionValidator
         DuplicateIdRule.Rule,
         .. FactRules.All,
         .. FactNameRules.All,
+        .. ActionRules.All,
         .. KnowledgeBaseRules.All,
         .. ArticleRules.All,
         .. ReferenceRules.All,
         .. ProcedureShapeRules.All,
         .. ProcedureFactRules.All,
+        .. ActionStepRules.All,
         .. ProcedureVersionRules.All,
     ];
 

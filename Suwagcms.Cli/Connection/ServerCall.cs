@@ -16,13 +16,15 @@ internal static class ServerCall
         Uri address,
         string path,
         T body,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        TimeSpan? timeout = null
     ) =>
         SendAsync(
             environment,
             address,
             (http, cancellation) => http.PostAsJsonAsync(new Uri(address, path), body, cancellation),
-            cancellationToken
+            cancellationToken,
+            timeout
         );
 
     public static Task<ServerAnswer> PutAsync<T>(
@@ -50,11 +52,12 @@ internal static class ServerCall
         CliEnvironment environment,
         Uri address,
         Func<HttpClient, CancellationToken, Task<HttpResponseMessage>> send,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        TimeSpan? timeout = null
     )
     {
         ArgumentNullException.ThrowIfNull(environment);
-        using var owned = new HttpClient { Timeout = Timeout };
+        using var owned = new HttpClient { Timeout = timeout ?? Timeout };
         var http = environment.Http ?? owned;
         try
         {

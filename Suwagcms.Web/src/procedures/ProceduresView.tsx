@@ -1,5 +1,8 @@
+import type { ReactNode } from "react";
+
 import type { Mistake } from "@/api/client";
 import { Anchor } from "@/design/anchor";
+import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Badge } from "@/design/badge";
 import { Page, Paper } from "@/design/page";
 import { Table } from "@/design/table";
@@ -18,10 +21,21 @@ function Readiness({ count }: { count: number }) {
 }
 
 /** The Procedures screen: each procedure with its description and how many mistakes still stop a version. Each opens in the creator, and a new one starts there. */
-export function ProceduresView({ bot, list }: { bot: string; list: ProcedureList }) {
+export function ProceduresView({
+    bot,
+    list,
+    isOff,
+    notice,
+}: {
+    bot: string;
+    list: ProcedureList;
+    isOff?: (id: string) => boolean;
+    notice?: ReactNode;
+}) {
     const botMistakes: Mistake[] = list.botNotReady;
     return (
         <Page title={`Procedures of ${bot}`}>
+            {notice}
             {botMistakes.length > 0 && (
                 <Paper className="border-warning">
                     <ul className="flex flex-col gap-1 text-sm">
@@ -47,6 +61,7 @@ export function ProceduresView({ bot, list }: { bot: string; list: ProcedureList
                                 <th>Procedure</th>
                                 <th>Description</th>
                                 <th>Readiness</th>
+                                <th>Availability</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -60,6 +75,9 @@ export function ProceduresView({ bot, list }: { bot: string; list: ProcedureList
                                     <td className="text-muted-foreground">{procedure.description}</td>
                                     <td>
                                         <Readiness count={mistakesOf(procedure)} />
+                                    </td>
+                                    <td>
+                                        <AvailabilityBadge off={isOff?.(procedure.id) ?? false} />
                                     </td>
                                 </tr>
                             ))}

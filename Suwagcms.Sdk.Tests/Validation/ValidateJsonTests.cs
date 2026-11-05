@@ -64,6 +64,9 @@ public sealed class ValidateJsonTests
 
         var mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Save);
 
-        Assert.Equal([ResourceKind.KnowledgeBase, ResourceKind.Action], mistakes.Select(mistake => mistake.Resource.Kind));
+        Assert.Equal(
+            [ResourceKind.KnowledgeBase, ResourceKind.Action],
+            mistakes.Where(mistake => mistake.Code == MistakeCodes.DuplicateId).Select(mistake => mistake.Resource.Kind)
+        );
     }
 }

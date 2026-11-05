@@ -28,6 +28,53 @@
           "string",
           "null"
         ]
+      },
+      "availability": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "off": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "Definition",
+                    "GlobalFact",
+                    "KnowledgeBase",
+                    "Article",
+                    "Action",
+                    "Procedure"
+                  ]
+                },
+                "id": {
+                  "type": "string"
+                },
+                "upToVersion": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "default": null
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "number",
+          "off"
+        ]
       }
     },
     "required": [
@@ -158,6 +205,53 @@
       "mistakes"
     ]
   },
+  "availability": {
+    "type": "object",
+    "properties": {
+      "number": {
+        "type": "integer"
+      },
+      "off": {
+        "type": "array",
+        "items": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "Definition",
+                "GlobalFact",
+                "KnowledgeBase",
+                "Article",
+                "Action",
+                "Procedure"
+              ]
+            },
+            "id": {
+              "type": "string"
+            },
+            "upToVersion": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "default": null
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ]
+        }
+      }
+    },
+    "required": [
+      "number",
+      "off"
+    ]
+  },
   "versionEnvelope": {
     "type": "object",
     "properties": {
@@ -177,6 +271,21 @@
     "required": [
       "formatVersion",
       "bot",
+      "number",
+      "digest"
+    ]
+  },
+  "currentChoice": {
+    "type": "object",
+    "properties": {
+      "number": {
+        "type": "integer"
+      },
+      "digest": {
+        "type": "string"
+      }
+    },
+    "required": [
       "number",
       "digest"
     ]
@@ -279,5 +388,143 @@
         }
       }
     }
+  },
+  "actionTestRequest": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "values": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "items": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "min": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "max": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "maxLength": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
+          "results": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "$ref": "#/properties/action/properties/parameters/additionalProperties"
+            }
+          },
+          "implementation": true
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "values": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "required": [
+      "action"
+    ]
+  },
+  "actionTestAnswer": {
+    "type": "object",
+    "properties": {
+      "outcome": {
+        "type": "string"
+      },
+      "results": {
+        "type": "object",
+        "additionalProperties": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "reason": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "status": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "elapsedMs": {
+        "type": "integer"
+      },
+      "answerStart": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "answerCut": {
+        "type": "boolean"
+      },
+      "succeeded": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "outcome"
+    ]
   }
 }

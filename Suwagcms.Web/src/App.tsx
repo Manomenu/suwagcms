@@ -1,5 +1,6 @@
 import { Redirect, Route, Switch } from "wouter";
 
+import { ActionsScreen } from "./actions/ActionsScreen";
 import { ArticlesScreen } from "./articles/ArticlesScreen";
 import { BotsRoutes } from "./bots/BotsRoutes";
 import { FactsScreen } from "./facts/FactsScreen";
@@ -25,6 +26,7 @@ export function App() {
                 <Route path="/bots/:id/procedures">
                     {(params) => <ProceduresScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>
+                <Route path="/bots/:id/actions">{(params) => <ActionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
                 <Route path="/bots/:id/versions">
                     {(params) => <VersionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>

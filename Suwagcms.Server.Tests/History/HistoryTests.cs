@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Dapper;
 using Microsoft.AspNetCore.Routing;
@@ -362,5 +363,65 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
         Assert.Equal(first.Batch, second.Batch);
         Assert.Equal(first.Batch, deleted.Batch);
         Assert.NotEqual(first.Batch, other.Batch);
+    }
+
+    private async Task<HttpResponseMessage> Rename(string bot, string collection, string id, string newId) =>
+        await app.CreateClient()
+            .PostAsJsonAsync($"/api/bots/{bot}/{collection}/{id}/rename", new { newId }, TestContext.Current.CancellationToken);
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-17")]
+    public async Task A_rename_is_one_entry_for_the_resource_and_one_for_each_rewritten_referrer_in_one_batch()
+    {
+        var (articles, history) = await NewBot();
+        await articles.Add("cennik", ArticleApi.Body());
+        await articles.Add("wycena", ArticleApi.Body(content: "See [prices](cms://article/cennik)."));
+
+        (await Rename(articles.Bot, "articles", "cennik", "priceList")).EnsureSuccessStatusCode();
+
+        var entries = (await history.Of("articles", "priceList")).Entries;
+        Assert.Equal(["renamed", "added"], entries.Select(entry => entry.Action));
+        var renamed = entries[0];
+        Assert.Equal(("article", "priceList", 2), (renamed.Kind, renamed.ResourceId, renamed.Revision));
+        var id = Assert.Single(renamed.Changes);
+        Assert.Equal(("id", "cennik", "priceList"), (id.Field, HistoryScene.TextOf(id, old: true), HistoryScene.TextOf(id, old: false)));
+        var referrer = (await history.Of("articles", "wycena")).Entries[0];
+        Assert.Equal(("edited", "content"), (referrer.Action, Assert.Single(referrer.Changes).Field));
+        Assert.NotNull(renamed.Batch);
+        Assert.Equal(renamed.Batch, referrer.Batch);
+        Assert.DoesNotContain((await history.OfBot()).Entries, entry => entry.Action == "deleted");
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-17")]
+    public async Task A_resource_is_found_under_either_id_also_when_another_takes_the_old_one()
+    {
+        var (articles, history) = await NewBot();
+        await articles.Add("cennik", ArticleApi.Body());
+        (await Rename(articles.Bot, "articles", "cennik", "priceList")).EnsureSuccessStatusCode();
+        await articles.Add("cennik", ArticleApi.Body(content: "Another one."));
+
+        var underNew = (await history.Of("articles", "priceList")).Entries;
+        var underOld = (await history.Of("articles", "cennik")).Entries;
+
+        Assert.Equal(["renamed", "added"], underNew.Select(entry => entry.Action));
+        Assert.Equal(["added", "renamed", "added"], underOld.Select(entry => entry.Action));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-17")]
+    public async Task A_rename_of_a_fact_names_its_old_and_new_name()
+    {
+        var (articles, history) = await NewBot();
+        var facts = new FactApi(app.CreateClient(), articles.Bot);
+        await facts.Add("customer.city", FactApi.Text());
+
+        (await Rename(articles.Bot, "facts", "customer.city", "client.town")).EnsureSuccessStatusCode();
+
+        var change = Assert.Single((await history.Of("facts", "client.town")).Entries[0].Changes);
+        Assert.Equal(
+            ("name", "customer.city", "client.town"),
+            (change.Field, HistoryScene.TextOf(change, old: true), HistoryScene.TextOf(change, old: false))
+        );
     }
 }

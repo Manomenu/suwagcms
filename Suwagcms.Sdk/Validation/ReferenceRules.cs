@@ -13,7 +13,28 @@ internal static class ReferenceRules
 
     // Why: facts and articles share the one code, so a client treats a name that points at nothing the same way wherever it is written.
     private static IEnumerable<Mistake> MissingTargets(BotDefinition definition) =>
-        ProcedureFactRules.MissingFacts(definition).Concat(MissingArticles(definition));
+        ProcedureFactRules
+            .MissingFacts(definition)
+            .Concat(MissingArticles(definition))
+            .Concat(MissingActions(definition))
+            .Concat(ActionStepRules.MissingMappedFields(definition));
+
+    private static IEnumerable<Mistake> MissingActions(BotDefinition definition)
+    {
+        var known = definition.Actions.Select(action => action.Id).Order(StringComparer.Ordinal).ToList();
+        return ReferenceWalker
+            .From(definition)
+            .Where(reference => reference.To.Kind == ResourceKind.Action && !known.Contains(reference.To.Id, StringComparer.Ordinal))
+            .Select(reference => new Mistake(
+                MistakeCodes.ReferenceMissing,
+                ValidationStage.Save,
+                reference.From,
+                reference.Path,
+                $"{reference.Path} of '{reference.From.Id}' names action '{reference.To.Id}', which this bot does not have.",
+                known.Count == 0 ? "The bot has no actions yet: add one first." : $"Actions of the bot: {string.Join(", ", known)}.",
+                []
+            ));
+    }
 
     private static IEnumerable<Mistake> MissingArticles(BotDefinition definition)
     {

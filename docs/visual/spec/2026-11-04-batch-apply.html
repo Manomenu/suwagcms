@@ -380,8 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It is the one way to make changes that only work together, and it is an ordinary save with more than one change in it, so it knows no rule of its own. A file says what to change. It is not a local copy of the bot.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -507,6 +507,7 @@ changes:
     <li><code>AC-batch-apply-14</code> <code>suwagcms apply</code> has its line in the plugin's main skill, and a separate skill for batch changes starts with a dry run.</li>
     <li><code>AC-batch-apply-15</code> A dry run shows the same refusals as an ordinary save, judged on the whole file's result: a used article and every reference to it can go in one file, and two new articles linking to each other are refused as a loop.</li>
     <li><code>AC-batch-apply-16</code> A file of changes covers procedures, and a successful answer also lists the <code>Version</code> stage's mistakes without refusing.</li>
+    <li><code>AC-batch-apply-17</code> A file of changes covers actions.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
@@ -514,7 +515,6 @@ changes:
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>edit-guard</code>:</b> a dry run shows the refusals of the edit guard too, judged on the whole file's result.</li>
-    <li><b>after <code>http-actions</code>:</b> a file of changes covers actions.</li>
     <li><b>after <code>version-export</code>:</b> an exported file given to <code>apply</code> is refused, saying that exports are for reading and how to write a file of changes.</li>
   </ul>
 </section>

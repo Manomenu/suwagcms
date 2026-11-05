@@ -69,4 +69,33 @@ public sealed class DeclarationRouteTests
         Assert.Equal(HttpStatusCode.OK, status);
         Assert.Equal(1, (await bot.StateAsync()).Current);
     }
+
+    [Fact]
+    [Trait("criterion", "AC-code-actions-12")]
+    public async Task A_bot_whose_version_holds_a_code_action_it_does_not_declare_refuses_it_and_keeps_what_it_had()
+    {
+        await using var bot = await BotHost.StartAsync(
+            new InMemoryVersionStore(),
+            declares: new BotCapabilities { FormatVersion = 1, Blocks = Block.Names }
+        );
+        var good = Documents.Make(1);
+        var (accepted, _) = await bot.PutAsync(1, good);
+        Assert.Equal(HttpStatusCode.OK, accepted);
+        var bad = Documents.Make(2);
+        bad["actions"] = new System.Text.Json.Nodes.JsonArray(
+            new System.Text.Json.Nodes.JsonObject
+            {
+                ["id"] = "lookupPolicy",
+                ["description"] = "Finds",
+                ["implementation"] = "code",
+            }
+        );
+        bad["digest"] = VersionDigest.Of(bad.ToJsonString());
+
+        var (status, body) = await bot.PutAsync(2, bad);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, status);
+        Assert.Contains("action.code.undeclared", body.ToJsonString(), StringComparison.Ordinal);
+        Assert.Equal(1, (await bot.StateAsync()).Current);
+    }
 }

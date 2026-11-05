@@ -15,6 +15,7 @@ import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation } from "wouter";
 
 import { renamer } from "@/api/rename";
+import { useAvailability } from "@/api/availability";
 import { useResourceHistory } from "@/api/history";
 import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
@@ -22,7 +23,7 @@ import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
-import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
+import { type ActionView, fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
 import { addStep, connect, deleteStep, disconnect, edgesOf, factsSeen, stepOrder, toSave, type BlockName, type Draft } from "./draft";
 import type { OfferedBlocks } from "./offeredBlocks";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
@@ -96,6 +97,7 @@ function CreatorBody({
     id,
     initial,
     facts,
+    actions,
     stored,
     offered,
 }: {
@@ -103,6 +105,7 @@ function CreatorBody({
     id: string;
     initial: ProcedureDetail;
     facts: Fact[];
+    actions: ActionView[];
     offered: OfferedBlocks;
     stored: Positions;
 }) {
@@ -120,6 +123,7 @@ function CreatorBody({
     const check = useLiveCheck(bot, id, state.revision, draft);
     const usage = useUsage(bot, "procedures", id, state.revision);
     const history = useResourceHistory(bot, "procedures", id, state.revision);
+    const availability = useAvailability(bot);
     const dirty = isDirty(state);
     const changer = useMemo(() => renamer(bot, "procedures", id, state.revision), [bot, id, state.revision]);
     const drawn = useMemo(() => placed(draft, positions), [draft, positions]);
@@ -168,6 +172,8 @@ function CreatorBody({
             width: size.width,
             height: size.height,
             selected: name === selected,
+            // Why: nodes are rebuilt on every edit, and a node without its size is measured again, its edges gone until that ends; the size is known, so an edge never waits on it.
+            measured: size,
             data: { name, step, first: draft.firstStep === name, flagged: flagged.has(name) },
         };
     });
@@ -336,6 +342,7 @@ function CreatorBody({
                             name={selected}
                             draft={draft}
                             facts={factsSeen(draft, facts)}
+                            actions={actions}
                             edit={edit}
                             onRenamed={setSelected}
                             onDeleted={() => {
@@ -344,7 +351,15 @@ function CreatorBody({
                             onLeave={leave}
                         />
                     ) : (
-                        <ProcedurePanel bot={bot} id={id} draft={draft} usage={usage} history={history} edit={edit} />
+                        <ProcedurePanel
+                            bot={bot}
+                            id={id}
+                            draft={draft}
+                            usage={usage}
+                            history={history}
+                            availability={availability}
+                            edit={edit}
+                        />
                     )}
                     <MistakeList
                         check={check}
@@ -374,6 +389,7 @@ export function Creator(props: {
     id: string;
     initial: ProcedureDetail;
     facts: Fact[];
+    actions: ActionView[];
     stored: Positions;
     offered: OfferedBlocks;
 }) {

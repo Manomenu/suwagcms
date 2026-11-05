@@ -18,6 +18,33 @@ internal static class Documents
         return Sign(document);
     }
 
+    // Why: a base in another language than the default, so the feed can be seen taking the language from it.
+    public static JsonObject WithArticles(int number, params JsonObject[] articles)
+    {
+        var document = Make(number);
+        document["knowledgeBases"] = new JsonArray(
+            new JsonObject
+            {
+                ["id"] = "faq",
+                ["title"] = "Questions",
+                ["language"] = "pl",
+            }
+        );
+        document["articles"] = new JsonArray([.. articles]);
+        return Sign(document);
+    }
+
+    public static JsonObject Article(string id, string content = "Text.") =>
+        new()
+        {
+            ["id"] = id,
+            ["knowledgeBase"] = "faq",
+            ["title"] = $"Title of {id}",
+            ["description"] = $"What {id} answers",
+            ["content"] = content,
+            ["llmGuide"] = $"Guide of {id}",
+        };
+
     public static JsonObject Fact(string name) =>
         new()
         {

@@ -1245,6 +1245,335 @@
         }
       }
     },
+    "/api/bots/{bot}/actions": {
+      "get": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActionView"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/actions/{id}": {
+      "get": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/actions/{id}/test": {
+      "post": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionTestAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/versions": {
       "get": {
         "tags": [
@@ -1593,9 +1922,48 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/versions/{number}/push-plan": {
+      "get": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           },
-          "422": {
-            "description": "Unprocessable Entity",
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPlan"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1626,7 +1994,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|articles|procedures)$",
+              "pattern": "^(facts|articles|procedures|actions)$",
               "type": "string"
             }
           },
@@ -1682,7 +2050,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|knowledge-bases|articles|procedures)$",
+              "pattern": "^(facts|knowledge-bases|articles|procedures|actions)$",
               "type": "string"
             }
           },
@@ -2031,7 +2399,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "pattern": "^(facts|knowledge-bases|articles|procedures|versions)$",
+              "pattern": "^(facts|knowledge-bases|articles|procedures|actions|versions)$",
               "type": "string"
             }
           },
@@ -2092,10 +2460,423 @@
           }
         }
       }
+    },
+    "/api/bots/{bot}/availability": {
+      "get": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ask",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityView"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/availability/send": {
+      "post": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityDelivery"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/availability/{kind}/{id}/off": {
+      "post": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/availability/{kind}/{id}/on": {
+      "post": {
+        "tags": [
+          "AvailabilityEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvailabilityAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActionField": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "values": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "min": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "max": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxLength": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "ActionImplementation": { },
+      "ActionTestAnswer": {
+        "required": [
+          "outcome",
+          "results",
+          "reason",
+          "status",
+          "elapsedMs",
+          "answerStart",
+          "answerCut"
+        ],
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string"
+          },
+          "results": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "elapsedMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "answerStart": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "answerCut": {
+            "type": "boolean"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "What a test run came to. `Outcome` is `success` or `failure` when the bot ran the action, `unreachable` when the bot could not be reached or gave no usable answer, and `notOffered` when the bot has no such route; in the last two the action has not been judged.\n`Status`, `ElapsedMs` and `AnswerStart` are what is known of the call; `AnswerCut` says the answer was longer than what is shown. `Note` says what the run cannot show, such as that the action is turned off."
+      },
+      "ActionView": {
+        "required": [
+          "id",
+          "description",
+          "parameters",
+          "results",
+          "implementation",
+          "revision",
+          "usedBy",
+          "alsoDeclared",
+          "noLongerDeclared"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "implementation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ActionImplementation"
+              }
+            ]
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "alsoDeclared": {
+            "type": "boolean"
+          },
+          "noLongerDeclared": {
+            "type": "boolean"
+          }
+        },
+        "description": "An action of a bot as the API shows it: the format's fields, with secrets only as the names its headers hold, the revision to send back to guard an edit, the procedures that use it, whether the bot also declares this id as a code action, and whether a code action in use is no longer declared."
+      },
       "ApplyChanges": {
         "required": [
           "bot",
@@ -2116,7 +2897,7 @@
             ]
           }
         },
-        "description": "A file of changes as a request. Each change says what it does (add, edit or delete, with the kind as the value: fact, knowledgeBase, article, procedure), the resource's id (name for a fact), and for an add or edit the fields of that resource's own save; an edit or delete may give ifRevision. Bot, when given, must be the bot of the address."
+        "description": "A file of changes as a request. Each change says what it does (add, edit or delete, with the kind as the value: fact, knowledgeBase, article, procedure, action), the resource's id (name for a fact), and for an add or edit the fields of that resource's own save; an edit or delete may give ifRevision. Bot, when given, must be the bot of the address."
       },
       "ArticleView": {
         "required": [
@@ -2162,6 +2943,135 @@
           }
         },
         "description": "An article of a bot as the API shows it: the format's fields, the language of its knowledge base (read only, derived), and the revision to send back to guard an edit."
+      },
+      "AvailabilityAnswer": {
+        "required": [
+          "kind",
+          "id",
+          "off",
+          "changed",
+          "usedBy",
+          "delivery"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "off": {
+            "type": "boolean"
+          },
+          "changed": {
+            "type": "boolean"
+          },
+          "usedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsageLink"
+            }
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/AvailabilityDelivery"
+          }
+        },
+        "description": "The result of turning a resource on or off, or with a dry run what it would be: `Changed` is false when it already was so; `UsedBy` is what uses it, listed when turning off; `Delivery` says whether the bot has it."
+      },
+      "AvailabilityDelivery": {
+        "required": [
+          "state",
+          "number",
+          "botNumber",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/AvailabilityDeliveryState"
+          },
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "botNumber": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "Whether the bot has the CMS's setting, from the bot's own answer: the CMS's `Number`, the one the bot reports (null when it gave none), and when not delivered the `Reason`, which says what to do."
+      },
+      "AvailabilityDeliveryState": {
+        "enum": [
+          "Confirmed",
+          "NotDelivered",
+          "NotAsked"
+        ],
+        "description": "What the bot's own answer says about the setting: `Confirmed` it reports the CMS's number, `NotDelivered` it does not or could not be asked, `NotAsked` nobody asked it, as with nothing ever turned off or a dry run."
+      },
+      "AvailabilityItem": {
+        "required": [
+          "kind",
+          "id",
+          "off"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "off": {
+            "type": "boolean"
+          }
+        },
+        "description": "One resource that has availability: its kind (article or procedure), its id, and whether it is off; a resource never touched is on."
+      },
+      "AvailabilityView": {
+        "required": [
+          "number",
+          "resources",
+          "delivery"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvailabilityItem"
+            }
+          },
+          "delivery": {
+            "$ref": "#/components/schemas/AvailabilityDelivery"
+          }
+        },
+        "description": "The bot's setting in the CMS: its number, every resource that has availability, and whether the bot has it."
       },
       "Bot": {
         "required": [
@@ -2654,7 +3564,7 @@
             }
           }
         },
-        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists the steps of the working state using a block the declaration leaves out."
+        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists what of the working state does not fit the declaration: steps using a block it leaves out, and actions it no longer has, describes differently or also holds as a code action."
       },
       "DeclarationStored": {
         "enum": [
@@ -2921,7 +3831,7 @@
             "format": "uuid"
           }
         },
-        "description": "One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure or version; and id), the action (added, edited, deleted, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share."
+        "description": "One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure, action or version; and id), the action (added, edited, deleted, renamed, turned on, turned off, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share."
       },
       "HistoryPage": {
         "required": [
@@ -3277,6 +4187,36 @@
               "type": "string"
             }
           },
+          "action": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "with": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "onFailure": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "next": {
             "oneOf": [
               {
@@ -3368,6 +4308,62 @@
         ],
         "description": "How an attempt to push a version ended."
       },
+      "PushPlan": {
+        "required": [
+          "version",
+          "botHas",
+          "way",
+          "problem",
+          "mistakes",
+          "changes"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "botHas": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "way": {
+            "$ref": "#/components/schemas/PushWay"
+          },
+          "problem": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          },
+          "changes": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/VersionComparison"
+              }
+            ]
+          }
+        },
+        "description": "What a push of a version would do, with nothing changed: the way it would go, the version the bot reports, what the push would be refused for (`Problem` and `Mistakes`, empty when it would go through), and what going from the bot's version to this one changes (null when the two cannot be compared)."
+      },
       "PushResult": {
         "required": [
           "outcome",
@@ -3412,6 +4408,14 @@
           }
         },
         "description": "The answer to a push: how it ended, the version the bot reported afterwards (null when it did not answer), and when it failed, the reason and every mistake the bot named."
+      },
+      "PushWay": {
+        "enum": [
+          "Send",
+          "MakeCurrent",
+          "Nothing"
+        ],
+        "description": "How a push reaches the bot: the document is sent, a version the bot holds is made current without sending it, or nothing is needed because it is already current."
       },
       "Refusal": {
         "required": [
@@ -3627,6 +4631,70 @@
             "type": "string"
           }
         }
+      },
+      "RunAction": {
+        "required": [
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "What a test run of a saved action takes: the value of each parameter, as text."
+      },
+      "SaveAction": {
+        "required": [
+          "description",
+          "parameters",
+          "results",
+          "implementation"
+        ],
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "parameters": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ActionField"
+            }
+          },
+          "implementation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ActionImplementation"
+              }
+            ]
+          }
+        },
+        "description": "What saving an action takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once. A secret stands in a header as {secret:NAME}, never as its value."
       },
       "SaveArticle": {
         "required": [
@@ -4063,6 +5131,7 @@
           "knowledgeBases",
           "articles",
           "procedures",
+          "actions",
           "sha256"
         ],
         "type": "object",
@@ -4111,6 +5180,14 @@
             ],
             "format": "int32"
           },
+          "actions": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
           "sha256": {
             "type": "string"
           }
@@ -4142,6 +5219,9 @@
       "name": "ProcedureEndpoints"
     },
     {
+      "name": "ActionEndpoints"
+    },
+    {
       "name": "VersionEndpoints"
     },
     {
@@ -4158,6 +5238,9 @@
     },
     {
       "name": "HistoryEndpoints"
+    },
+    {
+      "name": "AvailabilityEndpoints"
     }
   ]
 }

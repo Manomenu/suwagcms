@@ -42,22 +42,41 @@ public sealed class SchemaTests
         }
     }
 
-    // Why: next is a step's id or a list of rules, which the exporter cannot see through the converter, so the schema says so itself.
+    // Why: next is a step's id or a list of rules, and an implementation is the word code or an HTTP call, which the exporter cannot see through the converters, so the schema says so itself.
     private static readonly JsonSchemaExporterOptions ExporterOptions = new()
     {
         TransformSchemaNode = (context, node) =>
-            context.TypeInfo.Type == typeof(NextSteps)
-                ? new JsonObject
-                {
-                    ["oneOf"] = new JsonArray(
-                        new JsonObject { ["type"] = "string" },
-                        JsonNode.Parse(
-                            JsonSchemaExporter.GetJsonSchemaAsNode(DefinitionFormat.Options, typeof(List<Transition>)).ToJsonString()
-                        )
-                    ),
-                }
-                : node,
+            context.TypeInfo.Type == typeof(NextSteps) ? OneOf(new JsonObject { ["type"] = "string" }, typeof(List<Transition>))
+            : context.TypeInfo.Type == typeof(ActionImplementation) ? Implementation()
+            : node,
     };
+
+    private static JsonObject OneOf(JsonObject first, Type second) =>
+        new()
+        {
+            ["oneOf"] = new JsonArray(
+                first,
+                JsonNode.Parse(JsonSchemaExporter.GetJsonSchemaAsNode(DefinitionFormat.Options, second).ToJsonString())
+            ),
+        };
+
+    private static JsonObject Implementation() =>
+        new()
+        {
+            ["oneOf"] = new JsonArray(
+                new JsonObject { ["const"] = ActionImplementation.CodeWord },
+                new JsonObject
+                {
+                    ["type"] = "object",
+                    ["properties"] = new JsonObject
+                    {
+                        ["http"] = JsonNode.Parse(
+                            JsonSchemaExporter.GetJsonSchemaAsNode(DefinitionFormat.Options, typeof(HttpCall)).ToJsonString()
+                        ),
+                    },
+                }
+            ),
+        };
 
     private static JsonNode Schema()
     {

@@ -58,6 +58,20 @@ internal sealed class BotHost : IAsyncDisposable
     public Task<(HttpStatusCode Status, JsonNode Body)> PutAsync(int number, JsonObject document) =>
         PutAsync(number, document.ToJsonString());
 
+    public async Task<(HttpStatusCode Status, JsonNode Body)> MakeCurrentAsync(int number, string digest)
+    {
+        using var content = new StringContent(
+            new JsonObject { ["number"] = number, ["digest"] = digest }.ToJsonString(),
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+        using var response = await Client.PutAsync(new Uri("/suwagcms/current", UriKind.Relative), content);
+        return (
+            response.StatusCode,
+            JsonNode.Parse(await response.Content.ReadAsStringAsync()) ?? throw new InvalidOperationException("empty answer")
+        );
+    }
+
     public async Task<BotState> StateAsync() =>
         await Client.GetFromJsonAsync<BotState>(new Uri("/suwagcms/state", UriKind.Relative), Web)
         ?? throw new InvalidOperationException("empty state");

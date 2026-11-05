@@ -11,7 +11,13 @@ internal static class ProcedureFile
 {
     private static readonly HashSet<string> TopNumbers = new(["revision"], StringComparer.Ordinal);
 
-    public static async Task<(JsonObject? Document, string Problem)> ReadAsync(string path, CancellationToken cancellationToken)
+    private const string OneProcedure = "one procedure: write a mapping with id, description, firstStep and steps";
+
+    public static async Task<(JsonObject? Document, string Problem)> ReadAsync(
+        string path,
+        CancellationToken cancellationToken,
+        string expected = OneProcedure
+    )
     {
         string text;
         try
@@ -22,18 +28,16 @@ internal static class ProcedureFile
         {
             return (null, $"Cannot read '{path}': {exception.Message} Pass --file with the path of a YAML or JSON file.");
         }
-        return Parse(text, path);
+        return Parse(text, path, expected);
     }
 
-    public static (JsonObject? Document, string Problem) Parse(string text, string name)
+    public static (JsonObject? Document, string Problem) Parse(string text, string name, string expected = OneProcedure)
     {
         ArgumentNullException.ThrowIfNull(text);
         try
         {
             var node = text.TrimStart().StartsWith('{') ? JsonNode.Parse(text) : FromYaml(text, TopNumbers);
-            return node is JsonObject document
-                ? (document, "")
-                : (null, $"'{name}' does not hold one procedure: write a mapping with id, description, firstStep and steps.");
+            return node is JsonObject document ? (document, "") : (null, $"'{name}' does not hold {expected}.");
         }
         catch (Exception exception) when (exception is JsonException or YamlException or ArgumentException)
         {
@@ -49,7 +53,7 @@ internal static class ProcedureFile
         return stream.Documents.Count == 0 ? null : Convert(stream.Documents[0].RootNode, "", "", topNumbers);
     }
 
-    // Why: YAML writes 42 and true unquoted, and only the bounds of a range or a local fact and known mean a number or a boolean; every other plain scalar is the text it spells.
+    // Why: YAML writes 42 and true unquoted, and only the bounds of a range, of a local fact or of an action's parameter or result, a timeout and known mean a number or a boolean; every other plain scalar is the text it spells.
     private static JsonNode? Convert(YamlNode node, string key, string parent, IReadOnlySet<string> topNumbers, string grandparent = "")
     {
         switch (node)
@@ -88,7 +92,8 @@ internal static class ProcedureFile
         }
         var isNumber =
             (key is "min" or "max" && parent == "range")
-            || (key is "min" or "max" or "maxLength" && grandparent == "localFacts")
+            || (key is "min" or "max" or "maxLength" && grandparent is "localFacts" or "parameters" or "results")
+            || (key == "timeoutSeconds" && parent == "http")
             || (parent.Length == 0 && topNumbers.Contains(key));
         return isNumber && int.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number)
             ? number

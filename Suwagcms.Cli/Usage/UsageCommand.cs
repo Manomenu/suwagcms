@@ -17,11 +17,12 @@ internal static class UsageCommand
         ["fact"] = "facts",
         ["article"] = "articles",
         ["procedure"] = "procedures",
+        ["action"] = "actions",
     };
 
     public static Command Create(GlobalOptions options, CliEnvironment environment)
     {
-        var kind = new Argument<string>("kind") { Description = "fact, article or procedure." };
+        var kind = new Argument<string>("kind") { Description = "fact, article, procedure or action." };
         kind.AcceptOnlyFromAmong([.. Collections.Keys]);
         var id = new Argument<string>("id") { Description = "The resource's id or, for a fact, its name." };
         var command = new Command("usage", "Show what uses a resource and what it uses, with the field of each reference. Changes nothing.")

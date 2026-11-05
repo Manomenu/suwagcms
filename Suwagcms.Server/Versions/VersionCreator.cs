@@ -79,6 +79,7 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
             resources.Count(item => item.Target.Kind == ResourceKind.KnowledgeBase),
             resources.Count(item => item.Target.Kind == ResourceKind.Article),
             resources.Count(item => item.Target.Kind == ResourceKind.Procedure),
+            resources.Count(item => item.Target.Kind == ResourceKind.Action),
             sha256
         );
         return (new VersionCreated(summary, !dryRun), null);

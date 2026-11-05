@@ -15,6 +15,7 @@ internal static class VersionStore
         int KnowledgeBases,
         int Articles,
         int Procedures,
+        int Actions,
         string Sha256
     );
 
@@ -25,6 +26,7 @@ internal static class VersionStore
         int KnowledgeBases,
         int Articles,
         int Procedures,
+        int Actions,
         string Sha256
     );
 
@@ -36,6 +38,7 @@ internal static class VersionStore
         jsonb_array_length(document::jsonb -> 'knowledgeBases') AS KnowledgeBases,
         jsonb_array_length(document::jsonb -> 'articles') AS Articles,
         jsonb_array_length(document::jsonb -> 'procedures') AS Procedures,
+        jsonb_array_length(document::jsonb -> 'actions') AS Actions,
         sha256 AS Sha256
         """;
 
@@ -70,7 +73,18 @@ internal static class VersionStore
         return row is null
             ? null
             : new VersionDetail(
-                Summary(new ListedVersion(number, row.CreatedAt, row.Facts, row.KnowledgeBases, row.Articles, row.Procedures, row.Sha256)),
+                Summary(
+                    new ListedVersion(
+                        number,
+                        row.CreatedAt,
+                        row.Facts,
+                        row.KnowledgeBases,
+                        row.Articles,
+                        row.Procedures,
+                        row.Actions,
+                        row.Sha256
+                    )
+                ),
                 row.Document
             );
     }
@@ -155,6 +169,7 @@ internal static class VersionStore
             row.KnowledgeBases,
             row.Articles,
             row.Procedures,
+            row.Actions,
             row.Sha256
         );
 }

@@ -94,6 +94,10 @@ internal static class ProcedureShapeRules
         }
         foreach (var (name, step) in procedure.Steps)
         {
+            if (step.OnFailure is { } failure && ProcedureMistake.Given(failure) && !procedure.Steps.ContainsKey(failure))
+            {
+                yield return Missing(procedure, $"steps.{name}.onFailure", $"'onFailure: {failure}' of step '{name}'");
+            }
             foreach (var (path, target) in step.Next?.Targets ?? [])
             {
                 if (!procedure.Steps.ContainsKey(target))

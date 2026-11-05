@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { fetchDeclaration } from "@/api/declaration";
 import { Alert } from "@/design/alert";
 
-import { fetchFacts, fetchLayout, fetchProcedure, type Fact, type ProcedureDetail } from "./api";
+import { fetchActions, fetchFacts, fetchLayout, fetchProcedure, type ActionView, type Fact, type ProcedureDetail } from "./api";
 import { Creator } from "./Creator";
 import type { Positions } from "./layout";
 import { offeredBlocks, type OfferedBlocks } from "./offeredBlocks";
@@ -11,6 +11,7 @@ import { offeredBlocks, type OfferedBlocks } from "./offeredBlocks";
 interface Loaded {
     detail: ProcedureDetail;
     facts: Fact[];
+    actions: ActionView[];
     stored: Positions;
     offered: OfferedBlocks;
 }
@@ -29,11 +30,13 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
             fetchLayout(bot, id, controller.signal),
             // Why: the last answer, not a new ask: opening a form must not wait on a bot.
             fetchDeclaration(bot, controller.signal, false),
+            fetchActions(bot, controller.signal),
         ])
-            .then(([detail, facts, layout, declaration]) => {
+            .then(([detail, facts, layout, declaration, actions]) => {
                 setLoaded({
                     detail,
                     facts,
+                    actions,
                     offered: offeredBlocks(declaration),
                     stored: Object.fromEntries(
                         Object.entries(layout.positions).map(([name, at]) => [name, { x: Number(at.x), y: Number(at.y) }]),
@@ -56,5 +59,15 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
         );
     }
     if (loaded === null) return <p className="p-4 text-muted-foreground">Loading {id}…</p>;
-    return <Creator bot={bot} id={id} initial={loaded.detail} facts={loaded.facts} stored={loaded.stored} offered={loaded.offered} />;
+    return (
+        <Creator
+            bot={bot}
+            id={id}
+            initial={loaded.detail}
+            facts={loaded.facts}
+            actions={loaded.actions}
+            stored={loaded.stored}
+            offered={loaded.offered}
+        />
+    );
 }

@@ -36,10 +36,8 @@ internal static class ExportYaml
             ResourceKind.KnowledgeBase => $"suwagcms kb edit {file.Id}",
             ResourceKind.Article => $"suwagcms articles edit {file.Id}",
             ResourceKind.Procedure => $"suwagcms procedures edit {file.Id} --file <file>",
-            ResourceKind.Action or ResourceKind.Definition => throw new ArgumentOutOfRangeException(
-                nameof(file),
-                "an export has no such file"
-            ),
+            ResourceKind.Action => $"suwagcms actions edit {file.Id} --file <file>",
+            ResourceKind.Definition => throw new ArgumentOutOfRangeException(nameof(file), "an export has no such file"),
             _ => throw new ArgumentOutOfRangeException(nameof(file), "unknown kind of resource"),
         };
 

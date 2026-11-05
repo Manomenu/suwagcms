@@ -13,6 +13,7 @@ internal static class VersionExportSplitter
         ("facts", ResourceKind.GlobalFact, "facts", "name"),
         ("knowledgeBases", ResourceKind.KnowledgeBase, "knowledge-bases", "id"),
         ("articles", ResourceKind.Article, "articles", "id"),
+        ("actions", ResourceKind.Action, "actions", "id"),
         ("procedures", ResourceKind.Procedure, "procedures", "id"),
     ];
 

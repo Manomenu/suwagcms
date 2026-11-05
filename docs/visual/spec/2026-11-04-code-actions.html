@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-availability.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-code-actions.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Availability</title>
+<title>Code actions</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Availability</h1>
+  <h1>Code actions</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 32 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>articles</code>, <code>delete-guard</code>, <code>bot-runtime-sdk</code></span>
+    <span><b>Feature:</b> 23 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>bot-declaration</code>, <code>http-actions</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,221 +376,150 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>Anyone can turn an article off, and later a procedure or an action, from the web, the CLI or the plugin. The list of what uses it is shown first, and being in use never stops it. Turning off changes whether a resource can be found, never whether it exists, so no reference breaks.</p>
-    <p>Availability is a live setting outside versions. The CMS sends it to the bot at once, with no push, and it applies to every conversation, also those on an older version. If the bot cannot be reached, the page says the change is saved and not delivered, because “off” is often an emergency and nobody should believe it too early.</p>
+    <p>An action written in the bot's code appears in the CMS as soon as the bot declares it, marked <code>code</code> and read-only, next to the HTTP actions and with the same contract. Nobody retypes it.</p>
+    <p>The bot's code can change without asking the CMS, so a new declaration is never refused because of what it does to the working state. What it breaks is reported, and it stops a version, not a save.</p>
   </div>
   <div class="stats">
-    <div><b>21</b><span>criteria</span></div>
-    <div><b>9</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>19</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>An article is wrong, or a service behind an action is misbehaving, and it has to stop now. The rest of the CMS cannot do that. A push is slow and carries everything else in the working state; deleting is refused while something refers to the resource; and even after a push, a conversation finishes on the version it started on, so the old content keeps being used by the conversations already open.</p>
-  <p>The bot's routes today accept versions and report them, and nothing reaches a bot outside a version.</p>
+  <p>Some work cannot be an HTTP call: a step that needs a library, several calls in a row, or a service with a nested answer. That work lives in the bot's code, and <code>bot-declaration</code> already brings its contract to the CMS, but only as part of a panel on the profile. A procedure's author should find it where the other actions are.</p>
+  <p>This resource also differs from all the others in one way: its source is not the CMS. README promises that a referenced resource cannot be deleted and that the working state is always sound, yet a developer can delete an action from the bot's code at any moment, and no refusal can reach them.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>Turn a resource off and on, from any door, with one action.</li>
-      <li>See what uses it before it goes off, without being stopped by it.</li>
-      <li>The change reaches the bot at once, on every version, on every instance.</li>
-      <li>An honest answer about whether the bot has it, as with versions: what the bot reports, not what the CMS tried.</li>
+      <li>One list of a bot's actions, whichever kind they are.</li>
+      <li>What the bot's code declares is what the CMS shows, with no retyping and no second copy to edit.</li>
+      <li>A change in the bot never stops anyone from saving, and is impossible to miss before a version.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Facts and knowledge bases: README gives them no availability.</li>
-      <li>Conditions or schedules: on or off only, as README's table of Rasa terms says.</li>
-      <li>Availability inside a file of changes: <code>suwagcms apply</code> changes the working state and this is not part of it.</li>
-      <li>Telling the bot's code which articles to leave out of its search: an item of <code>article-search-feed</code>.</li>
-      <li>Acting on it in a conversation: the bot's engine does, asking the SDK.</li>
+      <li>Writing or changing a code action from the CMS: it is the bot's code.</li>
+      <li>Running one: the bot does, and how its engine calls its own code is its business.</li>
+      <li>Trying one from the CMS: <code>action-test-run</code>.</li>
+      <li>Turning one off, which README does let the CMS do: <code>availability</code>.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. Marta takes a wrong price list off the air</h3>
+  <h3>1. A developer adds an action to the bot</h3>
   <ol class="steps">
-    <li><p>On the article <code>cennik</code> she flips the switch. A dialog lists what uses it: the article <code>rabaty</code>, through a link in its content. She confirms.</p></li>
-    <li><p>The page says <b>Off</b>, “Bot confirmed”. New searches on the bot leave <code>cennik</code> out. No version was created and nothing was pushed, and the conversations still on v12 get the same answer from the SDK as those on v14.</p></li>
+    <li><p>Paweł adds <code>lookupPolicy</code> to the bot's code, states it in the SDK's setup and deploys.</p></li>
+    <li><p>Marta opens the bot's profile, the CMS asks the bot, and <code>lookupPolicy</code> is on the Actions screen, marked <code>code</code>, with its parameters and results.</p></li>
   </ol>
-  <h3>2. An agent, with the list first</h3>
-  <div class="term"><span class="dim">$</span> suwagcms availability off article cennik
-Used by:
-  article rabaty, content
-Nothing changed. Repeat with --yes to turn it off.
-<span class="dim">$</span> echo $?
-1
-<span class="dim">$</span> suwagcms availability off article cennik --yes
-Used by:
-  article rabaty, content
-Turned off. Bot rzeczoznawca confirmed.
-<span class="dim">$</span> echo $?
-0</div>
-  <h3>3. The bot is down</h3>
-  <div class="term"><span class="dim">$</span> suwagcms availability off article cennik --yes
-Turned off in the CMS, not delivered: cannot reach http://rzeczoznawca.internal:8080.
-The bot still has the previous setting. Check that it is running, then: suwagcms availability send
+  <h3>2. An agent tries to edit it</h3>
+  <div class="term"><span class="dim">$</span> suwagcms actions edit lookupPolicy --file lookupPolicy.yaml
+Refused, 1 mistake:
+  action.code.readOnly  'lookupPolicy' is written in the bot's code, so the CMS only shows it. Change it in the bot and deploy; the CMS sees the change the next time it asks.
 <span class="dim">$</span> echo $?
 1</div>
-  <h3>4. Two instances behind a load balancer</h3>
+  <h3>3. The bot starts declaring an id the CMS already has</h3>
   <ol class="steps">
-    <li><p>The change reaches instance A, which writes it to the bot's shared store. Instance B finds it the next time it polls, within seconds, and from then on answers the same on all versions.</p></li>
+    <li><p>The bot has an HTTP action <code>checkServiceability</code> in the CMS. Paweł moves it into the code under the same id and deploys.</p></li>
+    <li><p>The declaration is stored and the HTTP action stays as it was. The Actions screen shows the conflict, saves go on working, and creating a version reports it until the HTTP action is removed.</p></li>
   </ol>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>What off means</h3>
+  <p>Each time a good declaration arrives, the CMS brings the bot's actions in line with it, in one step through the same write path as any save, so it runs in turn with other saves. This step is never refused.</p>
   <table>
-    <tr><th>Off</th><th>Effect</th></tr>
-    <tr><td>Article</td><td>left out of search; a procedure naming it explicitly still gets it</td></tr>
-    <tr><td>Procedure</td><td>the model cannot start it, even from an article's guide; conversations already in it finish</td></tr>
-    <tr><td>Action</td><td>a step running it takes <code>onFailure</code>, which makes it a usable emergency switch</td></tr>
+    <tr><th>The declaration</th><th>Result</th></tr>
+    <tr><td>a code action the CMS does not have</td><td>appears among the bot's actions as <code>code</code></td></tr>
+    <tr><td>a code action whose description, parameters or results changed</td><td>updated</td></tr>
+    <tr><td>nothing different from what the CMS has</td><td>nothing changes, so there is no new revision and no reason for a new version</td></tr>
+    <tr><td>no longer lists a code action</td><td>the action is gone from the CMS</td></tr>
+    <tr><td>an id the bot's HTTP actions already have</td><td>the HTTP action stays; the code action is not added; a <code>Version</code> mistake says to remove or rename the HTTP action</td></tr>
+    <tr><td>the bot is unreachable, or its answer is invalid</td><td>nothing changes: the last good declaration stands</td></tr>
   </table>
-  <p>The bot's engine carries these out, in its own repository. The SDK gives it the answers, so that bots cannot differ on them, and this spec's criteria check those answers.</p>
-  <h3>How a change travels</h3>
-  <script type="text/x-mermaid" data-caption="A change of availability never waits for a version">
-sequenceDiagram
-  participant A as Web, CLI or plugin
-  participant C as CMS
-  participant B as Bot, any instance
-  participant S as Bot's store
-  A->>C: turn off article cennik
-  C->>C: save, with a new number for this bot
-  C->>B: the whole set of what is off, with the number
-  B->>S: keep it, unless a higher number is already there
-  B-->>C: what it now has
-  C-->>A: confirmed, or saved and not delivered
-</script>
-  <p>Each message holds everything that is off, never a single change, so a missed one repairs itself with the next. The number goes up with each change, so a slow older message arriving late cannot undo a newer one. The bot reports what it has in its state, and the page shows that, as it does with a version.</p>
-  <h3>Situations</h3>
+  <h3>Reading and writing</h3>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a resource nothing uses</td><td>the dialog says nothing uses it; in the CLI, off needs no <code>--yes</code></td></tr>
-    <tr><td>a resource in use</td><td>the web shows the list and asks; the CLI without <code>--yes</code> prints the list, changes nothing and exits 1; never refused once confirmed</td></tr>
-    <tr><td><code>--dry-run</code></td><td>prints the list and what would change, and changes nothing</td></tr>
-    <tr><td>turning on</td><td>at once, with no list and no question: it cannot cause harm that off did not</td></tr>
-    <tr><td>a resource already in that state</td><td>says so, and sends the set anyway, which repairs a missed message</td></tr>
-    <tr><td>a resource or kind that does not exist; a fact or a knowledge base</td><td>refused, naming the kinds that have availability</td></tr>
-    <tr><td>the bot cannot be reached, or does not answer within the time limit</td><td>the change stays saved; the page and the CLI say it is not delivered, with the reason; the CLI exits 1; a person sends again</td></tr>
-    <tr><td>the bot reports a lower number than the CMS's</td><td>shown as not delivered, with a way to send again; this also covers a bot whose store was replaced</td></tr>
-    <tr><td>a bot on an SDK without this route</td><td>not delivered, saying to update its SDK</td></tr>
-    <tr><td>a resource the bot's version does not hold</td><td>the bot keeps the setting and it does nothing until a version holds that resource</td></tr>
-    <tr><td>creating a version with something off</td><td>unaffected: a referrer stays valid, and a version says nothing about availability</td></tr>
-    <tr><td>a resource is deleted</td><td>its setting goes with it; the same id created again starts on</td></tr>
-    <tr><td>a change while the bot is slow</td><td>no save of the bot waits for it</td></tr>
-    <tr><td>a change and a delete of the resource at the same moment</td><td>one after the other; whichever goes second sees what the first left</td></tr>
-    <tr><td>a bot's restart</td><td>the setting is back, from its store</td></tr>
+    <tr><td>listing or showing</td><td>the same as an HTTP action, with <code>implementation: code</code> and no URL, method or headers</td></tr>
+    <tr><td>editing or deleting a code action, or adding an action with <code>implementation: code</code></td><td>refused with the fix: change it in the bot</td></tr>
+    <tr><td>adding an HTTP action with an id the bot declares</td><td>refused, naming the code action</td></tr>
+    <tr><td>the web</td><td>the same screen with no editing controls, and a line saying why</td></tr>
   </table>
-  <p>A resource is on until someone turns it off, and a change of availability is not an edit: it does not touch the resource's revision, so nobody's open edit is refused because of it, and creating a version finds nothing changed.</p>
+  <h3>What the validator does</h3>
+  <p>A code action is part of the definition, with its contract, so a version stands on its own. Given a declaration, the validator's <code>Version</code> stage compares the two, on id, parameters and results, leaving descriptions aside:</p>
+  <table>
+    <tr><th>In the definition</th><th>In the declaration</th><th>Result at <code>Version</code></th></tr>
+    <tr><td>code action</td><td>missing</td><td>a mistake: the bot no longer has it</td></tr>
+    <tr><td>code action</td><td>parameters or results differ</td><td>a mistake naming the differences</td></tr>
+    <tr><td>HTTP action</td><td>a code action of that id</td><td>a mistake: two sources for one id</td></tr>
+    <tr><td>no action</td><td>a code action</td><td>no mistake: the bot may have work no procedure uses yet</td></tr>
+  </table>
+  <p>Since a bot validates each version it loads with its own declaration, a version that needs a code action the bot no longer has is refused by the bot as well.</p>
 </section>
 <section data-role="ui">
-  <h2>Screens</h2>
-  <div class="wire-pair">
-    <div class="wire after"><span class="wf-label">Before turning off</span>
-      <div class="wf-bar"><b>Turn off cennik?</b></div>
-      <div class="wf-body">
-        <p>Used by:</p>
-        <div class="wf-card wf-row"><span class="wf-grow">article <code>rabaty</code></span><span class="wf-muted">content</span></div>
-        <p class="wf-muted">They keep working. It takes effect on the bot at once, also in conversations on older versions.</p>
-        <div class="wf-row"><span class="wf-grow"></span><span class="wf-btn">Cancel</span><span class="wf-btn primary">Turn off</span></div>
-      </div>
-    </div>
-    <div class="wire after"><span class="wf-label">Saved, not delivered</span>
-      <div class="wf-bar"><b>cennik</b><span class="wf-grow"></span><span class="toggle off"></span><span class="tag">off</span></div>
-      <div class="wf-body">
-        <div class="wf-card"><span class="tag bad">not delivered</span> The bot still has the previous setting: cannot reach http://rzeczoznawca.internal:8080. <span class="wf-btn">Send again</span></div>
-      </div>
+  <h2>Screen</h2>
+  <div class="wire after"><span class="wf-label">Actions of rzeczoznawca</span>
+    <div class="wf-bar"><b>Actions</b><span class="wf-grow"></span><span class="wf-btn primary">Add an action</span></div>
+    <div class="wf-body">
+      <div class="wf-card wf-row"><code class="wf-grow">checkServiceability</code><span class="wf-muted">Checks whether we serve an address</span><span class="tag accent">http</span></div>
+      <div class="wf-card wf-row"><code class="wf-grow">lookupPolicy</code><span class="wf-muted">Finds a customer's policy</span><span class="tag note">code</span></div>
+      <div class="wf-card wf-row"><code class="wf-grow">sendOffer</code><span class="wf-muted">Sends the offer</span><span class="tag accent">http</span><span class="tag warn">the bot also declares this id</span></div>
     </div>
   </div>
 </section>
-<section data-role="contract">
-  <h2>Contract</h2>
-  <p>This adds to the public contract between the CMS and any bot. The shapes are published with the bot runtime's JSON schema.</p>
-  <table>
-    <tr><th>Route</th><th>Does</th><th>Answers</th></tr>
-    <tr><td><code>PUT /suwagcms/availability</code></td><td>takes the number and everything that is off, as kind and id; a number lower than the one held changes nothing; safe to repeat</td><td>the state</td></tr>
-    <tr><td><code>GET /suwagcms/state</code></td><td>gains what is off and its number, from the store, so every instance gives the same answer</td><td>as today, plus these</td></tr>
-  </table>
-  <p>A store a bot supplies keeps this setting alongside the versions.</p>
+<section data-role="data">
+  <h2>Format</h2>
+  <p>Part of the public contract with bots. A code action in a definition, with no call in it, because the call is in the bot.</p>
+  <script type="text/x-code" data-file="lookupPolicy.yaml" data-lang="yaml">
+id: lookupPolicy
+description: Finds a customer's policy.
+parameters:
+  pesel: { type: text, maxLength: 11, description: The customer's PESEL. }
+results:
+  policyNumber: { type: text, maxLength: 20, description: The number of the policy. }
+implementation: code
+</script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>A resource in use can be turned off, with the “used by” list shown first (README), because it cannot break a reference.</li>
-    <li>In the CLI the list comes first by making <code>--yes</code> necessary only for a resource in use: a script stays one flag away, and the emergency path stays one command.</li>
-    <li>A change is saved even when the bot cannot be reached, and exits 1: the intent stands and repairs itself on the next send, while the exit code keeps an agent from taking it for done.</li>
-    <li>Availability is not an edit of the resource and is not part of the working state, so it does not create a reason for a new version, while it shares the same per-bot ordering as saves.</li>
-    <li><code>conversation</code> cannot be turned off, because the format requires it as the base of every conversation, in the same spirit as the rule that it cannot be deleted.</li>
-    <li>The bot's routes have no key until <code>cms-identity</code> (owner's decision), and this request carries none.</li>
+    <li>The mark "no longer declared" is not stored: it comes from comparing the copy with the last declaration, so asking again changes it without a write and the format gains no field for it.</li>
+    <li>A bot that declares nothing has said nothing about its code actions, so their copies stay as they are until it declares again.</li>
+    <li>A declaration whose code action has an id or a field name that is no camelCase word, or a field named twice, is invalid: the last good one stands, because the CMS could not keep such a copy.</li>
+    <li>The CMS keeps a copy of a code action's contract in the working state, kept in line by the declaration. Otherwise a save could not check a step against it without a running bot, and a version would not stand on its own.</li>
+    <li>A declaration is never refused for what it does to the working state: the bot has already changed, and a refusal would only hide that.</li>
+    <li>Rule: what the CMS controls is refused at <code>Save</code>; what the bot's code controls is reported at <code>Version</code>. Each save validates the whole definition, so a <code>Save</code> mistake from a declaration would stop every save of the bot until someone fixed it.</li>
+    <li>When an HTTP action and a declared code action share an id, the existing HTTP action stays, because replacing it would silently change what procedures run.</li>
+    <li>Descriptions are left out of the comparison at <code>Version</code>, so a reworded description does not stop a rollback.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-availability-1</code> In the web and with <code>suwagcms availability off article</code> and <code>on</code>, an article turns off and on, and the article's screen, the list of articles and <code>suwagcms availability list</code> show its state; a resource never touched is on.</li>
-    <li><code>AC-availability-2</code> Before turning off a resource in use, the web shows the list of what uses it and asks; the list is the same as the “Used by” panel.</li>
-    <li><code>AC-availability-3</code> In the CLI, off on a resource in use without <code>--yes</code> prints the list, changes nothing and exits 1; with <code>--yes</code> it prints the list and turns it off; on a resource nothing uses, it needs no <code>--yes</code>.</li>
-    <li><code>AC-availability-4</code> A resource in use turns off once confirmed, and no reference to it is refused or broken: a save of a referrer and the validator at both stages give the same answer as with it on.</li>
-    <li><code>AC-availability-5</code> <code>--dry-run</code> prints the list and what would change, and changes nothing in the CMS or on the bot.</li>
-    <li><code>AC-availability-6</code> Turning on asks nothing and takes effect the same way.</li>
-    <li><code>AC-availability-7</code> Changing availability creates no new revision of the resource or of anything else in the working state: an open edit based on the earlier revision still saves.</li>
-    <li><code>AC-availability-8</code> A kind or a resource that does not exist, a fact and a knowledge base are each refused with a mistake naming what can be turned off.</li>
-    <li><code>AC-availability-9</code> A change reaches a running test bot with no version created and no push: its state and the SDK's answer show the resource off, and the CMS shows it as confirmed from the bot's answer.</li>
-    <li><code>AC-availability-10</code> A change of availability takes effect at once, also on an older version: the SDK answers the same for the bot's code whichever version its conversation is on.</li>
-    <li><code>AC-availability-11</code> In a bot with two instances sharing a store, a change delivered to one is what the other answers after its next poll, and the state route says the same on both.</li>
-    <li><code>AC-availability-12</code> After a restart, a bot reports the same setting, and the same behaviour tests pass against the default file store and a store supplied by a test.</li>
-    <li><code>AC-availability-13</code> With the SDK told an article is off, the article is still given by id and in its version's definition, and the SDK's answer says it is off.</li>
-    <li><code>AC-availability-14</code> Each message holds the whole set, so after a missed change, the next change or <code>suwagcms availability send</code> leaves the bot with the CMS's full setting.</li>
-    <li><code>AC-availability-15</code> A message with a lower number than the bot holds changes nothing, and the same message sent twice changes nothing.</li>
-    <li><code>AC-availability-16</code> With the bot unreachable or too slow, the change stays saved, the page and the CLI say it is not delivered with the reason, and the CLI exits 1 with <code>--json</code> saying so.</li>
-    <li><code>AC-availability-17</code> A bot reporting a lower number than the CMS's, or having no such route, shows as not delivered with a way to send again or the fix.</li>
-    <li><code>AC-availability-18</code> A save of the same bot during a change waiting on a slow bot completes without waiting for it, and a delete and a change of one resource at the same moment run one after the other.</li>
-    <li><code>AC-availability-19</code> A deleted resource's setting is gone: created again with the same id, it is on.</li>
-    <li><code>AC-availability-20</code> The published schema of the new route and of the state is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
-    <li><code>AC-availability-21</code> Each <code>suwagcms availability</code> command has its line in the plugin's main skill, which says it takes effect at once and that a resource in use needs <code>--yes</code>.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>procedure-model</code>:</b> a procedure can be turned off, and the procedures list shows its state; the SDK says the model cannot start it, even from an article's guide, while its definition stays available to a conversation already in it.</li>
-    <li><b>after <code>procedure-model</code>:</b> turning off <code>conversation</code> is refused with the reason.</li>
-    <li><b>after <code>inform-block</code>, <code>instruction-context</code>:</b> the SDK gives an article a procedure names explicitly even while it is off.</li>
-    <li><b>after <code>http-actions</code>:</b> an action can be turned off, and the Actions screen shows its state.</li>
-    <li><b>after <code>code-actions</code>:</b> a code action can be turned off the same way, though the rest of it is read-only.</li>
-    <li><b>after <code>action-block</code>:</b> the SDK answers, for a step running a turned-off action, that it takes its <code>onFailure</code> step, on any version.</li>
-    <li><b>after <code>version-push</code>:</b> every push sends the whole set before the version, so a missed change is repaired and a new version never runs without it.</li>
-    <li><b>after <code>resource-rename</code>:</b> a renamed resource keeps its setting, and turning it off also reaches conversations on an older version that holds it under its old id.</li>
-    <li><b>after <code>cms-identity</code>:</b> the request carries the bot's key, and a wrong key shows as not delivered, saying how to fix it.</li>
+    <li><code>AC-code-actions-1</code> A code action in a test bot's declaration appears, after the CMS asks, in the web's Actions screen and in <code>suwagcms actions list</code> and <code>show</code>, marked <code>code</code>, with its description, parameters and results.</li>
+    <li><code>AC-code-actions-2</code> <code>suwagcms actions list</code> and its <code>--json</code> give both kinds in one list, each with its implementation.</li>
+    <li><code>AC-code-actions-3</code> When the declaration changes a code action's description, parameters or results, the CMS shows the change after it asks.</li>
+    <li><code>AC-code-actions-4</code> A code action the declaration no longer lists, and no step uses, is gone from the CMS after it asks.</li>
+    <li><code>AC-code-actions-5</code> A declaration equal to what the CMS already has creates no new revision of any action.</li>
+    <li><code>AC-code-actions-6</code> With the bot unreachable or its answer invalid, the bot's code actions stay as they were.</li>
+    <li><code>AC-code-actions-7</code> Editing or deleting a code action, and adding an action with <code>implementation: code</code>, are each refused with the fix, from the web's API and from the CLI, and the web's screen of a code action has no editing controls and says why.</li>
+    <li><code>AC-code-actions-8</code> Adding an HTTP action with an id the bot declares is refused, naming the code action.</li>
+    <li><code>AC-code-actions-9</code> A declaration naming an id the bot's HTTP actions have leaves that action unchanged, shows the conflict on the Actions screen and in <code>suwagcms actions list</code>, and refuses no save.</li>
+    <li><code>AC-code-actions-10</code> Given a declaration, the validator returns at the <code>Version</code> stage a mistake for: a code action the declaration lacks, a code action whose parameters or results differ, and an HTTP action sharing an id with a declared code action; and none of them at the <code>Save</code> stage.</li>
+    <li><code>AC-code-actions-11</code> A code action differing from the declaration only in its description, and a declared code action absent from the definition, produce no mistake.</li>
+    <li><code>AC-code-actions-12</code> A test bot whose version holds a code action it does not declare refuses that version with the mistake, and keeps what it had.</li>
+    <li><code>AC-code-actions-13</code> A definition holding a code action passes the validator offline, with no declaration and no bot.</li>
+    <li><code>AC-code-actions-14</code> The plugin's main skill says in the lines of <code>suwagcms actions</code> that a code action is read-only and where to change it.</li>
+    <li><code>AC-code-actions-15</code> A version holds a bot's code actions with their contracts, alongside its HTTP actions.</li>
+    <li><code>AC-code-actions-16</code> A change to a code action made by a declaration is not refused, even when a step maps what changed.</li>
+    <li><code>AC-code-actions-17</code> A procedure's step can use a code action, by the same rules of mapping and types as an HTTP action.</li>
+    <li><code>AC-code-actions-18</code> A mapping that does not fit a code action is a <code>Version</code> mistake, and refuses no save, including when a new declaration causes it.</li>
+    <li><code>AC-code-actions-19</code> A code action the declaration no longer lists, while a step uses it, stays in the CMS marked as no longer declared; saves go on working, the <code>Version</code> stage names each step, the next ask removes it once no step uses it, and asking again brings it back unmarked if the bot declares it again.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>“At once” has a limit.</b> Delivery is immediate to one instance; the others take up to one poll, 5 seconds by default. In that window one instance may still run a turned-off action.</p></div>
-  <div class="callout risk"><p><b>A failed delivery leaves the bot as it was during an emergency.</b> The page makes this loud rather than fixing it. See the open question on retrying.</p></div>
-  <div class="callout risk"><p><b>The route has no key.</b> Until <code>cms-identity</code>, anyone who can reach a bot can switch its actions off, or back on. Only a trusted network may reach it.</p></div>
-  <div class="callout warn"><p><b>A bot's own store is now holding a setting as well.</b> A store a bot supplies has to keep it, which changes what such a store must do. <code>Suwagcms.Sdk</code> is not yet published, so no outside store is affected; after publishing it would be a breaking change.</p></div>
-  <div class="callout assumption"><p>The feature map lists only <code>articles</code> as needed first, but the list of what uses a resource comes from <code>delete-guard</code>, and it belongs to the first cut, so it will exist by then.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should the CMS retry an undelivered change by itself?</legend>
-      <p class="why">Off is often an emergency, and a person may walk away after seeing “not delivered”. README says it takes effect at once and does not say what happens to a bot that is down. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="manual"><span><b>No: a person or an agent sends again, and each later change or push repairs it</b><small>the same as a push; no background work in the CMS, and a sick bot stays visible</small></span></label>
-      <label><input type="radio" value="retry"><span><b>Yes: the CMS keeps trying until the bot confirms</b><small>closes the gap by itself, at the cost of a background worker that the CMS does not otherwise have</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Can a resource deleted from the working state be turned off, for conversations on an older version that still hold it?</legend>
-      <p class="why">A resource with no referrers can be deleted, while conversations on an older version still run it, and a rollback can bring it back. Off is the only thing that reaches those conversations. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="no"><span><b>No: what is off is chosen from the working state, and this risk stays written down</b><small>simplest; a deleted resource is on again for those conversations after the next send, so an emergency switch stays undeleted and off until no version in use holds it</small></span></label>
-      <label><input type="radio" value="yes"><span><b>Yes: any id found in a version the bot still holds can be turned off</b><small>closes the gap, but it needs a way to name a resource that no longer exists, in every door</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout risk"><p><b>The CMS learns of a change only when it asks.</b> Between a deployment and the next look at the profile, the CMS shows an old contract, and a version may be created against it. A push asks again and the bot validates what it loads, so the old contract cannot reach a conversation unchecked.</p></div>
+  <div class="callout warn"><p><b>A deployment can stop the next version.</b> A developer who removes an action in use blocks new versions of that bot until someone changes the procedures. This is the intended loud failure, and the mistake names every step.</p></div>
+  <div class="callout warn"><p><b>This bends two rules of README.</b> “A referenced resource cannot be deleted” and “Remove or retype an action's parameter or result” hold for what the CMS controls. The bot's code stays outside them, and the working state stays sound because the marked copy remains.</p></div>
 </section>
 
 <!-- CONTENT END -->

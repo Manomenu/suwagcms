@@ -1,6 +1,6 @@
 namespace Suwagcms.Contracts;
 
-/// <summary>One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure or version; and id), the action (added, edited, deleted, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share.</summary>
+/// <summary>One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure, action or version; and id), the action (added, edited, deleted, renamed, turned on, turned off, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share.</summary>
 public sealed record HistoryEntry(
     long Id,
     DateTimeOffset At,

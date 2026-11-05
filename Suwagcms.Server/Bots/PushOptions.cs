@@ -7,4 +7,7 @@ internal sealed class PushOptions
 
     // Why: a person waits on the page for the bot's state, which is read from a store and needs far less than a push.
     public int StateTimeoutSeconds { get; set; } = 5;
+
+    // Why: a test run waits as long as the action may take, plus a little for the way to the bot and back.
+    public int ActionTestMarginSeconds { get; set; } = 5;
 }
