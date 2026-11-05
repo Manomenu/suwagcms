@@ -115,6 +115,7 @@ public sealed class UsageCommandTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-8")]
     public async Task Usage_of_a_kind_it_does_not_know_is_a_wrong_use()
     {
         var result = await TestCli.Run(Args("usage", "kb", "offer"), Recording([], HttpStatusCode.OK, Nothing));

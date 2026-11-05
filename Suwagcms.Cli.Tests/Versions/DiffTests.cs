@@ -65,6 +65,7 @@ public sealed class DiffTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-8")]
     public async Task A_number_that_is_not_a_number_is_a_wrong_use()
     {
         var result = await TestCli.Run(["diff", "one", "14", .. OnBot]);

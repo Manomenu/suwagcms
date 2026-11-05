@@ -284,6 +284,7 @@ public sealed class FactsTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-10")]
     public async Task With_no_bot_chosen_a_facts_command_exits_2_and_lists_the_bots_without_touching_facts()
     {
         var recorder = new Recorder();
@@ -297,6 +298,7 @@ public sealed class FactsTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-10")]
     public async Task A_bot_the_server_does_not_know_exits_1_and_lists_the_bots_that_exist()
     {
         var recorder = new Recorder();
@@ -317,6 +319,7 @@ public sealed class FactsTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task Open_shows_the_facts_screen_of_the_bot_without_calling_the_server()
     {
         var opened = new List<Uri>();
@@ -333,6 +336,7 @@ public sealed class FactsTests
     [InlineData("add")]
     [InlineData("edit")]
     [InlineData("delete")]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task A_command_that_changes_a_fact_has_no_page_to_open(string word)
     {
         var result = await TestCli.Run(Args("facts", word, "customer.city", "--open"), StubServer.Healthy());

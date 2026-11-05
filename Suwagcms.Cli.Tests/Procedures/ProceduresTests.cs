@@ -390,6 +390,7 @@ public sealed class ProceduresTests : IDisposable
     [InlineData("id: [broken", "not valid YAML or JSON")]
     [InlineData("- a\n- b", "does not hold one procedure")]
     [InlineData("description: no id here", "has no id")]
+    [Trait("criterion", "AC-procedure-model-2")]
     public async Task A_file_that_cannot_be_read_as_one_procedure_says_what_to_fix_and_asks_no_server(string text, string expected)
     {
         var file = FileWith("bad.yaml", text);

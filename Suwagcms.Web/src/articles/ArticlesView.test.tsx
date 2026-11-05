@@ -125,7 +125,7 @@ describe("ArticlesView", () => {
         expect(view([], bases, { knowledgeBase: "offer", language: "", text: "" })).toContain("No article matches the filters.");
     });
 
-    it("a bot with no knowledge base is sent to create one before an article", () => {
+    it("AC-articles-11: a bot with no knowledge base is sent to create one before an article", () => {
         const html = view([], []);
 
         expect(html).toContain("Create the first knowledge base");

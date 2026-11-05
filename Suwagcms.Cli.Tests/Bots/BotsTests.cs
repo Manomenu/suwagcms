@@ -224,6 +224,7 @@ public sealed class BotsTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-12")]
     public async Task Using_a_bot_without_a_settings_folder_is_refused_and_writes_nothing_in_the_current_directory()
     {
         var before = Directory.GetFileSystemEntries(Directory.GetCurrentDirectory());

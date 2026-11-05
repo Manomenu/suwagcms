@@ -14,6 +14,7 @@ public sealed class HealthEndpointsTests(TestDatabase database) : IDisposable
     public void Dispose() => app.Dispose();
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-14")]
     public async Task Health_is_ok_when_the_database_answers()
     {
         _ = database.Pool;
@@ -25,6 +26,7 @@ public sealed class HealthEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-14")]
     public async Task Health_says_what_to_do_when_the_database_does_not_answer_and_names_the_trace_in_the_log()
     {
         _ = database.Pool;

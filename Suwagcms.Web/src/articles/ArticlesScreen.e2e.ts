@@ -576,7 +576,10 @@ test("AC-delete-guard-4: after the last link is removed in the web the article c
     expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
 });
 
-test("the controls of one row of the article form share their top and height", async ({ page, request }) => {
+test("AC-knowledge-base-language-12: the language stands beside the base selector, and the controls of one row share their top and height", async ({
+    page,
+    request,
+}) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
     await page.getByRole("button", { name: "New article" }).click();
@@ -598,6 +601,11 @@ test("the controls of one row of the article form share their top and height", a
     const row = [await boxOf("#article-id"), await boxOf("#article-title"), await boxOf("#article-knowledgeBase")];
     expect(row[1]).toEqual(row[0]);
     expect(row[2]).toEqual(row[0]);
+    const language = await page.locator('[data-field="language"]').boundingBox();
+    const selector = await page.locator('[data-field="knowledgeBase"]').boundingBox();
+    if (language === null || selector === null) throw new Error("the language or the base selector has no box");
+    expect(language.y).toBeCloseTo(selector.y, 0);
+    expect(language.x).toBeGreaterThanOrEqual(selector.x + selector.width);
 });
 
 test("AC-resource-rename-2: Change id lists the referrers before it is confirmed, rewrites them, and leaves the author on the article at its new id", async ({

@@ -39,6 +39,27 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-version-diff-15")]
+    public async Task A_resource_whose_id_changed_is_listed_as_removed_under_the_old_id_and_added_under_the_new_one()
+    {
+        var (scene, bot) = await FilledAsync();
+        await using var _ = bot;
+        var first = await scene.CreateAsync();
+        var renamed = await scene.Client.PostAsJsonAsync(
+            $"/api/bots/{scene.Bot}/articles/priceList/rename",
+            new { newId = "prices" },
+            TestContext.Current.CancellationToken
+        );
+        Assert.True(renamed.IsSuccessStatusCode);
+        var second = await scene.CreateAsync();
+
+        var comparison = await CompareAsync(scene, first.Number, second.Number);
+
+        Assert.Contains(comparison.Resources, resource => (resource.Id, resource.Difference) == ("priceList", Difference.Removed));
+        Assert.Contains(comparison.Resources, resource => (resource.Id, resource.Difference) == ("prices", Difference.Added));
+    }
+
+    [Fact]
     [Trait("criterion", "AC-version-diff-1")]
     public async Task The_route_and_the_cli_list_the_same_resources_for_real_versions_of_a_bot()
     {

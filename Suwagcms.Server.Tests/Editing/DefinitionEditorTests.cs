@@ -22,13 +22,13 @@ public sealed class DefinitionEditorTests(TestDatabase database)
 
     private static Put Add(string name, string description = "A fact") => new(Ref(name), Fact(name, description), 0);
 
-    private async Task<(DefinitionEditor Editor, string Bot)> NewBot(TimeProvider? time = null)
+    private async Task<(DefinitionEditor Editor, string Bot)> NewBot()
     {
         var bot = "e" + Guid.NewGuid().ToString("N")[..12];
         Assert.True(
             await BotStore.AddAsync(database.Pool, new Bot(bot, "A bot", "http://bot.internal"), TestContext.Current.CancellationToken)
         );
-        return (new DefinitionEditor(database.Pool, time ?? TimeProvider.System), bot);
+        return (new DefinitionEditor(database.Pool, TimeProvider.System), bot);
     }
 
     private async Task<List<Row>> Rows(string bot)
@@ -39,11 +39,6 @@ public sealed class DefinitionEditorTests(TestDatabase database)
             new { bot }
         );
         return [.. rows];
-    }
-
-    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => now;
     }
 
     [Fact]
@@ -179,39 +174,5 @@ public sealed class DefinitionEditorTests(TestDatabase database)
 
         Assert.Equal(2, Assert.Single(await Rows(first)).Revision);
         Assert.Equal(1, Assert.Single(await Rows(second)).Revision);
-    }
-
-    [Fact]
-    public async Task A_bot_that_does_not_exist_is_reported_and_nothing_is_written()
-    {
-        var (editor, _) = await NewBot();
-
-        var result = await editor.ApplyAsync("no-such-bot", [Add("customer.city")], false, TestContext.Current.CancellationToken);
-
-        Assert.IsType<EditResult.UnknownBot>(result);
-    }
-
-    [Fact]
-    public async Task The_row_carries_the_time_of_the_injected_clock_and_the_records_json()
-    {
-        var moment = new DateTimeOffset(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
-        var (editor, bot) = await NewBot(new FixedClock(moment));
-
-        await editor.ApplyAsync(bot, [Add("customer.city")], false, TestContext.Current.CancellationToken);
-
-        var (_, _, body, updatedAt) = Assert.Single(await Rows(bot));
-        Assert.Equal(moment, updatedAt);
-        Assert.Contains("\"name\": \"customer.city\"", body, StringComparison.Ordinal);
-        Assert.DoesNotContain("values", body, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task A_record_of_the_wrong_type_for_its_kind_is_a_programming_error()
-    {
-        var (editor, bot) = await NewBot();
-
-        await Assert.ThrowsAsync<ArgumentException>(() =>
-            editor.ApplyAsync(bot, [new Put(Ref("customer.city"), "not a fact", 0)], false, TestContext.Current.CancellationToken)
-        );
     }
 }

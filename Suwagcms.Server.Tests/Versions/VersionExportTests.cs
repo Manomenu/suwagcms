@@ -122,6 +122,27 @@ public sealed class VersionExportTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-batch-apply-20")]
+    public async Task An_exported_file_given_to_apply_is_refused_and_nothing_is_saved()
+    {
+        var (scene, bot) = await FilledAsync();
+        await using var _ = bot;
+        await scene.CreateAsync();
+        var folder = Path.Combine(scratch, "export");
+        Assert.Equal(0, (await scene.CliAsync("export", "1", "--out", folder)).ExitCode);
+        var before = await scene.SnapshotAsync();
+
+        foreach (var file in new[] { "version.yaml", Path.Combine("articles", "priceList.yaml") })
+        {
+            var run = await scene.CliAsync("apply", Path.Combine(folder, file));
+
+            Assert.Equal(2, run.ExitCode);
+            Assert.Contains("no `changes` list", run.Error, StringComparison.Ordinal);
+        }
+        Assert.Equal(before, await scene.SnapshotAsync());
+    }
+
+    [Fact]
     [Trait("criterion", "AC-version-export-6")]
     public async Task A_number_the_bot_does_not_have_and_a_bot_with_no_version_are_refused_with_exit_code_1()
     {

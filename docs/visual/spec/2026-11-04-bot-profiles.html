@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The active profile belongs to the client, not the server, so two browser tabs and two agents can work on different bots without getting in each other's way. Everything later hangs off this: every resource belongs to one bot.</p>
   </div>
   <div class="stats">
-    <div><b>11</b><span>criteria</span></div>
+    <div><b>12</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
@@ -489,7 +489,7 @@ No bot 'rzeczoznawka'. Bots: rzeczoznawca, sklep.</div>
   <h2>Acceptance criteria</h2>
   <ul class="checks">
     <li><code>AC-bot-profiles-1</code> Registering a bot with a valid id, name and address makes it appear in the list, in both the web and <code>suwagcms bots list</code>.</li>
-    <li><code>AC-bot-profiles-2</code> A registration in the web opens the new bot's profile at <code>/bots/&lt;id&gt;</code>.</li>
+    <li><code>AC-bot-profiles-2</code> A registration in the web opens the new bot's profile at <code>/bots/&lt;id&gt;</code>, showing its name and address and not the other bots.</li>
     <li><code>AC-bot-profiles-3</code> <code>suwagcms bots add</code> registers a bot, and <code>--json</code> returns the bot's id, name and address.</li>
     <li><code>AC-bot-profiles-4</code> A missing or invalid id, a blank name and an address that is not an absolute http or https address are each refused, all reported at once with their fixes, and nothing is registered.</li>
     <li><code>AC-bot-profiles-5</code> Registering an id that is already taken is refused with a mistake naming the id, including when two registrations arrive at the same moment.</li>
@@ -499,6 +499,7 @@ No bot 'rzeczoznawka'. Bots: rzeczoznawca, sklep.</div>
     <li><code>AC-bot-profiles-9</code> The bot for a CLI command comes from <code>--bot</code>, else <code>SUWAGCMS_BOT</code>, else <code>suwagcms use</code>; each level is proven to win over the next.</li>
     <li><code>AC-bot-profiles-10</code> A command that needs a bot, with none chosen, exits 2 and says how to choose one; with a bot that does not exist it exits 1 and lists the existing bots.</li>
     <li><code>AC-bot-profiles-11</code> A web address naming a bot that does not exist shows a page saying so, with a link to the list of bots.</li>
+    <li><code>AC-bot-profiles-13</code> A route of a bot that does not exist answers 404 with the mistake <code>bot.notFound</code>, and nothing is written.</li>
   </ul>
 </section>
 

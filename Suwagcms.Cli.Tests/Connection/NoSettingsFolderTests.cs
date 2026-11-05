@@ -3,6 +3,7 @@ namespace Suwagcms.Cli.Tests.Connection;
 public sealed class NoSettingsFolderTests
 {
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-12")]
     public async Task Saving_without_a_settings_folder_is_refused_with_the_fix_and_writes_nothing_in_the_current_directory()
     {
         var before = Directory.GetFileSystemEntries(Directory.GetCurrentDirectory());
@@ -16,6 +17,7 @@ public sealed class NoSettingsFolderTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-12")]
     public async Task Reading_works_without_a_settings_folder()
     {
         var server = StubServer.Healthy();

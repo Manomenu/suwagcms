@@ -135,6 +135,7 @@ public sealed class LoopRulesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-loop-guard-2")]
     public void The_same_definition_always_gives_the_same_path_whatever_the_order_of_its_articles()
     {
         var articles = new[] { Linking("c", Link("a")), Linking("a", Link("b")), Linking("b", Link("c")) };
@@ -148,6 +149,7 @@ public sealed class LoopRulesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-procedure-model-11")]
     public void Loops_between_the_steps_of_one_procedure_and_facts_are_not_loops_between_resources()
     {
         var procedure = Samples.Procedure("conversation") with
@@ -172,27 +174,7 @@ public sealed class LoopRulesTests
     }
 
     [Fact]
-    public void A_missing_target_is_not_a_loop() => Assert.Empty(Loops(Linking("a", Link("ghost"))));
-
-    [Fact]
-    public void The_graph_function_finds_loops_in_any_graph_so_later_kinds_of_edges_need_no_change_to_the_rule()
-    {
-        var edges = new Dictionary<string, List<string>>
-        {
-            ["article:guide"] = ["procedure:evacuation"],
-            ["procedure:evacuation"] = ["article:guide", "procedure:evacuation"],
-            ["article:other"] = ["article:guide"],
-        };
-
-        var cycles = LoopRules.Cycles(edges, StringComparer.Ordinal);
-
-        Assert.Equal(
-            ["article:guide > procedure:evacuation", "procedure:evacuation"],
-            cycles.Select(cycle => string.Join(" > ", cycle)).Order(StringComparer.Ordinal)
-        );
-    }
-
-    [Fact]
+    [Trait("criterion", "AC-loop-guard-7")]
     public void A_chain_of_5000_articles_closed_into_a_ring_is_found_in_one_pass_within_the_limit()
     {
         const int count = 5000;

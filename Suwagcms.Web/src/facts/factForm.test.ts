@@ -69,7 +69,7 @@ describe("fieldOf", () => {
         expect(fieldOf(mistake("resource.exists", "revision"))).toBe("name");
     });
 
-    it("a mistake no field owns has no field", () => {
+    it("AC-global-facts-6: a mistake no field owns has no field", () => {
         expect(fieldOf(mistake("resource.stale", "revision"))).toBeNull();
         expect(fieldOf(mistake("save.invalid", "$"))).toBeNull();
     });

@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It is the one way to make changes that only work together, and it is an ordinary save with more than one change in it, so it knows no rule of its own. A file says what to change. It is not a local copy of the bot.</p>
   </div>
   <div class="stats">
-    <div><b>18</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>19</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -509,13 +508,7 @@ changes:
     <li><code>AC-batch-apply-16</code> A successful answer also lists the <code>Version</code> stage's mistakes, without refusing.</li>
     <li><code>AC-batch-apply-18</code> A file that breaks a rule of the edit guard gets the edit guard's refusal, with and without <code>--dry-run</code>, judged on the whole file's result: a file narrowing a used fact is refused with <code>fact.enum.valueInUse</code> and saves nothing, and a file changing the fact and the procedure using it together is accepted.</li>
     <li><code>AC-batch-apply-19</code> An unreadable file exits 2, naming the line, and an empty list says there is nothing to apply and exits 0.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>version-export</code>:</b> an exported file given to <code>apply</code> is refused, saying that exports are for reading and how to write a file of changes.</li>
+    <li><code>AC-batch-apply-20</code> An exported file given to <code>apply</code> is refused, since it holds no list of changes, and nothing is saved.</li>
   </ul>
 </section>
 <section data-role="risks">

@@ -529,7 +529,7 @@ whenStalled:
   <h2>Acceptance criteria</h2>
   <ul class="checks">
     <li><code>AC-procedure-model-1</code> A procedure using <code>listen</code>, <code>collect</code>, <code>say</code> and <code>assign</code> and rule-based <code>next</code> saved with <code>suwagcms procedures add --file</code> reads back with its steps, blocks and transitions as written, in YAML and in JSON.</li>
-    <li><code>AC-procedure-model-2</code> The output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning, in both formats; a file whose <code>id</code> differs from the command is refused before the server is asked, naming both.</li>
+    <li><code>AC-procedure-model-2</code> The output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning, in both formats; a file whose <code>id</code> differs from the command is refused before the server is asked, naming both, and a file that cannot be read as one procedure says what to fix.</li>
     <li><code>AC-procedure-model-3</code> A procedure with no description, an id the bot already has, and an id or step name that is not camelCase are each refused with a mistake and a fix.</li>
     <li><code>AC-procedure-model-4</code> An unknown block and a step with two blocks are each refused, with the blocks that exist.</li>
     <li><code>AC-procedure-model-5</code> <code>firstStep</code>, <code>next</code> or <code>to</code> naming a missing step is refused, with the steps of the procedure.</li>

@@ -61,6 +61,7 @@ public sealed class ServerAddressTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-13")]
     public async Task An_address_that_is_not_http_is_a_wrong_use_that_names_its_source()
     {
         var server = StubServer.Healthy();
@@ -73,6 +74,7 @@ public sealed class ServerAddressTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-13")]
     public async Task Saving_an_address_that_is_not_http_exits_2_and_saves_nothing()
     {
         var folder = TestCli.FreshSettingsFolder();

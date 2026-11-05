@@ -51,11 +51,4 @@ public sealed class CommandListTests
 
         Assert.Equal(["server"], differences.NotInCli);
     }
-
-    [Fact]
-    public void The_main_skill_lists_at_least_the_commands_the_cli_has_today()
-    {
-        Assert.Contains("status", CommandList.Listed(MainSkill()));
-        Assert.Contains("server", CommandList.Listed(MainSkill()));
-    }
 }

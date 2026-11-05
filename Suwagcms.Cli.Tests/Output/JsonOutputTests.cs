@@ -36,6 +36,7 @@ public sealed class JsonOutputTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-4")]
     public async Task A_server_that_is_down_with_json_prints_one_document_holding_the_message()
     {
         var result = await TestCli.Run(["status", "--json", "--server", "http://cms.internal"], StubServer.Down());

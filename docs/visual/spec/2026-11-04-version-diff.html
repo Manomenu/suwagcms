@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It only reads. It answers “what will this version change for customers?” before a push and “what did that version change?” after a bad one, and it is what lets a person or an agent decide on a rollback with facts.</p>
   </div>
   <div class="stats">
-    <div><b>13</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>14</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -493,13 +492,7 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
     <li><code>AC-version-diff-11</code> <code>suwagcms diff --json</code> returns the same changes in a fixed order, so the same two versions always give the same output; <code>--open</code> opens the matching web comparison.</li>
     <li><code>AC-version-diff-13</code> The bot's page offers a comparison between the version the bot reports and the one on offer.</li>
     <li><code>AC-version-diff-14</code> A comparison covers actions: their contract and implementation, with secrets only as the references the version holds.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>resource-rename</code>:</b> a renamed resource is listed as removed under its old <code>id</code> and added under its new one, because a version holds only the <code>id</code>.</li>
+    <li><code>AC-version-diff-15</code> A resource whose <code>id</code> changed is listed as removed under its old <code>id</code> and added under its new one, because a version holds only the <code>id</code>.</li>
   </ul>
 </section>
 <section data-role="risks">

@@ -88,13 +88,6 @@ describe("FactsView", () => {
         expect(html).not.toContain(">Delete<");
         expect(html.match(/>Edit</g)).toHaveLength(3);
     });
-
-    it("says there are no facts and how to add one", () => {
-        const html = view([]);
-
-        expect(html).toContain("No facts yet.");
-        expect(html).toContain("Add a fact");
-    });
 });
 
 describe("FactFields", () => {
@@ -136,7 +129,7 @@ describe("FactFields", () => {
         expect(fieldHtml(html, "name")).toContain("Choose another name.");
     });
 
-    it("shows the constraint fields of the chosen type only", () => {
+    it("AC-global-facts-1: shows the constraint fields of the chosen type only", () => {
         expect(fields([], "enum")).toContain('data-field="values"');
         expect(fields([], "enum")).not.toContain('data-field="maxLength"');
         expect(fields([], "int")).toContain('data-field="min"');

@@ -322,6 +322,7 @@ public sealed class ArticlesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task Open_shows_the_articles_screen_of_the_bot_without_calling_the_server()
     {
         var opened = new List<Uri>();
@@ -338,6 +339,7 @@ public sealed class ArticlesTests
     [InlineData("add")]
     [InlineData("edit")]
     [InlineData("delete")]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task A_command_that_changes_an_article_has_no_page_to_open(string word)
     {
         var result = await TestCli.Run(Args("articles", word, "priceList", "--title", "x", "--open"), StubServer.Healthy());

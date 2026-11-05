@@ -442,22 +442,23 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-13")]
     public async Task An_unknown_bot_is_a_404_for_every_route()
     {
         _ = database.Pool;
         var client = app.CreateClient();
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            (await client.GetAsync("/api/bots/nobody/versions", TestContext.Current.CancellationToken)).StatusCode
-        );
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            (await client.GetAsync("/api/bots/nobody/versions/1", TestContext.Current.CancellationToken)).StatusCode
-        );
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            (await client.PostAsync("/api/bots/nobody/versions", null, TestContext.Current.CancellationToken)).StatusCode
-        );
+        var responses = new[]
+        {
+            await client.GetAsync("/api/bots/nobody/versions", TestContext.Current.CancellationToken),
+            await client.GetAsync("/api/bots/nobody/versions/1", TestContext.Current.CancellationToken),
+            await client.PostAsync("/api/bots/nobody/versions", null, TestContext.Current.CancellationToken),
+        };
+
+        foreach (var response in responses)
+        {
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(["bot.notFound"], await VersionApi.CodesOf(response));
+        }
     }
 }

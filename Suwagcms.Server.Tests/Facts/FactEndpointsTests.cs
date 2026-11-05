@@ -395,6 +395,7 @@ public sealed class FactEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-13")]
     public async Task A_bot_that_does_not_exist_is_a_404_with_a_mistake_on_every_route()
     {
         _ = database.Pool;

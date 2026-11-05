@@ -402,6 +402,7 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-7")]
     public async Task An_article_does_not_list_its_knowledge_base_among_what_it_uses()
     {
         var scene = await NewScene();

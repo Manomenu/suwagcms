@@ -8,7 +8,7 @@ using YamlDotNet.Serialization.EventEmitters;
 
 namespace Suwagcms.Cli.Versions;
 
-// Why: the first line of every file says it is a read-only export, so nobody takes it for a way to change anything, and a command that gets one can tell.
+// Why: the first line of every file says it is a read-only export, so nobody takes it for a way to change anything.
 internal static class ExportYaml
 {
     private static readonly ISerializer Serializer = new SerializerBuilder()

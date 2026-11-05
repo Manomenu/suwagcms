@@ -382,7 +382,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>11</b><span>criteria</span></div>
-    <div><b>5</b><span>criteria after other features</span></div>
+    <div><b>4</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -459,7 +459,7 @@ Refused, 1 mistake:
     <li><code>AC-loop-guard-4</code> A loop running through both fields, such as one link in a <code>content</code> and the next in an <code>llmGuide</code>, is refused.</li>
     <li><code>AC-loop-guard-5</code> One save that closes several loops reports every one of them, each with its path.</li>
     <li><code>AC-loop-guard-6</code> A save that removes a link and adds another is judged on its result: it is accepted when the result has no loop.</li>
-    <li><code>AC-loop-guard-7</code> Two articles linking to one target, and a long chain without a loop, are accepted.</li>
+    <li><code>AC-loop-guard-7</code> Two articles linking to one target, and a long chain without a loop, are accepted; closing a chain of 5000 articles into a ring is found within 5 s.</li>
     <li><code>AC-loop-guard-8</code> Of two saves at the same moment that together would close a loop, exactly one succeeds, and the other is refused with the path.</li>
     <li><code>AC-loop-guard-9</code> For any generated sequence of link edits, the bot's articles never contain a loop, and all of them can be deleted in some order.</li>
     <li><code>AC-loop-guard-10</code> The validator on its own reports a definition holding a loop with the same code and path.</li>
@@ -471,7 +471,6 @@ Refused, 1 mistake:
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>procedure-model</code>:</b> a loop between the steps of one procedure is not refused, as in a <code>conversation</code> returning to its own <code>listen</code>.</li>
     <li><b>after <code>start-block</code>:</b> a loop between procedures through <code>start</code> is refused.</li>
     <li><b>after <code>instruction-context</code>:</b> a loop article → procedure → article through a context is refused.</li>
     <li><b>after <code>start-block</code>:</b> a procedure starting itself is refused.</li>
