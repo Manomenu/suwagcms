@@ -6,6 +6,7 @@ using Suwagcms.Cli.Facts;
 using Suwagcms.Cli.KnowledgeBases;
 using Suwagcms.Cli.Output;
 using Suwagcms.Cli.Procedures;
+using Suwagcms.Cli.Renames;
 using Suwagcms.Cli.Status;
 using Suwagcms.Cli.Usage;
 using Suwagcms.Cli.Versions;
@@ -37,6 +38,7 @@ internal static class CliApp
             ProceduresCommand.Create(options, environment),
             VersionsCommand.Create(options, environment),
             UsageCommand.Create(options, environment),
+            RenameCommand.Create(options, environment),
             PushCommand.Create(options, environment),
         };
         options.AddTo(root);

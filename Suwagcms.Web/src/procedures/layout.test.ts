@@ -17,7 +17,7 @@ function overlapping(draft: Draft, at: Record<string, { x: number; y: number }>)
 }
 
 function graph(): Draft {
-    let draft: Draft = { description: "d", firstStep: "listen", whenStalled: null, steps: {} };
+    let draft: Draft = { description: "d", firstStep: "listen", whenStalled: null, steps: {}, localFacts: {} };
     for (const block of ["listen", "collect", "say", "assign", "say", "say"] as const) draft = addStep(draft, block).draft;
     draft = connect(draft, "listen", "next", "collect");
     draft = connect(draft, "collect", "next", "say");

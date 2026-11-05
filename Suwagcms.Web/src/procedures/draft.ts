@@ -28,11 +28,14 @@ export interface Step {
     next?: string | Rule[];
 }
 
+export type LocalFact = NonNullable<SaveProcedure["localFacts"]>[string];
+
 export interface Draft {
     description: string;
     firstStep: string | null;
     whenStalled: string | null;
     steps: Record<string, Step>;
+    localFacts: Record<string, LocalFact>;
 }
 
 type Wire = ProcedureDetail["steps"][string];
@@ -75,6 +78,7 @@ export function fromDetail(detail: ProcedureDetail): Draft {
         firstStep: detail.firstStep,
         whenStalled: detail.whenStalled?.instruction ?? null,
         steps: Object.fromEntries(Object.entries(detail.steps).map(([name, wire]) => [name, stepOf(wire)])),
+        localFacts: detail.localFacts ?? {},
     };
 }
 
@@ -96,6 +100,7 @@ export function toSave(draft: Draft): SaveProcedure {
                 },
             ]),
         ),
+        ...(Object.keys(draft.localFacts).length === 0 ? {} : { localFacts: draft.localFacts }),
     };
 }
 
@@ -292,6 +297,33 @@ export function freshCondition(kind: ConditionKind): Condition {
 
 export function kindOf(condition: Condition): ConditionKind {
     return condition.range ? "range" : condition.known !== undefined ? "known" : "oneOf";
+}
+
+/** What a step of this procedure sees: the bot's facts and the procedure's own, which only it can name. */
+export function factsSeen(draft: Draft, facts: Fact[]): Fact[] {
+    const local = Object.entries(draft.localFacts).map(([name, fact]) => ({
+        name,
+        type: fact.type ?? "",
+        description: fact.description ?? "",
+        writableBy: fact.writableBy ?? "set",
+        values: fact.values ?? null,
+        min: fact.min ?? null,
+        max: fact.max ?? null,
+        maxLength: fact.maxLength ?? null,
+        revision: 0,
+        usedBy: [],
+    }));
+    return [...facts, ...local];
+}
+
+/** Adds a local fact, or replaces it; the server's dry run says what is wrong with it. */
+export function setLocalFact(draft: Draft, name: string, fact: LocalFact): Draft {
+    return { ...draft, localFacts: { ...draft.localFacts, [name]: fact } };
+}
+
+/** Removes a local fact; steps that still use it are for the server's dry run to list. */
+export function removeLocalFact(draft: Draft, name: string): Draft {
+    return { ...draft, localFacts: Object.fromEntries(Object.entries(draft.localFacts).filter(([other]) => other !== name)) };
 }
 
 /** The facts a collect may use: a fact only a procedure assigns is not asked of the customer. */

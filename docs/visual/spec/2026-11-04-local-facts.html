@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-resource-rename.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-local-facts.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Changing an id</title>
+<title>Local facts</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Changing an id</h1>
+  <h1>Local facts</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 17 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>article-links</code></span>
+    <span><b>Feature:</b> 14 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,175 +376,131 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>Changing a resource's <code>id</code> is one operation: the resource gets the new <code>id</code>, and every structured link and reference to it is rewritten with it, all or nothing. <code>suwagcms rename article cennik priceList</code>, or “Change id” in the web, shows what will change before anything does.</p>
-    <p>Only the target of a link changes: the rest of each referrer's text stays exactly as it was, and versions already created keep the old <code>id</code>. Plain text naming a resource is not a reference, so it is left alone.</p>
+    <p>A procedure can declare its own <code>localFacts</code>: typed like global facts, written without dots, and gone when the procedure ends. Its steps use them by their short name, and no other procedure can see them.</p>
+    <p>They are part of the procedure, so they are saved with it and deleted with it. Removing one that a step still uses is refused, and a local fact can never share a name with a global fact of the bot.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
-    <div><b>10</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>13</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>An <code>id</code> is fixed once created, because references are stored by it. Yet ids get chosen in a hurry, and <code>cennik</code> becomes wrong the day the bot moves to English. Without this feature an author has to create a copy, repoint every link by hand and delete the original, and the delete guard then refuses until the last link has moved. README asks for one operation instead.</p>
+  <p>After <code>procedure-model</code>, everything a procedure remembers is a global fact. The date of one order would then sit in the bot's catalog for a whole conversation, visible to every procedure and offered to every author, although only one procedure ever means anything by it. A second procedure that happens to use the same name would read a leftover value. Suwchatbot already solves this with <code>localFacts</code> in the procedure, and its reader is the model for these rules.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>One step, through every door, that leaves no reference pointing at the old <code>id</code>.</li>
-      <li>All or nothing, whichever part fails.</li>
-      <li>The author sees what will change before it does.</li>
-      <li>No edit other than the link target is made to anyone's text.</li>
+      <li>A procedure keeps its own working values out of the bot's catalog.</li>
+      <li>The same types, constraints and <code>writableBy</code> as a global fact, with the same mistakes.</li>
+      <li>A name always means one thing inside a procedure.</li>
+      <li>A local fact in use cannot be taken away from under a step.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Finding plain text that names the old <code>id</code> or title: README says it is not a reference.</li>
-      <li>Changing a title: an ordinary edit, which rewrites no referrer (<code>article-links</code>).</li>
-      <li>A redirect from the old <code>id</code>: after the change it means nothing and can be used again.</li>
-      <li>Renaming a step or a local fact: they live inside a procedure, and saving the procedure's file does it.</li>
-      <li>Changing versions already created: they are immutable.</li>
+      <li>Editing local facts on the Facts screen: they are edited in the panel of the procedure's creator, a criterion of <code>procedure-creator</code>.</li>
+      <li>Commands for one local fact: a procedure is saved as one whole file, as <code>procedure-model</code> decided.</li>
+      <li>Passing a local fact to the customer: <code>inform-block</code>. Filling one from an action: <code>action-block</code>.</li>
+      <li>Refusing an edit that narrows a local fact a step relies on: <code>edit-guard</code>.</li>
+      <li>Forgetting the value when a procedure ends: bots run procedures, and the first bot's specs are in its own repository.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent looks first, then renames</h3>
-  <div class="term"><span class="dim">$</span> suwagcms rename article cennik priceList --dry-run
-Would rename article 'cennik' to 'priceList' and rewrite 2 referrers:
-  article wycena (content, 1 link)
-  article rabaty (llmGuide, 2 links)
-Nothing was changed.
-<span class="dim">$</span> suwagcms rename article cennik priceList
-Renamed article 'cennik' to 'priceList'. Rewrote 2 referrers.
-<span class="dim">$</span> suwagcms articles show cennik
-This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
-  <p>The text of <code>wycena</code> read <code>See the [Price list](cms://article/cennik).</code> It now reads <code>See the [Price list](cms://article/priceList).</code></p>
-  <h3>2. Marta changes an id in the web</h3>
-  <ol class="steps">
-    <li><p>On the article <code>cennik</code> she chooses <span class="btn">Change id</span> and types <code>priceList</code>. The dialog lists what will be rewritten.</p></li>
-    <li><p>She confirms and lands on the article at its new address. Its “Used by” panel lists the same referrers, and their chips still open it.</p></li>
-  </ol>
-  <h3>3. The new id is taken</h3>
+  <h3>1. An agent gives a procedure its own fact</h3>
+  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml   <span class="dim"># declares local fact visitDate, and step ask collects it</span>
+Saved orderValuation, revision 4.
+<span class="dim">$</span> suwagcms facts list
+customer.city  text, up to 80   set
+order.kind     enum: house, flat   correct</div>
+  <p><code>visitDate</code> is not in the bot's list of facts. <code>suwagcms procedures show orderValuation</code> prints it in the procedure.</p>
+  <h3>2. A name the bot already uses</h3>
   <div class="term">Refused, 1 mistake:
-  resource.duplicateId  This bot already has an article 'priceList'. Choose another id, or delete that article first.</div>
-  <h3>4. Someone had the referrer open</h3>
-  <ol class="steps">
-    <li><p>An agent is editing <code>wycena</code>, read at revision 3, when Marta renames <code>cennik</code>. That rewrites <code>wycena</code>, now revision 4.</p></li>
-    <li><p>The agent's save is based on an old revision, so it is refused, and it reads the article again. Without this its text would bring the old link back.</p></li>
-  </ol>
+  fact.local.nameClash  Local fact 'city' of procedure 'orderValuation' has the name of a global fact. Inside the procedure the name would be ambiguous. Rename one of them.</div>
+  <h3>3. Another procedure reaches for it</h3>
+  <div class="term">Refused, 1 mistake:
+  reference.missing  'collect' of step 'ask' in 'complaint' names fact 'visitDate', which this procedure does not see. Facts it sees: customer.city, order.kind. Local facts of other procedures are not visible.</div>
+  <h3>4. A local fact still in use</h3>
+  <div class="term">Refused, 1 mistake:
+  reference.missing  'orderValuation' no longer declares local fact 'visitDate', which is used by: step ask (collect), step confirm (when). Change these steps first, or keep the fact.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>What can change its id</h3>
+  <h3>A local fact</h3>
   <table>
-    <tr><th>Kind</th><th>What is rewritten</th></tr>
-    <tr><td>article</td><td>each link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles</td></tr>
-    <tr><td>knowledge base</td><td>the <code>knowledgeBase</code> of each of its articles</td></tr>
-    <tr><td>global fact</td><td>its <code>name</code>; what uses it arrives with later features, see below</td></tr>
+    <tr><th>Field</th><th>Rule</th></tr>
+    <tr><td><code>localFacts</code></td><td>optional on a procedure; a map from name to fact; may be empty</td></tr>
+    <tr><td>name</td><td>camelCase with no dot; unique within the procedure; two procedures may each have the same name with different types</td></tr>
+    <tr><td><code>type</code>, constraints, <code>description</code>, <code>writableBy</code></td><td>exactly as for a global fact, including the default <code>set</code> and every mistake in the <code>global-facts</code> spec</td></tr>
   </table>
-  <p>Each later kind of resource and reference joins this list through “Criteria after other features”. Changing a title is not this operation, and the knowledge-base screen's existing “Rename” stays a change of title, so here the web's action is called “Change id”.</p>
-  <h3>What a rewrite touches</h3>
-  <table>
-    <tr><th>In a referrer</th><th>After the change</th></tr>
-    <tr><td><code>[Price list](cms://article/cennik)</code></td><td><code>[Price list](cms://article/priceList)</code>: the label stays</td></tr>
-    <tr><td><code>cms://article/cennik</code> in a code span or block</td><td>unchanged: it is text in code</td></tr>
-    <tr><td>the word <code>cennik</code> in plain text, a <code>title</code> or a <code>description</code></td><td>unchanged</td></tr>
-    <tr><td>a link to <code>cennikFirmowy</code></td><td>unchanged: a different <code>id</code></td></tr>
-    <tr><td>everything else</td><td>identical, byte for byte</td></tr>
-  </table>
-  <h3>The operation</h3>
-  <p>It goes through the same write path as any save, as one set of changes validated as a whole, so a refused or failed rename leaves no trace. All mistakes come at once, each with its fix. Each resource it rewrites gets a new revision, and any other resource keeps its own.</p>
+  <p>Facts have no availability, and a local fact has no revision of its own: the procedure holds both. A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes.</p>
+  <h3>What a step sees</h3>
+  <p>A step of a procedure sees the bot's global facts and that procedure's local facts, the latter by short name. Everything <code>procedure-model</code> checks for a fact holds for a local one: a <code>collect</code> cannot name one with <code>writableBy: assign</code>, a condition must fit its type, and a value in <code>oneOf</code>, <code>range</code> or <code>assign</code> must be one it can take.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>the new <code>id</code> is taken by the same kind of resource in this bot</td><td>refused with <code>resource.duplicateId</code></td></tr>
-    <tr><td>the new <code>id</code> is not in the right form for that kind</td><td>refused with the fix</td></tr>
-    <tr><td>the new <code>id</code> is the same as the old one</td><td>refused: nothing would change</td></tr>
-    <tr><td>the resource does not exist</td><td>refused, naming it</td></tr>
-    <tr><td><code>--if-revision</code>, or a web dialog opened at an old revision, when the resource has moved on</td><td>refused with the current revision</td></tr>
-    <tr><td>a dry run</td><td>the same refusal, or a list of each referrer and field to be rewritten; nothing changes</td></tr>
-    <tr><td>a rename, and a new link to the old <code>id</code>, at the same moment</td><td>one after the other: a link saved first is rewritten, and a link saved second is refused with <code>reference.missing</code></td></tr>
-    <tr><td>the same <code>id</code> in another bot</td><td>untouched, with its links</td></tr>
-    <tr><td>the old <code>id</code> afterwards</td><td>free: a new resource may take it, and a link to it means that new resource</td></tr>
+    <tr><td>a step names a local fact of another procedure, by short name or as <code>otherProcedure.name</code></td><td>refused with <code>reference.missing</code>; the message lists what this procedure sees and says local facts of others are not visible</td></tr>
+    <tr><td>a step names its own local fact as <code>thisProcedure.name</code></td><td>refused the same way: inside the procedure the short name is the only name</td></tr>
+    <tr><td>a save removes a local fact and a step still uses it</td><td>refused with <code>reference.missing</code>, listing every step and the place in it</td></tr>
+    <tr><td>a save removes a local fact and every use of it</td><td>accepted: the result is sound</td></tr>
+    <tr><td>a local fact has a global fact's name</td><td>refused, whichever was saved second; see below</td></tr>
+    <tr><td>a procedure is deleted</td><td>its local facts go with it, and their names are free for a global fact</td></tr>
+    <tr><td>a local fact no step uses</td><td>allowed at both stages</td></tr>
+    <tr><td>a <code>collect</code> naming only local facts</td><td>the procedure still needs <code>whenStalled</code> before a version</td></tr>
   </table>
+  <h3>Names shared with global facts</h3>
+  <p>A local fact with a global fact's name would make the name ambiguous inside the procedure, so the rule is on the result of a save and works in both directions. A procedure declaring such a local fact is refused, and so is adding a global fact with such a name, which lists the procedures holding it. <code>edit-guard</code> covers the other clash: a global fact named <code>&lt;procedureId&gt;.&lt;anything&gt;</code>.</p>
+  <p>The rules are in the validator at the <code>Save</code> stage, so they also hold offline.</p>
 </section>
-<section data-role="ui">
-  <h2>Screen</h2>
-  <div class="wire after"><span class="wf-label">Article cennik: Change id</span>
-    <div class="wf-bar"><b>Change id</b></div>
-    <div class="wf-body">
-      <div class="wf-card wf-new">
-        <p>New id: <span class="wf-input">priceList</span></p>
-        <p><b>This rewrites 2 referrers</b></p>
-        <p><a href="#">wycena</a> <span class="wf-muted">content, 1 link</span></p>
-        <p><a href="#">rabaty</a> <span class="wf-muted">llmGuide, 2 links</span></p>
-        <p class="wf-muted">Plain text naming this article is not changed.</p>
-        <div class="wf-row"><span class="wf-grow"></span><span class="wf-btn">Cancel</span><span class="wf-btn primary">Change id</span></div>
-      </div>
-    </div>
-  </div>
+<section data-role="data">
+  <h2>Format</h2>
+  <p>This is part of the public contract with bots. It adds an optional field, so it does not raise <code>formatVersion</code>.</p>
+  <script type="text/x-code" data-file="orderValuation.yaml" data-lang="yaml" data-notes='[{"lines":"3-7","label":"localFacts","note":"the same shape as a global fact"},{"lines":"11","label":"Short name","note":"no prefix and no dot"}]'>
+id: orderValuation
+description: The customer orders a valuation of a property.
+localFacts:
+  visitDate:
+    type: text
+    maxLength: 40
+    description: The date the customer wants the visit on.
+firstStep: ask
+steps:
+  ask:
+    collect: [customer.city, visitDate]
+whenStalled:
+  instruction: Tell the customer you could not finish and give the office phone number.
+  </script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>One command for every kind, <code>suwagcms rename &lt;kind&gt; &lt;id&gt; &lt;newId&gt;</code>, in the shape of <code>suwagcms usage &lt;kind&gt; &lt;id&gt;</code>: the behaviour is one, and each new kind only adds a word.</li>
-    <li>Labels stay as written: a label holds a title, not an <code>id</code>, and a version already fills in the current title.</li>
-    <li>A rewrite bumps each referrer's revision: its text did change, and a stale save would otherwise put the old link back or be refused for a reason nobody could see.</li>
+    <li>Both directions of the “same name as a global fact” clash live here, as the <code>global-facts</code> spec already says; <code>edit-guard</code> keeps the prefix clash, which needs no local fact to exist. One rule on the result covers both directions, so splitting it across two specs would only duplicate its check.</li>
+    <li>No commands for a single local fact: an agent edits the procedure's file, which is how it already reasons about a procedure.</li>
+    <li>The global name <code>procedureId.name</code> is how a bot may report a local fact outside the procedure. In the format a step never writes it, so authors have one name to learn.</li>
+    <li>A local fact no step uses is allowed at both stages: it is harmless at run time, and the same as a global fact nobody uses.</li>
+    <li>A name clash is one mistake on the global fact, naming every procedure that holds the name, whichever side was saved second.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-resource-rename-1</code> <code>suwagcms rename article cennik priceList</code> gives the article the new <code>id</code>, and every link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles then targets <code>priceList</code>; the article can no longer be read as <code>cennik</code>.</li>
-    <li><code>AC-resource-rename-2</code> The same change made with “Change id” in the web gives the same result, lists the referrers before it is confirmed, and leaves the author on the resource at its new address.</li>
-    <li><code>AC-resource-rename-3</code> In a rewritten referrer only the link targets differ: for a test set covering labels, code spans and blocks, plain text naming the <code>id</code>, longer ids starting with the old one, and ordinary web links, everything else is identical, byte for byte.</li>
-    <li><code>AC-resource-rename-4</code> Changing a knowledge base's <code>id</code> updates the <code>knowledgeBase</code> of each of its articles, which stay in that base.</li>
-    <li><code>AC-resource-rename-5</code> A global fact's name can be changed the same way, including one with dots, and the form rules for a fact's name apply to the new one.</li>
-    <li><code>AC-resource-rename-6</code> A new <code>id</code> already taken by that kind of resource in this bot, one not in the right form, the same <code>id</code> as the old one, and a resource that does not exist are each refused with a mistake and a fix, and nothing changes.</li>
-    <li><code>AC-resource-rename-7</code> A failure while writing leaves every resource as it was: the resource keeps its old <code>id</code>, and no referrer is rewritten.</li>
-    <li><code>AC-resource-rename-8</code> <code>--dry-run</code> gives the same refusal, or lists each referrer and field to be rewritten, and nothing changes.</li>
-    <li><code>AC-resource-rename-9</code> In the same situation <code>--json</code> gives the renamed resource and the referrers as data, and the CLI exits 1 on a refusal.</li>
-    <li><code>AC-resource-rename-10</code> Each rewritten referrer gets a new revision, and a resource that does not refer to the renamed one keeps its revision.</li>
-    <li><code>AC-resource-rename-11</code> A save of a referrer based on its revision before the rename is refused.</li>
-    <li><code>AC-resource-rename-12</code> <code>--if-revision</code> with an old revision of the resource, and a web dialog opened at one, are refused with the current revision.</li>
-    <li><code>AC-resource-rename-13</code> A rename and a new link to the old <code>id</code> at the same moment never leave a link without a target.</li>
-    <li><code>AC-resource-rename-14</code> A resource with the same <code>id</code> in another bot, and the links to it, stay unchanged.</li>
-    <li><code>AC-resource-rename-15</code> After the change the old <code>id</code> can be taken by a new resource, and a link to the old <code>id</code> before that is refused with <code>reference.missing</code>.</li>
-    <li><code>AC-resource-rename-16</code> <code>suwagcms rename --open</code> opens the resource's page at its new address.</li>
-    <li><code>AC-resource-rename-17</code> <code>suwagcms rename</code> has its line in the plugin's main skill.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>procedure-model</code>:</b> changing a fact's name also rewrites it in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it.</li>
-    <li><b>after <code>procedure-model</code>:</b> a procedure's <code>id</code> can be changed, and <code>conversation</code> cannot change its <code>id</code>, since the format requires it as the base of every conversation; a new <code>id</code> that a global fact's name starts with, followed by a dot, is refused, and so is a fact's new name starting with a procedure's <code>id</code> and a dot.</li>
-    <li><b>after <code>local-facts</code>:</b> a fact's new name that a local fact already has is refused.</li>
-    <li><b>after <code>start-block</code>:</b> changing a procedure's <code>id</code> rewrites each <code>start</code> that targets it.</li>
-    <li><b>after <code>inform-block</code>:</b> changing an article's <code>id</code> or a fact's name rewrites each <code>inform</code> that names it.</li>
-    <li><b>after <code>instruction-context</code>:</b> changing an article's <code>id</code> rewrites each <code>context</code> that names it; a search query holding those words is text and stays as it is.</li>
-    <li><b>after <code>article-procedure-links</code>:</b> changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
-    <li><b>after <code>action-block</code>:</b> changing an action's <code>id</code> rewrites each <code>action</code> step, and changing a fact's name rewrites it in each step's mapping of parameters and results.</li>
-    <li><b>after <code>procedure-creator</code>:</b> a procedure's node positions stay after its <code>id</code> changes.</li>
-    <li><b>after <code>availability</code>:</b> a resource turned off stays off after its <code>id</code> changes, also for conversations on a version that still holds the old <code>id</code>.</li>
+    <li><code>AC-local-facts-1</code> A procedure declaring an <code>enum</code>, an <code>int</code> and a <code>text</code> local fact, saved with <code>suwagcms procedures add --file</code>, reads back with each fact's type, constraints, description and <code>writableBy</code> as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-local-facts-2</code> A local fact without <code>writableBy</code> has <code>set</code>; a procedure with no <code>localFacts</code> or an empty one is accepted.</li>
+    <li><code>AC-local-facts-3</code> A local fact with a blank description, an unknown type, or constraints a global fact of that type could not have is refused with the same code as for a global fact, and a path inside <code>localFacts</code> of that procedure.</li>
+    <li><code>AC-local-facts-4</code> A local fact name with a dot, and one that is not camelCase, are each refused with a mistake and a fix.</li>
+    <li><code>AC-local-facts-5</code> A procedure declaring a local fact with the name of a global fact is refused with <code>fact.local.nameClash</code>, naming both; adding a global fact with the name of a local fact is refused with the same code, listing every procedure that holds it.</li>
+    <li><code>AC-local-facts-6</code> <code>collect</code>, <code>assign</code> and <code>when</code> can name a local fact of their procedure by its short name, and the rules for facts hold for it: a <code>collect</code> of one with <code>writableBy: assign</code>, a condition that does not fit its type, and a value it can never take are each refused; a procedure whose only <code>collect</code> names local facts still needs <code>whenStalled</code> at the <code>Version</code> stage.</li>
+    <li><code>AC-local-facts-7</code> A step naming a local fact of another procedure, by short name or as <code>otherProcedure.name</code>, or its own as <code>thisProcedure.name</code>, is refused with <code>reference.missing</code>, listing the facts this procedure sees.</li>
+    <li><code>AC-local-facts-8</code> Two procedures can each hold a local fact of one name with different types, and each is checked against its own.</li>
+    <li><code>AC-local-facts-9</code> A save removing a local fact a step still uses is refused with <code>reference.missing</code>, listing every step using it; a save removing the fact and all its uses is accepted.</li>
+    <li><code>AC-local-facts-10</code> After a procedure with local facts is deleted, a global fact with one of their names can be added.</li>
+    <li><code>AC-local-facts-11</code> Local facts are not listed by <code>suwagcms facts list</code> or on the Facts screen, and <code>suwagcms facts show</code> of one's name is refused as a fact the bot does not have.</li>
+    <li><code>AC-local-facts-12</code> The validator on its own reports each of these mistakes with the same code.</li>
+    <li><code>AC-local-facts-13</code> The plugin's main skill gives the form of <code>localFacts</code>.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p>Availability is live and reaches conversations on older versions, while those versions hold the old <code>id</code>. A switch sent only under the new <code>id</code> would miss them, so <code>availability</code> has to answer for this. The deferred item above is the check.</p></div>
-  <div class="callout warn"><p>Plain text that mentions the old <code>id</code> stays behind, and so does a label an author wrote by hand. README accepts this: plain text is not protected.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should a rename be refused while it would make open edits stale?</legend>
-      <p class="why">Each referrer gets a new revision, so anyone with one open is refused when they save, and has to reload. The CMS has no notion of who has what open, and no identity yet. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="stale"><span><b>No: rename, and those saves are refused as stale</b><small>the same protection every edit has; work stays on the screen, and no link can come back</small></span></label>
-      <label><input type="radio" value="merge"><span><b>Rewrite the link inside the incoming stale save</b><small>nobody has to reload, but saves stop being judged on what the author saw</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout assumption"><p>A bot on an SDK older than this field ignores <code>localFacts</code> as an unknown field, and its validator then reports each step using one as <code>reference.missing</code>. That stops the load instead of misleading a customer, so the field does not raise <code>formatVersion</code>.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

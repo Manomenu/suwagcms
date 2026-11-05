@@ -15,6 +15,7 @@ internal static class ProcedureMapping
             FirstStep = body.FirstStep,
             Steps = body.Steps ?? new Dictionary<string, ProcedureStep>(),
             WhenStalled = body.WhenStalled,
+            LocalFacts = body.LocalFacts,
         };
 
     public static ProcedureDetail Show(Procedure procedure, int revision, IReadOnlyList<Mistake> notReady) =>
@@ -25,7 +26,8 @@ internal static class ProcedureMapping
             procedure.Steps,
             procedure.WhenStalled,
             revision,
-            Of(notReady, procedure.Id)
+            Of(notReady, procedure.Id),
+            procedure.LocalFacts
         );
 
     public static ProcedureDetail Show(StoredResource stored, IReadOnlyList<Mistake> notReady) =>

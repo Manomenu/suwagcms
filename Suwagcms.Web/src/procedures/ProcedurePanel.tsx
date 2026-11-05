@@ -5,6 +5,7 @@ import { Textarea } from "@/design/textarea";
 import { UsagePanel } from "@/design/usagePanel";
 
 import type { Draft } from "./draft";
+import { LocalFactsPanel } from "./LocalFactsPanel";
 
 /** The fields of the procedure itself, shown when no step is selected. */
 export function ProcedurePanel({
@@ -57,6 +58,7 @@ export function ProcedurePanel({
                     />
                 )}
             </Field>
+            <LocalFactsPanel draft={draft} edit={edit} />
             <UsagePanel usage={usage.usage} failure={usage.failure} hrefOf={(entry) => usageHref(bot, entry)} />
             <p className="text-sm text-muted-foreground">Select a step on the graph to edit it.</p>
         </section>

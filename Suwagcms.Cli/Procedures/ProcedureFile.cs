@@ -46,8 +46,8 @@ internal static class ProcedureFile
         return stream.Documents.Count == 0 ? null : Convert(stream.Documents[0].RootNode, "", "");
     }
 
-    // Why: YAML writes 42 and true unquoted, and only min, max and known mean a number or a boolean; every other plain scalar is the text it spells.
-    private static JsonNode? Convert(YamlNode node, string key, string parent)
+    // Why: YAML writes 42 and true unquoted, and only the bounds of a range or a local fact and known mean a number or a boolean; every other plain scalar is the text it spells.
+    private static JsonNode? Convert(YamlNode node, string key, string parent, string grandparent = "")
     {
         switch (node)
         {
@@ -56,19 +56,19 @@ internal static class ProcedureFile
                 foreach (var (name, value) in mapping.Children)
                 {
                     var childKey = (name as YamlScalarNode)?.Value ?? "";
-                    result[childKey] = Convert(value, childKey, key);
+                    result[childKey] = Convert(value, childKey, key, parent);
                 }
                 return result;
             case YamlSequenceNode sequence:
-                return new JsonArray([.. sequence.Children.Select(item => Convert(item, "", key))]);
+                return new JsonArray([.. sequence.Children.Select(item => Convert(item, "", key, parent))]);
             case YamlScalarNode scalar:
-                return Scalar(scalar, key, parent);
+                return Scalar(scalar, key, parent, grandparent);
             default:
                 return null;
         }
     }
 
-    private static JsonNode? Scalar(YamlScalarNode scalar, string key, string parent)
+    private static JsonNode? Scalar(YamlScalarNode scalar, string key, string parent, string grandparent)
     {
         var value = scalar.Value ?? "";
         if (scalar.Style != ScalarStyle.Plain)
@@ -83,7 +83,10 @@ internal static class ProcedureFile
         {
             return value == "true";
         }
-        var isNumber = (key is "min" or "max" && parent == "range") || (key == "revision" && parent.Length == 0);
+        var isNumber =
+            (key is "min" or "max" && parent == "range")
+            || (key is "min" or "max" or "maxLength" && grandparent == "localFacts")
+            || (key == "revision" && parent.Length == 0);
         return isNumber && int.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var number)
             ? number
             : value;

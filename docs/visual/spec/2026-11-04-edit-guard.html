@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-local-facts.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-edit-guard.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Local facts</title>
+<title>Edit guard</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Local facts</h1>
+  <h1>Edit guard</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 14 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>procedure-model</code></span>
+    <span><b>Feature:</b> 16 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>global-facts</code>, <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,141 +376,143 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A procedure can declare its own <code>localFacts</code>: typed like global facts, written without dots, and gone when the procedure ends. Its steps use them by their short name, and no other procedure can see them.</p>
-    <p>They are part of the procedure, so they are saved with it and deleted with it. Removing one that a step still uses is refused, and a local fact can never share a name with a global fact of the bot.</p>
+    <p>An edit of a fact that would leave a procedure invalid is refused at that edit, naming the fact and every step that relies on it. That covers removing an <code>enum</code> value, changing a type, narrowing a range or <code>maxLength</code>, and setting <code>writableBy: assign</code>. A global fact also cannot be named <code>&lt;procedureId&gt;.&lt;anything&gt;</code>.</p>
+    <p>An agent asks “what would this change break?” with a dry run and gets the same answer. There is no force option: the author changes the steps first, or leaves the fact as it is.</p>
   </div>
   <div class="stats">
-    <div><b>13</b><span>criteria</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>After <code>procedure-model</code>, everything a procedure remembers is a global fact. The date of one order would then sit in the bot's catalog for a whole conversation, visible to every procedure and offered to every author, although only one procedure ever means anything by it. A second procedure that happens to use the same name would read a leftover value. Suwchatbot already solves this with <code>localFacts</code> in the procedure, and its reader is the model for these rules.</p>
+  <p>The delete guard protects a fact from disappearing, but an edit can do the same damage quietly. If Marta removes the value <code>flat</code> from <code>order.kind</code> while a <code>when</code> branches on it, that branch can never be taken. After <code>global-facts</code> and <code>procedure-model</code>, the first sign would be a refusal on some later save of the procedure, given to whoever touches it next and blaming the wrong edit. The refusal belongs on the edit that causes the break, in front of the person making it.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>A procedure keeps its own working values out of the bot's catalog.</li>
-      <li>The same types, constraints and <code>writableBy</code> as a global fact, with the same mistakes.</li>
-      <li>A name always means one thing inside a procedure.</li>
-      <li>A local fact in use cannot be taken away from under a step.</li>
+      <li>An edit that would break a referrer never succeeds, from any client.</li>
+      <li>The refusal names every referrer at once, so one pass clears them all.</li>
+      <li>An edit that breaks nothing is never refused.</li>
+      <li>“What would this change break?” can be asked without changing anything.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Editing local facts in the web: a panel in the creator, waiting in <code>procedure-creator</code>'s criteria after this feature.</li>
-      <li>Commands for one local fact: a procedure is saved as one whole file, as <code>procedure-model</code> decided.</li>
-      <li>Passing a local fact to the customer: <code>inform-block</code>. Filling one from an action: <code>action-block</code>.</li>
-      <li>Refusing an edit that narrows a local fact a step relies on: <code>edit-guard</code>.</li>
-      <li>Forgetting the value when a procedure ends: bots run procedures, and the first bot's specs are in its own repository.</li>
+      <li>A force option, or an edit that also rewrites the steps: only an author can say what a branch should do instead.</li>
+      <li>Deleting a fact: <code>delete-guard</code>. Changing its name: <code>resource-rename</code>.</li>
+      <li>A local fact with a global fact's name: <code>local-facts</code>, which holds both directions of that rule.</li>
+      <li>Changing a fact and its steps in one save: <code>batch-apply</code> judges such a file on its result.</li>
+      <li>Edits of articles: they hold no constraints a referrer relies on.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent gives a procedure its own fact</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml   <span class="dim"># declares local fact visitDate, and step ask collects it</span>
-Saved orderValuation, revision 4.
-<span class="dim">$</span> suwagcms facts list
-customer.city  text, up to 80   set
-order.kind     enum: house, flat   correct</div>
-  <p><code>visitDate</code> is not in the bot's list of facts. <code>suwagcms procedures show orderValuation</code> prints it in the procedure.</p>
-  <h3>2. A name the bot already uses</h3>
-  <div class="term">Refused, 1 mistake:
-  fact.local.nameClash  Local fact 'city' of procedure 'orderValuation' has the name of a global fact. Inside the procedure the name would be ambiguous. Rename one of them.</div>
-  <h3>3. Another procedure reaches for it</h3>
-  <div class="term">Refused, 1 mistake:
-  reference.missing  'collect' of step 'ask' in 'complaint' names fact 'visitDate', which this procedure does not see. Facts it sees: customer.city, order.kind. Local facts of other procedures are not visible.</div>
-  <h3>4. A local fact still in use</h3>
-  <div class="term">Refused, 1 mistake:
-  reference.missing  'orderValuation' no longer declares local fact 'visitDate', which is used by: step ask (collect), step confirm (when). Change these steps first, or keep the fact.</div>
+  <h3>1. An agent removes a value in use</h3>
+  <div class="term"><span class="dim">$</span> suwagcms facts edit order.kind --values house,land
+Refused, 1 mistake:
+  fact.enum.valueInUse  Value 'flat' of 'order.kind' is used, so it cannot be removed. Used by:
+    procedure orderValuation, step ask (when)        http://cms.internal/bots/rzeczoznawca/procedures/orderValuation
+    procedure leadIntake, step tagOrder (assign)     http://cms.internal/bots/rzeczoznawca/procedures/leadIntake
+  Change these steps first, or keep the value.
+<span class="dim">$</span> echo $?
+1</div>
+  <h3>2. Marta asks for more than the steps allow</h3>
+  <ol class="steps">
+    <li><p>Marta narrows <code>order.rooms</code> from 1–50 to 1–10 and saves. A <code>when</code> tests <code>range: { min: 20 }</code>, so the save is refused. The form shows the mistake beside <code>max</code>, with a link to the step, and her values stay on the screen.</p></li>
+    <li><p>She changes the step, saves it, and saves the fact again. It works.</p></li>
+  </ol>
+  <h3>3. An agent asks first</h3>
+  <div class="term"><span class="dim">$</span> suwagcms facts edit customer.city --writable-by assign --dry-run
+Refused, 1 mistake:
+  fact.writableBy.inUse  'collect' of step 'ask' in 'orderValuation' names fact 'customer.city', which only an assign step may write. Remove it from collect, or give the fact 'writableBy: set'.
+Nothing was changed.</div>
+  <h3>4. A name that means something else</h3>
+  <div class="term"><span class="dim">$</span> suwagcms facts add orderValuation.note --type text --max-length 80 --description "A note."
+Refused, 1 mistake:
+  fact.name.procedurePrefix  'orderValuation.note' starts with procedure id 'orderValuation', which is how a local fact of that procedure is named outside it. Choose another name.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>A local fact</h3>
+  <h3>What is refused</h3>
   <table>
-    <tr><th>Field</th><th>Rule</th></tr>
-    <tr><td><code>localFacts</code></td><td>optional on a procedure; a map from name to fact; may be empty</td></tr>
-    <tr><td>name</td><td>camelCase with no dot; unique within the procedure; two procedures may each have the same name with different types</td></tr>
-    <tr><td><code>type</code>, constraints, <code>description</code>, <code>writableBy</code></td><td>exactly as for a global fact, including the default <code>set</code> and every mistake in the <code>global-facts</code> spec</td></tr>
+    <tr><th>Edit</th><th>Refused when</th><th>Never stops it</th><th>Mistake</th></tr>
+    <tr><td>remove an <code>enum</code> value</td><td>a <code>when</code> or <code>assign</code> uses that value</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.enum.valueInUse</code></td></tr>
+    <tr><td>change the type</td><td>any procedure uses the fact, even if each use would still fit the new type</td><td>a fact nothing uses</td><td><code>fact.type.inUse</code></td></tr>
+    <tr><td>narrow an <code>int</code> range</td><td>a value in <code>assign</code> or <code>oneOf</code>, or a bound in <code>range</code>, falls outside it</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.range.inUse</code></td></tr>
+    <tr><td>narrow <code>maxLength</code></td><td>a value in <code>assign</code> or <code>oneOf</code> is longer</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.range.inUse</code></td></tr>
+    <tr><td>set <code>writableBy: assign</code></td><td>a <code>collect</code> names the fact</td><td>an <code>assign</code> or <code>when</code> on the fact</td><td><code>fact.writableBy.inUse</code></td></tr>
+    <tr><td>name a global fact <code>&lt;procedureId&gt;.&lt;anything&gt;</code>, or give a procedure an id that an existing global fact's name starts with, followed by a dot</td><td>always: that is how a local fact is named outside its procedure</td><td></td><td><code>fact.name.procedurePrefix</code></td></tr>
   </table>
-  <p>Facts have no availability, and a local fact has no revision of its own: the procedure holds both. A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes.</p>
-  <h3>What a step sees</h3>
-  <p>A step of a procedure sees the bot's global facts and that procedure's local facts, the latter by short name. Everything <code>procedure-model</code> checks for a fact holds for a local one: a <code>collect</code> cannot name one with <code>writableBy: assign</code>, a condition must fit its type, and a value in <code>oneOf</code>, <code>range</code> or <code>assign</code> must be one it can take.</p>
+  <p>Everything else passes: adding a value, reordering values, widening a range or <code>maxLength</code>, moving <code>writableBy</code> from <code>assign</code> to <code>set</code> or between <code>set</code> and <code>correct</code>, and editing a description.</p>
+  <h3>The refusal</h3>
+  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes. One edit that breaks several things gets one mistake for each, all at once. Each mistake lists every referrer, not only the first, with the procedure, the step, the block and a link. The web shows each mistake beside the field it concerns, with those links.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a step names a local fact of another procedure, by short name or as <code>otherProcedure.name</code></td><td>refused with <code>reference.missing</code>; the message lists what this procedure sees and says local facts of others are not visible</td></tr>
-    <tr><td>a step names its own local fact as <code>thisProcedure.name</code></td><td>refused the same way: inside the procedure the short name is the only name</td></tr>
-    <tr><td>a save removes a local fact and a step still uses it</td><td>refused with <code>reference.missing</code>, listing every step and the place in it</td></tr>
-    <tr><td>a save removes a local fact and every use of it</td><td>accepted: the result is sound</td></tr>
-    <tr><td>a local fact has a global fact's name</td><td>refused, whichever was saved second; see below</td></tr>
-    <tr><td>a procedure is deleted</td><td>its local facts go with it, and their names are free for a global fact</td></tr>
-    <tr><td>a local fact no step uses</td><td>allowed at both stages (see Open questions)</td></tr>
-    <tr><td>a <code>collect</code> naming only local facts</td><td>the procedure still needs <code>whenStalled</code> before a version</td></tr>
+    <tr><td>a dry run of an edit</td><td>the same refusal or answer, with nothing changed</td></tr>
+    <tr><td>the use is removed from the step, then the edit is repeated</td><td>accepted</td></tr>
+    <tr><td>a fact edit, and a procedure save that adds a use the edit would break, at the same moment</td><td>one after the other; whichever goes second is refused</td></tr>
+    <tr><td>a procedure of another bot using a fact of the same name</td><td>does not count: bots are separate</td></tr>
+    <tr><td>a version already created that uses the old value</td><td>does not count: a version is immutable and is not a referrer</td></tr>
+    <tr><td>an unfinished procedure</td><td>counts like any other: the working state is always referentially sound</td></tr>
   </table>
-  <h3>Names shared with global facts</h3>
-  <p>A local fact with a global fact's name would make the name ambiguous inside the procedure, so the rule is on the result of a save and works in both directions. A procedure declaring such a local fact is refused, and so is adding a global fact with such a name, which lists the procedures holding it. <code>edit-guard</code> covers the other clash: a global fact named <code>&lt;procedureId&gt;.&lt;anything&gt;</code>.</p>
-  <p>The rules are in the validator at the <code>Save</code> stage, so they also hold offline.</p>
+  <h3>Where each rule holds</h3>
+  <p>Rules about values and names look only at the definition, so they hold in the validator offline as well. “The type changed while a procedure uses the fact” needs both the stored fact and the new one, so the server applies it to every edit, and the validator alone cannot see it.</p>
 </section>
-<section data-role="data">
-  <h2>Format</h2>
-  <p>This is part of the public contract with bots. It adds an optional field, so it does not raise <code>formatVersion</code>.</p>
-  <script type="text/x-code" data-file="orderValuation.yaml" data-lang="yaml" data-notes='[{"lines":"3-7","label":"localFacts","note":"the same shape as a global fact"},{"lines":"11","label":"Short name","note":"no prefix and no dot"}]'>
-id: orderValuation
-description: The customer orders a valuation of a property.
-localFacts:
-  visitDate:
-    type: text
-    maxLength: 40
-    description: The date the customer wants the visit on.
-firstStep: ask
-steps:
-  ask:
-    collect: [customer.city, visitDate]
-whenStalled:
-  instruction: Tell the customer you could not finish and give the office phone number.
-  </script>
+<section data-role="ui">
+  <h2>Screen</h2>
+  <div class="wire after"><span class="wf-label">Edit fact order.kind</span>
+    <div class="wf-bar"><b>order.kind</b><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
+    <div class="wf-body">
+      <div class="wf-card"><b>values</b> <span class="wf-input">house, land</span>
+        <p class="wf-new">Value <code>flat</code> is used, so it cannot be removed. Used by: <a href="#">orderValuation · ask</a> (when), <a href="#">leadIntake · tagOrder</a> (assign). Change these steps first, or keep the value.</p>
+      </div>
+    </div>
+  </div>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>Both directions of the “same name as a global fact” clash live here, as the <code>global-facts</code> spec already says; <code>edit-guard</code> keeps the prefix clash, which needs no local fact to exist. One rule on the result covers both directions, so splitting it across two specs would only duplicate its check.</li>
-    <li>No commands for a single local fact: an agent edits the procedure's file, which is how it already reasons about a procedure.</li>
-    <li>The global name <code>procedureId.name</code> is how a bot may report a local fact outside the procedure. In the format a step never writes it, so authors have one name to learn.</li>
+    <li>Any bound of a <code>range</code> outside the fact blocks a narrowing, as it stops a procedure's save: the condition says what the author really expects, and otherwise it would silently mean less.</li>
+    <li>The rules judge the new definition and give their ordinary mistakes offline; the server, which also has the old definition, words the mistakes an edit caused for that edit.</li>
+    <li>A type change is refused for any use, as README says, although a <code>collect</code> might survive it: the model would be asked for a different kind of value in a procedure written for the old one, and no rule can tell whether that still makes sense.</li>
+    <li>One mistake per broken thing, listing its referrers, as the delete guard does: an author reads one cause with its list instead of one line per step.</li>
+    <li>The prefix rule looks at the result, so it also stops a new procedure <code>customer</code> when the fact <code>customer.city</code> exists; otherwise the order of two saves would decide whether a name is ambiguous.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-local-facts-1</code> A procedure declaring an <code>enum</code>, an <code>int</code> and a <code>text</code> local fact, saved with <code>suwagcms procedures add --file</code>, reads back with each fact's type, constraints, description and <code>writableBy</code> as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
-    <li><code>AC-local-facts-2</code> A local fact without <code>writableBy</code> has <code>set</code>; a procedure with no <code>localFacts</code> or an empty one is accepted.</li>
-    <li><code>AC-local-facts-3</code> A local fact with a blank description, an unknown type, or constraints a global fact of that type could not have is refused with the same code as for a global fact, and a path inside <code>localFacts</code> of that procedure.</li>
-    <li><code>AC-local-facts-4</code> A local fact name with a dot, and one that is not camelCase, are each refused with a mistake and a fix.</li>
-    <li><code>AC-local-facts-5</code> A procedure declaring a local fact with the name of a global fact is refused with <code>fact.local.nameClash</code>, naming both; adding a global fact with the name of a local fact is refused with the same code, listing every procedure that holds it.</li>
-    <li><code>AC-local-facts-6</code> <code>collect</code>, <code>assign</code> and <code>when</code> can name a local fact of their procedure by its short name, and the rules for facts hold for it: a <code>collect</code> of one with <code>writableBy: assign</code>, a condition that does not fit its type, and a value it can never take are each refused; a procedure whose only <code>collect</code> names local facts still needs <code>whenStalled</code> at the <code>Version</code> stage.</li>
-    <li><code>AC-local-facts-7</code> A step naming a local fact of another procedure, by short name or as <code>otherProcedure.name</code>, or its own as <code>thisProcedure.name</code>, is refused with <code>reference.missing</code>, listing the facts this procedure sees.</li>
-    <li><code>AC-local-facts-8</code> Two procedures can each hold a local fact of one name with different types, and each is checked against its own.</li>
-    <li><code>AC-local-facts-9</code> A save removing a local fact a step still uses is refused with <code>reference.missing</code>, listing every step using it; a save removing the fact and all its uses is accepted.</li>
-    <li><code>AC-local-facts-10</code> After a procedure with local facts is deleted, a global fact with one of their names can be added.</li>
-    <li><code>AC-local-facts-11</code> Local facts are not listed by <code>suwagcms facts list</code> or on the Facts screen, and <code>suwagcms facts show</code> of one's name is refused as a fact the bot does not have.</li>
-    <li><code>AC-local-facts-12</code> The validator on its own reports each of these mistakes with the same code.</li>
-    <li><code>AC-local-facts-13</code> The plugin's main skill gives the form of <code>localFacts</code>.</li>
+    <li><code>AC-edit-guard-1</code> Removing an <code>enum</code> value that a <code>when</code> or an <code>assign</code> uses is refused with <code>fact.enum.valueInUse</code>, naming the value, in the web, through the API and with the CLI, and the fact stays as it was with the same revision.</li>
+    <li><code>AC-edit-guard-2</code> Removing an <code>enum</code> value no step uses as a value is accepted, also when a <code>collect</code> or <code>known</code> uses the fact; adding and reordering values is accepted.</li>
+    <li><code>AC-edit-guard-3</code> Changing the type of a fact a <code>collect</code>, <code>assign</code> or <code>when</code> uses is refused with <code>fact.type.inUse</code>, also when each use would still fit the new type; changing the type of a fact nothing uses is accepted.</li>
+    <li><code>AC-edit-guard-4</code> Narrowing an <code>int</code> so that a value in <code>assign</code> or <code>oneOf</code>, or a bound in <code>range</code>, falls outside it is refused with <code>fact.range.inUse</code>.</li>
+    <li><code>AC-edit-guard-5</code> Narrowing <code>maxLength</code> below the length of a value in <code>assign</code> or <code>oneOf</code> is refused with <code>fact.range.inUse</code>.</li>
+    <li><code>AC-edit-guard-6</code> Narrowing that leaves every value and bound inside, narrowing a fact used only by <code>collect</code> or <code>known</code>, and any widening are accepted.</li>
+    <li><code>AC-edit-guard-7</code> Setting <code>writableBy: assign</code> on a fact a <code>collect</code> names is refused with <code>fact.writableBy.inUse</code> and the fix given in README; moving from <code>assign</code> to <code>set</code>, or between <code>set</code> and <code>correct</code>, is accepted.</li>
+    <li><code>AC-edit-guard-8</code> A global fact named <code>&lt;procedureId&gt;.&lt;anything&gt;</code> is refused with <code>fact.name.procedurePrefix</code>, whether or not that procedure has local facts; a new procedure whose id an existing global fact's name starts with, followed by a dot, is refused with the same code.</li>
+    <li><code>AC-edit-guard-9</code> Each refusal lists every referrer, with the procedure, step, block and a link to it; one edit that breaks several things returns a mistake for each at once.</li>
+    <li><code>AC-edit-guard-10</code> In the same situation the CLI exits 1, and <code>--json</code> gives the referrers as data.</li>
+    <li><code>AC-edit-guard-11</code> In the web, the mistake appears beside the field it concerns with working links to the referrers, and the values typed stay on the screen.</li>
+    <li><code>AC-edit-guard-12</code> <code>--dry-run</code> on an edit gives the same refusal or answer, and nothing changes.</li>
+    <li><code>AC-edit-guard-13</code> After the use is removed from the step, the same edit is accepted.</li>
+    <li><code>AC-edit-guard-14</code> A fact edit and a procedure save at the same moment that together would break a referrer never both succeed.</li>
+    <li><code>AC-edit-guard-15</code> A procedure of another bot using a fact of the same name does not block the edit.</li>
+    <li><code>AC-edit-guard-16</code> The plugin's main skill says that <code>--dry-run</code> on an edit answers “what would this change break?”, and that only the server sees a type change.</li>
+    <li><code>AC-edit-guard-17</code> The same refusals hold for a local fact when a save of its procedure would break a step of that procedure: removing a value, changing the type, narrowing, or setting <code>writableBy: assign</code>.</li>
+  </ul>
+</section>
+<section data-role="deferred-acceptance">
+  <h2>Criteria after other features</h2>
+  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
+  <ul>
+    <li><b>after <code>inform-block</code>:</b> a fact named in an <code>inform</code> counts as a use, so its type cannot change.</li>
+    <li><b>after <code>action-block</code>:</b> removing or retyping an action's parameter or result that a procedure's step maps is refused, listing each step; a fact mapped to a parameter or a result counts as a use, so its type cannot change.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout assumption"><p>A bot on an SDK older than this field ignores <code>localFacts</code> as an unknown field, and its validator then reports each step using one as <code>reference.missing</code>. That stops the load instead of misleading a customer, so the field does not raise <code>formatVersion</code>.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Is a local fact no step uses a mistake?</legend>
-      <p class="why">README and Suwchatbot's reader do not ask for a rule, and one more rule means one more mistake while a procedure is being built. It would catch leftovers, though. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="allow"><span><b>No: it is allowed at both stages</b><small>harmless at run time, and the same as a global fact nobody uses</small></span></label>
-      <label><input type="radio" value="version"><span><b>Yes: a <code>Version</code> mistake</b><small>catches leftovers, but differs from Suwchatbot's reader and adds a rule with no proven need</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout warn"><p>A coding agent validating offline will not see a <code>fact.type.inUse</code> refusal until it saves. A dry run against the server shows it, and the plugin's main skill says so.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

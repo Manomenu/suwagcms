@@ -14,13 +14,27 @@ import {
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation } from "wouter";
 
+import { renamer } from "@/api/rename";
 import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
+import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
 import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
-import { addStep, BLOCKS, connect, deleteStep, disconnect, edgesOf, stepOrder, toSave, type BlockName, type Draft } from "./draft";
+import {
+    addStep,
+    BLOCKS,
+    connect,
+    deleteStep,
+    disconnect,
+    edgesOf,
+    factsSeen,
+    stepOrder,
+    toSave,
+    type BlockName,
+    type Draft,
+} from "./draft";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
 import { MistakeList } from "./MistakeList";
 import { targetOf, stepsWithMistakes } from "./mistakes";
@@ -107,12 +121,14 @@ function CreatorBody({
     const [reveal, setReveal] = useState<{ name: string; times: number } | null>(null);
     const [saving, setSaving] = useState(false);
     const [layoutFailure, setLayoutFailure] = useState<string | null>(null);
+    const [changingId, setChangingId] = useState(false);
     const [, navigate] = useLocation();
     const flow = useReactFlow();
     const { draft } = state;
     const check = useLiveCheck(bot, id, state.revision, draft);
     const usage = useUsage(bot, "procedures", id, state.revision);
     const dirty = isDirty(state);
+    const changer = useMemo(() => renamer(bot, "procedures", id, state.revision), [bot, id, state.revision]);
     const drawn = useMemo(() => placed(draft, positions), [draft, positions]);
     // Why: a step is placed automatically once, and then stays, so drawing an edge never shuffles a graph the author is looking at.
     const fresh = Object.keys(drawn).filter((name) => !(name in positions));
@@ -225,10 +241,35 @@ function CreatorBody({
                 >
                     Arrange
                 </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={dirty}
+                    title={dirty ? "Save your changes first." : undefined}
+                    onClick={() => {
+                        setChangingId(true);
+                    }}
+                >
+                    Change id
+                </Button>
                 <Button type="button" onClick={save} disabled={saving || !dirty}>
                     Save
                 </Button>
             </header>
+            {changingId && (
+                <ChangeIdDialog
+                    noun="procedure"
+                    id={id}
+                    preview={changer.preview}
+                    apply={changer.apply}
+                    onChanged={(newId) => {
+                        navigate(`/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(newId)}`, { replace: true });
+                    }}
+                    onCancel={() => {
+                        setChangingId(false);
+                    }}
+                />
+            )}
             <Notices state={state} onReload={reload} />
             <div className="flex min-h-0 flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">
@@ -300,7 +341,7 @@ function CreatorBody({
                             bot={bot}
                             name={selected}
                             draft={draft}
-                            facts={facts}
+                            facts={factsSeen(draft, facts)}
                             edit={edit}
                             onRenamed={setSelected}
                             onDeleted={() => {

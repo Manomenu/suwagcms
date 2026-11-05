@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-edit-guard.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-resource-rename.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Edit guard</title>
+<title>Changing an id</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Edit guard</h1>
+  <h1>Changing an id</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 16 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>global-facts</code>, <code>procedure-model</code></span>
+    <span><b>Feature:</b> 17 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>article-links</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,97 +376,110 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>An edit of a fact that would leave a procedure invalid is refused at that edit, naming the fact and every step that relies on it. That covers removing an <code>enum</code> value, changing a type, narrowing a range or <code>maxLength</code>, and setting <code>writableBy: assign</code>. A global fact also cannot be named <code>&lt;procedureId&gt;.&lt;anything&gt;</code>.</p>
-    <p>An agent asks “what would this change break?” with a dry run and gets the same answer. There is no force option: the author changes the steps first, or leaves the fact as it is.</p>
+    <p>Changing a resource's <code>id</code> is one operation: the resource gets the new <code>id</code>, and every structured link and reference to it is rewritten with it, all or nothing. <code>suwagcms rename article cennik priceList</code>, or “Change id” in the web, shows what will change before anything does.</p>
+    <p>Only the target of a link changes: the rest of each referrer's text stays exactly as it was, and versions already created keep the old <code>id</code>. Plain text naming a resource is not a reference, so it is left alone.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>21</b><span>criteria</span></div>
+    <div><b>6</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>The delete guard protects a fact from disappearing, but an edit can do the same damage quietly. If Marta removes the value <code>flat</code> from <code>order.kind</code> while a <code>when</code> branches on it, that branch can never be taken. After <code>global-facts</code> and <code>procedure-model</code>, the first sign would be a refusal on some later save of the procedure, given to whoever touches it next and blaming the wrong edit. The refusal belongs on the edit that causes the break, in front of the person making it.</p>
+  <p>An <code>id</code> is fixed once created, because references are stored by it. Yet ids get chosen in a hurry, and <code>cennik</code> becomes wrong the day the bot moves to English. Without this feature an author has to create a copy, repoint every link by hand and delete the original, and the delete guard then refuses until the last link has moved. README asks for one operation instead.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>An edit that would break a referrer never succeeds, from any client.</li>
-      <li>The refusal names every referrer at once, so one pass clears them all.</li>
-      <li>An edit that breaks nothing is never refused.</li>
-      <li>“What would this change break?” can be asked without changing anything.</li>
+      <li>One step, through every door, that leaves no reference pointing at the old <code>id</code>.</li>
+      <li>All or nothing, whichever part fails.</li>
+      <li>The author sees what will change before it does.</li>
+      <li>No edit other than the link target is made to anyone's text.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>A force option, or an edit that also rewrites the steps: only an author can say what a branch should do instead.</li>
-      <li>Deleting a fact: <code>delete-guard</code>. Changing its name: <code>resource-rename</code>.</li>
-      <li>A local fact with a global fact's name: <code>local-facts</code>, which holds both directions of that rule.</li>
-      <li>Changing a fact and its steps in one save: <code>batch-apply</code> judges such a file on its result.</li>
-      <li>Edits of articles: they hold no constraints a referrer relies on.</li>
+      <li>Finding plain text that names the old <code>id</code> or title: README says it is not a reference.</li>
+      <li>Changing a title: an ordinary edit, which rewrites no referrer (<code>article-links</code>).</li>
+      <li>A redirect from the old <code>id</code>: after the change it means nothing and can be used again.</li>
+      <li>Renaming a step or a local fact: they live inside a procedure, and saving the procedure's file does it.</li>
+      <li>Changing versions already created: they are immutable.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent removes a value in use</h3>
-  <div class="term"><span class="dim">$</span> suwagcms facts edit order.kind --values house,land
-Refused, 1 mistake:
-  fact.enum.valueInUse  Value 'flat' of 'order.kind' is used, so it cannot be removed. Used by:
-    procedure orderValuation, step ask (when)        http://cms.internal/bots/rzeczoznawca/procedures/orderValuation
-    procedure leadIntake, step tagOrder (assign)     http://cms.internal/bots/rzeczoznawca/procedures/leadIntake
-  Change these steps first, or keep the value.
-<span class="dim">$</span> echo $?
-1</div>
-  <h3>2. Marta asks for more than the steps allow</h3>
+  <h3>1. An agent looks first, then renames</h3>
+  <div class="term"><span class="dim">$</span> suwagcms rename article cennik priceList --dry-run
+Would rename article 'cennik' to 'priceList' and rewrite 2 referrers:
+  article wycena (content, 1 link)
+  article rabaty (llmGuide, 2 links)
+Nothing was changed.
+<span class="dim">$</span> suwagcms rename article cennik priceList
+Renamed article 'cennik' to 'priceList'. Rewrote 2 referrers.
+<span class="dim">$</span> suwagcms articles show cennik
+This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
+  <p>The text of <code>wycena</code> read <code>See the [Price list](cms://article/cennik).</code> It now reads <code>See the [Price list](cms://article/priceList).</code></p>
+  <h3>2. Marta changes an id in the web</h3>
   <ol class="steps">
-    <li><p>Marta narrows <code>order.rooms</code> from 1–50 to 1–10 and saves. A <code>when</code> tests <code>range: { min: 20 }</code>, so the save is refused. The form shows the mistake beside <code>max</code>, with a link to the step, and her values stay on the screen.</p></li>
-    <li><p>She changes the step, saves it, and saves the fact again. It works.</p></li>
+    <li><p>On the article <code>cennik</code> she chooses <span class="btn">Change id</span> and types <code>priceList</code>. The dialog lists what will be rewritten.</p></li>
+    <li><p>She confirms and lands on the article at its new address. Its “Used by” panel lists the same referrers, and their chips still open it.</p></li>
   </ol>
-  <h3>3. An agent asks first</h3>
-  <div class="term"><span class="dim">$</span> suwagcms facts edit customer.city --writable-by assign --dry-run
-Refused, 1 mistake:
-  fact.writableBy.inUse  'collect' of step 'ask' in 'orderValuation' names fact 'customer.city', which only an assign step may write. Remove it from collect, or give the fact 'writableBy: set'.
-Nothing was changed.</div>
-  <h3>4. A name that means something else</h3>
-  <div class="term"><span class="dim">$</span> suwagcms facts add orderValuation.note --type text --max-length 80 --description "A note."
-Refused, 1 mistake:
-  fact.name.procedurePrefix  'orderValuation.note' starts with procedure id 'orderValuation', which is how a local fact of that procedure is named outside it. Choose another name.</div>
+  <h3>3. The new id is taken</h3>
+  <div class="term">Refused, 1 mistake:
+  resource.duplicateId  This bot already has an article 'priceList'. Choose another id, or delete that article first.</div>
+  <h3>4. Someone had the referrer open</h3>
+  <ol class="steps">
+    <li><p>An agent is editing <code>wycena</code>, read at revision 3, when Marta renames <code>cennik</code>. That rewrites <code>wycena</code>, now revision 4.</p></li>
+    <li><p>The agent's save is based on an old revision, so it is refused, and it reads the article again. Without this its text would bring the old link back.</p></li>
+  </ol>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>What is refused</h3>
+  <h3>What can change its id</h3>
   <table>
-    <tr><th>Edit</th><th>Refused when</th><th>Never stops it</th><th>Mistake</th></tr>
-    <tr><td>remove an <code>enum</code> value</td><td>a <code>when</code> or <code>assign</code> uses that value</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.enum.valueInUse</code></td></tr>
-    <tr><td>change the type</td><td>any procedure uses the fact, even if each use would still fit the new type</td><td>a fact nothing uses</td><td><code>fact.type.inUse</code></td></tr>
-    <tr><td>narrow an <code>int</code> range</td><td>a value in <code>assign</code> or <code>oneOf</code>, or a bound in <code>range</code>, falls outside it</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.range.inUse</code></td></tr>
-    <tr><td>narrow <code>maxLength</code></td><td>a value in <code>assign</code> or <code>oneOf</code> is longer</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.range.inUse</code></td></tr>
-    <tr><td>set <code>writableBy: assign</code></td><td>a <code>collect</code> names the fact</td><td>an <code>assign</code> or <code>when</code> on the fact</td><td><code>fact.writableBy.inUse</code></td></tr>
-    <tr><td>name a global fact <code>&lt;procedureId&gt;.&lt;anything&gt;</code>, or give a procedure an id that an existing global fact's name starts with, followed by a dot</td><td>always: that is how a local fact is named outside its procedure</td><td></td><td><code>fact.name.procedurePrefix</code></td></tr>
+    <tr><th>Kind</th><th>What is rewritten</th></tr>
+    <tr><td>article</td><td>each link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles</td></tr>
+    <tr><td>knowledge base</td><td>the <code>knowledgeBase</code> of each of its articles</td></tr>
+    <tr><td>global fact</td><td>its <code>name</code>, in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it</td></tr>
+    <tr><td>procedure</td><td>its <code>id</code>; <code>conversation</code> cannot change its id</td></tr>
   </table>
-  <p>Everything else passes: adding a value, reordering values, widening a range or <code>maxLength</code>, moving <code>writableBy</code> from <code>assign</code> to <code>set</code> or between <code>set</code> and <code>correct</code>, and editing a description.</p>
-  <h3>The refusal</h3>
-  <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes. One edit that breaks several things gets one mistake for each, all at once. Each mistake lists every referrer, not only the first, with the procedure, the step, the block and a link. The web shows each mistake beside the field it concerns, with those links.</p>
+  <p>Each later kind of resource and reference joins this list through “Criteria after other features”. Changing a title is not this operation, and the knowledge-base screen's existing “Rename” stays a change of title, so here the web's action is called “Change id”.</p>
+  <h3>What a rewrite touches</h3>
+  <table>
+    <tr><th>In a referrer</th><th>After the change</th></tr>
+    <tr><td><code>[Price list](cms://article/cennik)</code></td><td><code>[Price list](cms://article/priceList)</code>: the label stays</td></tr>
+    <tr><td><code>cms://article/cennik</code> in a code span or block</td><td>unchanged: it is text in code</td></tr>
+    <tr><td>the word <code>cennik</code> in plain text, a <code>title</code> or a <code>description</code></td><td>unchanged</td></tr>
+    <tr><td>a link to <code>cennikFirmowy</code></td><td>unchanged: a different <code>id</code></td></tr>
+    <tr><td>everything else</td><td>identical, byte for byte</td></tr>
+  </table>
+  <h3>The operation</h3>
+  <p>It goes through the same write path as any save, as one set of changes validated as a whole, so a refused or failed rename leaves no trace. All mistakes come at once, each with its fix. Each resource it rewrites gets a new revision, and any other resource keeps its own.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a dry run of an edit</td><td>the same refusal or answer, with nothing changed</td></tr>
-    <tr><td>the use is removed from the step, then the edit is repeated</td><td>accepted</td></tr>
-    <tr><td>a fact edit, and a procedure save that adds a use the edit would break, at the same moment</td><td>one after the other; whichever goes second is refused</td></tr>
-    <tr><td>a procedure of another bot using a fact of the same name</td><td>does not count: bots are separate</td></tr>
-    <tr><td>a version already created that uses the old value</td><td>does not count: a version is immutable and is not a referrer</td></tr>
-    <tr><td>an unfinished procedure</td><td>counts like any other: the working state is always referentially sound</td></tr>
+    <tr><td>the new <code>id</code> is taken by the same kind of resource in this bot</td><td>refused with <code>resource.duplicateId</code></td></tr>
+    <tr><td>the new <code>id</code> is not in the right form for that kind</td><td>refused with the fix</td></tr>
+    <tr><td>the new <code>id</code> is the same as the old one</td><td>refused: nothing would change</td></tr>
+    <tr><td>the resource does not exist</td><td>refused, naming it</td></tr>
+    <tr><td><code>--if-revision</code>, or a web dialog opened at an old revision, when the resource has moved on</td><td>refused with the current revision</td></tr>
+    <tr><td>a dry run</td><td>the same refusal, or a list of each referrer and field to be rewritten; nothing changes</td></tr>
+    <tr><td>a rename, and a new link to the old <code>id</code>, at the same moment</td><td>one after the other: a link saved first is rewritten, and a link saved second is refused with <code>reference.missing</code></td></tr>
+    <tr><td>the same <code>id</code> in another bot</td><td>untouched, with its links</td></tr>
+    <tr><td>the old <code>id</code> afterwards</td><td>free: a new resource may take it, and a link to it means that new resource</td></tr>
   </table>
-  <h3>Where each rule holds</h3>
-  <p>Rules about values and names look only at the definition, so they hold in the validator offline as well. “The type changed while a procedure uses the fact” needs both the stored fact and the new one, so the server applies it to every edit, and the validator alone cannot see it.</p>
 </section>
 <section data-role="ui">
   <h2>Screen</h2>
-  <div class="wire after"><span class="wf-label">Edit fact order.kind</span>
-    <div class="wf-bar"><b>order.kind</b><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
+  <div class="wire after"><span class="wf-label">Article cennik: Change id</span>
+    <div class="wf-bar"><b>Change id</b></div>
     <div class="wf-body">
-      <div class="wf-card"><b>values</b> <span class="wf-input">house, land</span>
-        <p class="wf-new">Value <code>flat</code> is used, so it cannot be removed. Used by: <a href="#">orderValuation · ask</a> (when), <a href="#">leadIntake · tagOrder</a> (assign). Change these steps first, or keep the value.</p>
+      <div class="wf-card wf-new">
+        <p>New id: <span class="wf-input">priceList</span></p>
+        <p><b>This rewrites 2 referrers</b></p>
+        <p><a href="#">wycena</a> <span class="wf-muted">content, 1 link</span></p>
+        <p><a href="#">rabaty</a> <span class="wf-muted">llmGuide, 2 links</span></p>
+        <p class="wf-muted">Plain text naming this article is not changed.</p>
+        <div class="wf-row"><span class="wf-grow"></span><span class="wf-btn">Cancel</span><span class="wf-btn primary">Change id</span></div>
       </div>
     </div>
   </div>
@@ -474,55 +487,55 @@ Refused, 1 mistake:
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>A type change is refused for any use, as README says, although a <code>collect</code> might survive it: the model would be asked for a different kind of value in a procedure written for the old one, and no rule can tell whether that still makes sense.</li>
-    <li>One mistake per broken thing, listing its referrers, as the delete guard does: an author reads one cause with its list instead of one line per step.</li>
-    <li>The prefix rule looks at the result, so it also stops a new procedure <code>customer</code> when the fact <code>customer.city</code> exists; otherwise the order of two saves would decide whether a name is ambiguous.</li>
+    <li>A rename does not wait for edits that are open: each referrer gets a new revision, so those saves are refused as stale, the same protection every edit has; work stays on the screen, and no link can come back.</li>
+    <li>The renamed resource keeps its row and its next revision, so what hangs on the row, such as a procedure's node positions, stays with it.</li>
+    <li>One command for every kind, <code>suwagcms rename &lt;kind&gt; &lt;id&gt; &lt;newId&gt;</code>, in the shape of <code>suwagcms usage &lt;kind&gt; &lt;id&gt;</code>: the behaviour is one, and each new kind only adds a word.</li>
+    <li>Labels stay as written: a label holds a title, not an <code>id</code>, and a version already fills in the current title.</li>
+    <li>A rewrite bumps each referrer's revision: its text did change, and a stale save would otherwise put the old link back or be refused for a reason nobody could see.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-edit-guard-1</code> Removing an <code>enum</code> value that a <code>when</code> or an <code>assign</code> uses is refused with <code>fact.enum.valueInUse</code>, naming the value, in the web, through the API and with the CLI, and the fact stays as it was with the same revision.</li>
-    <li><code>AC-edit-guard-2</code> Removing an <code>enum</code> value no step uses as a value is accepted, also when a <code>collect</code> or <code>known</code> uses the fact; adding and reordering values is accepted.</li>
-    <li><code>AC-edit-guard-3</code> Changing the type of a fact a <code>collect</code>, <code>assign</code> or <code>when</code> uses is refused with <code>fact.type.inUse</code>, also when each use would still fit the new type; changing the type of a fact nothing uses is accepted.</li>
-    <li><code>AC-edit-guard-4</code> Narrowing an <code>int</code> so that a value in <code>assign</code> or <code>oneOf</code>, or a bound in <code>range</code>, falls outside it is refused with <code>fact.range.inUse</code>.</li>
-    <li><code>AC-edit-guard-5</code> Narrowing <code>maxLength</code> below the length of a value in <code>assign</code> or <code>oneOf</code> is refused with <code>fact.range.inUse</code>.</li>
-    <li><code>AC-edit-guard-6</code> Narrowing that leaves every value and bound inside, narrowing a fact used only by <code>collect</code> or <code>known</code>, and any widening are accepted.</li>
-    <li><code>AC-edit-guard-7</code> Setting <code>writableBy: assign</code> on a fact a <code>collect</code> names is refused with <code>fact.writableBy.inUse</code> and the fix given in README; moving from <code>assign</code> to <code>set</code>, or between <code>set</code> and <code>correct</code>, is accepted.</li>
-    <li><code>AC-edit-guard-8</code> A global fact named <code>&lt;procedureId&gt;.&lt;anything&gt;</code> is refused with <code>fact.name.procedurePrefix</code>, whether or not that procedure has local facts; a new procedure whose id an existing global fact's name starts with, followed by a dot, is refused with the same code.</li>
-    <li><code>AC-edit-guard-9</code> Each refusal lists every referrer, with the procedure, step, block and a link to it; one edit that breaks several things returns a mistake for each at once.</li>
-    <li><code>AC-edit-guard-10</code> In the same situation the CLI exits 1, and <code>--json</code> gives the referrers as data.</li>
-    <li><code>AC-edit-guard-11</code> In the web, the mistake appears beside the field it concerns with working links to the referrers, and the values typed stay on the screen.</li>
-    <li><code>AC-edit-guard-12</code> <code>--dry-run</code> on an edit gives the same refusal or answer, and nothing changes.</li>
-    <li><code>AC-edit-guard-13</code> After the use is removed from the step, the same edit is accepted.</li>
-    <li><code>AC-edit-guard-14</code> A fact edit and a procedure save at the same moment that together would break a referrer never both succeed.</li>
-    <li><code>AC-edit-guard-15</code> A procedure of another bot using a fact of the same name does not block the edit.</li>
-    <li><code>AC-edit-guard-16</code> The plugin's main skill says that <code>--dry-run</code> on an edit answers “what would this change break?”, and that only the server sees a type change.</li>
+    <li><code>AC-resource-rename-1</code> <code>suwagcms rename article cennik priceList</code> gives the article the new <code>id</code>, and every link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles then targets <code>priceList</code>; the article can no longer be read as <code>cennik</code>.</li>
+    <li><code>AC-resource-rename-2</code> The same change made with “Change id” in the web gives the same result, lists the referrers before it is confirmed, and leaves the author on the resource at its new address.</li>
+    <li><code>AC-resource-rename-3</code> In a rewritten referrer only the link targets differ: for a test set covering labels, code spans and blocks, plain text naming the <code>id</code>, longer ids starting with the old one, and ordinary web links, everything else is identical, byte for byte.</li>
+    <li><code>AC-resource-rename-4</code> Changing a knowledge base's <code>id</code> updates the <code>knowledgeBase</code> of each of its articles, which stay in that base.</li>
+    <li><code>AC-resource-rename-5</code> A global fact's name can be changed the same way, including one with dots, and the form rules for a fact's name apply to the new one.</li>
+    <li><code>AC-resource-rename-6</code> A new <code>id</code> already taken by that kind of resource in this bot, one not in the right form, the same <code>id</code> as the old one, and a resource that does not exist are each refused with a mistake and a fix, and nothing changes.</li>
+    <li><code>AC-resource-rename-7</code> A failure while writing leaves every resource as it was: the resource keeps its old <code>id</code>, and no referrer is rewritten.</li>
+    <li><code>AC-resource-rename-8</code> <code>--dry-run</code> gives the same refusal, or lists each referrer and field to be rewritten, and nothing changes.</li>
+    <li><code>AC-resource-rename-9</code> In the same situation <code>--json</code> gives the renamed resource and the referrers as data, and the CLI exits 1 on a refusal.</li>
+    <li><code>AC-resource-rename-10</code> Each rewritten referrer gets a new revision, and a resource that does not refer to the renamed one keeps its revision.</li>
+    <li><code>AC-resource-rename-11</code> A save of a referrer based on its revision before the rename is refused.</li>
+    <li><code>AC-resource-rename-12</code> <code>--if-revision</code> with an old revision of the resource, and a web dialog opened at one, are refused with the current revision.</li>
+    <li><code>AC-resource-rename-13</code> A rename and a new link to the old <code>id</code> at the same moment never leave a link without a target.</li>
+    <li><code>AC-resource-rename-14</code> A resource with the same <code>id</code> in another bot, and the links to it, stay unchanged.</li>
+    <li><code>AC-resource-rename-15</code> After the change the old <code>id</code> can be taken by a new resource, and a link to the old <code>id</code> before that is refused with <code>reference.missing</code>.</li>
+    <li><code>AC-resource-rename-16</code> <code>suwagcms rename --open</code> opens the resource's page at its new address.</li>
+    <li><code>AC-resource-rename-17</code> <code>suwagcms rename</code> has its line in the plugin's main skill.</li>
+    <li><code>AC-resource-rename-18</code> Changing a fact's name also rewrites it in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it.</li>
+    <li><code>AC-resource-rename-19</code> A procedure's <code>id</code> can be changed, and <code>conversation</code> cannot change its <code>id</code>, since the format requires it as the base of every conversation; a new <code>id</code> that a global fact's name starts with, followed by a dot, is refused, and so is a fact's new name starting with a procedure's <code>id</code> and a dot.</li>
+    <li><code>AC-resource-rename-20</code> A fact's new name that a local fact already has is refused.</li>
+    <li><code>AC-resource-rename-21</code> A procedure's node positions stay after its <code>id</code> changes.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>local-facts</code>:</b> the same refusals hold for a local fact when a save of its procedure would break a step of that procedure: removing a value, changing the type, narrowing, or setting <code>writableBy: assign</code>.</li>
-    <li><b>after <code>inform-block</code>:</b> a fact named in an <code>inform</code> counts as a use, so its type cannot change.</li>
-    <li><b>after <code>action-block</code>:</b> removing or retyping an action's parameter or result that a procedure's step maps is refused, listing each step; a fact mapped to a parameter or a result counts as a use, so its type cannot change.</li>
+    <li><b>after <code>start-block</code>:</b> changing a procedure's <code>id</code> rewrites each <code>start</code> that targets it.</li>
+    <li><b>after <code>inform-block</code>:</b> changing an article's <code>id</code> or a fact's name rewrites each <code>inform</code> that names it.</li>
+    <li><b>after <code>instruction-context</code>:</b> changing an article's <code>id</code> rewrites each <code>context</code> that names it; a search query holding those words is text and stays as it is.</li>
+    <li><b>after <code>article-procedure-links</code>:</b> changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
+    <li><b>after <code>action-block</code>:</b> changing an action's <code>id</code> rewrites each <code>action</code> step, and changing a fact's name rewrites it in each step's mapping of parameters and results.</li>
+    <li><b>after <code>availability</code>:</b> a resource turned off stays off after its <code>id</code> changes, also for conversations on a version that still holds the old <code>id</code>.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout warn"><p>A coding agent validating offline will not see a <code>fact.type.inUse</code> refusal until it saves. A dry run against the server shows it, and the plugin's main skill says so.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Does a <code>range</code> condition wider than a narrowed fact block the narrowing?</legend>
-      <p class="why">README says an edit is refused when a condition “falls outside” the new range. A condition <code>range: { min: 5, max: 200 }</code> on a fact narrowed to 1–100 still works for 5–100 but cannot be true above that. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="bound"><span><b>Yes: any bound outside the new range blocks it</b><small>the same rule <code>procedure-model</code> applies to a value the fact can never take; the condition says what the author really expects</small></span></label>
-      <label><input type="radio" value="overlap"><span><b>Only when the whole condition falls outside</b><small>fewer refusals, but a condition silently means less than it says</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout risk"><p>Availability is live and reaches conversations on older versions, while those versions hold the old <code>id</code>. A switch sent only under the new <code>id</code> would miss them, so <code>availability</code> has to answer for this. The deferred item above is the check.</p></div>
+  <div class="callout warn"><p>Plain text that mentions the old <code>id</code> stays behind, and so does a label an author wrote by hand. README accepts this: plain text is not protected.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

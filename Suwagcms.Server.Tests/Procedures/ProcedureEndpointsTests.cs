@@ -146,7 +146,7 @@ public sealed class ProcedureEndpointsTests(TestDatabase database) : IDisposable
         var mistake = Assert.Single(await FactApi.MistakesOf(response));
 
         Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
-        Assert.Contains("which this bot does not have", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Contains("which this procedure does not see", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Contains(
             "customer.city, order.floors, order.kind, system.flag",
             mistake.GetProperty("fix").GetString(),

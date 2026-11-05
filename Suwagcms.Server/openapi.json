@@ -1469,6 +1469,112 @@
         }
       }
     },
+    "/api/bots/{bot}/{kind}/{id}/rename": {
+      "post": {
+        "tags": [
+          "RenameEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^(facts|knowledge-bases|articles|procedures)$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dryRun",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "ifRevision",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameResource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenameAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/procedures/{id}/layout": {
       "get": {
         "tags": [
@@ -1887,6 +1993,56 @@
       "ListenArguments": {
         "type": "object"
       },
+      "LocalFact": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "writableBy": {
+            "type": "string"
+          },
+          "values": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "min": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "max": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxLength": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "Mistake": {
         "required": [
           "code",
@@ -2004,6 +2160,15 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Mistake"
+            }
+          },
+          "localFacts": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LocalFact"
             }
           }
         },
@@ -2286,6 +2451,95 @@
           }
         }
       },
+      "RenameAnswer": {
+        "required": [
+          "kind",
+          "oldId",
+          "id",
+          "revision",
+          "referrers"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "oldId": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "referrers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RenameReferrer"
+            }
+          }
+        },
+        "description": "The result of changing an id, or with a dry run what it would be: the resource's kind, its old and new id, its revision, and each field of each referrer rewritten."
+      },
+      "RenameReferrer": {
+        "required": [
+          "kind",
+          "id",
+          "field",
+          "links",
+          "revision"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "links": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "revision": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "One field of a resource rewritten by a change of id (`Kind` is article or procedure): how many links or uses it held, and the revision the resource then has."
+      },
+      "RenameResource": {
+        "required": [
+          "newId"
+        ],
+        "type": "object",
+        "properties": {
+          "newId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "What changing a resource's id takes: the new id, which is checked by the same rules as a new resource's."
+      },
       "ResourceKind": {
         "enum": [
           "Definition",
@@ -2484,6 +2738,15 @@
                 "$ref": "#/components/schemas/StallInstruction"
               }
             ]
+          },
+          "localFacts": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/LocalFact"
+            }
           }
         },
         "description": "What saving a procedure takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once."
@@ -2664,6 +2927,9 @@
     },
     {
       "name": "UsageEndpoints"
+    },
+    {
+      "name": "RenameEndpoints"
     },
     {
       "name": "ProcedureLayoutEndpoints"

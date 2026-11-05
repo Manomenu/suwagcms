@@ -5,6 +5,9 @@ namespace Suwagcms.Sdk.Tests.Validation;
 
 public sealed class ArticleLinkRulesTests
 {
+    private static IEnumerable<Reference> Links(BotDefinition definition) =>
+        ReferenceWalker.From(definition).Where(reference => reference.To.Kind == ResourceKind.Article);
+
     private static readonly KnowledgeBase Offer = new() { Id = "offer", Title = "Offer" };
 
     private static Article Target(string id, string knowledgeBase = "faq") =>
@@ -108,14 +111,14 @@ public sealed class ArticleLinkRulesTests
         var article = Linking(content);
 
         Assert.Empty(Check(article));
-        Assert.Empty(ReferenceWalker.From(Bot(article)));
+        Assert.Empty(Links(Bot(article)));
     }
 
     [Fact]
     [Trait("criterion", "AC-article-links-10")]
     public void A_link_after_a_closed_code_block_is_still_a_reference()
     {
-        var references = ReferenceWalker.From(Bot(Linking("```\nx\n```\n[x](cms://article/cennik)"))).ToList();
+        var references = Links(Bot(Linking("```\nx\n```\n[x](cms://article/cennik)"))).ToList();
 
         Assert.Equal("cennik", Assert.Single(references).To.Id);
     }
@@ -133,8 +136,8 @@ public sealed class ArticleLinkRulesTests
 
         Assert.Equal(
             [("wycena", "content", "one"), ("wycena", "content", "two"), ("wycena", "llmGuide", "one")],
-            ReferenceWalker.From(bot).Select(reference => (reference.From.Id, reference.Path, reference.To.Id))
+            Links(bot).Select(reference => (reference.From.Id, reference.Path, reference.To.Id))
         );
-        Assert.All(ReferenceWalker.From(bot), reference => Assert.Null(reference.Use));
+        Assert.All(Links(bot), reference => Assert.Null(reference.Use));
     }
 }

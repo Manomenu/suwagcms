@@ -153,3 +153,25 @@ test("AC-knowledge-base-language-11: the label of the language select carries a 
 
     await expect(page.locator('[data-field="language"] label')).toHaveAttribute("title", /language of every article in this base/);
 });
+
+test("AC-resource-rename-4: Change id on a base keeps its articles in it and leaves the author on the base", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addBase(request, bot, "offer", "Offer");
+    const article = await request.put(`/api/bots/${bot}/articles/cennik?ifRevision=0`, {
+        data: { knowledgeBase: "offer", title: "Price list", content: "C", llmGuide: "G", description: "D" },
+    });
+    expect(article.status()).toBe(200);
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.getByRole("row").filter({ hasText: "offer" }).getByRole("button", { name: "Edit" }).click();
+
+    await page.getByRole("button", { name: "Change id" }).click();
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("pricing");
+    await expect(dialog).toContainText("cennik knowledgeBase");
+    await dialog.getByRole("button", { name: "Change id" }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("row").filter({ hasText: "pricing" })).toBeVisible();
+    const stored = (await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()) as { knowledgeBase: string };
+    expect(stored.knowledgeBase).toBe("pricing");
+});

@@ -267,3 +267,66 @@ test("AC-procedure-creator-17: leaving the creator with unsaved changes asks fir
     await page.getByRole("navigation", { name: "Bots" }).getByRole("link", { name: "Procedures" }).click();
     await expect(page.getByRole("heading", { name: /Procedures of/ })).toBeVisible();
 });
+
+test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers it, the save stores it, and the panel removes it again", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", { description: "D", firstStep: "ask", steps: { ask: { collect: [] } } }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    const panel = page.getByRole("region", { name: "Local facts" });
+    await panel.getByRole("button", { name: "Add a local fact" }).click();
+    await panel.getByLabel("Name").fill("visitDate");
+    await panel.getByLabel("Maximum length").fill("20");
+    await panel.getByLabel("Fact description").fill("When to visit");
+    await panel.getByRole("button", { name: "Keep" }).click();
+    await expect(panel).toContainText("text, up to 20 · set");
+
+    await node(page, "ask").click();
+    await page.getByRole("checkbox", { name: "visitDate" }).check();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("unsaved changes")).toBeHidden();
+
+    const saved = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+        localFacts: Record<string, { maxLength: number; description: string }>;
+        steps: Record<string, { collect?: string[] }>;
+    };
+    expect(saved.localFacts["visitDate"]).toMatchObject({ maxLength: 20, description: "When to visit" });
+    expect(saved.steps["ask"]?.collect).toEqual(["visitDate"]);
+    const listed = (await (await request.get(`/api/bots/${bot}/facts`)).json()) as { name: string }[];
+    expect(listed.map((fact) => fact.name)).not.toContain("visitDate");
+
+    await page.getByRole("checkbox", { name: "visitDate" }).uncheck();
+    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+    await panel.getByRole("button", { name: "Edit visitDate" }).click();
+    await panel.getByLabel("Maximum length").fill("30");
+    await panel.getByRole("button", { name: "Keep" }).click();
+    await expect(panel).toContainText("text, up to 30");
+    await panel.getByRole("button", { name: "Remove visitDate" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("unsaved changes")).toBeHidden();
+    const after = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { localFacts: unknown };
+    expect(after.localFacts ?? {}).toEqual({});
+});
+
+test("AC-resource-rename-21: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    const positions = { ask: { x: 11, y: 22 }, mark: { x: 33, y: 44 }, confirm: { x: 55, y: 66 }, goodbye: { x: 77, y: 88 } };
+    expect((await request.put(`/api/bots/${bot}/procedures/orderValuation/layout`, { data: { positions } })).status()).toBe(200);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    await expect(page.locator("[data-step]")).toHaveCount(4);
+
+    await page.getByRole("button", { name: "Change id" }).click();
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("valuation");
+    await expect(dialog).toContainText("This rewrites nothing else.");
+    await dialog.getByRole("button", { name: "Change id" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/valuation$`));
+    await expect(page.getByRole("heading", { name: /Creator: valuation/ })).toBeVisible();
+    const layout = (await (await request.get(`/api/bots/${bot}/procedures/valuation/layout`)).json()) as { positions: unknown };
+    expect(layout.positions).toEqual(positions);
+});

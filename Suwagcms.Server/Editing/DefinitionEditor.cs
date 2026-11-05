@@ -24,45 +24,51 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         {
             return unmet;
         }
-        var after = Applied(changes, before);
+        if (Conflict(changes, before) is { } conflict)
+        {
+            return conflict;
+        }
+        var rewritten = Rewrites(changes, before);
+        var after = Applied(changes, before, rewritten);
         // Why: one pass at the Version stage finds both kinds, since it runs every Save rule too; only the Save ones refuse.
         var assembled = ResourceKinds.Assemble(after.Values);
         var found = DefinitionValidator.Validate(assembled, ValidationStage.Version);
-        if (found.Where(mistake => mistake.Stage == ValidationStage.Save).ToList() is { Count: > 0 } mistakes)
+        // Why: an edit is judged by the rules on its result and only worded for its cause, so the same break is refused however it came about.
+        var edited = EditGuard.Reshape(
+            ResourceKinds.Assemble(before.Values),
+            assembled,
+            [.. WithoutEchoes([.. found.Where(mistake => mistake.Stage == ValidationStage.Save)], changes, rewritten)]
+        );
+        if (edited.Count > 0)
         {
             // Why: a delete that leaves references behind is refused by the same rule as a typo, worded for the resource being deleted.
             var removed = changes.OfType<Remove>().Select(change => change.Target).ToList();
-            return new EditResult.Refused(DeleteGuard.Reshape(assembled, removed, mistakes));
+            return new EditResult.Refused(DeleteGuard.Reshape(assembled, removed, edited));
         }
 
-        var touched = changes.Select(change => change.Target).Distinct().ToList();
         var revisions = new Dictionary<ResourceRef, int>();
         var now = time.GetUtcNow();
-        foreach (var target in touched)
+        // Why: a row is known by its Id, so a renamed resource stays the same row, with what hangs on that row, and only its public id changes.
+        var known = before.Values.Select(item => item.Id).ToHashSet();
+        var kept = after.Values.Select(item => item.Id).ToHashSet();
+        foreach (var gone in before.Values.Where(item => !kept.Contains(item.Id)).Where(_ => !dryRun))
         {
-            before.TryGetValue(target, out var was);
-            if (!after.TryGetValue(target, out var becomes))
+            await ResourceStore.DeleteAsync(connection, transaction, gone.Id, cancellationToken);
+        }
+        foreach (var becomes in after.Values.Where(item => !ReferenceEquals(item, before.GetValueOrDefault(item.Target))))
+        {
+            revisions[becomes.Target] = becomes.Revision;
+            if (dryRun)
             {
-                if (was is not null && !dryRun)
-                {
-                    await ResourceStore.DeleteAsync(connection, transaction, was.Id, cancellationToken);
-                }
+                continue;
             }
-            else if (was is null)
+            if (known.Contains(becomes.Id))
             {
-                revisions[target] = becomes.Revision;
-                if (!dryRun)
-                {
-                    await ResourceStore.InsertAsync(connection, transaction, bot, becomes, now, cancellationToken);
-                }
+                await ResourceStore.UpdateAsync(connection, transaction, becomes, now, cancellationToken);
             }
             else
             {
-                revisions[target] = becomes.Revision;
-                if (!dryRun)
-                {
-                    await ResourceStore.UpdateAsync(connection, transaction, becomes, now, cancellationToken);
-                }
+                await ResourceStore.InsertAsync(connection, transaction, bot, becomes, now, cancellationToken);
             }
         }
 
@@ -74,7 +80,7 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         {
             await transaction.CommitAsync(cancellationToken);
         }
-        return new EditResult.Saved(revisions, !dryRun, found);
+        return new EditResult.Saved(revisions, !dryRun, found) { Rewritten = rewritten };
     }
 
     // Why: expected revisions are checked against the state found under the lock, before any change is applied, so a stale edit loses to no mistake.
@@ -83,7 +89,7 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         foreach (var change in changes)
         {
             before.TryGetValue(change.Target, out var found);
-            if (change is Remove && found is null)
+            if (change is Remove or Rename && found is null)
             {
                 return new EditResult.Missing(change.Target);
             }
@@ -95,9 +101,46 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         return null;
     }
 
+    // Why: a new id in the wrong form makes every link rewritten to it malformed too; that has one cause, so it is said once.
+    private static IEnumerable<Mistake> WithoutEchoes(List<Mistake> mistakes, IReadOnlyList<Change> changes, List<Reference> rewritten)
+    {
+        var renamed = changes.OfType<Rename>().Select(rename => rename.NewTarget).ToList();
+        return mistakes.Any(mistake => renamed.Contains(mistake.Resource))
+            ? mistakes.Where(mistake =>
+                mistake.Code != MistakeCodes.ReferenceMalformed
+                || !rewritten.Any(reference => reference.From == mistake.Resource && reference.Path == mistake.Path)
+            )
+            : mistakes;
+    }
+
+    private static EditResult.Refused? Conflict(IReadOnlyList<Change> changes, Dictionary<ResourceRef, StoredResource> before)
+    {
+        foreach (var rename in changes.OfType<Rename>())
+        {
+            if (rename.NewId == rename.Target.Id)
+            {
+                return new EditResult.Refused([EditProblems.SameId(rename.Target)]);
+            }
+            if (before.ContainsKey(rename.NewTarget))
+            {
+                return new EditResult.Refused([EditProblems.Taken(rename.Target, rename.NewTarget)]);
+            }
+        }
+        return null;
+    }
+
+    private static List<Reference> Rewrites(IReadOnlyList<Change> changes, Dictionary<ResourceRef, StoredResource> before)
+    {
+        var renames = changes.OfType<Rename>().Select(rename => rename.Target).ToList();
+        return renames.Count == 0
+            ? []
+            : [.. ReferenceWalker.From(ResourceKinds.Assemble(before.Values)).Where(reference => renames.Contains(reference.To))];
+    }
+
     private static Dictionary<ResourceRef, StoredResource> Applied(
         IReadOnlyList<Change> changes,
-        Dictionary<ResourceRef, StoredResource> before
+        Dictionary<ResourceRef, StoredResource> before,
+        List<Reference> rewritten
     )
     {
         var after = new Dictionary<ResourceRef, StoredResource>(before);
@@ -117,6 +160,25 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
                     break;
                 case Remove remove:
                     after.Remove(remove.Target);
+                    break;
+                case Rename rename:
+                    foreach (var from in rewritten.Where(found => found.To == rename.Target).Select(found => found.From).Distinct())
+                    {
+                        var referrer = after[from];
+                        after[from] = referrer with
+                        {
+                            Revision = before[from].Revision + 1,
+                            Record = ResourceKinds.Rewritten(referrer.Record, rename.Target, rename.NewId),
+                        };
+                    }
+                    var moved = after[rename.Target];
+                    after.Remove(rename.Target);
+                    after[rename.NewTarget] = moved with
+                    {
+                        Target = rename.NewTarget,
+                        Revision = before[rename.Target].Revision + 1,
+                        Record = ResourceKinds.WithId(moved.Record, rename.NewId),
+                    };
                     break;
                 default:
                     throw new ArgumentException($"{change.GetType().Name} is not a known change.");
