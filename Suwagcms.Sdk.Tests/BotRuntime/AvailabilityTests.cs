@@ -27,7 +27,7 @@ public sealed class AvailabilityTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-availability-9")]
+    [Trait("criterion", "AC-availability-1")]
     public async Task A_bot_that_was_told_nothing_has_nothing_off()
     {
         await using var bot = await BotHost.StartAsync(new InMemoryVersionStore());
@@ -62,7 +62,6 @@ public sealed class AvailabilityTests
     [Theory]
     [MemberData(nameof(Stores.Kinds), MemberType = typeof(Stores))]
     [Trait("criterion", "AC-availability-10")]
-    [Trait("criterion", "AC-bot-runtime-sdk-18")]
     public async Task The_answer_is_the_same_whichever_version_a_conversation_is_on_and_needs_no_new_version(string kind)
     {
         using var directory = new TempDirectory();
@@ -103,13 +102,13 @@ public sealed class AvailabilityTests
     {
         using var directory = new TempDirectory();
         await using var bot = await BotHost.StartAsync(Stores.Create(kind, directory));
-        await bot.PutAsync(1, Documents.Make(1, "keptFact"));
+        await bot.PutAsync(1, Documents.WithArticles(1, Documents.Article("cennik", "The prices.")));
 
-        await SendAsync(bot, Message(1, "keptFact"));
+        await SendAsync(bot, Message(1, "cennik"));
 
-        Assert.True(bot.Definitions.IsOff(1, ResourceKind.Article, "keptFact"));
+        Assert.True(bot.Definitions.IsOff(1, ResourceKind.Article, "cennik"));
         var definition = await bot.Definitions.GetAsync(1, TestContext.Current.CancellationToken);
-        Assert.Equal("keptFact", definition.Facts.Single().Name);
+        Assert.Equal("The prices.", definition.Articles.Single(article => article.Id == "cennik").Content);
     }
 
     [Theory]
@@ -151,7 +150,6 @@ public sealed class AvailabilityTests
 
     [Fact]
     [Trait("criterion", "AC-availability-11")]
-    [Trait("criterion", "AC-bot-runtime-sdk-18")]
     public async Task A_change_delivered_to_one_instance_is_what_the_other_answers_after_its_next_poll()
     {
         var shared = new InMemoryVersionStore();
@@ -198,7 +196,7 @@ public sealed class AvailabilityTests
     public static TheoryData<string> RestartingStores => ["file", "supplied"];
 
     [Fact]
-    [Trait("criterion", "AC-availability-16")]
+    [Trait("criterion", "AC-availability-12")]
     public async Task A_store_that_fails_answers_503_and_the_setting_stays()
     {
         var store = new FlakyStore(new InMemoryVersionStore());

@@ -92,7 +92,6 @@ public sealed class VersionExportTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-version-export-3")]
-    [Trait("criterion", "AC-version-export-5")]
     public async Task Changing_or_deleting_exported_files_changes_nothing_and_a_later_export_is_byte_identical()
     {
         var (scene, bot) = await FilledAsync();
@@ -120,6 +119,27 @@ public sealed class VersionExportTests(TestDatabase database) : IDisposable
             .ToDictionary(file => Path.GetRelativePath(second, file), File.ReadAllBytes);
         Assert.Equal(written.Keys.Order(StringComparer.Ordinal), again.Keys.Order(StringComparer.Ordinal));
         Assert.All(written, file => Assert.Equal(file.Value, again[file.Key]));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-batch-apply-20")]
+    public async Task An_exported_file_given_to_apply_is_refused_and_nothing_is_saved()
+    {
+        var (scene, bot) = await FilledAsync();
+        await using var _ = bot;
+        await scene.CreateAsync();
+        var folder = Path.Combine(scratch, "export");
+        Assert.Equal(0, (await scene.CliAsync("export", "1", "--out", folder)).ExitCode);
+        var before = await scene.SnapshotAsync();
+
+        foreach (var file in new[] { "version.yaml", Path.Combine("articles", "priceList.yaml") })
+        {
+            var run = await scene.CliAsync("apply", Path.Combine(folder, file));
+
+            Assert.Equal(2, run.ExitCode);
+            Assert.Contains("no `changes` list", run.Error, StringComparison.Ordinal);
+        }
+        Assert.Equal(before, await scene.SnapshotAsync());
     }
 
     [Fact]

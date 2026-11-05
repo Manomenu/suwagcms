@@ -140,6 +140,41 @@ public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
         var down = await scene.Answer();
         Assert.Equal(503, down.GetProperty("status").GetInt32());
         Assert.Equal("down", down.GetProperty("answerStart").GetString());
+        Assert.True(down.GetProperty("elapsedMs").GetInt64() >= 0);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-4")]
+    public async Task A_non_JSON_answer_a_result_that_does_not_fit_and_a_timeout_each_show_their_reason_and_the_time_taken()
+    {
+        await using var scene = await SceneAsync();
+        scene.Service.Answer = context => context.Response.WriteAsync("<html>oops</html>");
+
+        var notJson = await scene.Answer();
+
+        Assert.Equal("failure", notJson.GetProperty("outcome").GetString());
+        Assert.Contains("it is not a JSON object", notJson.GetProperty("reason").GetString(), StringComparison.Ordinal);
+        Assert.Equal(200, notJson.GetProperty("status").GetInt32());
+        Assert.Equal("<html>oops</html>", notJson.GetProperty("answerStart").GetString());
+        Assert.True(notJson.GetProperty("elapsedMs").GetInt64() >= 0);
+
+        scene.Service.Answer = context => context.Response.WriteAsync("""{"serviceable":"maybe"}""");
+
+        var unfit = await scene.Answer();
+
+        Assert.Equal("failure", unfit.GetProperty("outcome").GetString());
+        Assert.Contains("result 'serviceable' does not fit", unfit.GetProperty("reason").GetString(), StringComparison.Ordinal);
+        Assert.Equal("""{"serviceable":"maybe"}""", unfit.GetProperty("answerStart").GetString());
+        Assert.True(unfit.GetProperty("elapsedMs").GetInt64() >= 0);
+
+        (await scene.Api.Put("check", ActionJson(scene.Service.Address, extra: ""","timeoutSeconds":1"""))).EnsureSuccessStatusCode();
+        scene.Service.Answer = context => Task.Delay(TimeSpan.FromSeconds(5), context.RequestAborted);
+
+        var slow = await scene.Answer();
+
+        Assert.Equal("failure", slow.GetProperty("outcome").GetString());
+        Assert.Contains("within the time limit of 1 seconds", slow.GetProperty("reason").GetString(), StringComparison.Ordinal);
+        Assert.InRange(slow.GetProperty("elapsedMs").GetInt64(), 900, 4000);
     }
 
     [Fact]

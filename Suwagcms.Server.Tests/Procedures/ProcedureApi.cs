@@ -12,9 +12,9 @@ internal sealed class ProcedureApi(HttpClient client, FactApi facts)
 
     public string Bot => Facts.Bot;
 
-    public static async Task<ProcedureApi> NewBotAsync(HttpClient client)
+    public static async Task<ProcedureApi> NewBotAsync(HttpClient client, string address = FactApi.NoBotAddress)
     {
-        var facts = await FactApi.NewBotAsync(client);
+        var facts = await FactApi.NewBotAsync(client, address);
         Assert.True((await facts.Add("customer.city", FactApi.Text())).IsSuccessStatusCode);
         Assert.True((await facts.Add("order.kind", FactApi.Kind)).IsSuccessStatusCode);
         Assert.True(

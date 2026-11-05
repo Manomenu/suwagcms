@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>articles</code>, <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -397,7 +397,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Writing the text, or checking what the model said: bots do that, and the first bot's specs are in its own repository.</li>
-      <li>Passing the value of a fact: a customer's fact is already in the conversation, and a constant is written in the point.</li>
+      <li>Passing the value of a fact: the block has no field for one. A point is text, and what else a bot tells a customer is the bot's concern.</li>
       <li>The rules on <code>context</code>: <code>instruction-context</code>. Refusing to delete or loop through an article it names: <code>delete-guard</code>, <code>loop-guard</code>.</li>
       <li>The form in the creator: <code>procedure-creator</code>.</li>
     </ul></div>
@@ -475,7 +475,7 @@ whatHappensNext:
     <li>The set of blocks is fixed and defined in the SDK, so this block has the shape the first bot's engine runs, and that engine can consume the SDK's definition instead of its own.</li>
     <li>No points and a blank text or instruction are <code>Version</code> mistakes, for the reason <code>procedure-model</code> gives: they are work still to do. A wrong name breaks the form, so it is a <code>Save</code> mistake.</li>
     <li>The instruction is required, as on <code>whenStalled</code>: without it a bot would have to invent how to phrase the step, and two bots would do it differently.</li>
-    <li>What the model should read goes in the context, and an article named there is the reference; a point holds the words that must get across. A point names no fact, since a customer's fact is already in the conversation.</li>
+    <li>What the model should read goes in the context, and an article named there is the reference; a point holds the words that must get across. A point names no fact: it is text the CMS stores and delivers as written, so no check ties its words to a fact.</li>
     <li>Points are a map, not a list, because a bot reports by name which point was told. The store keeps the keys as written, so the map's order survives.</li>
   </ul>
 </section>
@@ -496,7 +496,7 @@ whatHappensNext:
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>An action's result has no way to the customer yet.</b> A point is fixed text and names no fact. The first bot's <code>inform-step</code> spec leaves this to its first real need; when that comes, an optional field can arrive without raising <code>formatVersion</code>.</p></div>
+  <div class="callout risk"><p><b>A point cannot hold a value known only when the bot runs,</b> such as an action's result: it is fixed text and names no fact. The first bot's <code>inform-step</code> spec leaves this to its first real need; when that comes, an optional field can arrive without raising <code>formatVersion</code>.</p></div>
   <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
 </section>
 <!-- CONTENT END -->

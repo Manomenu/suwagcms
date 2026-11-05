@@ -201,7 +201,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-http-actions-20")]
+    [Trait("criterion", "AC-action-block-19")]
     public async Task The_view_of_an_action_shows_the_procedures_that_use_it()
     {
         var scene = await SceneAsync();
@@ -252,6 +252,11 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
         "results.serviceable",
         "removed"
     )]
+    [InlineData(
+        """{"description":"Checks.","parameters":{"address":{"type":"text","maxLength":200,"description":"Where."}},"results":{"serviceable":{"type":"text","maxLength":5,"description":"Served."}},"implementation":{"http":{"method":"POST","url":"https://crm.internal/check"}}}""",
+        "results.serviceable",
+        "changed from enum to text"
+    )]
     [Trait("criterion", "AC-edit-guard-18")]
     public async Task Removing_or_retyping_a_mapped_parameter_or_result_is_refused_listing_each_step(
         string edited,
@@ -274,6 +279,23 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-edit-guard-18")]
+    public async Task A_refusal_lists_every_step_that_maps_the_field_in_every_procedure()
+    {
+        var scene = await SceneAsync();
+        (await scene.PutProcedure("orderService", Order)).EnsureSuccessStatusCode();
+        (await scene.PutProcedure("recheck", Order.Replace("checkAddress", "again", StringComparison.Ordinal))).EnsureSuccessStatusCode();
+        const string withoutResult =
+            """{"description":"Checks.","parameters":{"address":{"type":"text","maxLength":200,"description":"Where."}},"implementation":{"http":{"method":"POST","url":"https://crm.internal/check"}}}""";
+
+        var mistake = Assert.Single(await FactApi.MistakesOf(await scene.Actions.Put("checkServiceability", withoutResult)));
+
+        var message = mistake.GetProperty("message").GetString();
+        Assert.Contains("procedure orderService, step checkAddress", message, StringComparison.Ordinal);
+        Assert.Contains("procedure recheck, step again", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-edit-guard-3")]
     public async Task A_fact_mapped_to_a_parameter_or_a_result_counts_as_a_use_so_its_type_cannot_change()
     {
         var scene = await SceneAsync();
@@ -365,7 +387,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-code-actions-16")]
+    [Trait("criterion", "AC-code-actions-18")]
     public async Task A_change_made_by_a_declaration_is_not_refused_even_when_a_step_maps_what_changed()
     {
         var scene = await BotSceneAsync();
@@ -418,6 +440,15 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
         var scene = await BotSceneAsync();
         await using var _ = scene.Bot;
         var actions = scene.Inner.Actions;
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (
+                await scene.Inner.PutProcedure(
+                    "usesIt",
+                    """{"description":"d","firstStep":"run","steps":{"run":{"action":"lookupPolicy","with":{"address":"customer.address"},"onFailure":"again"},"again":{"action":"lookupPolicy","with":{"address":"customer.address"},"onFailure":"failed"},"failed":{"say":"Sorry."}}}"""
+                )
+            ).StatusCode
+        );
 
         scene.Answers();
         await scene.AskAsync();
@@ -430,10 +461,13 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
             null,
             TestContext.Current.CancellationToken
         );
-        var undeclared = (await FactApi.MistakesOf(refused)).Single(mistake =>
-            mistake.GetProperty("code").GetString() == MistakeCodes.ActionCodeUndeclared
-        );
-        Assert.Contains("steps.run.action of procedure 'usesIt'", undeclared.GetProperty("message").GetString(), StringComparison.Ordinal);
+        var undeclared = (await FactApi.MistakesOf(refused))
+            .Where(mistake => mistake.GetProperty("code").GetString() == MistakeCodes.ActionCodeUndeclared)
+            .Select(mistake => mistake.GetProperty("message").GetString() ?? "")
+            .ToList();
+        var named = Assert.Single(undeclared);
+        Assert.Contains("steps.run.action of procedure 'usesIt'", named, StringComparison.Ordinal);
+        Assert.Contains("steps.again.action of procedure 'usesIt'", named, StringComparison.Ordinal);
 
         scene.Answers(Lookup);
         await scene.AskAsync();

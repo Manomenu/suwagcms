@@ -225,6 +225,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal(HttpStatusCode.Conflict, edit.StatusCode);
         Assert.Contains("revision 2", (await FactApi.MistakesOf(edit))[0].GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.Conflict, delete.StatusCode);
+        Assert.Contains("revision 2", (await FactApi.MistakesOf(delete))[0].GetProperty("message").GetString(), StringComparison.Ordinal);
         var named = await FactApi.MistakesOf(unknown);
         Assert.Equal("secretValue", named[0].GetProperty("path").GetString());
     }
@@ -307,7 +308,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-create-18")]
+    [Trait("criterion", "AC-version-create-3")]
     public async Task A_version_holds_the_bots_actions()
     {
         var client = Client();
@@ -353,7 +354,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-export-12")]
+    [Trait("criterion", "AC-version-export-1")]
     public async Task An_export_covers_actions_with_secrets_only_as_references()
     {
         var client = Client();
@@ -374,7 +375,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-change-history-16")]
+    [Trait("criterion", "AC-change-history-1")]
     public async Task History_covers_actions_with_secrets_only_as_the_references_they_hold()
     {
         var client = Client();
@@ -393,7 +394,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-batch-apply-17")]
+    [Trait("criterion", "AC-batch-apply-1")]
     public async Task A_file_of_changes_covers_actions_with_the_same_refusals()
     {
         var client = Client();

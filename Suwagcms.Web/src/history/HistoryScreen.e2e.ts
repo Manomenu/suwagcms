@@ -33,7 +33,7 @@ test("AC-change-history-6: the bot's History page lists every change newest firs
     await expect(page.getByText("− Nowa oferta").first()).toBeVisible();
 });
 
-test("AC-change-history-1: a resource's History panel shows a change with its old and new values, and AC-change-history-8: one with none says since when", async ({
+test("AC-change-history-1: a resource's History panel shows a change with its old and new values, and one with none says since when", async ({
     page,
     request,
 }) => {

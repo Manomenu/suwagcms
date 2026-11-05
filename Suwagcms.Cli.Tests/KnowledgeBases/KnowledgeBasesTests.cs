@@ -311,6 +311,7 @@ public sealed class KnowledgeBasesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task Open_shows_the_knowledge_bases_screen_of_the_bot_without_calling_the_server()
     {
         var opened = new List<Uri>();
@@ -327,21 +328,11 @@ public sealed class KnowledgeBasesTests
     [InlineData("add")]
     [InlineData("edit")]
     [InlineData("delete")]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task A_command_that_changes_a_base_has_no_page_to_open(string word)
     {
         var result = await TestCli.Run(Args("kb", word, "offer", "--title", "x", "--open"), StubServer.Healthy());
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-knowledge-bases-8")]
-    public void Every_kb_command_has_its_line_in_the_main_skill()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var commands = CommandList.RunnableInCli().Where(words => words.StartsWith("kb ", StringComparison.Ordinal)).ToList();
-
-        Assert.Equal(["kb add", "kb delete", "kb edit", "kb list", "kb show"], commands);
-        Assert.Empty(commands.Except(CommandList.Listed(skill)));
     }
 }

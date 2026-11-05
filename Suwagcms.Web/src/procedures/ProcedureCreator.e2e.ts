@@ -152,6 +152,7 @@ test("AC-procedure-creator-5: removing the only edge into a step shows it unreac
     const mistake = page.getByRole("button", { name: /No path from firstStep reaches step 'confirm'/ });
     await expect(mistake).toBeVisible();
     await expect(mistake).toContainText("Stops a version");
+    await expect(mistake).toContainText("Connect it from the next of a step that is reached, or delete it.");
     await mistake.click();
     await expect(page.getByRole("region", { name: "Step confirm" })).toBeVisible();
     await expect(node(page, "confirm")).toBeInViewport();
@@ -246,6 +247,37 @@ test("AC-procedure-creator-7: a save on an old revision is refused, the drawing 
     await page.getByRole("button", { name: "Reload" }).click();
     await expect(page.getByLabel("Description")).toHaveValue("The agent's description");
     await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("AC-procedure-creator-6: a save with only a Version mistake succeeds, and a save with a Save mistake is refused and the drawing stays", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+    await page.getByLabel("When stalled").fill("");
+    await expect(page.getByRole("button", { name: /whenStalled/ })).toContainText("Stops a version");
+
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("unsaved changes")).toBeHidden();
+    const versionOnly = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { revision: number };
+    expect(versionOnly.revision).toBe(2);
+
+    await node(page, "mark").click();
+    await page.getByLabel("Value of system.flag").fill("far too long");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(page.getByRole("alert")).toContainText("Your drawing is unchanged");
+    await expect(page.getByLabel("Value of system.flag")).toHaveValue("far too long");
+    await expect(page.getByText("unsaved changes")).toBeVisible();
+    const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+        revision: number;
+        steps: { mark: { assign: Record<string, string> } };
+    };
+    expect(stored.revision).toBe(2);
+    expect(stored.steps.mark.assign).toEqual({ "system.flag": "big" });
 });
 
 test("AC-procedure-creator-17: leaving the creator with unsaved changes asks first", async ({ page, request }) => {
@@ -429,7 +461,7 @@ test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers
     expect(after.localFacts ?? {}).toEqual({});
 });
 
-test("AC-resource-rename-21: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
+test("AC-resource-rename-2: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     const positions = { ask: { x: 11, y: 22 }, mark: { x: 33, y: 44 }, confirm: { x: 55, y: 66 }, goodbye: { x: 77, y: 88 } };

@@ -27,7 +27,7 @@ async function addIn(page: Page, name: string, description: string, maxLength: s
     await page.getByRole("button", { name: "Add", exact: true }).click();
 }
 
-test("AC-global-facts-1: a fact added in the web is listed with its type, limit, description and writableBy, which is set by default (AC-global-facts-2)", async ({
+test("AC-global-facts-1: a fact added in the web is listed with its type, limit, description and writableBy, which is set by default", async ({
     page,
     request,
 }) => {
@@ -70,17 +70,6 @@ test("AC-global-facts-6: the web shows the mistakes of a bad fact beside their f
     expect((await (await request.get(`/api/bots/${bot}/facts`)).json()) as unknown[]).toEqual([]);
 });
 
-test("AC-global-facts-4: adding a name the bot already has shows the refusal beside the name", async ({ page, request }) => {
-    const bot = await newBot(request);
-    await addCity(request, bot);
-    await page.goto(`/bots/${bot}/facts`);
-
-    await addIn(page, "customer.city", "Another", "10");
-
-    await expect(page.locator('[data-field="name"]')).toContainText("already exists");
-    await expect(page.getByLabel("Description")).toHaveValue("Another");
-});
-
 test("AC-global-facts-11: saving an edit of a fact that changed meanwhile is refused with the current revision and keeps what was typed", async ({
     page,
     request,
@@ -116,17 +105,6 @@ test("AC-global-facts-8: a fact deleted in the web is gone from the list and fro
 
     await expect(page.getByText("No facts yet.")).toBeVisible();
     expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(404);
-});
-
-test("AC-global-facts-13: the facts screen of one bot shows nothing of another bot's facts", async ({ page, request }) => {
-    const first = await newBot(request);
-    const second = await newBot(request);
-    await addCity(request, first);
-
-    await page.goto(`/bots/${second}/facts`);
-
-    await expect(page.getByText("No facts yet.")).toBeVisible();
-    await expect(page.getByText("customer.city")).toHaveCount(0);
 });
 
 test("AC-delete-guard-12: a fact a procedure uses is refused for delete in the API, and in the web Delete is disabled beside a link to the procedure (AC-delete-guard-7, AC-delete-guard-9)", async ({

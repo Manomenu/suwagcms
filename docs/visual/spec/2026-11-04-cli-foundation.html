@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> nothing</span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The gate fails for a server route that has no command, so the promise that the CLI can do anything the web can is enforced instead of hoped for.</p>
   </div>
   <div class="stats">
-    <div><b>11</b><span>criteria</span></div>
+    <div><b>14</b><span>criteria</span></div>
     <div><b>4</b><span>exit codes</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
@@ -485,10 +485,13 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <li><code>AC-cli-foundation-5</code> When the server refuses a change, the command prints every mistake with its fix and exits 1.</li>
     <li><code>AC-cli-foundation-6</code> With <code>--json</code>, a refused command prints one JSON document holding the same mistakes with their codes and exits 1.</li>
     <li><code>AC-cli-foundation-7</code> With <code>--json</code>, a successful command prints exactly one JSON document on stdout, parsable with nothing else around it.</li>
-    <li><code>AC-cli-foundation-8</code> An unknown command, an unknown option or a missing argument exits 2 and prints the correct usage.</li>
-    <li><code>AC-cli-foundation-9</code> <code>--open</code> opens the page matching the command in the browser; with no browser available it prints the page's address and exits 0.</li>
+    <li><code>AC-cli-foundation-8</code> An unknown command, an unknown option, or a missing or malformed argument exits 2 and prints the correct usage.</li>
+    <li><code>AC-cli-foundation-9</code> <code>--open</code> opens the page matching the command in the browser; with no browser available it prints the page's address and exits 0; <code>--open</code> on a command with no page, or together with <code>--json</code>, exits 2.</li>
     <li><code>AC-cli-foundation-10</code> A route the server maps without a command or a stated reason fails the full gate, with a message naming the route and the fix; so does a route naming a command that does not exist.</li>
-    <li><code>AC-cli-foundation-11</code> <code>--help</code> on the root command lists every command, and on any command lists its options.</li>
+    <li><code>AC-cli-foundation-11</code> <code>--help</code> on the root command lists every command, and on any command says what it does and lists its options.</li>
+    <li><code>AC-cli-foundation-12</code> Saving an address or a chosen bot with no settings folder exits 2 with the fix and writes nothing in the current directory; reading works without one.</li>
+    <li><code>AC-cli-foundation-13</code> An address that is not http or https exits 2 naming where it came from, and is neither used nor saved.</li>
+    <li><code>AC-cli-foundation-14</code> <code>GET /api/health</code> answers 200 while the database answers; otherwise 503, saying what to do, with a trace id that is in the log.</li>
   </ul>
 </section>
 

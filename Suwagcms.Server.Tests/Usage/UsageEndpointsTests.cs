@@ -1,6 +1,7 @@
 using System.Net;
 using Suwagcms.Contracts;
 using Suwagcms.Server.Tests.Articles;
+using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Usage;
@@ -82,13 +83,16 @@ public sealed class UsageEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-13")]
     public async Task An_unknown_resource_or_bot_or_kind_is_a_404()
     {
         var api = await NewBot();
         var client = app.CreateClient();
 
         Assert.Equal(HttpStatusCode.NotFound, (await UsageApi.Get(client, api.Bot, "articles", "nothing")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await UsageApi.Get(client, "nobody", "articles", "nothing")).StatusCode);
+        var nobody = await UsageApi.Get(client, "nobody", "articles", "nothing");
+        Assert.Equal(HttpStatusCode.NotFound, nobody.StatusCode);
+        Assert.Equal(["bot.notFound"], await FactApi.CodesOf(nobody));
         Assert.Equal(HttpStatusCode.NotFound, (await UsageApi.Get(client, api.Bot, "versions", "1")).StatusCode);
     }
 }

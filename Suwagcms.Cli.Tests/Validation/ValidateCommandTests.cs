@@ -39,7 +39,6 @@ public sealed class ValidateCommandTests : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-15")]
-    [Trait("criterion", "AC-sdk-validator-14")]
     public async Task It_reads_json_checks_the_version_stage_unless_told_otherwise_and_exits_0_for_no_mistakes()
     {
         var path = File("definition.json", """{"formatVersion":1,"facts":[]}""");

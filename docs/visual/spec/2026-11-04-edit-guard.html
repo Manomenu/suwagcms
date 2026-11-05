@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>global-facts</code>, <code>procedure-model</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -484,14 +484,14 @@ Refused, 1 mistake:
   <ul class="checks">
     <li><code>AC-edit-guard-1</code> Removing an <code>enum</code> value that a <code>when</code> or an <code>assign</code> uses is refused with <code>fact.enum.valueInUse</code>, naming the value, in the web, through the API and with the CLI, and the fact stays as it was with the same revision.</li>
     <li><code>AC-edit-guard-2</code> Removing an <code>enum</code> value no step uses as a value is accepted, also when a <code>collect</code> or <code>known</code> uses the fact; adding and reordering values is accepted.</li>
-    <li><code>AC-edit-guard-3</code> Changing the type of a fact a <code>collect</code>, <code>assign</code> or <code>when</code> uses is refused with <code>fact.type.inUse</code>, also when each use would still fit the new type; changing the type of a fact nothing uses is accepted.</li>
+    <li><code>AC-edit-guard-3</code> Changing the type of a fact a <code>collect</code>, <code>assign</code> or <code>when</code> uses, or a step maps to an action's parameter or result, is refused with <code>fact.type.inUse</code>, also when each use would still fit the new type; changing the type of a fact nothing uses is accepted.</li>
     <li><code>AC-edit-guard-4</code> Narrowing an <code>int</code> so that a value in <code>assign</code> or <code>oneOf</code>, or a bound in <code>range</code>, falls outside it is refused with <code>fact.range.inUse</code>.</li>
     <li><code>AC-edit-guard-5</code> Narrowing <code>maxLength</code> below the length of a value in <code>assign</code> or <code>oneOf</code> is refused with <code>fact.range.inUse</code>.</li>
     <li><code>AC-edit-guard-6</code> Narrowing that leaves every value and bound inside, narrowing a fact used only by <code>collect</code> or <code>known</code>, and any widening are accepted.</li>
-    <li><code>AC-edit-guard-7</code> Setting <code>writableBy: assign</code> on a fact a <code>collect</code> names is refused with <code>fact.writableBy.inUse</code> and the fix given in README; moving from <code>assign</code> to <code>set</code>, or between <code>set</code> and <code>correct</code>, is accepted.</li>
+    <li><code>AC-edit-guard-7</code> Setting <code>writableBy: assign</code> on a fact a <code>collect</code> names is refused with <code>fact.writableBy.inUse</code> and the fix: remove it from the <code>collect</code>, or give the fact <code>writableBy: set</code>; moving from <code>assign</code> to <code>set</code>, or between <code>set</code> and <code>correct</code>, is accepted.</li>
     <li><code>AC-edit-guard-8</code> A global fact named <code>&lt;procedureId&gt;.&lt;anything&gt;</code> is refused with <code>fact.name.procedurePrefix</code>, whether or not that procedure has local facts; a new procedure whose id an existing global fact's name starts with, followed by a dot, is refused with the same code.</li>
     <li><code>AC-edit-guard-9</code> Each refusal lists every referrer, with the procedure, step, block and a link to it; one edit that breaks several things returns a mistake for each at once.</li>
-    <li><code>AC-edit-guard-10</code> In the same situation the CLI exits 1, and <code>--json</code> gives the referrers as data.</li>
+    <li><code>AC-edit-guard-10</code> When an edit is refused because something uses what it changes, the CLI exits 1, and <code>--json</code> gives the referrers as data.</li>
     <li><code>AC-edit-guard-11</code> In the web, the mistake appears beside the field it concerns with working links to the referrers, and the values typed stay on the screen.</li>
     <li><code>AC-edit-guard-12</code> <code>--dry-run</code> on an edit gives the same refusal or answer, and nothing changes.</li>
     <li><code>AC-edit-guard-13</code> After the use is removed from the step, the same edit is accepted.</li>
@@ -499,7 +499,7 @@ Refused, 1 mistake:
     <li><code>AC-edit-guard-15</code> A procedure of another bot using a fact of the same name does not block the edit.</li>
     <li><code>AC-edit-guard-16</code> The plugin's main skill says that <code>--dry-run</code> on an edit answers “what would this change break?”, and that only the server sees a type change.</li>
     <li><code>AC-edit-guard-17</code> The same refusals hold for a local fact when a save of its procedure would break a step of that procedure: removing a value, changing the type, narrowing, or setting <code>writableBy: assign</code>.</li>
-    <li><code>AC-edit-guard-18</code> Removing or retyping an action's parameter or result that a procedure's step maps is refused, listing each step; a fact mapped to a parameter or a result counts as a use, so its type cannot change.</li>
+    <li><code>AC-edit-guard-18</code> Removing or retyping an action's parameter or result that a procedure's step maps is refused, listing each step.</li>
   </ul>
 </section>
 <section data-role="risks">

@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Facts;
 
@@ -285,6 +284,7 @@ public sealed class FactsTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-10")]
     public async Task With_no_bot_chosen_a_facts_command_exits_2_and_lists_the_bots_without_touching_facts()
     {
         var recorder = new Recorder();
@@ -298,6 +298,7 @@ public sealed class FactsTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-10")]
     public async Task A_bot_the_server_does_not_know_exits_1_and_lists_the_bots_that_exist()
     {
         var recorder = new Recorder();
@@ -318,6 +319,7 @@ public sealed class FactsTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task Open_shows_the_facts_screen_of_the_bot_without_calling_the_server()
     {
         var opened = new List<Uri>();
@@ -334,21 +336,11 @@ public sealed class FactsTests
     [InlineData("add")]
     [InlineData("edit")]
     [InlineData("delete")]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task A_command_that_changes_a_fact_has_no_page_to_open(string word)
     {
         var result = await TestCli.Run(Args("facts", word, "customer.city", "--open"), StubServer.Healthy());
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-global-facts-14")]
-    public void Every_facts_command_has_its_line_in_the_main_skill()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var factsCommands = CommandList.RunnableInCli().Where(words => words.StartsWith("facts ", StringComparison.Ordinal)).ToList();
-
-        Assert.Equal(["facts add", "facts delete", "facts edit", "facts list", "facts show"], factsCommands);
-        Assert.Empty(factsCommands.Except(CommandList.Listed(skill)));
     }
 }

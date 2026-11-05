@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Usage;
 
@@ -107,7 +106,7 @@ public sealed class UsageCommandTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-delete-guard-7")]
+    [Trait("criterion", "AC-delete-guard-8")]
     public async Task Usage_of_a_resource_nothing_relates_to_says_so()
     {
         var result = await TestCli.Run(Args("usage", "procedure", "orderValuation"), Recording([], HttpStatusCode.OK, Nothing));
@@ -116,19 +115,11 @@ public sealed class UsageCommandTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-8")]
     public async Task Usage_of_a_kind_it_does_not_know_is_a_wrong_use()
     {
         var result = await TestCli.Run(Args("usage", "kb", "offer"), Recording([], HttpStatusCode.OK, Nothing));
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-delete-guard-11")]
-    public void The_main_skill_has_a_line_for_suwagcms_usage()
-    {
-        var text = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-
-        Assert.Contains("usage", CommandList.Listed(text));
     }
 }

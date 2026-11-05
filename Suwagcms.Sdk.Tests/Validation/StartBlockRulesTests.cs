@@ -174,6 +174,7 @@ public sealed class StartBlockRulesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-7")]
     public void A_null_in_the_lists_a_step_targets_is_not_a_crash_and_the_walker_yields_the_start_with_no_fact_use()
     {
         var reference = Assert.Single(ReferenceWalker.From(Starting("orderValuation", "documentsList", "confirm")));

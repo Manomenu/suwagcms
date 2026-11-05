@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>global-facts</code>, <code>article-links</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It is the one way to make changes that only work together, and it is an ordinary save with more than one change in it, so it knows no rule of its own. A file says what to change. It is not a local copy of the bot.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>19</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -456,7 +455,7 @@ Applied: 5 added, 2 edited, 1 deleted.
   <script type="text/x-code" data-file="changes.yaml" data-lang="yaml">
 bot: rzeczoznawca            # optional; refused if it is not the bot in use
 changes:
-  - add: article             # add, edit or delete; kinds: fact, knowledgeBase, article, procedure
+  - add: article             # add, edit or delete; kinds: fact, knowledgeBase, article, action, procedure
     id: rabaty
     knowledgeBase: oferta
     title: Rabaty
@@ -491,7 +490,7 @@ changes:
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-batch-apply-1</code> <code>suwagcms apply</code> with adds, edits and deletes of facts, knowledge bases and articles saves them all, and each resource then reads back as the file said, with a summary of the counts and exit code 0.</li>
+    <li><code>AC-batch-apply-1</code> <code>suwagcms apply</code> with adds, edits and deletes of facts, knowledge bases, articles, procedures and actions saves them all, and each resource then reads back as the file said, with a summary of the counts and exit code 0.</li>
     <li><code>AC-batch-apply-2</code> A file with one bad change saves nothing: every resource keeps its value and revision, and the CLI exits 1.</li>
     <li><code>AC-batch-apply-3</code> A file with several mistakes returns all of them at once, each naming its change's position and resource.</li>
     <li><code>AC-batch-apply-4</code> The same bad resource is refused with the same codes and messages through a file as through its own save.</li>
@@ -500,22 +499,16 @@ changes:
     <li><code>AC-batch-apply-7</code> Resources the file does not name stay byte-identical, and their revisions do not move.</li>
     <li><code>AC-batch-apply-8</code> <code>--dry-run</code> gives the same mistakes or the same counts as the real command, and leaves the working state unchanged; the real command afterwards gives that answer.</li>
     <li><code>AC-batch-apply-9</code> An old <code>ifRevision</code> refuses the whole file with the current revision; a change without one applies to the latest revision, and an edit changes only the fields it gives.</li>
-    <li><code>AC-batch-apply-10</code> A field the API does not know is refused, naming the change and the field; an unreadable file exits 2, naming the line; an empty list says there is nothing to apply and exits 0; a <code>bot</code> other than the one in use is refused, naming both.</li>
+    <li><code>AC-batch-apply-10</code> A field the API does not know is refused, naming the change and the field, and a <code>bot</code> other than the one in use is refused, naming both.</li>
     <li><code>AC-batch-apply-11</code> A file of changes can set a knowledge base's language, and <code>en</code> applies without it.</li>
     <li><code>AC-batch-apply-12</code> A file and a save of the same bot arriving at the same moment run one after the other: each is checked against the state the other left, and a refused file leaves no trace of itself.</li>
     <li><code>AC-batch-apply-13</code> <code>--json</code> returns the result per change, and the mistakes as a save returns them.</li>
-    <li><code>AC-batch-apply-14</code> <code>suwagcms apply</code> has its line in the plugin's main skill, and a separate skill for batch changes starts with a dry run.</li>
+    <li><code>AC-batch-apply-14</code> A separate skill for batch changes starts with a dry run.</li>
     <li><code>AC-batch-apply-15</code> A dry run shows the same refusals as an ordinary save, judged on the whole file's result: a used article and every reference to it can go in one file, and two new articles linking to each other are refused as a loop.</li>
-    <li><code>AC-batch-apply-16</code> A file of changes covers procedures, and a successful answer also lists the <code>Version</code> stage's mistakes without refusing.</li>
-    <li><code>AC-batch-apply-17</code> A file of changes covers actions.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>edit-guard</code>:</b> a dry run shows the refusals of the edit guard too, judged on the whole file's result.</li>
-    <li><b>after <code>version-export</code>:</b> an exported file given to <code>apply</code> is refused, saying that exports are for reading and how to write a file of changes.</li>
+    <li><code>AC-batch-apply-16</code> A successful answer also lists the <code>Version</code> stage's mistakes, without refusing.</li>
+    <li><code>AC-batch-apply-18</code> A file that breaks a rule of the edit guard gets the edit guard's refusal, with and without <code>--dry-run</code>, judged on the whole file's result: a file narrowing a used fact is refused with <code>fact.enum.valueInUse</code> and saves nothing, and a file changing the fact and the procedure using it together is accepted.</li>
+    <li><code>AC-batch-apply-19</code> An unreadable file exits 2, naming the line, and an empty list says there is nothing to apply and exits 0.</li>
+    <li><code>AC-batch-apply-20</code> An exported file given to <code>apply</code> is refused, since it holds no list of changes, and nothing is saved.</li>
   </ul>
 </section>
 <section data-role="risks">

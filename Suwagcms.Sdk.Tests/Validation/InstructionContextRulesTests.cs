@@ -198,6 +198,7 @@ public sealed class InstructionContextRulesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-7")]
     public void A_query_names_nothing_so_the_walker_yields_only_the_articles()
     {
         var reference = Assert.Single(

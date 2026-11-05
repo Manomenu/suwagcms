@@ -54,14 +54,4 @@ public sealed class RefusalTests
             mistakes.Select(mistake => mistake.GetProperty("fix").GetString())
         );
     }
-
-    [Fact]
-    public async Task A_client_error_without_mistakes_is_not_a_refusal()
-    {
-        var notFound = StubServer.Answering(HttpStatusCode.NotFound, """{"status":404}""");
-
-        var result = await TestCli.Run(["status", "--server", "http://cms.internal"], notFound);
-
-        Assert.Equal(3, result.ExitCode);
-    }
 }

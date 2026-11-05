@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>sdk-validator</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -382,7 +382,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>6</b><span>routes on the bot</span></div>
-    <div><b>18</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -505,22 +505,20 @@ flowchart TB
   <ul class="checks">
     <li><code>AC-bot-runtime-sdk-1</code> A test bot built on the packed <code>Suwagcms.Sdk</code> package, with only its setup call, its route call and a store, accepts a version over <code>PUT /suwagcms/versions/{number}</code> without a restart, and reports it on <code>GET /suwagcms/state</code>.</li>
     <li><code>AC-bot-runtime-sdk-2</code> Asked for the current version before any push, the SDK says there is none, and the state route reports none.</li>
-    <li><code>AC-bot-runtime-sdk-3</code> A version that fails at the <code>Version</code> stage is refused with every mistake, and the state and running conversations stay as they were.</li>
+    <li><code>AC-bot-runtime-sdk-3</code> A version that fails at the <code>Version</code> stage is refused with every mistake, and the state stays as it was.</li>
     <li><code>AC-bot-runtime-sdk-4</code> A document with another bot's id, an unknown <code>formatVersion</code>, or a digest that does not match is refused, naming the reason, and the state stays as it was.</li>
-    <li><code>AC-bot-runtime-sdk-5</code> After a new version is accepted, a new conversation gets its number, while a conversation that started earlier still gets its own version's definition by number.</li>
+    <li><code>AC-bot-runtime-sdk-5</code> After a new version is accepted, the SDK gives its number as current, and the definition of an earlier number is still available.</li>
     <li><code>AC-bot-runtime-sdk-6</code> Sending the same number and document twice succeeds and changes nothing; the same number with another document is refused.</li>
-    <li><code>AC-bot-runtime-sdk-7</code> A lower number than the current one is accepted and becomes current.</li>
+    <li><code>AC-bot-runtime-sdk-7</code> A lower number than the current one that the bot does not hold is accepted and becomes current.</li>
     <li><code>AC-bot-runtime-sdk-8</code> A version neither current nor reported as in use is removed; one reported as in use is kept; the current one is never removed, even if reported as unused.</li>
     <li><code>AC-bot-runtime-sdk-9</code> When the bot's code has never reported what is in use, no version is removed.</li>
     <li><code>AC-bot-runtime-sdk-10</code> After a restart, a bot with the default file store reports the same version and can give the definition of any version it held.</li>
     <li><code>AC-bot-runtime-sdk-11</code> With two instances sharing one store, a version pushed to one becomes current on the other at its next poll, and <code>GET /suwagcms/state</code> gives the same answer on both.</li>
-    <li><code>AC-bot-runtime-sdk-12</code> A conversation started on one instance gets its version's definition on another instance, loaded from the shared store.</li>
+    <li><code>AC-bot-runtime-sdk-12</code> The definition of a version held in the shared store is available on every instance, whichever one took it.</li>
     <li><code>AC-bot-runtime-sdk-13</code> When the store fails during a write, the route answers with the reason and the state stays what it was.</li>
     <li><code>AC-bot-runtime-sdk-14</code> When the store cannot be read while polling, the instance keeps serving what it has, and the state route says the store cannot be read.</li>
-    <li><code>AC-bot-runtime-sdk-15</code> The same behaviour tests pass against the default file store and against a store supplied by a test.</li>
-    <li><code>AC-bot-runtime-sdk-16</code> The published schema of the state answer and of a refusal is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
-    <li><code>AC-bot-runtime-sdk-17</code> The SDK tells the bot's code about a new version, so it can update its search.</li>
-    <li><code>AC-bot-runtime-sdk-18</code> A change of availability takes effect at once, also on an older version, and reaches the other instances through the shared store.</li>
+    <li><code>AC-bot-runtime-sdk-15</code> The default file store and a store supplied by a test give the same state for the same scenario.</li>
+    <li><code>AC-bot-runtime-sdk-16</code> The published schema of every bot route (the state answer, a refusal, <code>PUT /suwagcms/current</code>, the declaration, the availability message and the test route) is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
   </ul>
 </section>
 

@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>bot-profiles</code>, <code>sdk-validator</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -376,11 +376,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A bot states what it supports: the format version it wants, the blocks it can run and the actions written in its code. The CMS asks the bot for this over a new route, keeps the last good answer and shows it in the web, the CLI and the plugin.</p>
-    <p>The validator can now check a definition against a declaration, and a bot outside .NET can validate through an endpoint of the CMS. Registering a bot still contacts nothing: the CMS asks afterwards.</p>
+    <p>A bot states what it supports: the format version it wants, the blocks it can run and the actions written in its code. The CMS asks the bot for this over a route of its own, keeps the last good answer and shows it in the web, the CLI and the plugin.</p>
+    <p>The validator can check a definition against a declaration, and a bot outside .NET can validate through an endpoint of the CMS. Registering a bot still contacts nothing: the CMS asks afterwards.</p>
   </div>
   <div class="stats">
-    <div><b>18</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -505,20 +505,18 @@ Mistakes, 1:
   <ul class="checks">
     <li><code>AC-bot-declaration-1</code> A test bot built on the packed <code>Suwagcms.Sdk</code> package, whose setup states a format version, blocks and a code action, answers <code>GET /suwagcms/declaration</code> with them and its own id.</li>
     <li><code>AC-bot-declaration-2</code> A test bot whose setup states nothing answers that it declares nothing, and still accepts and reports versions.</li>
-    <li><code>AC-bot-declaration-3</code> The published schema of the declaration is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
     <li><code>AC-bot-declaration-4</code> Opening a bot's profile and running <code>suwagcms bots declaration</code> each ask the bot, store the answer with its time and show the format version, the blocks and the code actions; <code>--json</code> returns the same as data.</li>
     <li><code>AC-bot-declaration-5</code> A bot that has never answered shows that it has not, in the web and the CLI, and nothing else about the bot is refused because of it.</li>
     <li><code>AC-bot-declaration-6</code> With the bot unreachable, or not answering within the time limit, the last stored declaration stays and is shown with its time and the reason, and the CLI exits 1.</li>
     <li><code>AC-bot-declaration-7</code> An answer with another bot's id, no blocks, a block the format does not have, a code action with no description, a repeated code action id or a type breaking the rules of facts shows every mistake at once, and the stored declaration stays as it was.</li>
     <li><code>AC-bot-declaration-8</code> A declaration with a format version the CMS does not know is stored and shown with its fix.</li>
     <li><code>AC-bot-declaration-9</code> A new valid answer replaces the stored declaration as a whole: a block the bot stopped declaring is no longer shown.</li>
-    <li><code>AC-bot-declaration-10</code> An answer that the bot declares nothing clears the stored declaration, and the page says so.</li>
+    <li><code>AC-bot-declaration-10</code> A 404, or an answer that the bot declares nothing, clears the stored declaration, and the page says so.</li>
     <li><code>AC-bot-declaration-11</code> Asking the bot changes no fact, article or procedure of that bot, and no version.</li>
     <li><code>AC-bot-declaration-12</code> Given a declaration with another format version, the validator returns at the <code>Version</code> stage a mistake naming both versions, with its fix, and nothing at the <code>Save</code> stage.</li>
-    <li><code>AC-bot-declaration-13</code> Given no declaration, the validator returns the same mistakes as before this feature.</li>
+    <li><code>AC-bot-declaration-13</code> Given no declaration, or one that declares nothing, the validator returns the same mistakes as without a declaration.</li>
     <li><code>AC-bot-declaration-14</code> <code>POST /api/validate</code> returns the same mistakes as the library for the same definition, stage and declaration, stores nothing, and contacts no bot.</li>
     <li><code>AC-bot-declaration-15</code> <code>suwagcms validate</code> reads YAML and JSON, checks the <code>Version</code> stage unless told otherwise, and exits 0 for no mistakes and 1 otherwise, with <code>--json</code> returning the mistakes.</li>
-    <li><code>AC-bot-declaration-16</code> <code>suwagcms bots declaration</code> and <code>suwagcms validate</code> each have their line in the plugin's main skill.</li>
     <li><code>AC-bot-declaration-17</code> Given a declaration, the validator returns at the <code>Version</code> stage a mistake for each step whose block the bot does not declare, naming the procedure, the step and the blocks it does declare.</li>
     <li><code>AC-bot-declaration-18</code> A change of declaration that leaves out a block in use lists the affected procedures on the profile and in <code>suwagcms bots declaration</code>.</li>
   </ul>

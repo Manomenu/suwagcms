@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>version-push</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p><b>The one thing to know:</b> a bot may still hold the chosen version, for a conversation in progress. Sending it again would succeed and change nothing, as <code>bot-runtime-sdk</code> requires. So a request of its own makes a held version current. A rollback counts as done only when the bot's own answer names the chosen version.</p>
   </div>
   <div class="stats">
-    <div><b>20</b><span>criteria</span></div>
+    <div><b>18</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -460,7 +460,7 @@ flowchart TD
     <tr><td>the bot removed the version between the CMS's question and its request</td><td>the bot refuses, the CMS sends the document, and it becomes current</td></tr>
     <tr><td>the held version no longer passes the bot's validation</td><td>refused with every mistake; the bot keeps what it had</td></tr>
     <tr><td>the bot holds another document under that number</td><td>refused, as a version never changes; the bot keeps what it had</td></tr>
-    <tr><td>a bot on an SDK without the new request, holding the chosen version</td><td>failed, saying to upgrade the bot's SDK; a version the bot does not hold still goes through</td></tr>
+    <tr><td>a bot on an SDK without <code>PUT /suwagcms/current</code>, holding the chosen version</td><td>failed, saying to upgrade the bot's SDK; a version the bot does not hold still goes through</td></tr>
     <tr><td>the bot cannot be reached, or does not answer in time</td><td>failed as any push; the attempt is recorded</td></tr>
     <tr><td>a bot in several instances</td><td>the choice is written to the shared store, and the other instances follow at their next poll</td></tr>
     <tr><td>a save during a rollback</td><td>unaffected, as with any push</td></tr>
@@ -523,20 +523,18 @@ flowchart TD
     <li><code>AC-version-rollback-3</code> A rollback is reported as done only when the bot's answer names the chosen version; a test bot that answers with success but names another is shown as a failed push saying which version it reports, and the CLI exits 1.</li>
     <li><code>AC-version-rollback-4</code> After a rollback to v12, with v14 still held by the bot, pushing the latest version makes v14 current.</li>
     <li><code>AC-version-rollback-5</code> After a rollback the working state and all versions are byte-identical to before, also when the chosen version holds resources deleted since, and the next version created takes the number after the latest.</li>
-    <li><code>AC-version-rollback-6</code> After a rollback a new conversation gets the chosen version, and a conversation that started earlier still gets its own version's definition by number.</li>
-    <li><code>AC-version-rollback-7</code> On the bot, the new request makes a held version current, and repeating it changes nothing; a number it does not hold, or a digest that differs from the held document, is refused, and the state stays as it was.</li>
+    <li><code>AC-version-rollback-6</code> After a rollback the SDK gives the chosen number as current, and the definition of an earlier number is still available.</li>
+    <li><code>AC-version-rollback-7</code> On the bot, <code>PUT /suwagcms/current</code> makes a held version current, and repeating it changes nothing; a number it does not hold, or a digest that differs from the held document, is refused, and a store that fails during the write answers 503; in each of these the state stays as it was.</li>
     <li><code>AC-version-rollback-8</code> A held version that no longer passes the bot's validation is refused with every mistake, and the state stays as it was.</li>
     <li><code>AC-version-rollback-9</code> When the bot refuses because it no longer holds the version, the CMS sends the document, and the version becomes current.</li>
     <li><code>AC-version-rollback-10</code> With two instances sharing a store, a held version made current through one is current on the other at its next poll, and the state route gives the same answer on both.</li>
-    <li><code>AC-version-rollback-11</code> A test bot without the new request, holding the chosen version, is shown as a failed push saying to upgrade its SDK, and keeps what it had; a version it does not hold is still accepted.</li>
+    <li><code>AC-version-rollback-11</code> A test bot without <code>PUT /suwagcms/current</code>, holding the chosen version, is shown as a failed push saying to upgrade its SDK, and keeps what it had; a version it does not hold is still accepted.</li>
     <li><code>AC-version-rollback-12</code> <code>suwagcms push --version n</code> for the version already current says so, sends nothing and exits 0; for a number the CMS does not have it exits 1, naming kept numbers.</li>
     <li><code>AC-version-rollback-13</code> The web's select lists the bot's kept versions other than the latest and the one the bot has, newest first, and pushing one asks once, saying the bot's current and chosen versions; the CLI asks nothing.</li>
-    <li><code>AC-version-rollback-14</code> <code>--dry-run</code> says whether the version would be sent, made current, or needs nothing, and the bot's state stays as it was; every attempt is recorded and listed with its version, as any push is.</li>
-    <li><code>AC-version-rollback-15</code> The published schema of the bot's routes covers the new request and is compared on the gate, and the behaviour tests of the new request pass through the packed <code>Suwagcms.Sdk</code> package, against the default file store and a store supplied by a test.</li>
-    <li><code>AC-version-rollback-16</code> <code>suwagcms push --version</code> has its line in the plugin's main skill, which says that this is the rollback and that it changes only the bot.</li>
-    <li><code>AC-version-rollback-17</code> A version using a block the bot no longer runs is refused, naming the block, and the bot keeps what it had.</li>
+    <li><code>AC-version-rollback-14</code> <code>--dry-run</code> says whether the version would be sent, made current, or needs nothing, and the bot's state stays as it was.</li>
+    <li><code>AC-version-rollback-15</code> The smoke test of <code>PUT /suwagcms/current</code> passes through the packed <code>Suwagcms.Sdk</code> package, with the default file store and a store supplied by a test.</li>
+    <li><code>AC-version-rollback-16</code> The plugin's main skill says of <code>suwagcms push --version</code> that this is the rollback and that it changes only the bot.</li>
     <li><code>AC-version-rollback-18</code> Before a rollback, the page shows what will go back, and <code>--dry-run</code> lists the same changes.</li>
-    <li><code>AC-version-rollback-19</code> A rollback is recorded with the version it left and the version it chose.</li>
     <li><code>AC-version-rollback-20</code> A rollback also delivers the current availability set before it changes what the bot runs, and availability of a resource the chosen version does not hold has no effect.</li>
   </ul>
 </section>
@@ -544,12 +542,12 @@ flowchart TD
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>cms-identity</code>:</b> the new request needs the bot's key, like the other routes.</li>
+    <li><b>after <code>cms-identity</code>:</b> <code>PUT /suwagcms/current</code> needs the bot's key, like the other routes.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>A bot needs the new route.</b> Bots outside this repository need the new SDK to go back to a version they hold. Until they upgrade, a rollback there fails with a clear reason exactly when it is urgent. The fix available to them at that moment is a new version that restores the old state.</p></div>
+  <div class="callout risk"><p><b>A bot needs <code>PUT /suwagcms/current</code>.</b> Bots outside this repository need an SDK that has it to go back to a version they hold. Until they upgrade, a rollback there fails with a clear reason exactly when it is urgent. The fix available to them at that moment is a new version that restores the old state.</p></div>
   <div class="callout warn"><p><b>A rollback can bring back what was removed on purpose.</b> An article deleted for being wrong returns to customers. The page's question, with the comparison of what will go back, is what warns the person; nothing refuses it, as README accepts.</p></div>
   <div class="callout assumption"><p>A version made current again counts as current for removal: the SDK never removes it, as it never removes any current version.</p></div>
 </section>

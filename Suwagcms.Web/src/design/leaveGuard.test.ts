@@ -16,13 +16,13 @@ function Guarded({ message }: { message: string }) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("leave guard", () => {
-    it("asks nothing when no page is guarded", () => {
+    it("AC-articles-13: asks nothing when no page is guarded", () => {
         const confirm = vi.spyOn(window, "confirm");
         expect(mayLeave()).toBe(true);
         expect(confirm).not.toHaveBeenCalled();
     });
 
-    it("asks the question while guarded and returns the answer, then asks nothing after unmount", () => {
+    it("AC-articles-13, AC-procedure-creator-17: asks the question while guarded and returns the answer, then asks nothing after unmount", () => {
         const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
         const root = createRoot(document.createElement("div"));
         act(() => root.render(createElement(Guarded, { message: "Discard changes?" })));

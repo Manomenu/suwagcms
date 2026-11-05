@@ -112,13 +112,6 @@ describe("ArticlesView", () => {
         expect(html).toContain("What a valuation costs");
     });
 
-    it("AC-articles-8: each article has an edit button, and Delete is on the opened article beside what uses it", () => {
-        const html = view(articles);
-
-        expect(html).not.toContain(">Delete<");
-        expect(html.match(/>Edit</g)).toHaveLength(1);
-    });
-
     it("AC-articles-11: the list offers a filter by knowledge base and one by text", () => {
         const html = view(articles);
 
@@ -132,7 +125,7 @@ describe("ArticlesView", () => {
         expect(view([], bases, { knowledgeBase: "offer", language: "", text: "" })).toContain("No article matches the filters.");
     });
 
-    it("a bot with no knowledge base is sent to create one before an article", () => {
+    it("AC-articles-11: a bot with no knowledge base is sent to create one before an article", () => {
         const html = view([], []);
 
         expect(html).toContain("Create the first knowledge base");

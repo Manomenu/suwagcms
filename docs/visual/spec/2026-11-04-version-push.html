@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>version-create</code>, <code>bot-runtime-sdk</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -378,10 +378,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>TL;DR</h2>
   <div class="tldr">
     <p>A bot's page says <b>Bot has: v12, Latest: v14</b> and offers <span class="btn primary">Push v14</span>. The number shown is the one the bot reports, not the last one the CMS tried to send, so a failed push shows as failed and the bot keeps what it had.</p>
-    <p>People and agents may both push, through the web, the CLI and the plugin. With this feature, the first cut is complete: facts, articles and procedures reach a running bot.</p>
+    <p>People and agents may both push, through the web, the CLI and the plugin. So facts, articles and procedures reach a running bot.</p>
   </div>
   <div class="stats">
-    <div><b>17</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -404,7 +404,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>Choosing another version and rolling back: <code>version-rollback</code> owns the version select and <code>--version</code>.</li>
       <li>Sending availability changes: <code>availability</code>.</li>
       <li>Retrying by itself: a person or an agent decides, and a repeated push is safe.</li>
-      <li>A key on the bot's routes, and recording who pushed: they arrive with <code>cms-identity</code> and <code>change-history</code>.</li>
+      <li>A key on the bot's routes, and recording who pushed: they arrive with <code>cms-identity</code>.</li>
     </ul></div>
   </div>
 </section>
@@ -524,11 +524,10 @@ stateDiagram-v2
     <li><code>AC-version-push-10</code> <code>suwagcms push</code> when the bot has the latest version says so, sends nothing and exits 0; with no version it exits 1 and says to create one.</li>
     <li><code>AC-version-push-11</code> A save of the same bot during a push waiting on a slow bot completes without waiting for it.</li>
     <li><code>AC-version-push-12</code> Every attempt is recorded with its time, version, result and reason, and the page and <code>suwagcms versions status</code> list the recent ones.</li>
-    <li><code>AC-version-push-13</code> The page and <code>suwagcms versions status</code> list the versions the bot still holds for conversations in use.</li>
+    <li><code>AC-version-push-13</code> The page and <code>suwagcms versions status</code> list the versions the bot reports in use, leaving out the current one.</li>
     <li><code>AC-version-push-14</code> <code>suwagcms push</code> asks for no confirmation, and with <code>--json</code> returns the result, the reason and the version the bot reports.</li>
-    <li><code>AC-version-push-15</code> <code>suwagcms push</code> and <code>suwagcms versions status</code> each have their line in the plugin's main skill.</li>
-    <li><code>AC-version-push-16</code> From a real server and a test bot, through the CLI: a fact, a base, two linked articles and the procedures are created, deleting a used article and closing a loop are refused, a version is created and pushed, and the CMS shows what the bot reports; with the bot stopped, a push fails visibly, and after its return the bot still reports the earlier version.</li>
-    <li><code>AC-version-push-17</code> A push is checked against what the bot declares now.</li>
+    <li><code>AC-version-push-16</code> From a real server and a test bot, with the resources created through the API: the CLI is refused deleting a used article and closing a loop, creates and pushes a version, and shows what the bot reports; with the bot stopped, a push fails visibly, and after its return the bot still reports the earlier version.</li>
+    <li><code>AC-version-push-17</code> A version, also an older one, holding a block the bot does not declare now is refused, naming the block, and nothing goes to the bot; a bot with no declaration or a wrong answer goes on to its own validation.</li>
   </ul>
 </section>
 

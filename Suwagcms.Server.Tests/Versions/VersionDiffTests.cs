@@ -39,6 +39,27 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-version-diff-15")]
+    public async Task A_resource_whose_id_changed_is_listed_as_removed_under_the_old_id_and_added_under_the_new_one()
+    {
+        var (scene, bot) = await FilledAsync();
+        await using var _ = bot;
+        var first = await scene.CreateAsync();
+        var renamed = await scene.Client.PostAsJsonAsync(
+            $"/api/bots/{scene.Bot}/articles/priceList/rename",
+            new { newId = "prices" },
+            TestContext.Current.CancellationToken
+        );
+        Assert.True(renamed.IsSuccessStatusCode);
+        var second = await scene.CreateAsync();
+
+        var comparison = await CompareAsync(scene, first.Number, second.Number);
+
+        Assert.Contains(comparison.Resources, resource => (resource.Id, resource.Difference) == ("priceList", Difference.Removed));
+        Assert.Contains(comparison.Resources, resource => (resource.Id, resource.Difference) == ("prices", Difference.Added));
+    }
+
+    [Fact]
     [Trait("criterion", "AC-version-diff-1")]
     public async Task The_route_and_the_cli_list_the_same_resources_for_real_versions_of_a_bot()
     {
@@ -95,7 +116,6 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-version-diff-4")]
-    [Trait("criterion", "AC-knowledge-base-language-16")]
     public async Task A_change_of_a_knowledge_bases_language_is_a_changed_field_with_both_values()
     {
         var (scene, bot) = await FilledAsync();
@@ -220,6 +240,10 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
         await scene.CreateAsync();
         Assert.True((await scene.Facts.Put("customer.city", FactApi.Text(length: 120))).IsSuccessStatusCode);
         await scene.ChangeAsync();
+        var articles = new ArticleApi(scene.Client, scene.Bot);
+        Assert.True((await articles.Add("zebra", ArticleApi.Body(title: "Zebra"))).IsSuccessStatusCode);
+        Assert.True((await articles.Add("bravo", ArticleApi.Body(title: "Bravo"))).IsSuccessStatusCode);
+        Assert.True((await articles.KnowledgeBases.Add("zulu", "Zulu")).IsSuccessStatusCode);
         await scene.CreateAsync();
 
         var once = await scene.CliAsync("diff", "1", "2", "--json");
@@ -229,8 +253,11 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
         using var document = JsonDocument.Parse(once.Output);
         Assert.Equal(1, document.RootElement.GetProperty("from").GetInt32());
         Assert.Equal(
-            ["customer.city", "extra.n1"],
-            document.RootElement.GetProperty("resources").EnumerateArray().Select(item => item.GetProperty("id").GetString())
+            ["GlobalFact:customer.city", "GlobalFact:extra.n1", "KnowledgeBase:zulu", "Article:bravo", "Article:zebra"],
+            document
+                .RootElement.GetProperty("resources")
+                .EnumerateArray()
+                .Select(item => $"{item.GetProperty("kind").GetString()}:{item.GetProperty("id").GetString()}")
         );
     }
 }

@@ -195,6 +195,7 @@ public sealed class InformBlockRulesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-7")]
     public void The_walker_yields_only_the_articles_of_the_context_with_their_place()
     {
         var references = ReferenceWalker.From(Informing(TwoPoints, articles: ["officeContact"])).ToList();

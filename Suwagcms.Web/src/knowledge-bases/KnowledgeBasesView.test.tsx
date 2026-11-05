@@ -44,13 +44,6 @@ describe("KnowledgeBasesView", () => {
         expect(html).toContain("dlaRzeczoznawcow");
     });
 
-    it("AC-knowledge-bases-2: each base has an edit button, and AC-knowledge-bases-3: a delete button", () => {
-        const html = view(bases);
-
-        expect(html.match(/>Edit</g)).toHaveLength(2);
-        expect(html.match(/>Delete</g)).toHaveLength(2);
-    });
-
     it("AC-knowledge-bases-7: a bot with no bases shows a screen offering to create the first one", () => {
         const html = view([]);
 

@@ -152,6 +152,11 @@ public sealed class DeleteGuardTests(TestDatabase database) : IDisposable
         _ = database.Pool;
         var api = await ProcedureApi.NewBotAsync(app.CreateClient());
         await api.Add("orderValuation", ProcedureApi.Valuation);
+        Assert.True(
+            (
+                await api.Add("secondOrder", """{"description":"D","firstStep":"ask","steps":{"ask":{"collect":["order.kind"]}}}""")
+            ).IsSuccessStatusCode
+        );
 
         var response = await api.Facts.Delete("order.kind");
         var mistake = Assert.Single(await FactApi.MistakesOf(response));
@@ -160,7 +165,17 @@ public sealed class DeleteGuardTests(TestDatabase database) : IDisposable
         Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
         Assert.Equal("order.kind", mistake.GetProperty("resource").GetProperty("id").GetString());
         var referrers = Referrers(mistake);
-        Assert.All(referrers, referrer => Assert.StartsWith("orderValuation:steps.ask.", referrer, StringComparison.Ordinal));
+        Assert.All(
+            referrers,
+            referrer =>
+                Assert.True(
+                    referrer.StartsWith("orderValuation:steps.ask.", StringComparison.Ordinal)
+                        || referrer == "secondOrder:steps.ask.collect[0]",
+                    referrer
+                )
+        );
+        Assert.Contains("secondOrder:steps.ask.collect[0]", referrers);
+        Assert.Contains(referrers, referrer => referrer.StartsWith("orderValuation:", StringComparison.Ordinal));
         Assert.Contains(referrers, referrer => referrer.Contains("when.order.kind", StringComparison.Ordinal));
         Assert.Contains("order.kind", (await api.Facts.List()).Select(fact => fact.Name));
     }

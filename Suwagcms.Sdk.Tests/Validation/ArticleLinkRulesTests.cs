@@ -117,7 +117,7 @@ public sealed class ArticleLinkRulesTests
         Assert.Empty(Check(Linking("See [Prices](cms://article/cennik)."), Target("cennik", "offer")));
 
     [Fact]
-    [Trait("criterion", "AC-article-links-7")]
+    [Trait("criterion", "AC-delete-guard-7")]
     public void The_walker_yields_each_article_link_with_its_field_as_path_and_no_fact_use()
     {
         var bot = Bot(Linking("[a](cms://article/one) and [b](cms://article/two)", "[c](cms://article/one)"));

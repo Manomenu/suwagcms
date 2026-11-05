@@ -129,6 +129,7 @@ public sealed class ArticleProcedureLinkRulesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-7")]
     public void The_walker_yields_a_guide_link_with_its_field_and_no_edge_to_conversation()
     {
         var references = ReferenceWalker.From(Holding(guide: $"{Link} [back](cms://procedure/conversation)")).ToList();

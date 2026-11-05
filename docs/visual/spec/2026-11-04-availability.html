@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>articles</code>, <code>delete-guard</code>, <code>bot-runtime-sdk</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Availability is a live setting outside versions. The CMS sends it to one instance of the bot at once, with no push, the others pick it up at their next poll, and it applies to every conversation, also those on an older version. If the bot cannot be reached, the page says the change is saved and not delivered, because “off” is often an emergency and nobody should believe it too early.</p>
   </div>
   <div class="stats">
-    <div><b>29</b><span>criteria</span></div>
+    <div><b>28</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
@@ -388,7 +388,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="problem">
   <h2>Problem</h2>
   <p>An article is wrong, or a service behind an action is misbehaving, and it has to stop now. The rest of the CMS cannot do that. A push is slow and carries everything else in the working state; deleting is refused while something refers to the resource; and even after a push, a conversation finishes on the version it started on, so the old content keeps being used by the conversations already open.</p>
-  <p>The bot's routes today accept versions and report them, and nothing reaches a bot outside a version.</p>
+  <p>The bot's other routes accept versions and report them, so nothing else would reach a bot outside a version.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
@@ -513,7 +513,7 @@ sequenceDiagram
   <table>
     <tr><th>Route</th><th>Does</th><th>Answers</th></tr>
     <tr><td><code>PUT /suwagcms/availability</code></td><td>takes the number and everything that is off, as kind and id, and for a former id of a renamed resource <code>upToVersion</code>, the last version it counts in; a number lower than the one held changes nothing; safe to repeat</td><td>the state</td></tr>
-    <tr><td><code>GET /suwagcms/state</code></td><td>gains what is off and its number, from the store, so every instance gives the same answer</td><td>as today, plus these</td></tr>
+    <tr><td><code>GET /suwagcms/state</code></td><td>also reports what is off and its number, from the store, so every instance gives the same answer</td><td>the rest of the state, plus these</td></tr>
   </table>
   <p>A store a bot supplies keeps this setting alongside the versions, and itself keeps the higher number, since the instances sharing it have no lock in common. The bot's code asks <code>IBotDefinitions.IsOff(version, kind, id)</code>.</p>
 </section>
@@ -546,26 +546,25 @@ sequenceDiagram
     <li><code>AC-availability-7</code> Changing availability creates no new revision of the resource or of anything else in the working state: an open edit based on the earlier revision still saves.</li>
     <li><code>AC-availability-8</code> A kind or a resource that does not exist, a fact and a knowledge base are each refused with a mistake naming what can be turned off.</li>
     <li><code>AC-availability-9</code> A change reaches a running test bot with no version created and no push: its state and the SDK's answer show the resource off, and the CMS shows it as confirmed from the bot's answer.</li>
-    <li><code>AC-availability-10</code> A change of availability takes effect at once, also on an older version: the SDK answers the same for the bot's code whichever version its conversation is on.</li>
+    <li><code>AC-availability-10</code> A change of availability takes effect at once, also on an older version: the SDK answers the same whichever version it is asked about.</li>
     <li><code>AC-availability-11</code> In a bot with two instances sharing a store, a change delivered to one is what the other answers after its next poll, and the state route says the same on both.</li>
-    <li><code>AC-availability-12</code> After a restart, a bot reports the same setting, and the same behaviour tests pass against the default file store and a store supplied by a test.</li>
+    <li><code>AC-availability-12</code> After a restart, a bot reports the same setting, the default file store and a store supplied by a test give the same state for the same scenario, and a store that fails answers 503 and the setting stays.</li>
     <li><code>AC-availability-13</code> With the SDK told an article is off, the article is still given by id and in its version's definition, and the SDK's answer says it is off.</li>
     <li><code>AC-availability-14</code> Each message holds the whole set, so after a missed change, the next change or <code>suwagcms availability send</code> leaves the bot with the CMS's full setting.</li>
     <li><code>AC-availability-15</code> A message with a lower number than the bot holds changes nothing, and the same message sent twice changes nothing.</li>
     <li><code>AC-availability-16</code> With the bot unreachable or too slow, the change stays saved, the page and the CLI say it is not delivered with the reason, and the CLI exits 1 with <code>--json</code> saying so.</li>
     <li><code>AC-availability-17</code> A bot reporting a lower number than the CMS's, or having no such route, shows as not delivered with a way to send again or the fix.</li>
-    <li><code>AC-availability-18</code> A save of the same bot during a change waiting on a slow bot completes without waiting for it, and a delete and a change of one resource at the same moment run one after the other.</li>
+    <li><code>AC-availability-18</code> A save of the same bot during a change waiting on a slow bot completes without waiting for it.</li>
     <li><code>AC-availability-19</code> A deleted resource's setting is gone: created again with the same id, it is on.</li>
-    <li><code>AC-availability-20</code> The published schema of the new route and of the state is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
-    <li><code>AC-availability-21</code> Each <code>suwagcms availability</code> command has its line in the plugin's main skill, which says it takes effect at once and that a resource in use needs <code>--yes</code>.</li>
-    <li><code>AC-availability-22</code> A procedure can be turned off, and the procedures list shows its state; the SDK says the model cannot start it, even from an article's guide, while its definition stays available to a conversation already in it.</li>
+    <li><code>AC-availability-21</code> The plugin's main skill says a change of availability takes effect at once and that a resource in use needs <code>--yes</code>.</li>
+    <li><code>AC-availability-22</code> A procedure can be turned off, and the procedures list shows its state; the SDK says it is off, and its definition stays available.</li>
     <li><code>AC-availability-23</code> Turning off <code>conversation</code> is refused with the reason.</li>
     <li><code>AC-availability-24</code> Every push sends the whole set before the version, so a missed change is repaired and a new version never runs without it.</li>
-    <li><code>AC-availability-25</code> A renamed resource keeps its setting, and turning it off also reaches conversations on an older version that holds it under its old <code>id</code>.</li>
-    <li><code>AC-availability-26</code> An action can be turned off and on like an article, with its setting kept when its <code>id</code> changes, and the Actions screen shows its state.</li>
-    <li><code>AC-availability-27</code> A code action can be turned off the same way, though the rest of it is read-only.</li>
-    <li><code>AC-availability-28</code> For a step running a turned-off action, the SDK says on any version that the action is off and still gives the step with its <code>onFailure</code> step; the CMS stores and delivers this, and taking that route is the bot's to carry out.</li>
+    <li><code>AC-availability-25</code> A renamed resource keeps its setting, and the SDK says it is off, also for an older version that holds it under its old <code>id</code>.</li>
+    <li><code>AC-availability-26</code> An action, HTTP or in code, can be turned off and on like an article, with its setting kept when its <code>id</code> changes, and the Actions screen shows its state; the rest of a code action stays read-only.</li>
+    <li><code>AC-availability-28</code> For a step running a turned-off action, the SDK says on any version that the action is off and still gives the step with its <code>onFailure</code> step.</li>
     <li><code>AC-availability-29</code> The SDK gives an article a procedure names explicitly even while it is off: the version still holds it and the answer says it is off.</li>
+    <li><code>AC-availability-30</code> A delete and a change of one resource at the same moment run one after the other.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">

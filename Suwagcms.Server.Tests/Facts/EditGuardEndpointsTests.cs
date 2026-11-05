@@ -182,6 +182,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database) : IDisposable
         var api = await NewBot();
         Assert.Equal(HttpStatusCode.OK, (await api.Add("first", Procedure(When("rooms", """{"range":{"min":2,"max":9}}""")))).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.Add("second", Procedure(""" "ask":{"collect":["note"]} """))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await api.Add("third", Procedure(When("kind", """{"oneOf":["flat"]}""")))).StatusCode);
 
         Assert.Equal(
             HttpStatusCode.OK,
@@ -194,6 +195,16 @@ public sealed class EditGuardEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal(
             HttpStatusCode.OK,
             (await api.Facts.Put("note", """{"type":"text","description":"A note","maxLength":2}""")).StatusCode
+        );
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (await api.Facts.Put("note", """{"type":"text","description":"A note","maxLength":40}""")).StatusCode
+        );
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (
+                await api.Facts.Put("kind", """{"type":"enum","description":"What is valued","values":["house","flat","land","office"]}""")
+            ).StatusCode
         );
     }
 
@@ -239,6 +250,13 @@ public sealed class EditGuardEndpointsTests(TestDatabase database) : IDisposable
 
         var procedure = await api.Add("customer", Procedure(""" "ask":{"say":"Hi"} """));
         Assert.Equal(["fact.name.procedurePrefix"], await FactApi.CodesOf(procedure));
+
+        Assert.Equal(HttpStatusCode.OK, (await api.Add("withLocal", Declaring(""" "ask":{"say":"Hi"} """, Note))).StatusCode);
+        var factOfLocal = await api.Facts.Add("withLocal.note", Note);
+        Assert.Equal(["fact.name.procedurePrefix"], await FactApi.CodesOf(factOfLocal));
+        Assert.Equal(HttpStatusCode.OK, (await api.Facts.Add("later.note", Note)).StatusCode);
+        var procedureOfFact = await api.Add("later", Declaring(""" "ask":{"say":"Hi"} """, Note));
+        Assert.Equal(["fact.name.procedurePrefix"], await FactApi.CodesOf(procedureOfFact));
     }
 
     [Fact]

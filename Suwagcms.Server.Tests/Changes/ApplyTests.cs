@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Procedures;
 
@@ -187,6 +188,16 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
         }
         Assert.NotEmpty(own);
         Assert.Equal(own.Select(Shown).Order(StringComparer.Ordinal), through.Select(Shown).Order(StringComparer.Ordinal));
+
+        var ownArticle = await FactApi.MistakesOf(await scene.Articles.Add("bad", ArticleApi.Body(knowledgeBase: "nope", description: "")));
+        var articleResponse = await scene.Post(
+            ChangeScene.File(
+                """{"add":"article","id":"bad","knowledgeBase":"nope","title":"Price list","content":"What a valuation costs.","llmGuide":"Ask which kind of property first.","description":""}"""
+            )
+        );
+        var throughArticle = Mistakes(await ChangeScene.JsonOf(articleResponse));
+        Assert.NotEmpty(ownArticle);
+        Assert.Equal(ownArticle.Select(Shown).Order(StringComparer.Ordinal), throughArticle.Select(Shown).Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -396,7 +407,7 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-batch-apply-10")]
+    [Trait("criterion", "AC-batch-apply-19")]
     public async Task An_unreadable_file_exits_2_naming_the_line_and_an_empty_list_says_there_is_nothing_to_apply()
     {
         var scene = await NewScene();
@@ -431,7 +442,6 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-batch-apply-11")]
-    [Trait("criterion", "AC-knowledge-base-language-15")]
     public async Task A_file_can_set_the_language_of_a_knowledge_base_and_en_applies_without_it()
     {
         var scene = await NewScene();
@@ -562,8 +572,53 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
         Assert.Equal("absent", await scene.ReadAsync("articles", "alfa"));
     }
 
+    private const string UsesFlat =
+        """{"description":"D","firstStep":"ask","steps":{"ask":{"say":"Hi","next":[{"when":{"order.type":{"oneOf":["flat"]}},"to":"end"},{"to":"end"}]},"end":{"say":"Bye"}}}""";
+
+    private async Task<ChangeScene> SceneWithAFactInUse()
+    {
+        var scene = await NewScene();
+        await scene.Facts.Add("order.type", """{"type":"enum","description":"What is valued","values":["house","flat","land"]}""");
+        await scene.Post(ChangeScene.File(UsesFlat.Insert(1, "\"add\":\"procedure\",\"id\":\"first\",")));
+        return scene;
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [Trait("criterion", "AC-batch-apply-18")]
+    public async Task A_file_that_narrows_a_used_fact_gets_the_refusal_of_the_edit_guard_and_saves_nothing(bool dryRun)
+    {
+        var scene = await SceneWithAFactInUse();
+
+        var response = await scene.Post(ChangeScene.File("""{"edit":"fact","name":"order.type","values":["house","land"]}"""), dryRun);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var mistake = Assert.Single(Mistakes(await ChangeScene.JsonOf(response)));
+        Assert.Equal("fact.enum.valueInUse", mistake.GetProperty("code").GetString());
+        Assert.Contains("first", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Contains("flat", await scene.ReadAsync("facts", "order.type"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-batch-apply-18")]
+    public async Task A_file_that_changes_the_fact_and_the_procedure_using_it_is_judged_on_its_result_and_passes()
+    {
+        var scene = await SceneWithAFactInUse();
+        var both = ChangeScene.File(
+            """{"edit":"fact","name":"order.type","values":["house","land"]}""",
+            UsesFlat.Replace("flat", "land", StringComparison.Ordinal).Insert(1, "\"edit\":\"procedure\",\"id\":\"first\",")
+        );
+
+        Assert.Equal(HttpStatusCode.OK, (await scene.Post(both, dryRun: true)).StatusCode);
+        Assert.Contains("flat", await scene.ReadAsync("facts", "order.type"), StringComparison.Ordinal);
+        Assert.Equal(HttpStatusCode.OK, (await scene.Post(both)).StatusCode);
+        Assert.DoesNotContain("flat", await scene.ReadAsync("facts", "order.type"), StringComparison.Ordinal);
+    }
+
     [Fact]
     [Trait("criterion", "AC-batch-apply-16")]
+    [Trait("criterion", "AC-batch-apply-1")]
     public async Task A_file_covers_procedures_and_a_successful_answer_lists_what_still_stops_a_version()
     {
         var scene = await NewScene();

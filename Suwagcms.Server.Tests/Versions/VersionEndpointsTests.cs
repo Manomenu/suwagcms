@@ -247,6 +247,12 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
         await one.Procedures.Facts.Add("alpha.first", FactApi.Text("First"));
         await other.Procedures.Facts.Add("alpha.first", FactApi.Text("First"));
         await other.Procedures.Facts.Add("zeta.last", FactApi.Text("Last"));
+        var oneBases = new ArticleApi(one.Client, one.Bot).KnowledgeBases;
+        var otherBases = new ArticleApi(other.Client, other.Bot).KnowledgeBases;
+        await oneBases.Add("zulu", "Zulu");
+        await oneBases.Add("alpha", "Alpha");
+        await otherBases.Add("alpha", "Alpha");
+        await otherBases.Add("zulu", "Zulu");
 
         await one.Created();
         await other.Created();
@@ -256,6 +262,11 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
         Assert.Contains(
             "\"name\":\"alpha.first\"",
             first[..first.IndexOf("zeta.last", StringComparison.Ordinal)],
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "\"id\":\"alpha\"",
+            first[first.IndexOf("knowledgeBases=", StringComparison.Ordinal)..first.IndexOf("zulu", StringComparison.Ordinal)],
             StringComparison.Ordinal
         );
     }
@@ -273,6 +284,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
             document.EnumerateObject().Select(member => member.Name)
         );
         await api.Procedures.Put("orderValuation", ProcedureApi.Valuation);
+        Assert.True((await api.Procedures.PutLayout("orderValuation", """{"positions":{"ask":{"x":10.5,"y":20}}}""")).IsSuccessStatusCode);
         var refused = await api.Create();
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
@@ -370,22 +382,13 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
     [Trait("criterion", "AC-version-create-11")]
     public async Task Creating_a_version_sends_no_request_to_the_bot()
     {
-        var api = await (await NewBot()).Ready();
+        _ = database.Pool;
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var address = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}";
-        var registered = await api.Client.PostAsJsonAsync(
-            "/api/bots",
-            new RegisterBot("w" + Guid.NewGuid().ToString("N")[..10], "Listening bot", address),
-            TestContext.Current.CancellationToken
-        );
-        var listening = (await registered.Content.ReadFromJsonAsync<Bot>(TestContext.Current.CancellationToken))?.Id ?? "";
-        Assert.True(
-            (await api.Client.PostAsync($"/api/bots/{listening}/versions", null, TestContext.Current.CancellationToken)).StatusCode
-                == HttpStatusCode.UnprocessableEntity
-        );
-        Assert.True((await api.Create()).IsSuccessStatusCode);
+        var api = await (await VersionApi.NewBotAsync(app.CreateClient(), address)).Ready();
 
+        await api.Created();
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
         Assert.False(listener.Pending(), "a connection reached the address of the bot");
@@ -451,22 +454,23 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-profiles-13")]
     public async Task An_unknown_bot_is_a_404_for_every_route()
     {
         _ = database.Pool;
         var client = app.CreateClient();
 
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            (await client.GetAsync("/api/bots/nobody/versions", TestContext.Current.CancellationToken)).StatusCode
-        );
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            (await client.GetAsync("/api/bots/nobody/versions/1", TestContext.Current.CancellationToken)).StatusCode
-        );
-        Assert.Equal(
-            HttpStatusCode.NotFound,
-            (await client.PostAsync("/api/bots/nobody/versions", null, TestContext.Current.CancellationToken)).StatusCode
-        );
+        var responses = new[]
+        {
+            await client.GetAsync("/api/bots/nobody/versions", TestContext.Current.CancellationToken),
+            await client.GetAsync("/api/bots/nobody/versions/1", TestContext.Current.CancellationToken),
+            await client.PostAsync("/api/bots/nobody/versions", null, TestContext.Current.CancellationToken),
+        };
+
+        foreach (var response in responses)
+        {
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(["bot.notFound"], await VersionApi.CodesOf(response));
+        }
     }
 }

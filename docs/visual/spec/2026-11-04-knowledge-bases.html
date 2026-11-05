@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>bot-profiles</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A base has an <code>id</code>, a <code>title</code> and a <code>language</code> and nothing else: it groups, and its language is the language of its articles. References work across all the knowledge bases of a bot, so moving an article between bases breaks nothing.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
+    <div><b>8</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -475,7 +475,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-knowledge-bases-5</code> The same <code>id</code> and title can exist in two bots, and a base of one bot is not listed for the other.</li>
     <li><code>AC-knowledge-bases-6</code> An edit or delete based on an old revision is refused, and <code>--dry-run</code> on an add, edit or delete changes nothing.</li>
     <li><code>AC-knowledge-bases-7</code> A bot with no bases shows a screen offering to create the first one, and <code>suwagcms kb list --json</code> returns an empty list with exit 0.</li>
-    <li><code>AC-knowledge-bases-8</code> Each <code>suwagcms kb</code> command has its line in the plugin's main skill.</li>
     <li><code>AC-knowledge-bases-9</code> A base with articles cannot be deleted, and the refusal lists them.</li>
   </ul>
 </section>

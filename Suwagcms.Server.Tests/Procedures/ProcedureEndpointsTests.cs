@@ -327,7 +327,7 @@ public sealed class ProcedureEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-procedure-model-16")]
+    [Trait("criterion", "AC-global-facts-15")]
     public async Task A_fact_shows_the_procedures_that_use_it_in_the_list_and_when_shown_and_when_saved()
     {
         var api = await NewBot();

@@ -13,10 +13,6 @@ public sealed class SchemaTests
 
     [Fact]
     [Trait("criterion", "AC-bot-runtime-sdk-16")]
-    [Trait("criterion", "AC-bot-declaration-3")]
-    [Trait("criterion", "AC-version-rollback-15")]
-    [Trait("criterion", "AC-availability-20")]
-    [Trait("criterion", "AC-action-test-run-15")]
     public async Task The_committed_schema_of_the_state_answer_and_the_refusal_equals_the_one_generated()
     {
         var path = RepositoryFiles.Path("Suwagcms.Sdk/bot-runtime.schema.json");
@@ -47,7 +43,7 @@ public sealed class SchemaTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-rollback-15")]
+    [Trait("criterion", "AC-bot-runtime-sdk-16")]
     public void The_schema_describes_the_request_that_makes_a_held_version_current()
     {
         var choice = Generate().Member("currentChoice").ToJsonString();
@@ -57,7 +53,7 @@ public sealed class SchemaTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-bot-declaration-3")]
+    [Trait("criterion", "AC-bot-runtime-sdk-16")]
     public void The_schema_describes_the_declaration_with_its_blocks_and_its_code_actions()
     {
         var declaration = Generate().Member("declaration").ToJsonString();
@@ -69,7 +65,7 @@ public sealed class SchemaTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-availability-20")]
+    [Trait("criterion", "AC-bot-runtime-sdk-16")]
     public void The_schema_describes_the_availability_message_and_the_state_reports_it()
     {
         var schema = Generate();
@@ -83,7 +79,7 @@ public sealed class SchemaTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-action-test-run-15")]
+    [Trait("criterion", "AC-bot-runtime-sdk-16")]
     public void The_schema_describes_the_test_route()
     {
         var schema = Generate();

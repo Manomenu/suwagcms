@@ -30,7 +30,7 @@ async function declaringBot(id: string): Promise<{ address: string; close: () =>
                             id: "lookupPolicy",
                             description: "Finds a policy",
                             parameters: [{ name: "pesel", type: "text", description: "The PESEL", maxLength: 11 }],
-                            results: [],
+                            results: [{ name: "policyNo", type: "text", description: "The policy number", maxLength: 20 }],
                         },
                     ],
                 }),
@@ -188,7 +188,10 @@ test("AC-code-actions-7: a code action's page has no editing controls and says w
 
     const panel = page.getByRole("region", { name: "Code action lookupPolicy" });
     await expect(panel).toContainText("written in the bot's code");
-    await expect(panel).toContainText("pesel");
+    await expect(panel).toContainText("Finds a policy");
+    await expect(panel.getByRole("region", { name: "Parameters" })).toContainText("pesel");
+    await expect(panel.getByRole("region", { name: "Results" })).toContainText("policyNo");
+    await expect(panel.getByRole("region", { name: "Results" })).toContainText("The policy number");
     await expect(page.getByRole("button", { name: "Save" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Delete" })).toHaveCount(0);
     running.close();
@@ -214,7 +217,7 @@ test("AC-code-actions-9: the Actions screen shows an HTTP action whose id the bo
     running.close();
 });
 
-test("AC-http-actions-20: the view of an action shows the procedures that use it, and its Delete says why not", async ({
+test("AC-action-block-19: the view of an action shows the procedures that use it, and its Delete says why not", async ({
     page,
     request,
 }) => {

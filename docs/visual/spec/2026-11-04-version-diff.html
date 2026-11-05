@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>version-create</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -381,7 +381,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>14</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -480,7 +479,7 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-version-diff-1</code> <code>suwagcms diff 12 14</code> and the web's comparison of the same two versions list the same resources as added, removed and changed, by kind, and list no unchanged resource.</li>
+    <li><code>AC-version-diff-1</code> <code>suwagcms diff 12 14</code> and the web's comparison of the same two versions list the same resources as added, removed and changed, by kind, and list no unchanged resource; a format version that differs is listed like a changed field, and the rest is still compared.</li>
     <li><code>AC-version-diff-2</code> A changed fact, knowledge base or article lists each changed field with its old and new values, and <code>content</code> and <code>llmGuide</code> as lines removed and added.</li>
     <li><code>AC-version-diff-3</code> A changed procedure lists its changed fields, its local facts added, removed or changed, and its steps added, removed or changed, with what changed in each.</li>
     <li><code>AC-version-diff-4</code> A change of a knowledge base's language is listed as a changed field with both values.</li>
@@ -491,16 +490,9 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
     <li><code>AC-version-diff-9</code> Comparing changes no version and no part of the working state, and sends no request to the bot.</li>
     <li><code>AC-version-diff-10</code> On the Versions screen, each version offers its changes against the one before it and a select of other versions to compare with; the first version offers neither.</li>
     <li><code>AC-version-diff-11</code> <code>suwagcms diff --json</code> returns the same changes in a fixed order, so the same two versions always give the same output; <code>--open</code> opens the matching web comparison.</li>
-    <li><code>AC-version-diff-12</code> <code>suwagcms diff</code> has its line in the plugin's main skill.</li>
-    <li><code>AC-version-diff-13</code> The bot's page offers a comparison between the version the bot reports and the one on offer, and the plugin's skill for versions shows that comparison before an agent pushes.</li>
+    <li><code>AC-version-diff-13</code> The bot's page offers a comparison between the version the bot reports and the one on offer.</li>
     <li><code>AC-version-diff-14</code> A comparison covers actions: their contract and implementation, with secrets only as the references the version holds.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>resource-rename</code>:</b> a renamed resource is listed as removed under its old <code>id</code> and added under its new one, because a version holds only the <code>id</code>.</li>
+    <li><code>AC-version-diff-15</code> A resource whose <code>id</code> changed is listed as removed under its old <code>id</code> and added under its new one, because a version holds only the <code>id</code>.</li>
   </ul>
 </section>
 <section data-role="risks">

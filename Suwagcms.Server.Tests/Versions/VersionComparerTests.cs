@@ -102,6 +102,7 @@ public sealed class VersionComparerTests
             ],
             content.Lines
         );
+        Assert.Equal([new TextLine(LineChange.Removed, "Be brief"), new TextLine(LineChange.Added, "Be kind")], article.Fields[1].Lines);
         Assert.Equal(("Old title", "New title", null), (article.Fields[2].Old, article.Fields[2].New, article.Fields[2].Lines));
     }
 
@@ -228,7 +229,7 @@ public sealed class VersionComparerTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-diff-11")]
+    [Trait("criterion", "AC-version-diff-1")]
     public void A_format_version_that_differs_is_listed_like_a_changed_field_and_the_rest_is_still_compared()
     {
         var comparison = Compare(Document(articles: Article("a", "Old"), format: 1), Document(articles: Article("a", "New"), format: 2));

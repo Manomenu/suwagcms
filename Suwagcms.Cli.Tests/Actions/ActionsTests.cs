@@ -105,6 +105,7 @@ public sealed class ActionsTests : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-http-actions-1")]
+    [Trait("criterion", "AC-http-actions-7")]
     public async Task List_and_show_read_back_in_yaml_and_json()
     {
         var server = new StubServer(request =>
@@ -121,6 +122,10 @@ public sealed class ActionsTests : IDisposable
         Assert.Contains("url: https://crm.internal/serviceability", yaml.Output, StringComparison.Ordinal);
         Assert.Contains("Authorization: Bearer {secret:CRM_TOKEN}", yaml.Output, StringComparison.Ordinal);
         Assert.Equal(200, JsonNode.Parse(json.Output)?["parameters"]?["address"]?["maxLength"]?.GetValue<int>());
+        Assert.Equal(
+            "Bearer {secret:CRM_TOKEN}",
+            JsonNode.Parse(json.Output)?["implementation"]?["http"]?["headers"]?["Authorization"]?.GetValue<string>()
+        );
     }
 
     [Theory]
@@ -179,6 +184,23 @@ public sealed class ActionsTests : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-http-actions-9")]
+    public async Task Dry_run_on_an_edit_is_sent_as_one_and_says_nothing_changed()
+    {
+        var sent = new List<(string Method, string Path, string Body)>();
+
+        var edit = await TestCli.Run(
+            ["actions", "edit", "checkServiceability", "--file", Saved("a.yaml", Yaml), "--dry-run", .. OnBot],
+            Recording(sent)
+        );
+
+        Assert.Equal(0, edit.ExitCode);
+        Assert.Contains("Nothing was changed", edit.Output, StringComparison.Ordinal);
+        var put = Assert.Single(sent, call => call.Method == "PUT");
+        Assert.EndsWith("?ifRevision=3&dryRun=true", put.Path, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-http-actions-11")]
     public async Task Delete_says_the_action_is_gone()
     {
@@ -193,21 +215,17 @@ public sealed class ActionsTests : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-http-actions-19")]
-    public void The_main_skill_has_a_line_for_each_command_and_says_how_a_secret_is_written()
+    public void The_main_skill_gives_the_file_format_of_an_action_and_says_how_a_secret_is_written()
     {
         var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var listed = CommandList.Listed(skill);
+        var section = SkillText.Section(skill, "Action file");
 
-        foreach (var command in new[] { "actions list", "actions show", "actions add", "actions edit", "actions delete" })
-        {
-            Assert.Contains(command, listed);
-        }
-        Assert.Contains("{secret:", skill, StringComparison.Ordinal);
-        Assert.Contains("## Action file", skill, StringComparison.Ordinal);
+        Assert.Contains("{secret:", section, StringComparison.Ordinal);
+        Assert.Contains("implementation", section, StringComparison.Ordinal);
     }
 
     private const string Code =
-        """{"id":"lookupPolicy","description":"Finds a policy.","parameters":{"pesel":{"type":"text","description":"PESEL.","maxLength":11}},"results":null,"implementation":"code","revision":1,"usedBy":[],"alsoDeclared":false,"noLongerDeclared":false}""";
+        """{"id":"lookupPolicy","description":"Finds a policy.","parameters":{"pesel":{"type":"text","description":"PESEL.","maxLength":11}},"results":{"policyNumber":{"type":"text","description":"The policy number.","maxLength":20}},"implementation":"code","revision":1,"usedBy":[],"alsoDeclared":false,"noLongerDeclared":false}""";
 
     [Fact]
     [Trait("criterion", "AC-code-actions-1")]
@@ -223,6 +241,9 @@ public sealed class ActionsTests : IDisposable
         Assert.Contains("lookupPolicy  Finds a policy.  code", list.Output, StringComparison.Ordinal);
         Assert.Contains("implementation: code", show.Output, StringComparison.Ordinal);
         Assert.DoesNotContain("url:", show.Output, StringComparison.Ordinal);
+        Assert.Contains("Finds a policy.", show.Output, StringComparison.Ordinal);
+        Assert.Contains("pesel", show.Output, StringComparison.Ordinal);
+        Assert.Contains("policyNumber", show.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -438,7 +459,6 @@ public sealed class ActionsTests : IDisposable
         "Bot rzeczoznawca does not offer test runs. Update its Suwagcms.Sdk and deploy; the action has not been judged."
     )]
     [Trait("criterion", "AC-action-test-run-6")]
-    [Trait("criterion", "AC-action-test-run-7")]
     public async Task A_bot_not_asked_is_told_apart_from_a_failed_action_in_the_words_and_in_json_and_exits_1(string outcome, string reason)
     {
         var answer =
@@ -508,6 +528,10 @@ public sealed class ActionsTests : IDisposable
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains("really runs the bot's code", result.Error, StringComparison.Ordinal);
+
+        var yes = await TestCli.Run(["actions", "test", "lookupPolicy", "--yes", .. OnBot], Testing(Code, Won));
+        Assert.Equal(0, yes.ExitCode);
+        Assert.DoesNotContain("Pass --yes", yes.Error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -521,11 +545,15 @@ public sealed class ActionsTests : IDisposable
         Assert.Equal("yes", answer?["results"]?["serviceable"]?.GetValue<string>());
         Assert.Equal(200, answer?["status"]?.GetValue<int>());
         Assert.Equal(320, answer?["elapsedMs"]?.GetValue<int>());
+        const string Lost =
+            """{"outcome":"failure","results":{},"reason":"Answer 500.","status":500,"elapsedMs":12,"answerStart":"","answerCut":false}""";
+        var failed = JsonNode.Parse((await TestCli.Run(["actions", "test", "lookup", "--json", .. OnBot], Testing(Get, Lost))).Output);
+        Assert.Equal("failure", failed?["outcome"]?.GetValue<string>());
+        Assert.Equal("Answer 500.", failed?["reason"]?.GetValue<string>());
         var skill = await File.ReadAllTextAsync(
             Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"),
             TestContext.Current.CancellationToken
         );
-        Assert.Contains("actions test", CommandList.Listed(skill));
         Assert.Contains("A test run really calls the service", skill, StringComparison.Ordinal);
     }
 }

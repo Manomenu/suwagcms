@@ -368,7 +368,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <span><b>Needs before it:</b> <code>sdk-validator</code>, <code>global-facts</code></span>
   </div>
   <nav class="doc-nav">
-    <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
+    <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
     <a href="https://claude.ai/artifact/XVVjY1yu3kTkJmgQZ5MSN7">Architecture</a>
     <a aria-current="page">Spec</a>
   </nav>
@@ -383,7 +383,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>4</b><span>blocks</span></div>
     <div><b>3</b><span>condition kinds</span></div>
-    <div><b>17</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -528,22 +528,21 @@ whenStalled:
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-procedure-model-1</code> A procedure using all four blocks and rule-based <code>next</code> saved with <code>suwagcms procedures add --file</code> reads back with its steps, blocks and transitions as written, in YAML and in JSON.</li>
-    <li><code>AC-procedure-model-2</code> The output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning, in both formats.</li>
+    <li><code>AC-procedure-model-1</code> A procedure using <code>listen</code>, <code>collect</code>, <code>say</code> and <code>assign</code> and rule-based <code>next</code> saved with <code>suwagcms procedures add --file</code> reads back with its steps, blocks and transitions as written, in YAML and in JSON.</li>
+    <li><code>AC-procedure-model-2</code> The output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning, in both formats; a file whose <code>id</code> differs from the command is refused before the server is asked, naming both, and a file that cannot be read as one procedure says what to fix.</li>
     <li><code>AC-procedure-model-3</code> A procedure with no description, an id the bot already has, and an id or step name that is not camelCase are each refused with a mistake and a fix.</li>
     <li><code>AC-procedure-model-4</code> An unknown block and a step with two blocks are each refused, with the blocks that exist.</li>
     <li><code>AC-procedure-model-5</code> <code>firstStep</code>, <code>next</code> or <code>to</code> naming a missing step is refused, with the steps of the procedure.</li>
     <li><code>AC-procedure-model-6</code> A <code>collect</code>, <code>assign</code> or <code>when</code> naming a fact the bot does not have is refused with <code>reference.missing</code>, with the bot's facts.</li>
-    <li><code>AC-procedure-model-7</code> A <code>collect</code> naming a fact with <code>writableBy: assign</code> is refused, with the fix given in README.</li>
+    <li><code>AC-procedure-model-7</code> A <code>collect</code> naming a fact with <code>writableBy: assign</code> is refused, with the fix: remove it from the <code>collect</code>, or give the fact <code>writableBy: set</code>.</li>
     <li><code>AC-procedure-model-8</code> A condition that does not fit the fact's type, and a value in <code>oneOf</code>, <code>range</code> or <code>assign</code> the fact can never take, are refused, with what is valid for that fact.</li>
     <li><code>AC-procedure-model-9</code> At the <code>Version</code> stage, the validator reports: no <code>firstStep</code>, a step with no block, an empty <code>collect</code> or <code>assign</code>, a blank <code>say</code>, an unreachable step, rules without a default, a <code>collect</code> without <code>whenStalled</code>, a blank instruction, and a bot with no <code>conversation</code>.</li>
     <li><code>AC-procedure-model-10</code> A procedure with only <code>Version</code> mistakes is saved, and the answer lists those mistakes without refusing: the CLI exits 0.</li>
     <li><code>AC-procedure-model-11</code> A loop between the steps of a procedure produces no mistake.</li>
     <li><code>AC-procedure-model-12</code> Deleting <code>conversation</code> is refused with the reason; deleting another procedure works.</li>
     <li><code>AC-procedure-model-13</code> <code>--dry-run</code> on a save gives the same answer and changes nothing, and a stale edit based on an old revision is refused.</li>
-    <li><code>AC-procedure-model-14</code> The web lists a bot's procedures with their description and how many mistakes stop a version.</li>
-    <li><code>AC-procedure-model-15</code> Each <code>suwagcms procedures</code> command has its line in the plugin's main skill, which gives the file format.</li>
-    <li><code>AC-procedure-model-16</code> The view of a fact shows the procedures that use it, in the web and in <code>suwagcms facts show</code>.</li>
+    <li><code>AC-procedure-model-14</code> The web and <code>suwagcms procedures list</code> list a bot's procedures with their description and how many mistakes stop a version.</li>
+    <li><code>AC-procedure-model-15</code> The plugin's main skill gives the file format of a procedure.</li>
     <li><code>AC-procedure-model-17</code> A rule with no <code>when</code> that is not the last rule of a step is a <code>Version</code> mistake, <code>next.default.notLast</code>, saying that the rules after it never apply.</li>
   </ul>
 </section>

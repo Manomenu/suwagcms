@@ -73,6 +73,9 @@ public sealed class LocalFactEndpointsTests(TestDatabase database) : IDisposable
             ["house", "flat"],
             locals.GetProperty("kind").GetProperty("values").EnumerateArray().Select(value => value.GetString())
         );
+        Assert.Equal("enum", locals.GetProperty("kind").GetProperty("type").GetString());
+        Assert.Equal("int", locals.GetProperty("rooms").GetProperty("type").GetString());
+        Assert.Equal("text", locals.GetProperty("visitDate").GetProperty("type").GetString());
         Assert.Equal("correct", locals.GetProperty("kind").GetProperty("writableBy").GetString());
         Assert.Equal(50, locals.GetProperty("rooms").GetProperty("max").GetInt32());
         Assert.Equal("set", locals.GetProperty("rooms").GetProperty("writableBy").GetString());

@@ -14,7 +14,10 @@ function freshId(prefix: string): string {
     return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
-test("the panel lists the bots with no tabs until one is opened, then follows each tab", async ({ page, request }) => {
+test("AC-web-shell-1, AC-web-shell-2, AC-web-shell-3: the panel lists the bots with no tabs until one is opened, then follows each tab", async ({
+    page,
+    request,
+}) => {
     const id = freshId("panel");
     const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
     expect(response.status()).toBe(201);

@@ -11,6 +11,7 @@ using Suwagcms.Contracts;
 using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Server.Tests.Articles;
+using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.History;
 using Suwagcms.Server.Tests.Versions;
 
@@ -158,9 +159,28 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     public async Task A_resource_in_use_turns_off_and_no_reference_to_it_is_refused_or_broken()
     {
         await using var scene = await SceneAsync();
+        var dryOn = await scene.Push.Client.PostAsync(
+            $"/api/bots/{scene.Id}/versions?dryRun=true",
+            null,
+            TestContext.Current.CancellationToken
+        );
+        var answerOn = await dryOn.Content.ReadFromJsonAsync<VersionCreated>(Web, TestContext.Current.CancellationToken);
 
         Assert.True((await scene.Turn("off")).Off);
 
+        var dryOff = await scene.Push.Client.PostAsync(
+            $"/api/bots/{scene.Id}/versions?dryRun=true",
+            null,
+            TestContext.Current.CancellationToken
+        );
+        Assert.Equal(HttpStatusCode.OK, dryOn.StatusCode);
+        Assert.Equal(dryOn.StatusCode, dryOff.StatusCode);
+        var answerOff = await dryOff.Content.ReadFromJsonAsync<VersionCreated>(Web, TestContext.Current.CancellationToken);
+        Assert.NotNull(answerOn);
+        Assert.NotNull(answerOff);
+        Assert.False(answerOn.Written);
+        Assert.Equal(answerOn.Version with { CreatedAt = default }, answerOff.Version with { CreatedAt = default });
+        Assert.Equal(answerOn.Written, answerOff.Written);
         var referrer = await scene.Articles.Get(AvailabilityScene.Referrer);
         var revision = (await ArticleApi.ViewOf(referrer)).Revision;
         var saved = await scene.Articles.Put(
@@ -218,7 +238,7 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     public async Task Turning_off_makes_no_revision_an_open_edit_still_saves_and_a_version_finds_nothing_changed()
     {
         await using var scene = await SceneAsync();
-        var first = await scene.Push.CreateAsync();
+        await scene.Push.CreateAsync();
         var read = await ArticleApi.ViewOf(await scene.Articles.Get(AvailabilityScene.Used));
         var snapshot = await scene.Push.SnapshotAsync();
 
@@ -226,12 +246,8 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
 
         Assert.Equal(snapshot, await scene.Push.SnapshotAsync());
         var noChange = await scene.Push.Client.PostAsync($"/api/bots/{scene.Id}/versions", null, TestContext.Current.CancellationToken);
-        Assert.False(noChange.IsSuccessStatusCode);
-        var document = await scene.Push.Client.GetStringAsync(
-            $"/api/bots/{scene.Id}/versions/{first.Number}",
-            TestContext.Current.CancellationToken
-        );
-        Assert.DoesNotContain("availability", document, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, noChange.StatusCode);
+        Assert.Contains("version.unchanged", await FactApi.CodesOf(noChange));
 
         var saved = await scene.Articles.Put(
             AvailabilityScene.Used,
@@ -501,7 +517,7 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-availability-18")]
+    [Trait("criterion", "AC-availability-30")]
     public async Task A_delete_and_a_change_of_one_resource_at_the_same_moment_run_one_after_the_other()
     {
         await using var scene = await SceneAsync();
@@ -753,7 +769,6 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-availability-25")]
-    [Trait("criterion", "AC-resource-rename-22")]
     public async Task A_resource_off_stays_off_after_its_id_changes_also_on_a_version_holding_the_old_id()
     {
         await using var scene = await SceneAsync();
@@ -774,7 +789,6 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-availability-25")]
-    [Trait("criterion", "AC-resource-rename-22")]
     public async Task Turned_off_after_the_rename_it_reaches_a_version_holding_the_old_id_and_not_a_new_resource_with_that_id()
     {
         await using var scene = await SceneAsync();
@@ -841,19 +855,21 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-export-11")]
-    public async Task An_export_holds_no_availability()
+    [Trait("criterion", "AC-version-create-17")]
+    public async Task A_version_created_while_a_resource_is_off_holds_nothing_about_it_nor_does_its_export()
     {
         await using var scene = await SceneAsync();
         await scene.Turn("off");
         var version = await scene.Push.CreateAsync();
 
-        var export = await scene.Push.Client.GetStringAsync(
-            $"/api/bots/{scene.Id}/versions/{version.Number}/export",
-            TestContext.Current.CancellationToken
-        );
-
-        Assert.DoesNotContain("availability", export, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(AvailabilityScene.Used, export, StringComparison.Ordinal);
+        foreach (var path in new[] { "", "/export" })
+        {
+            var text = await scene.Push.Client.GetStringAsync(
+                $"/api/bots/{scene.Id}/versions/{version.Number}{path}",
+                TestContext.Current.CancellationToken
+            );
+            Assert.DoesNotContain("availability", text, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(AvailabilityScene.Used, text, StringComparison.Ordinal);
+        }
     }
 }

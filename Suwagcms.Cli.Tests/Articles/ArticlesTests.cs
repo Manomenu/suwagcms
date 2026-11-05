@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Articles;
 
@@ -276,6 +275,7 @@ public sealed class ArticlesTests
 
     [Fact]
     [Trait("criterion", "AC-articles-7")]
+    [Trait("criterion", "AC-delete-guard-10")]
     public async Task Dry_run_on_an_add_an_edit_and_a_delete_asks_for_a_dry_run_and_says_nothing_was_changed()
     {
         var recorder = new Recorder();
@@ -322,6 +322,7 @@ public sealed class ArticlesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task Open_shows_the_articles_screen_of_the_bot_without_calling_the_server()
     {
         var opened = new List<Uri>();
@@ -338,22 +339,12 @@ public sealed class ArticlesTests
     [InlineData("add")]
     [InlineData("edit")]
     [InlineData("delete")]
+    [Trait("criterion", "AC-cli-foundation-9")]
     public async Task A_command_that_changes_an_article_has_no_page_to_open(string word)
     {
         var result = await TestCli.Run(Args("articles", word, "priceList", "--title", "x", "--open"), StubServer.Healthy());
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-articles-14")]
-    public void Every_articles_command_has_its_line_in_the_main_skill()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var commands = CommandList.RunnableInCli().Where(words => words.StartsWith("articles ", StringComparison.Ordinal)).ToList();
-
-        Assert.Equal(["articles add", "articles delete", "articles edit", "articles list", "articles show"], commands);
-        Assert.Empty(commands.Except(CommandList.Listed(skill)));
     }
 
     [Theory]

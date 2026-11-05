@@ -319,7 +319,7 @@ public sealed class VersionRollbackTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-rollback-14")]
+    [Trait("criterion", "AC-version-push-12")]
     public async Task Every_attempt_at_a_rollback_is_recorded_and_listed_with_its_version()
     {
         var (scene, bot) = await FilledAsync();
@@ -338,7 +338,7 @@ public sealed class VersionRollbackTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-rollback-17")]
+    [Trait("criterion", "AC-version-push-17")]
     public async Task A_version_using_a_block_the_bot_no_longer_runs_is_refused_naming_it_and_the_bot_keeps_what_it_had()
     {
         var (scene, bot) = await FilledAsync();
@@ -377,7 +377,6 @@ public sealed class VersionRollbackTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-rollback-19")]
     [Trait("criterion", "AC-change-history-14")]
     public async Task A_rollback_is_recorded_with_the_version_it_left_and_the_version_it_chose()
     {
@@ -394,7 +393,7 @@ public sealed class VersionRollbackTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-rollback-19")]
+    [Trait("criterion", "AC-change-history-14")]
     public async Task A_push_that_failed_records_no_move_of_the_bot()
     {
         var (scene, bot) = await FilledAsync();

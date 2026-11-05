@@ -41,6 +41,7 @@ public sealed class UsageTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-8")]
     public async Task A_wrong_use_with_json_prints_one_document_with_the_error_and_the_usage()
     {
         var result = await TestCli.Run(["server", "--json"]);

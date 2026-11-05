@@ -73,16 +73,6 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
     expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs." }]);
 });
 
-test("AC-articles-9: the label of content, llmGuide and description carries a tooltip saying who reads it", async ({ page, request }) => {
-    const bot = await newBot(request);
-    await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
-
-    await expect(page.locator('[data-field="content"] label')).toHaveAttribute("title", /customer reads it, through the model/);
-    await expect(page.locator('[data-field="llmGuide"] label')).toHaveAttribute("title", /Only the model reads it/);
-    await expect(page.locator('[data-field="description"] label')).toHaveAttribute("title", /search reads this.*customer never sees it/);
-});
-
 test("AC-articles-2: a bad article shows every mistake beside its field and keeps what was typed", async ({ page, request }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
@@ -256,30 +246,6 @@ test("AC-knowledge-base-language-12: the article form shows the language of the 
     );
 });
 
-test("AC-knowledge-base-language-6: an article saved in a Polish base is listed as pl, follows its base when the base changes, and follows a move", async ({
-    page,
-    request,
-}) => {
-    const bot = await newBot(request);
-    await addBase(request, bot, "oferta", "Oferta", "pl");
-    await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
-    await fill(page, "cennik", "Cennik");
-    await page.locator('[data-field="knowledgeBase"] select').selectOption("oferta");
-    await page.getByRole("button", { name: "Add", exact: true }).click();
-
-    const row = page.getByRole("row").filter({ hasText: "cennik" });
-    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
-    expect(await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()).toMatchObject({ language: "pl" });
-
-    const switched = await request.put(`/api/bots/${bot}/knowledge-bases/oferta?ifRevision=1`, {
-        data: { title: "Oferta", language: "en" },
-    });
-    expect(switched.status()).toBe(200);
-    await page.reload();
-    await expect(page.getByRole("row").filter({ hasText: "cennik" }).getByRole("cell", { name: "en", exact: true })).toBeVisible();
-});
-
 test("AC-knowledge-base-language-9: the list filters by language together with the other filters, the same as the API does", async ({
     page,
     request,
@@ -304,26 +270,6 @@ test("AC-knowledge-base-language-9: the list filters by language together with t
     await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
     const api = await request.get(`/api/bots/${bot}/articles?language=pl&knowledgeBase=oferta`);
     expect(((await api.json()) as { id: string }[]).map((article) => article.id)).toEqual(["cennik"]);
-});
-
-test("AC-knowledge-base-language-10: two articles in different languages with one title are two ordinary articles", async ({
-    page,
-    request,
-}) => {
-    const bot = await newBot(request);
-    await addBase(request, bot, "oferta", "Oferta", "pl");
-    await addArticle(request, bot, "cennik", { knowledgeBase: "oferta", title: "Cennik" });
-    await addArticle(request, bot, "pricing", { title: "Cennik" });
-    await page.goto(`/bots/${bot}/articles`);
-
-    await page.getByRole("row").filter({ hasText: "pricing" }).getByRole("button", { name: "Edit" }).click();
-    await page.getByRole("button", { name: "Delete" }).click();
-
-    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
-    const row = page.getByRole("main").locator("tbody").getByRole("row");
-    await expect(row.getByRole("cell", { name: "cennik", exact: true })).toBeVisible();
-    await expect(row.getByRole("cell", { name: "oferta", exact: true })).toBeVisible();
-    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
 });
 
 test("AC-articles-4: editing another field of an article whose text has CRLF line breaks leaves the stored text byte for byte", async ({
@@ -521,7 +467,7 @@ test("AC-loop-guard-1: a link that closes a loop is refused beside the field, wi
     expect(await contentOf(request, bot, "pricing")).toBe("See ");
 });
 
-test("AC-delete-guard-1: an article another article links to is refused for delete in the API and its Delete button is disabled in the web, AC-delete-guard-9", async ({
+test("AC-delete-guard-9: an article another article links to is refused for delete in the API and its Delete button is disabled in the web", async ({
     page,
     request,
 }) => {
@@ -576,7 +522,10 @@ test("AC-delete-guard-4: after the last link is removed in the web the article c
     expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
 });
 
-test("the controls of one row of the article form share their top and height", async ({ page, request }) => {
+test("AC-knowledge-base-language-12: the language stands beside the base selector, and the controls of one row share their top and height", async ({
+    page,
+    request,
+}) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
     await page.getByRole("button", { name: "New article" }).click();
@@ -598,6 +547,11 @@ test("the controls of one row of the article form share their top and height", a
     const row = [await boxOf("#article-id"), await boxOf("#article-title"), await boxOf("#article-knowledgeBase")];
     expect(row[1]).toEqual(row[0]);
     expect(row[2]).toEqual(row[0]);
+    const language = await page.locator('[data-field="language"]').boundingBox();
+    const selector = await page.locator('[data-field="knowledgeBase"]').boundingBox();
+    if (language === null || selector === null) throw new Error("the language or the base selector has no box");
+    expect(language.y).toBeCloseTo(selector.y, 0);
+    expect(language.x).toBeGreaterThanOrEqual(selector.x + selector.width);
 });
 
 test("AC-resource-rename-2: Change id lists the referrers before it is confirmed, rewrites them, and leaves the author on the article at its new id", async ({

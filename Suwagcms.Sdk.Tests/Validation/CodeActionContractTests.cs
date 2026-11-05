@@ -90,6 +90,7 @@ public sealed class CodeActionContractTests
         );
 
         Assert.Contains("result 'policy' is declared and not here", mistake.Message, StringComparison.Ordinal);
+        Assert.Empty(Codes(Holding(Lookup.ToAction()), declaration, ValidationStage.Save));
     }
 
     [Fact]

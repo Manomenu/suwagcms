@@ -53,6 +53,7 @@ public sealed class HelpTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-cli-foundation-11")]
     public async Task Help_says_what_a_command_does()
     {
         var result = await TestCli.Run(["status", "--help"]);

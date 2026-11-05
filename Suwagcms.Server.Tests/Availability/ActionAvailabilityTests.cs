@@ -101,7 +101,7 @@ public sealed class ActionAvailabilityTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-availability-27")]
+    [Trait("criterion", "AC-availability-26")]
     public async Task A_code_action_can_be_turned_off_though_the_rest_of_it_stays_read_only()
     {
         const string code = "lookupPolicy";

@@ -45,7 +45,6 @@ public sealed class ValidateEndpointTests(TestDatabase database) : IDisposable
     [InlineData("Save", true)]
     [InlineData("Version", true)]
     [Trait("criterion", "AC-bot-declaration-14")]
-    [Trait("criterion", "AC-sdk-validator-14")]
     public async Task The_endpoint_returns_the_same_mistakes_as_the_library_for_the_same_definition_stage_and_declaration(
         string stage,
         bool declared

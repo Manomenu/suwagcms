@@ -266,7 +266,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-change-history-10")]
+    [Trait("criterion", "AC-change-history-1")]
     public async Task History_covers_facts_and_procedures()
     {
         var (articles, history) = await NewBot();
@@ -307,6 +307,29 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
         var result = Assert.Single(entry.Changes);
         Assert.Equal("result", result.Field);
         Assert.StartsWith("Failed: ", HistoryScene.TextOf(result, old: false), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-11")]
+    public async Task A_succeeded_push_is_recorded_with_the_version_and_the_result()
+    {
+        _ = database.Pool;
+        var client = app.CreateClient();
+        var id = PushScene.FreshId();
+        await using var bot = await TestBot.StartAsync(id);
+        var scene = await PushScene.RegisterAsync(client, id, bot.Address);
+        await scene.FillAsync();
+        var history = new HistoryScene(client, scene.Bot);
+        await scene.CreateAsync();
+
+        Assert.Equal(PushOutcome.Succeeded, (await scene.PushAsync(1)).Outcome);
+
+        var entry = Assert.Single((await history.Of("versions", "1")).Entries, line => line.Action == "pushed");
+        Assert.Equal(("version", "1"), (entry.Kind, entry.ResourceId));
+        var result = Assert.Single(entry.Changes, change => change.Field == "result");
+        Assert.Equal("Succeeded", HistoryScene.TextOf(result, old: false));
+        var botVersion = Assert.Single(entry.Changes, change => change.Field == "botVersion");
+        Assert.Equal(1, botVersion.New?.GetInt32());
     }
 
     [Fact]
