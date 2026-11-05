@@ -2414,7 +2414,9 @@
           "results",
           "implementation",
           "revision",
-          "usedBy"
+          "usedBy",
+          "alsoDeclared",
+          "noLongerDeclared"
         ],
         "type": "object",
         "properties": {
@@ -2465,9 +2467,15 @@
             "items": {
               "type": "string"
             }
+          },
+          "alsoDeclared": {
+            "type": "boolean"
+          },
+          "noLongerDeclared": {
+            "type": "boolean"
           }
         },
-        "description": "An action of a bot as the API shows it: the format's fields, with secrets only as the names its headers hold, the revision to send back to guard an edit, and the procedures that use it."
+        "description": "An action of a bot as the API shows it: the format's fields, with secrets only as the names its headers hold, the revision to send back to guard an edit, the procedures that use it, whether the bot also declares this id as a code action, and whether a code action in use is no longer declared."
       },
       "ApplyChanges": {
         "required": [
@@ -3027,7 +3035,7 @@
             }
           }
         },
-        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists the steps of the working state using a block the declaration leaves out."
+        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists what of the working state does not fit the declaration: steps using a block it leaves out, and actions it no longer has, describes differently or also holds as a code action."
       },
       "DeclarationStored": {
         "enum": [

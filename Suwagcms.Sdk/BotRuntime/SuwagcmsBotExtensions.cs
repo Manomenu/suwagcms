@@ -26,7 +26,8 @@ public static class SuwagcmsBotExtensions
         services.AddSingleton(provider => new VersionRuntime(
             botId,
             store
-                ?? new FileVersionStore(Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, "suwagcms-versions"))
+                ?? new FileVersionStore(Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, "suwagcms-versions")),
+            provider.GetRequiredService<BotDeclaration>()
         ));
         services.AddSingleton<IBotDefinitions>(provider => provider.GetRequiredService<VersionRuntime>());
         services.AddHostedService(provider => new StorePoller(

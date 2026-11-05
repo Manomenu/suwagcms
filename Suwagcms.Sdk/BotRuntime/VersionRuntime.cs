@@ -5,7 +5,7 @@ using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.BotRuntime;
 
-internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDefinitions, IDisposable
+internal sealed class VersionRuntime(string botId, IVersionStore store, BotDeclaration? declaration = null) : IBotDefinitions, IDisposable
 {
     private readonly SemaphoreSlim writes = new(1, 1);
     private readonly ConcurrentDictionary<int, BotDefinition> loaded = new();
@@ -66,7 +66,7 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
 
     public async Task<(BotState? Accepted, BotRefusal? Refused)> PushAsync(int number, string json, CancellationToken cancellationToken)
     {
-        var mistakes = VersionIntake.Check(json, botId, number);
+        var mistakes = VersionIntake.Check(json, botId, number, declaration);
         if (mistakes.Count > 0)
         {
             return (null, Refusal(422, "The version was refused.", $"{mistakes.Count} mistake(s) in the document.", mistakes));

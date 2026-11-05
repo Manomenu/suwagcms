@@ -1,3 +1,4 @@
+using Npgsql;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Database;
@@ -20,6 +21,13 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         var before = (await ResourceStore.LoadAsync(connection, transaction, bot, cancellationToken)).ToDictionary(item => item.Target);
 
+        // Why: an add of a code action's id, whatever revision it expects, is told what the id belongs to rather than only that it is taken.
+        var readOnly = changes.Where(change => before.GetValueOrDefault(change.Target)?.Record is BotAction { IsCode: true }).ToList();
+        if (readOnly.Count > 0)
+        {
+            return new EditResult.Refused([.. readOnly.Select(change => EditProblems.ReadOnly(change.Target))]);
+        }
+
         var twice = Twice(changes);
         var unmet = Unmet(changes, before, twice);
         // Why: a list based on an old read has no result worth judging, so what is out of date comes before the rules, every piece of it at once; one piece alone keeps its own answer, a conflict or a 404.
@@ -40,6 +48,10 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         var rewritten = Rewrites(changes, before);
         var after = Applied(changes, before, rewritten);
+        if (await CodeGuardAsync(connection, transaction, bot, changes, before, after, cancellationToken) is { } codeRefused)
+        {
+            return codeRefused;
+        }
         // Why: one pass at the Version stage finds both kinds, since it runs every Save rule too; only the Save ones refuse. The order is fixed so that a list means the same in any order.
         var assembled = ResourceKinds.Assemble(
             after
@@ -60,6 +72,43 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
             return new EditResult.Refused(DeleteGuard.Reshape(assembled, removed, edited));
         }
 
+        var revisions = await WriteAsync(connection, transaction, bot, before, after, dryRun, cancellationToken);
+        if (dryRun)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+        }
+        else
+        {
+            await transaction.CommitAsync(cancellationToken);
+        }
+        return new EditResult.Saved(revisions, !dryRun, found) { Rewritten = rewritten };
+    }
+
+    // Why: the bot has already changed and a refusal would only hide that, so this step judges nothing; it holds the bot's lock, so it runs in turn with any save, and reads the stored declaration under it, so two answers arriving out of order cannot leave the older one in force.
+    public async Task AlignCodeActionsAsync(string bot, CancellationToken cancellationToken)
+    {
+        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        await ResourceStore.LockBotAsync(connection, transaction, bot, cancellationToken);
+        if (await ResourceStore.DeclaredAsync(connection, transaction, bot, cancellationToken) is not { } declaration)
+        {
+            return;
+        }
+        var before = (await ResourceStore.LoadAsync(connection, transaction, bot, cancellationToken)).ToDictionary(item => item.Target);
+        await WriteAsync(connection, transaction, bot, before, CodeActionAlignment.Apply(before, declaration), false, cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+    }
+
+    private async Task<Dictionary<ResourceRef, int>> WriteAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string bot,
+        Dictionary<ResourceRef, StoredResource> before,
+        Dictionary<ResourceRef, StoredResource> after,
+        bool dryRun,
+        CancellationToken cancellationToken
+    )
+    {
         var revisions = new Dictionary<ResourceRef, int>();
         var now = time.GetUtcNow();
         // Why: a row is known by its Id, so a renamed resource stays the same row, with what hangs on that row, and only its public id changes.
@@ -85,12 +134,7 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
                 await ResourceStore.InsertAsync(connection, transaction, bot, becomes, now, cancellationToken);
             }
         }
-
-        if (dryRun)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-        }
-        else
+        if (!dryRun)
         {
             // Why: a rename also rewrites the resources that refer to it, so history covers every row that changed, not only the targets named.
             var touched = before
@@ -103,9 +147,43 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
             {
                 await HistoryStore.WriteAsync(connection, transaction, bot, entry, now, cancellationToken);
             }
-            await transaction.CommitAsync(cancellationToken);
         }
-        return new EditResult.Saved(revisions, !dryRun, found) { Rewritten = rewritten };
+        return revisions;
+    }
+
+    // Why: what the bot's code controls has one source, so no save may touch it, whichever door the save came through; the declaration is read only when a list changes an action.
+    private static async Task<EditResult.Refused?> CodeGuardAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction transaction,
+        string bot,
+        IReadOnlyList<Change> changes,
+        Dictionary<ResourceRef, StoredResource> before,
+        Dictionary<ResourceRef, StoredResource> after,
+        CancellationToken cancellationToken
+    )
+    {
+        // Why: a stored code action never reaches here, so what is left is a save that would write one, or take an id the bot declares.
+        var ofActions = changes.Where(change => change.Target.Kind == ResourceKind.Action).ToList();
+        if (ofActions.Count == 0)
+        {
+            return null;
+        }
+        var declared = await ResourceStore.DeclaredAsync(connection, transaction, bot, cancellationToken);
+        var mistakes = new List<Mistake>();
+        foreach (var change in ofActions)
+        {
+            var result = change is Rename rename ? rename.NewTarget : change.Target;
+            var isNew = !before.ContainsKey(result);
+            if (after.GetValueOrDefault(result)?.Record is BotAction { IsCode: true })
+            {
+                mistakes.Add(EditProblems.CodeWritten(change.Target));
+            }
+            else if (isNew && after.ContainsKey(result) && declared?.CodeActions.Any(action => action.Id == result.Id) == true)
+            {
+                mistakes.Add(EditProblems.DeclaredId(change.Target, result));
+            }
+        }
+        return mistakes.Count == 0 ? null : new EditResult.Refused(mistakes);
     }
 
     // Why: the outcome of two changes to one resource would depend on their order, and a list means the same in any order; positions count from 1, as a file is read.

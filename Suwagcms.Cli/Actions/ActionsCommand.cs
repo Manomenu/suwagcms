@@ -20,7 +20,7 @@ internal static class ActionsCommand
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     // Why: what `show` adds to the format, which the file of an edit may carry back and the server does not take.
-    private static readonly string[] ShownOnly = ["id", "revision", "usedBy"];
+    private static readonly string[] ShownOnly = ["id", "revision", "usedBy", "alsoDeclared", "noLongerDeclared"];
 
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
         new("actions", "List, show, add, edit and delete the actions of a bot. A secret is written as {secret:NAME}, never as its value.")

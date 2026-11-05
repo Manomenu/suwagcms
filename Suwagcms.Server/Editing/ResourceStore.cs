@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;
@@ -38,6 +39,25 @@ internal static class ResourceStore
                 cancellationToken: cancellationToken
             )
         );
+
+    // Why: a stored declaration was judged when it arrived, so what cannot be read now counts as none; null means the bot declares nothing.
+    public static async Task<BotDeclaration?> DeclaredAsync(
+        NpgsqlConnection connection,
+        NpgsqlTransaction? transaction,
+        string bot,
+        CancellationToken cancellationToken
+    )
+    {
+        var text = await connection.ExecuteScalarAsync<string?>(
+            new CommandDefinition(
+                "SELECT declaration FROM bot WHERE id = @bot",
+                new { bot },
+                transaction,
+                cancellationToken: cancellationToken
+            )
+        );
+        return text is null ? null : DeclarationValidator.ParseJson(text).Declaration;
+    }
 
     public static async Task<List<StoredResource>> LoadAsync(
         NpgsqlConnection connection,

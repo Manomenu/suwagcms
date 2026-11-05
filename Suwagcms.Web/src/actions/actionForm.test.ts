@@ -13,6 +13,8 @@ const action: ActionView = {
     },
     revision: 2,
     usedBy: [],
+    alsoDeclared: false,
+    noLongerDeclared: false,
 };
 
 describe("the action form", () => {

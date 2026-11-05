@@ -133,3 +133,10 @@ export function placesOf(form: ActionForm): string[] {
         ...lists,
     ];
 }
+
+export function constraintOf(field: ActionField): string {
+    if (field.type === "enum") return `enum: ${(field.values ?? []).join(", ")}`;
+    if (field.type === "int") return `int, ${field.min ?? "?"} to ${field.max ?? "?"}`;
+    if (field.type === "text") return `text, up to ${field.maxLength ?? "?"}`;
+    return field.type ?? "";
+}

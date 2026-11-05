@@ -7,7 +7,7 @@ import { Table } from "@/design/table";
 
 import { isCode, type ActionView } from "./api";
 
-/** The Actions screen: the heading, one list of the bot's actions, and whatever is open. */
+/** The Actions screen: the heading, one list of the bot's actions, HTTP and code, and whatever is open. */
 export function ActionsView({
     bot,
     actions,
@@ -47,7 +47,13 @@ export function ActionsView({
                                     <td className="font-medium">{action.id}</td>
                                     <td>{action.description}</td>
                                     <td>
-                                        <Badge variant={isCode(action) ? "neutral" : "primary"}>{isCode(action) ? "code" : "http"}</Badge>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <Badge variant={isCode(action) ? "neutral" : "primary"}>
+                                                {isCode(action) ? "code" : "http"}
+                                            </Badge>
+                                            {action.alsoDeclared && <Badge variant="danger">the bot also declares this id</Badge>}
+                                            {action.noLongerDeclared && <Badge variant="danger">no longer declared</Badge>}
+                                        </div>
                                     </td>
                                     <td className="text-muted-foreground">
                                         {action.usedBy.length > 0 && `Used by: ${action.usedBy.join(", ")}`}

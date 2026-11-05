@@ -82,4 +82,10 @@ public static class MistakeCodes
     public const string CodeActionIdMissing = "codeAction.id.missing";
     public const string CodeActionDescriptionMissing = "codeAction.description.missing";
     public const string CodeActionRepeated = "codeAction.repeated";
+    public const string CodeActionIdInvalid = "codeAction.id.invalid";
+    public const string CodeActionFieldInvalid = "codeAction.field.invalid";
+    public const string CodeActionFieldRepeated = "codeAction.field.repeated";
+    public const string ActionCodeUndeclared = "action.code.undeclared";
+    public const string ActionCodeContract = "action.code.contract";
+    public const string ActionCodeConflict = "action.code.conflict";
 }

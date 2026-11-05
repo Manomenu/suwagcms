@@ -1,4 +1,7 @@
 // A person works on the actions of one bot in the browser; the CMS never calls an action's URL, and a refusal keeps what was typed.
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
+
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 function freshId(): string {
@@ -10,6 +13,40 @@ async function newBot(request: APIRequestContext): Promise<string> {
     const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
     expect(response.status()).toBe(201);
     return id;
+}
+
+/** A bot on a real port that declares one code action, as the SDK would say it. */
+async function declaringBot(id: string): Promise<{ address: string; close: () => void }> {
+    const server = createServer((request, response) => {
+        response.setHeader("content-type", "application/json");
+        if (request.url === "/suwagcms/declaration") {
+            response.end(
+                JSON.stringify({
+                    bot: id,
+                    formatVersion: 1,
+                    blocks: ["listen", "collect", "say", "assign"],
+                    codeActions: [
+                        {
+                            id: "lookupPolicy",
+                            description: "Finds a policy",
+                            parameters: [{ name: "pesel", type: "text", description: "The PESEL", maxLength: 11 }],
+                            results: [],
+                        },
+                    ],
+                }),
+            );
+        } else {
+            response.statusCode = 404;
+            response.end("{}");
+        }
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    return {
+        address: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+        close: () => {
+            server.close();
+        },
+    };
 }
 
 async function typeBasics(page: Page, id: string, url: string): Promise<void> {
@@ -133,4 +170,46 @@ test("AC-http-actions-11: an unused action can be deleted in the web and is gone
 
     await expect(page.getByText("No actions yet.")).toBeVisible();
     expect((await request.get(`/api/bots/${bot}/actions/check`)).status()).toBe(404);
+});
+
+test("AC-code-actions-7: a code action's page has no editing controls and says why, and AC-code-actions-1: it is listed marked code", async ({
+    page,
+    request,
+}) => {
+    const bot = freshId();
+    const running = await declaringBot(bot);
+    await request.post("/api/bots", { data: { id: bot, name: bot, address: running.address } });
+    expect((await request.get(`/api/bots/${bot}/declaration`)).status()).toBe(200);
+    await page.goto(`/bots/${bot}/actions`);
+
+    const row = page.getByRole("row").filter({ hasText: "lookupPolicy" });
+    await expect(row).toContainText("code");
+    await row.getByRole("button", { name: "Open" }).click();
+
+    const panel = page.getByRole("region", { name: "Code action lookupPolicy" });
+    await expect(panel).toContainText("written in the bot's code");
+    await expect(panel).toContainText("pesel");
+    await expect(page.getByRole("button", { name: "Save" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Delete" })).toHaveCount(0);
+    running.close();
+});
+
+test("AC-code-actions-9: the Actions screen shows an HTTP action whose id the bot also declares", async ({ page, request }) => {
+    const bot = freshId();
+    const running = await declaringBot(bot);
+    await request.post("/api/bots", { data: { id: bot, name: bot, address: running.address } });
+    await request.put(`/api/bots/${bot}/actions/lookupPolicy?ifRevision=0`, {
+        data: {
+            description: "Finds",
+            parameters: null,
+            results: null,
+            implementation: { http: { method: "GET", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+        },
+    });
+    await request.get(`/api/bots/${bot}/declaration`);
+
+    await page.goto(`/bots/${bot}/actions`);
+
+    await expect(page.getByRole("row").filter({ hasText: "lookupPolicy" })).toContainText("the bot also declares this id");
+    running.close();
 });

@@ -10,7 +10,8 @@ import { HistoryPanel } from "@/design/historyPanel";
 import { emptyForm, formOf } from "./actionForm";
 import { ActionForm } from "./ActionForm";
 import { ActionsView } from "./ActionsView";
-import { deleteAction, fetchAction, fetchActions, revisionOf, type ActionView } from "./api";
+import { deleteAction, fetchAction, fetchActions, isCode, revisionOf, type ActionView } from "./api";
+import { CodeActionPanel } from "./CodeActionPanel";
 
 type Open = { kind: "add" } | { kind: "edit"; action: ActionView } | null;
 
@@ -24,6 +25,7 @@ export function ActionsScreen({ bot }: { bot: string }) {
     const [params] = useSearchParams();
     const openParam = params.get("open");
     const openAction = open?.kind === "edit" ? open.action : null;
+    const editing = openAction !== null && !isCode(openAction);
     const history = useResourceHistory(bot, "actions", openAction?.id ?? null, openAction === null ? 0 : revisionOf(openAction));
 
     const load = useCallback(
@@ -94,7 +96,7 @@ export function ActionsScreen({ bot }: { bot: string }) {
             form={
                 <>
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
-                    {openAction !== null && (
+                    {editing && (
                         <div>
                             <Button
                                 type="button"
@@ -107,7 +109,15 @@ export function ActionsScreen({ bot }: { bot: string }) {
                             </Button>
                         </div>
                     )}
-                    {open !== null && (
+                    {openAction !== null && isCode(openAction) && (
+                        <CodeActionPanel
+                            action={openAction}
+                            onClose={() => {
+                                setOpen(null);
+                            }}
+                        />
+                    )}
+                    {open !== null && (open.kind === "add" || editing) && (
                         <ActionForm
                             key={openAction?.id ?? "add"}
                             bot={bot}

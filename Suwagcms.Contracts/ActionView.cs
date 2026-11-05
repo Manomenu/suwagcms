@@ -2,7 +2,7 @@ using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Contracts;
 
-/// <summary>An action of a bot as the API shows it: the format's fields, with secrets only as the names its headers hold, the revision to send back to guard an edit, and the procedures that use it.</summary>
+/// <summary>An action of a bot as the API shows it: the format's fields, with secrets only as the names its headers hold, the revision to send back to guard an edit, the procedures that use it, whether the bot also declares this id as a code action, and whether a code action in use is no longer declared.</summary>
 public sealed record ActionView(
     string Id,
     string Description,
@@ -10,5 +10,7 @@ public sealed record ActionView(
     IReadOnlyDictionary<string, ActionField>? Results,
     ActionImplementation? Implementation,
     int Revision,
-    IReadOnlyList<string> UsedBy
+    IReadOnlyList<string> UsedBy,
+    bool AlsoDeclared,
+    bool NoLongerDeclared
 );

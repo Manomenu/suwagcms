@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
@@ -35,10 +36,22 @@ internal static class ActionEndpoints
         CancellationToken cancellationToken
     ) =>
         await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
-            ? TypedResults.Ok(
-                stored.Where(item => item.Target.Kind == ResourceKind.Action).Select(item => ActionMapping.Show(item, stored)).ToList()
-            )
+            ? TypedResults.Ok(await ShownAsync(stored, bot, pool, cancellationToken))
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The actions were not listed.");
+
+    private static async Task<List<ActionView>> ShownAsync(
+        List<StoredResource> stored,
+        string bot,
+        Pool pool,
+        CancellationToken cancellationToken
+    )
+    {
+        var declaration = (await DeclarationStore.FindAsync(pool, bot, cancellationToken))?.Parsed;
+        return
+        [
+            .. stored.Where(item => item.Target.Kind == ResourceKind.Action).Select(item => ActionMapping.Show(item, stored, declaration)),
+        ];
+    }
 
     private static async Task<Results<Ok<ActionView>, ProblemHttpResult>> Get(
         string bot,
@@ -53,7 +66,7 @@ internal static class ActionEndpoints
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The action was not shown.");
         }
         return stored.SingleOrDefault(item => item.Target == target) is { } found
-            ? TypedResults.Ok(ActionMapping.Show(found, stored))
+            ? TypedResults.Ok(ActionMapping.Show(found, stored, (await DeclarationStore.FindAsync(pool, bot, cancellationToken))?.Parsed))
             : EditProblems.For(new EditResult.Missing(target), bot, "The action was not shown.");
     }
 
@@ -82,7 +95,8 @@ internal static class ActionEndpoints
         }
         // Why: a save leaves the procedures untouched, so who uses the action is read after it, outside the lock.
         var all = await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [];
-        return TypedResults.Ok(ActionMapping.Show(record, saved.Revisions[target], all));
+        var declaration = (await DeclarationStore.FindAsync(pool, bot, cancellationToken))?.Parsed;
+        return TypedResults.Ok(ActionMapping.Show(record, saved.Revisions[target], all, declaration));
     }
 
     private static async Task<Results<NoContent, ProblemHttpResult>> Delete(

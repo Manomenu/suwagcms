@@ -24,6 +24,12 @@ internal static class ActionText
     public static string Kind(ActionView action)
     {
         ArgumentNullException.ThrowIfNull(action);
-        return action.Implementation is { IsCode: true } ? "code" : "http";
+        return action.Implementation is { IsCode: true }
+            ? action.NoLongerDeclared
+                ? "code  no longer declared"
+                : "code"
+            : action.AlsoDeclared
+                ? "http  the bot also declares this id"
+                : "http";
     }
 }

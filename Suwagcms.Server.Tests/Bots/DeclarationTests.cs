@@ -356,7 +356,9 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
             Interlocked.Increment(ref puts);
             return Task.CompletedTask;
         };
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":1,"blocks":["listen","say","assign"]}""");
+        bot.OnDeclaration = Answering(
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":1,"blocks":["listen","say","assign"],"codeActions":[{"id":"lookupPolicy","description":"Finds a policy"}]}"""
+        );
 
         var result = await scene.PushAsync(version.Number);
 

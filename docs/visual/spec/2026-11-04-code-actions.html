@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Code actions</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 23 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>bot-declaration</code>, <code>http-actions</code></span>
@@ -380,9 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The bot's code can change without asking the CMS, so a new declaration is never refused because of what it does to the working state. What it breaks is reported, and it stops a version, not a save.</p>
   </div>
   <div class="stats">
-    <div><b>14</b><span>criteria</span></div>
-    <div><b>5</b><span>criteria after other features</span></div>
-    <div><b>0</b><span>open questions</span></div>
+    <div><b>15</b><span>criteria</span></div>
+    <div><b>4</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -483,6 +482,9 @@ implementation: code
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
+    <li>The mark "no longer declared" is not stored: it comes from comparing the copy with the last declaration, so asking again changes it without a write and the format gains no field for it.</li>
+    <li>A bot that declares nothing has said nothing about its code actions, so their copies stay as they are until it declares again.</li>
+    <li>A declaration whose code action has an id or a field name that is no camelCase word, or a field named twice, is invalid: the last good one stands, because the CMS could not keep such a copy.</li>
     <li>The CMS keeps a copy of a code action's contract in the working state, kept in line by the declaration. Otherwise a save could not check a step against it without a running bot, and a version would not stand on its own.</li>
     <li>A declaration is never refused for what it does to the working state: the bot has already changed, and a refusal would only hide that.</li>
     <li>Rule: what the CMS controls is refused at <code>Save</code>; what the bot's code controls is reported at <code>Version</code>. Each save validates the whole definition, so a <code>Save</code> mistake from a declaration would stop every save of the bot until someone fixed it.</li>
@@ -507,6 +509,7 @@ implementation: code
     <li><code>AC-code-actions-12</code> A test bot whose version holds a code action it does not declare refuses that version with the mistake, and keeps what it had.</li>
     <li><code>AC-code-actions-13</code> A definition holding a code action passes the validator offline, with no declaration and no bot.</li>
     <li><code>AC-code-actions-14</code> The plugin's main skill says in the lines of <code>suwagcms actions</code> that a code action is read-only and where to change it.</li>
+    <li><code>AC-code-actions-15</code> A version holds a bot's code actions with their contracts, alongside its HTTP actions.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
@@ -516,7 +519,6 @@ implementation: code
     <li><b>after <code>action-block</code>:</b> a procedure's step can use a code action, by the same rules of mapping and types as an HTTP action.</li>
     <li><b>after <code>action-block</code>:</b> a mapping that does not fit a code action is a <code>Version</code> mistake, and refuses no save, including when a new declaration causes it.</li>
     <li><b>after <code>action-block</code>:</b> a code action the declaration no longer lists, while a step uses it, stays in the CMS marked as no longer declared; saves go on working, the <code>Version</code> stage names each step, the next ask removes it once no step uses it, and asking again brings it back unmarked if the bot declares it again.</li>
-    <li><b>after <code>version-create</code>:</b> a version holds a bot's code actions with their contracts, alongside its HTTP actions.</li>
     <li><b>after <code>edit-guard</code>:</b> a change to a code action made by a declaration is not refused, even when a step maps what changed.</li>
   </ul>
 </section>

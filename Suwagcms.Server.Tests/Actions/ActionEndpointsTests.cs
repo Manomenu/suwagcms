@@ -30,7 +30,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
     private static string Without(JsonElement shown)
     {
         var node = Parsed(shown.GetRawText()).AsObject();
-        foreach (var name in new[] { "id", "revision", "usedBy" })
+        foreach (var name in new[] { "id", "revision", "usedBy", "alsoDeclared", "noLongerDeclared" })
         {
             node.Remove(name);
         }

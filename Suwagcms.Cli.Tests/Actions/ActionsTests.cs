@@ -205,4 +205,84 @@ public sealed class ActionsTests : IDisposable
         Assert.Contains("{secret:", skill, StringComparison.Ordinal);
         Assert.Contains("## Action file", skill, StringComparison.Ordinal);
     }
+
+    private const string Code =
+        """{"id":"lookupPolicy","description":"Finds a policy.","parameters":{"pesel":{"type":"text","description":"PESEL.","maxLength":11}},"results":null,"implementation":"code","revision":1,"usedBy":[],"alsoDeclared":false,"noLongerDeclared":false}""";
+
+    [Fact]
+    [Trait("criterion", "AC-code-actions-1")]
+    public async Task A_code_action_is_listed_and_shown_marked_code_with_no_call()
+    {
+        var server = new StubServer(request =>
+            Json(request.RequestUri?.AbsolutePath.EndsWith("/actions", StringComparison.Ordinal) == true ? $"[{Code}]" : Code)
+        );
+
+        var list = await TestCli.Run(["actions", "list", .. OnBot], server);
+        var show = await TestCli.Run(["actions", "show", "lookupPolicy", .. OnBot], server);
+
+        Assert.Contains("lookupPolicy  Finds a policy.  code", list.Output, StringComparison.Ordinal);
+        Assert.Contains("implementation: code", show.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("url:", show.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-code-actions-2")]
+    public async Task The_list_and_its_json_give_both_kinds_each_with_its_implementation()
+    {
+        var server = new StubServer(_ => Json($"[{Code},{Shown}]"));
+
+        var text = await TestCli.Run(["actions", "list", .. OnBot], server);
+        var json = await TestCli.Run(["actions", "list", "--json", .. OnBot], server);
+
+        Assert.Contains("code", text.Output, StringComparison.Ordinal);
+        Assert.Contains("http", text.Output, StringComparison.Ordinal);
+        var actions = JsonNode.Parse(json.Output)?["actions"];
+        Assert.Equal("code", actions?[0]?["implementation"]?.GetValue<string>());
+        Assert.Equal("POST", actions?[1]?["implementation"]?["http"]?["method"]?.GetValue<string>());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-code-actions-7")]
+    public async Task Editing_a_code_action_prints_the_refusal_with_the_fix_and_exits_1()
+    {
+        const string Refusal =
+            """{"mistakes":[{"code":"action.code.readOnly","stage":"Save","resource":{"kind":"Action","id":"lookupPolicy"},"path":"implementation","message":"'lookupPolicy' is written in the bot's code, so the CMS only shows it.","fix":"Change it in the bot and deploy; the CMS sees the change the next time it asks.","related":[]}]}""";
+        var server = new StubServer(request =>
+            request.Method == HttpMethod.Put ? Json(Refusal, HttpStatusCode.UnprocessableEntity) : Json(Code)
+        );
+
+        var result = await TestCli.Run(["actions", "edit", "lookupPolicy", "--file", Saved("c.json", Code), .. OnBot], server);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("action.code.readOnly", result.Error, StringComparison.Ordinal);
+        Assert.Contains("Change it in the bot and deploy", result.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-code-actions-9")]
+    public async Task The_list_shows_an_http_action_whose_id_the_bot_also_declares()
+    {
+        var conflict = Shown.Replace("\"usedBy\":[\"orderService\"]", "\"usedBy\":[],\"alsoDeclared\":true", StringComparison.Ordinal);
+        var server = new StubServer(_ => Json($"[{conflict}]"));
+
+        var result = await TestCli.Run(["actions", "list", .. OnBot], server);
+
+        Assert.Contains("http  the bot also declares this id", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-code-actions-14")]
+    public void The_main_skill_says_in_the_lines_of_actions_that_a_code_action_is_read_only_and_where_to_change_it()
+    {
+        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
+        var lines = skill
+            .ReplaceLineEndings("\n")
+            .Split('\n')
+            .Where(line => line.StartsWith("- `suwagcms actions ", StringComparison.Ordinal));
+
+        Assert.Contains(
+            lines,
+            line => line.Contains("A code action is read-only: change it in the bot's code and deploy", StringComparison.Ordinal)
+        );
+    }
 }
