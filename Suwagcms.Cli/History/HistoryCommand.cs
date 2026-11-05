@@ -11,6 +11,8 @@ namespace Suwagcms.Cli.History;
 
 internal static class HistoryCommand
 {
+    private const string PersonaWord = "persona";
+
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     // Why: the words a person types for a resource, mapped to the collection the API and the web serve it from.
@@ -21,6 +23,7 @@ internal static class HistoryCommand
         ["article"] = "articles",
         ["procedure"] = "procedures",
         ["action"] = "actions",
+        [PersonaWord] = PersonaWord,
         ["version"] = "versions",
     };
 
@@ -28,13 +31,13 @@ internal static class HistoryCommand
     {
         var kind = new Argument<string?>("kind")
         {
-            Description = "fact, kb, article, procedure, action or version. Left out with the id: every change to the bot.",
+            Description = "fact, kb, article, procedure, action, persona or version. Left out with the id: every change to the bot.",
             Arity = ArgumentArity.ZeroOrOne,
         };
         kind.AcceptOnlyFromAmong([.. Collections.Keys]);
         var id = new Argument<string?>("id")
         {
-            Description = "The resource's id, a fact's name or a version's number.",
+            Description = "The resource's id, a fact's name or a version's number; a persona, being one, has none.",
             Arity = ArgumentArity.ZeroOrOne,
         };
         var limit = new Option<int?>("--limit") { Description = "How many entries a page holds, 50 unless said otherwise." };
@@ -52,7 +55,7 @@ internal static class HistoryCommand
         EditOptions.RefuseOpenWithJson(command, options);
         command.Validators.Add(result =>
         {
-            if (result.GetValue(kind) is not null && result.GetValue(id) is null)
+            if (result.GetValue(kind) is not (null or PersonaWord) && result.GetValue(id) is null)
             {
                 result.AddError("Give the id too: `suwagcms history <kind> <id>`, or neither for the whole bot.");
             }
@@ -70,7 +73,8 @@ internal static class HistoryCommand
                     return exit;
                 }
                 var word = parsed.GetValue(kind);
-                var resource = parsed.GetValue(id);
+                // Why: a bot has one persona, so its history is asked for by the kind alone.
+                var resource = word == PersonaWord ? PersonaWord : parsed.GetValue(id);
                 if (parsed.GetValue(options.Open))
                 {
                     return await WebPage.ShowAsync(

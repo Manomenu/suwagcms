@@ -9,6 +9,7 @@ using Suwagcms.Server.Articles;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Facts;
 using Suwagcms.Server.KnowledgeBases;
+using Suwagcms.Server.Personas;
 using Suwagcms.Server.Procedures;
 
 namespace Suwagcms.Server.Changes;
@@ -34,6 +35,7 @@ internal static class ChangeList
         [ResourceKinds.Word(ResourceKind.Article)] = ResourceKind.Article,
         [ResourceKinds.Word(ResourceKind.Action)] = ResourceKind.Action,
         [ResourceKinds.Word(ResourceKind.Procedure)] = ResourceKind.Procedure,
+        [ResourceKinds.Word(ResourceKind.Persona)] = ResourceKind.Persona,
     };
 
     public static async Task<(List<ChangeItem> Items, List<ChangeMistake> Mistakes)> ReadAsync(
@@ -148,8 +150,19 @@ internal static class ChangeList
                 Refused($"'{change[verb]?.ToJsonString().Trim('"')}' is not a kind.", $"The kinds are {string.Join(", ", Kinds.Keys)}.")
             );
         }
+        if (kind == ResourceKind.Persona && verb != Edit)
+        {
+            return (
+                null,
+                Refused(
+                    "a persona is never added or deleted: every bot has one.",
+                    "Write `edit: persona`; to remove what it says, clear its fields."
+                )
+            );
+        }
         var idField = kind == ResourceKind.GlobalFact ? "name" : "id";
-        if (Text(change[idField]) is not { Length: > 0 } id)
+        var given = kind == ResourceKind.Persona ? Persona.PublicId : Text(change[idField]);
+        if (given is not { Length: > 0 } id)
         {
             return (null, Refused($"a {kindWord} needs its `{idField}`.", $"Give `{idField}`: the {kindWord}'s {idField}."));
         }
@@ -170,7 +183,11 @@ internal static class ChangeList
 
         var fields = change.DeepClone().AsObject();
         fields.Remove(verb);
-        fields.Remove(idField);
+        // Why: a persona's id is not the writer's to give, so an `id` on one is an unknown field like any other.
+        if (kind != ResourceKind.Persona)
+        {
+            fields.Remove(idField);
+        }
         fields.Remove(IfRevision);
         if (verb == Add && change.ContainsKey(IfRevision))
         {
@@ -234,6 +251,7 @@ internal static class ChangeList
                 body => ActionMapping.ToRecord(id, body),
                 ActionMapping.Merged
             ),
+            ResourceKind.Persona => Replacing(target, element, ifRevision),
             ResourceKind.Definition => throw new InvalidOperationException($"{kind} is not a kind of a file of changes."),
             _ => throw new ArgumentOutOfRangeException(nameof(node)),
         };
@@ -261,6 +279,13 @@ internal static class ChangeList
         return verb == Add
             ? (new Put(target, record(body), 0), [])
             : (new Edit(target, stored => record(merged((TRecord)stored, body)), ifRevision), []);
+    }
+
+    // Why: an edit of a persona replaces the whole of it, as its own command does, and works on one never saved, which has no row for an Edit to find.
+    private static (Change? Change, IReadOnlyList<Mistake> Mistakes) Replacing(ResourceRef target, JsonElement fields, int? ifRevision)
+    {
+        var (body, unreadable) = PersonaMapping.Read(fields, target);
+        return body is null ? (null, unreadable) : (new Put(target, PersonaMapping.ToRecord(body), ifRevision), []);
     }
 
     private static string? Text(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;

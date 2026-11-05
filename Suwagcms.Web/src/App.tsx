@@ -6,6 +6,7 @@ import { BotsRoutes } from "./bots/BotsRoutes";
 import { FactsScreen } from "./facts/FactsScreen";
 import { HistoryScreen } from "./history/HistoryScreen";
 import { KnowledgeBasesScreen } from "./knowledge-bases/KnowledgeBasesScreen";
+import { PersonaScreen } from "./persona/PersonaScreen";
 import { CreatorScreen } from "./procedures/CreatorScreen";
 import { ProceduresScreen } from "./procedures/ProceduresScreen";
 import { AppShell } from "./shell/AppShell";
@@ -27,6 +28,7 @@ export function App() {
                     {(params) => <ProceduresScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>
                 <Route path="/bots/:id/actions">{(params) => <ActionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
+                <Route path="/bots/:id/persona">{(params) => <PersonaScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
                 <Route path="/bots/:id/versions">
                     {(params) => <VersionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>

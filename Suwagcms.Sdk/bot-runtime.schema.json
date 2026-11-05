@@ -50,7 +50,8 @@
                     "KnowledgeBase",
                     "Article",
                     "Action",
-                    "Procedure"
+                    "Procedure",
+                    "Persona"
                   ]
                 },
                 "id": {
@@ -124,7 +125,8 @@
                     "KnowledgeBase",
                     "Article",
                     "Action",
-                    "Procedure"
+                    "Procedure",
+                    "Persona"
                   ]
                 },
                 "id": {
@@ -163,7 +165,8 @@
                           "KnowledgeBase",
                           "Article",
                           "Action",
-                          "Procedure"
+                          "Procedure",
+                          "Persona"
                         ]
                       },
                       "id": {
@@ -226,7 +229,8 @@
                 "KnowledgeBase",
                 "Article",
                 "Action",
-                "Procedure"
+                "Procedure",
+                "Persona"
               ]
             },
             "id": {
@@ -386,6 +390,12 @@
             }
           }
         }
+      },
+      "persona": {
+        "type": [
+          "string",
+          "null"
+        ]
       }
     }
   },

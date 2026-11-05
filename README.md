@@ -41,6 +41,7 @@ After registration the CMS asks the bot what it supports:
 | **Action**     | `id`, `description`, `parameters`, `results`, implementation                                      | all except `parameters` and `results`                    |
 | **Global fact**| `name`, `type` and its constraints, `description`, `writableBy`                                  | all; `writableBy` defaults to `set`                      |
 | **Local fact** | as a global fact, but it lives inside one procedure                                              | as above                                                 |
+| **Persona**    | `personality`, `scope` with `inScope`, `outOfScope`, `whenOutOfScope`; one per bot                | none; an empty text is left out of a version             |
 
 Three fields do different jobs and only `content` is for the customer:
 
@@ -296,6 +297,7 @@ The CMS is the single source of truth, so nobody edits a local copy. For work th
 | `suwagcms apply`    | applies a file of changes all or nothing, so the order of changes inside it does not matter; a dry run only reports what would break |
 | `suwagcms export`   | writes a version to files for reading and searching; changes to those files do nothing        |
 | `suwagcms diff`     | compares two versions                                                                         |
+| `suwagcms persona`  | shows the bot's persona, and replaces the whole of it from a file                             |
 
 | Part              | What it is                                                                                  |
 | :---------------- | :------------------------------------------------------------------------------------------ |
@@ -326,6 +328,7 @@ Behaviour shared by all of them:
 | Actions         | Contract, implementation, which procedures use it, a test run                            |
 | Facts           | Name, type, values, description, `writableBy`, which procedures use it                   |
 | Any resource    | "Used by" and "Uses" panels; delete is disabled with the reason when it is referenced    |
+| Persona         | One bot's personality and scope, each a plain text with its line breaks                  |
 | Versions        | Which version the bot has, what changed in each, create version, validation result, push, rollback |
 
 ## What it borrows
@@ -388,6 +391,7 @@ Rasa concepts in this project's terms:
 | Can resources be edited as local files?                           | No: `apply` for batches, `export` and `diff` only for reading            |
 | Can a resource in use be turned off?                              | Yes, with the "used by" list shown first                                 |
 | When does turning off take effect?                                | At once, without a push                                                  |
+| Where do a bot's personality and scope live?                      | In one Persona per bot, in its definition: it reaches the bot with a version |
 
 ## Sources
 

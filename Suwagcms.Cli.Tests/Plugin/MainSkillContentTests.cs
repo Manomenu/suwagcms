@@ -38,6 +38,11 @@ public sealed class MainSkillContentTests
             ["--dry-run", "what would this change break?", "Only the server sees a type change"]
         ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
+        (
+            "how to show and edit the persona, the form of its file and that it reaches the bot only with a version",
+            "Persona",
+            ["suwagcms persona show", "suwagcms persona edit --file <file>", "personality: |", "whenOutOfScope:", "only with a version"]
+        ),
         ("to compare before pushing", "Before a push", ["suwagcms versions status", "suwagcms diff <has> <latest>"]),
     ];
 
@@ -62,6 +67,11 @@ public sealed class MainSkillContentTests
             $"The main skill, claude-plugin/skills/suwagcms/SKILL.md, does not say: {string.Join("; ", missing)}."
         );
     }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-persona-12")]
+    public void The_main_skill_says_how_to_show_and_edit_the_persona_the_form_of_its_file_and_that_it_reaches_the_bot_only_with_a_version() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("how to show and edit the persona", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-article-links-12")]

@@ -27,6 +27,7 @@ const SCREENS: Record<Mistake["resource"]["kind"], string> = {
     Article: "articles",
     Procedure: "procedures",
     Action: "procedures",
+    Persona: "persona",
     Definition: "procedures",
 };
 

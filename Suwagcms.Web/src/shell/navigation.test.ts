@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { botHref, navigationOf, TABS, tabHref } from "./navigation";
 
+describe("the Persona tab", () => {
+    it("AC-bot-persona-1: goes between Actions and Versions", () => {
+        const ids: string[] = TABS.map((tab) => tab.id);
+
+        expect(ids.slice(ids.indexOf("actions"), ids.indexOf("versions") + 1)).toEqual(["actions", "persona", "versions"]);
+    });
+});
+
 describe("navigationOf", () => {
     it("AC-web-shell-4: has no bot and no tab on / and /bots", () => {
         for (const path of ["/", "/bots", "/bots/"]) {

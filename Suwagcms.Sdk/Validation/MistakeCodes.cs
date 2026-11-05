@@ -108,4 +108,7 @@ public static class MistakeCodes
     public const string ActionCodeUndeclared = "action.code.undeclared";
     public const string ActionCodeContract = "action.code.contract";
     public const string ActionCodeConflict = "action.code.conflict";
+    public const string PersonaTextTooLong = "persona.text.tooLong";
+    public const string PersonaRequired = "persona.required";
+    public const string DeclarationPersonaUnknown = "declaration.persona.unknown";
 }

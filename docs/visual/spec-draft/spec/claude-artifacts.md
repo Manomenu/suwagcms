@@ -20,3 +20,4 @@ source; the artifact is its published copy. Maintained by `vdoc.py register`, so
 | Definition validator | [2026-11-04-sdk-validator.html](2026-11-04-sdk-validator.html) | <https://claude.ai/artifact/FRCtaxRZRBhkZFCPmGhEnK> | 2026-11-04 |
 | Creating a version | [2026-11-04-version-create.html](2026-11-04-version-create.html) | <https://claude.ai/artifact/EuamQ3jfNpJbxxHGUys2jA> | 2026-11-04 |
 | Pushing a version | [2026-11-04-version-push.html](2026-11-04-version-push.html) | <https://claude.ai/artifact/NH1tHTYpkZyUH8KejAgj5j> | 2026-11-04 |
+| Bot persona | [2026-11-05-bot-persona.html](2026-11-05-bot-persona.html) | <https://claude.ai/artifact/YUTmhPWqLnRruMmKjdRwyo> | 2026-11-05 |

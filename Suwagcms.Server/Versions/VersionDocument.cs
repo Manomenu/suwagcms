@@ -27,6 +27,11 @@ internal static class VersionDocument
             ["actions"] = Kind(all, ResourceKind.Action),
             ["procedures"] = Kind(all, ResourceKind.Procedure),
         };
+        // Why: an optional member that is simply absent keeps the document of a bot without a persona as it always was, digest included.
+        if (ResourceKinds.PersonaOf(all) is { } persona)
+        {
+            document["persona"] = JsonNode.Parse(ResourceKinds.Write(persona));
+        }
         var digest = VersionDigest.Of(document.ToJsonString(Compact));
         document["digest"] = digest;
         return (document.ToJsonString(Compact), digest);

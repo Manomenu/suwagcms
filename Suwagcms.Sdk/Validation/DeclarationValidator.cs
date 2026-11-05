@@ -109,6 +109,7 @@ public static class DeclarationValidator
         return
         [
             .. DeclarationContract.Check(definition, declaration),
+            .. MissingPersona(definition, declaration),
             .. definition
                 .Procedures.OrderBy(procedure => procedure.Id, StringComparer.Ordinal)
                 .SelectMany(procedure =>
@@ -131,8 +132,34 @@ public static class DeclarationValidator
         ];
     }
 
+    private static IEnumerable<Mistake> MissingPersona(BotDefinition definition, BotDeclaration declaration)
+    {
+        if (declaration.Persona == BotDeclaration.PersonaRequired && definition.Persona?.HasText() != true)
+        {
+            yield return new(
+                MistakeCodes.PersonaRequired,
+                ValidationStage.Version,
+                new ResourceRef(ResourceKind.Persona, Persona.PublicId),
+                "persona",
+                "This bot declares 'persona: required', and this definition has no persona.",
+                "Fill in the personality or the scope on the Persona page or with `suwagcms persona edit --file <file>`, or take 'persona: required' out of the bot's setup and deploy.",
+                []
+            );
+        }
+    }
+
     private static IEnumerable<Mistake> Format(BotDeclaration declaration)
     {
+        if (declaration.Persona is { } persona && persona != BotDeclaration.PersonaRequired)
+        {
+            yield return Whole(
+                MistakeCodes.DeclarationPersonaUnknown,
+                "persona",
+                $"'{persona}' is not something a bot can say about a persona.",
+                $"Say 'persona: {BotDeclaration.PersonaRequired}', or leave it out if the bot works without one."
+            );
+        }
+
         if (declaration.FormatVersion is null)
         {
             yield return Whole(
