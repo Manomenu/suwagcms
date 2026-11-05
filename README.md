@@ -35,7 +35,8 @@ After registration the CMS asks the bot what it supports:
 
 | Resource       | Fields                                                                                           | Required                                                 |
 | :------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
-| **Article**    | `id`, `title`, `content`, `llmGuide`, `description`, `language`                                  | all; `language` is `pl` or `en` and defaults to `en`     |
+| **Knowledge base** | `id`, `title`, `language`                                                                    | all; `language` is `pl` or `en` and defaults to `en` |
+| **Article**    | `id`, `knowledgeBase`, `title`, `content`, `llmGuide`, `description`                             | all                                                      |
 | **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`                            | all except `localFacts`; `whenStalled` if it collects    |
 | **Action**     | `id`, `description`, `parameters`, `results`, implementation                                      | all except `parameters` and `results`                    |
 | **Global fact**| `name`, `type` and its constraints, `description`, `writableBy`                                  | all; `writableBy` defaults to `set`                      |
@@ -51,8 +52,8 @@ Three fields do different jobs and only `content` is for the customer:
 
 Each field's tooltip in the CMS says what the field is used for.
 
-`language` is chosen in the web and set through the CLI and the plugin like any other field. Two articles in different
-languages are separate articles: the CMS does not link them as translations.
+A knowledge base's `language` is chosen in the web and set through the CLI and the plugin like any other field. An
+article takes the language of its knowledge base. The CMS does not link articles as translations.
 
 ### Facts
 
@@ -368,7 +369,7 @@ Rasa concepts in this project's terms:
 | How are bots and knowledge bases organised?                       | One CMS with several bot profiles; references only within one bot        |
 | Do bots declare what they support?                                | Yes: format version, blocks and actions in code                          |
 | Can an article reference a procedure?                             | Yes, with a link from the picker in its guide                            |
-| What language is an article in?                                   | Its own `language`: `pl` or `en`, `en` by default; no linked translations |
+| What language is an article in?                                   | The language of its knowledge base: `pl` or `en`, `en` by default; no linked translations |
 | How do agents work with the CMS?                                  | Through a CLI and a Claude Code plugin with the same abilities as the web |
 | What format is article content in?                                | Markdown, with links written as cms:// addresses                         |
 | Can a bot run in several instances?                               | Yes, through a version store shared by its instances                     |
