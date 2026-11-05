@@ -51,7 +51,7 @@ test("AC-version-create-1: Create version in the web makes the next version and 
 
     await page.getByRole("button", { name: "Create version" }).click();
 
-    const row = page.getByRole("listitem").filter({ hasText: "v1 ·" });
+    const row = page.getByRole("row").filter({ hasText: "v1 ·" });
     await expect(row).toContainText("0 facts, 0 knowledge bases, 0 articles, 1 procedures");
     await row.getByRole("button", { name: "Open" }).click();
     await expect(page.getByText(`"bot":"${bot}"`)).toBeVisible();

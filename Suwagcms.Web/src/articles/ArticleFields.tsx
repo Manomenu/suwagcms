@@ -1,14 +1,13 @@
 import type { Mistake } from "@/api/client";
 import { Field } from "@/design/field";
 import { Input } from "@/design/input";
+import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 
 import { LANGUAGES, type KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";
 import { HINTS, fieldOf, type ArticleForm, type FieldName } from "./articleForm";
 import { LinkedTextEditor } from "./LinkedTextEditor";
-
-const SELECT = "h-9 w-full rounded-md border border-input bg-background px-2 text-sm";
 
 /** The fields of the article editor: content, llmGuide and description side by side, each with a tooltip saying who reads it. */
 export function ArticleFields({
@@ -75,9 +74,9 @@ export function ArticleFields({
                 </Field>
                 <Field prefix="article" name="knowledgeBase" label="Knowledge base" errors={errorsOf("knowledgeBase")}>
                     {(props) => (
-                        <select
+                        <Select
                             {...props}
-                            className={SELECT}
+                            className="w-full"
                             value={form.knowledgeBase}
                             onChange={(event) => {
                                 onChange({ knowledgeBase: event.currentTarget.value });
@@ -91,14 +90,14 @@ export function ArticleFields({
                                     {base.title}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     )}
                 </Field>
                 <Field prefix="article" name="language" label="Language" hint={HINTS.language} errors={errorsOf("language")}>
                     {(props) => (
-                        <select
+                        <Select
                             {...props}
-                            className={SELECT}
+                            className="w-full"
                             value={form.language}
                             onChange={(event) => {
                                 onChange({ language: event.currentTarget.value });
@@ -109,7 +108,7 @@ export function ArticleFields({
                                     {language}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     )}
                 </Field>
             </div>

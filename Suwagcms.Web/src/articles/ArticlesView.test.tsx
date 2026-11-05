@@ -83,7 +83,7 @@ describe("ArticlesView", () => {
 
         expect(html).toContain("Articles of rzeczoznawca");
         expect(html).toContain("Price list");
-        expect(html).toContain("priceList · offer · pl");
+        expect(html).toContain("<td>offer</td><td>pl</td>");
         expect(html).toContain("What a valuation costs");
     });
 
@@ -243,7 +243,7 @@ describe("the language of an article", () => {
         );
 
         expect(fieldHtml(html, "language")).toContain('<option value="pl" selected="">pl</option>');
-        expect(view(articles)).toContain("· pl");
+        expect(view(articles)).toContain("<td>pl</td>");
         expect(bodyOf({ ...emptyForm("offer"), language: "pl" }, emptyForm("offer")).language).toBe("pl");
     });
 

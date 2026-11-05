@@ -44,11 +44,11 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
 
     if (failure !== null) {
         return (
-            <main className="mx-auto max-w-2xl p-4">
+            <div className="p-4">
                 <Alert variant="destructive">{failure}</Alert>
-            </main>
+            </div>
         );
     }
-    if (loaded === null) return <main className="p-4 text-muted-foreground">Loading {id}…</main>;
+    if (loaded === null) return <p className="p-4 text-muted-foreground">Loading {id}…</p>;
     return <Creator bot={bot} id={id} initial={loaded.detail} facts={loaded.facts} stored={loaded.stored} />;
 }

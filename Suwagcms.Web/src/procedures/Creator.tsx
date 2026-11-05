@@ -12,11 +12,12 @@ import {
     type NodeChange,
 } from "@xyflow/react";
 import { useEffect, useMemo, useReducer, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 
 import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
+import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
 import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
 import { addStep, BLOCKS, connect, deleteStep, disconnect, edgesOf, stepOrder, toSave, type BlockName, type Draft } from "./draft";
@@ -29,10 +30,32 @@ import { StepForm } from "./StepForm";
 import { StepNode, type StepFlowNode } from "./StepNode";
 import { useLiveCheck } from "./useLiveCheck";
 
+// Why: the canvas variables map React Flow's palette onto the design tokens, so the graph reads on the dark theme like the rest.
+const CANVAS = [
+    "[--xy-background-color:var(--background)]",
+    "[--xy-background-pattern-dots-color:var(--border)]",
+    "[--xy-edge-stroke:var(--muted-foreground)]",
+    "[--xy-edge-stroke-selected:var(--primary)]",
+    "[--xy-edge-stroke-width:1.5]",
+    "[--xy-connectionline-stroke:var(--primary)]",
+    "[--xy-handle-background-color:var(--muted-foreground)]",
+    "[--xy-handle-border-color:var(--background)]",
+    "[--xy-controls-button-background-color:var(--secondary)]",
+    "[--xy-controls-button-background-color-hover:var(--accent)]",
+    "[--xy-controls-button-color:var(--foreground)]",
+    "[--xy-controls-button-color-hover:var(--foreground)]",
+    "[--xy-controls-button-border-color:var(--border)]",
+].join(" ");
+
 // Why: React Flow compares node types by identity, so the map must outlive every render.
 const NODE_TYPES = { step: StepNode };
 
 function Notices({ state, onReload }: { state: ReturnType<typeof loaded>; onReload: () => void }) {
+    const shown = noticeOf(state, onReload);
+    return shown === null ? null : <div className="p-3">{shown}</div>;
+}
+
+function noticeOf(state: ReturnType<typeof loaded>, onReload: () => void) {
     const notice = state.notice;
     if (notice === null) return null;
     if (notice.kind === "stale") {
@@ -97,16 +120,7 @@ function CreatorBody({
         setPositions({ ...positions, ...Object.fromEntries(fresh.flatMap((name) => (drawn[name] ? [[name, drawn[name]]] : []))) });
     const flagged = useMemo(() => (check.state === "done" ? stepsWithMistakes(check.mistakes, draft) : new Set<string>()), [check, draft]);
 
-    useEffect(() => {
-        if (!dirty) return;
-        const warn = (event: BeforeUnloadEvent) => {
-            event.preventDefault();
-        };
-        window.addEventListener("beforeunload", warn);
-        return () => {
-            window.removeEventListener("beforeunload", warn);
-        };
-    }, [dirty]);
+    useLeaveGuard(dirty, "You have unsaved changes. Leave and discard them?");
 
     useEffect(() => {
         if (reveal === null) return;
@@ -119,7 +133,7 @@ function CreatorBody({
     }, [reveal, flow]);
 
     const leave = (href: string) => {
-        if (dirty && !window.confirm("You have unsaved changes. Leave and discard them?")) return;
+        if (!mayLeave()) return;
         navigate(href);
     };
 
@@ -155,7 +169,7 @@ function CreatorBody({
         target: edge.target,
         targetHandle: "in",
         selected: edge.id === selectedEdge,
-        markerEnd: { type: MarkerType.ArrowClosed },
+        markerEnd: { type: MarkerType.ArrowClosed, color: edge.id === selectedEdge ? "var(--primary)" : "var(--muted-foreground)" },
     }));
 
     const onNodesChange = (changes: NodeChange<StepFlowNode>[]) => {
@@ -195,20 +209,10 @@ function CreatorBody({
     };
 
     return (
-        <div className="flex h-screen flex-col">
-            <header className="flex items-center gap-3 border-b px-4 py-2">
-                <Link
-                    href={`~/bots/${encodeURIComponent(bot)}/procedures`}
-                    className="text-sm text-primary underline underline-offset-4"
-                    onClick={(event) => {
-                        event.preventDefault();
-                        leave(`/bots/${encodeURIComponent(bot)}/procedures`);
-                    }}
-                >
-                    Procedures
-                </Link>
-                <h1 className="flex-1 text-xl font-semibold">
-                    Creator: {id} {dirty && <span className="text-sm font-normal text-amber-700">unsaved changes</span>}
+        <div className="flex h-full flex-col">
+            <header className="flex items-center gap-3 border-b border-border px-4 py-2">
+                <h1 className="flex-1 text-xl font-bold">
+                    Creator: {id} {dirty && <span className="text-sm font-normal text-warning">unsaved changes</span>}
                 </h1>
                 {layoutFailure !== null && <span className="text-sm text-destructive">The layout was not kept: {layoutFailure}</span>}
                 <Button
@@ -227,65 +231,69 @@ function CreatorBody({
             </header>
             <Notices state={state} onReload={reload} />
             <div className="flex min-h-0 flex-1">
-                <aside className="flex w-36 flex-col gap-2 border-r p-3" aria-label="Blocks">
-                    <h2 className="text-sm font-semibold">Blocks</h2>
-                    {BLOCKS.map((block) => (
-                        <Button
-                            key={block}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                                add(block);
+                <div className="flex min-w-0 flex-1 flex-col">
+                    <aside className="flex items-center gap-2 border-b border-border px-3 py-2" aria-label="Blocks">
+                        <h2 className="text-base font-semibold">Blocks</h2>
+                        {BLOCKS.map((block) => (
+                            <Button
+                                key={block}
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                    add(block);
+                                }}
+                            >
+                                {block}
+                            </Button>
+                        ))}
+                    </aside>
+                    <div className="min-h-0 flex-1" aria-label="Graph">
+                        <ReactFlow
+                            colorMode="dark"
+                            className={CANVAS}
+                            nodes={nodes}
+                            edges={edges}
+                            nodeTypes={NODE_TYPES}
+                            onNodesChange={onNodesChange}
+                            onConnect={onConnect}
+                            onNodeClick={(_, node) => {
+                                setSelected(node.id);
+                                setSelectedEdge(null);
                             }}
+                            onEdgeClick={(_, edge) => {
+                                setSelectedEdge(edge.id);
+                            }}
+                            onPaneClick={() => {
+                                setSelected(null);
+                                setSelectedEdge(null);
+                            }}
+                            onNodeDragStop={() => {
+                                keepPositions(drawn);
+                            }}
+                            onNodesDelete={(removed) => {
+                                let next = draft;
+                                for (const node of removed) next = deleteStep(next, node.id);
+                                dispatch({ type: "edited", draft: next });
+                                setSelected(null);
+                            }}
+                            onEdgesDelete={(removed) => {
+                                let next = draft;
+                                for (const edge of removed) if (edge.sourceHandle) next = disconnect(next, edge.source, edge.sourceHandle);
+                                dispatch({ type: "edited", draft: next });
+                                setSelectedEdge(null);
+                            }}
+                            deleteKeyCode={["Backspace", "Delete"]}
+                            nodesConnectable
+                            fitView
+                            minZoom={0.2}
                         >
-                            {block}
-                        </Button>
-                    ))}
-                </aside>
-                <div className="min-w-0 flex-1" aria-label="Graph">
-                    <ReactFlow
-                        nodes={nodes}
-                        edges={edges}
-                        nodeTypes={NODE_TYPES}
-                        onNodesChange={onNodesChange}
-                        onConnect={onConnect}
-                        onNodeClick={(_, node) => {
-                            setSelected(node.id);
-                            setSelectedEdge(null);
-                        }}
-                        onEdgeClick={(_, edge) => {
-                            setSelectedEdge(edge.id);
-                        }}
-                        onPaneClick={() => {
-                            setSelected(null);
-                            setSelectedEdge(null);
-                        }}
-                        onNodeDragStop={() => {
-                            keepPositions(drawn);
-                        }}
-                        onNodesDelete={(removed) => {
-                            let next = draft;
-                            for (const node of removed) next = deleteStep(next, node.id);
-                            dispatch({ type: "edited", draft: next });
-                            setSelected(null);
-                        }}
-                        onEdgesDelete={(removed) => {
-                            let next = draft;
-                            for (const edge of removed) if (edge.sourceHandle) next = disconnect(next, edge.source, edge.sourceHandle);
-                            dispatch({ type: "edited", draft: next });
-                            setSelectedEdge(null);
-                        }}
-                        deleteKeyCode={["Backspace", "Delete"]}
-                        nodesConnectable
-                        fitView
-                        minZoom={0.2}
-                    >
-                        <Background />
-                        <Controls showInteractive={false} />
-                    </ReactFlow>
+                            <Background />
+                            <Controls showInteractive={false} />
+                        </ReactFlow>
+                    </div>
                 </div>
-                <aside className="flex w-96 flex-col gap-6 overflow-y-auto border-l p-4">
+                <aside className="flex w-96 shrink-0 flex-col gap-6 overflow-y-auto border-l border-border p-4">
                     {selected !== null && selected in draft.steps ? (
                         <StepForm
                             key={selected}

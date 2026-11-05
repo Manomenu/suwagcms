@@ -1,12 +1,12 @@
 import type { ReactNode } from "react";
-import { Link } from "wouter";
-
+import { Anchor } from "@/design/anchor";
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
+import { Page, Paper } from "@/design/page";
+import { Select } from "@/design/select";
+import { Table } from "@/design/table";
 
 import { LANGUAGES, type Article, type Filters, type KnowledgeBase } from "./api";
-
-const SELECT = "h-9 rounded-md border border-input bg-background px-2 text-sm";
 
 /** The Articles screen: the heading, the filters, the list with its actions, and whatever form is open. */
 export function ArticlesView({
@@ -32,38 +32,28 @@ export function ArticlesView({
 }) {
     const filtered = filters.knowledgeBase !== "" || filters.language !== "" || filters.text.trim() !== "";
     return (
-        <main className="mx-auto flex max-w-5xl flex-col gap-4 p-4">
-            <header className="flex items-center gap-2">
-                <h1 className="flex-1 text-2xl font-semibold">Articles of {bot}</h1>
-                <Link
-                    href={`~/bots/${encodeURIComponent(bot)}`}
-                    onClick={onLeave}
-                    className="text-sm text-primary underline underline-offset-4"
-                >
-                    Bots
-                </Link>
+        <Page
+            title={`Articles of ${bot}`}
+            actions={
                 <Button onClick={onAdd} disabled={bases.length === 0}>
                     New article
                 </Button>
-            </header>
+            }
+        >
             {bases.length === 0 && (
                 <p className="text-muted-foreground">
                     This bot has no knowledge base yet, and an article lives in one.{" "}
-                    <Link
-                        href={`~/bots/${encodeURIComponent(bot)}/knowledge-bases`}
-                        onClick={onLeave}
-                        className="text-primary underline underline-offset-4"
-                    >
+                    <Anchor href={`~/bots/${encodeURIComponent(bot)}/knowledge-bases`} onClick={onLeave}>
                         Create the first knowledge base
-                    </Link>
+                    </Anchor>
                     .
                 </p>
             )}
             {form}
             <div className="flex gap-2">
-                <select
+                <Select
                     aria-label="Knowledge base"
-                    className={SELECT}
+                    className="shrink-0"
                     value={filters.knowledgeBase}
                     onChange={(event) => {
                         onFilters({ ...filters, knowledgeBase: event.currentTarget.value });
@@ -75,10 +65,10 @@ export function ArticlesView({
                             {base.title}
                         </option>
                     ))}
-                </select>
-                <select
+                </Select>
+                <Select
                     aria-label="Language"
-                    className={SELECT}
+                    className="shrink-0"
                     value={filters.language}
                     onChange={(event) => {
                         onFilters({ ...filters, language: event.currentTarget.value });
@@ -90,7 +80,7 @@ export function ArticlesView({
                             {language}
                         </option>
                     ))}
-                </select>
+                </Select>
                 <Input
                     aria-label="Search"
                     placeholder="Search the title, id and description"
@@ -105,29 +95,43 @@ export function ArticlesView({
                     {filtered ? "No article matches the filters." : "No articles yet. Add one: the bot answers from the articles it has."}
                 </p>
             ) : (
-                <ul className="flex flex-col gap-2">
-                    {articles.map((article) => (
-                        <li key={article.id} className="flex items-center gap-3 rounded-lg border p-3">
-                            <div className="flex flex-1 flex-col gap-1">
-                                <span className="font-medium">{article.title}</span>
-                                <span className="text-sm text-muted-foreground">
-                                    {article.id} · {article.knowledgeBase} · {article.language}
-                                </span>
-                                <span className="text-sm">{article.description}</span>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    onEdit(article);
-                                }}
-                            >
-                                Edit
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
+                <Paper>
+                    <Table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Id</th>
+                                <th>Knowledge base</th>
+                                <th>Language</th>
+                                <th>Description</th>
+                                <th />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {articles.map((article) => (
+                                <tr key={article.id}>
+                                    <td className="font-semibold">{article.title}</td>
+                                    <td className="text-muted-foreground">{article.id}</td>
+                                    <td>{article.knowledgeBase}</td>
+                                    <td>{article.language}</td>
+                                    <td className="text-muted-foreground">{article.description}</td>
+                                    <td className="text-right">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                onEdit(article);
+                                            }}
+                                        >
+                                            Edit
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </Paper>
             )}
-        </main>
+        </Page>
     );
 }

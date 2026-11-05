@@ -22,7 +22,7 @@ export function ProcedurePanel({
 }) {
     return (
         <section aria-label="Procedure" className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Procedure: {id}</h2>
+            <h2 className="text-base font-semibold">Procedure: {id}</h2>
             <Field
                 prefix="procedure"
                 name="description"

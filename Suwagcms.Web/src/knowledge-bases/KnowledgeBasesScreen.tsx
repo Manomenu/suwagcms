@@ -39,13 +39,9 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
     }, [load]);
 
     if (failure !== null) {
-        return (
-            <main className="mx-auto max-w-2xl p-4">
-                <Alert variant="destructive">{failure}</Alert>
-            </main>
-        );
+        return <Alert variant="destructive">{failure}</Alert>;
     }
-    if (bases === null) return <main className="mx-auto max-w-2xl p-4 text-muted-foreground">Loading knowledge bases…</main>;
+    if (bases === null) return <p className="text-muted-foreground">Loading knowledge bases…</p>;
 
     const renamedId = open?.kind === "rename" ? open.base.id : null;
     const latest = renamedId === null ? undefined : bases.find((base) => base.id === renamedId);

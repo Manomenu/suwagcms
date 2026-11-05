@@ -45,21 +45,21 @@ export function StepNode({ data, selected }: NodeProps<StepFlowNode>) {
             data-step={name}
             style={{ width: size.width, height: size.height }}
             className={cn(
-                "flex flex-col rounded-lg border bg-card text-sm shadow-xs",
-                selected && "ring-2 ring-ring",
-                flagged && "border-amber-500",
+                "flex flex-col rounded-lg border border-input bg-secondary text-sm text-foreground",
+                flagged && "border-destructive",
+                selected && "border-primary ring-1 ring-primary",
             )}
         >
             <Handle type="target" position={Position.Left} id="in" />
-            <div className="flex items-center gap-1 rounded-t-lg border-b bg-muted px-2 py-1.5 font-medium">
+            <div className="flex items-center gap-1 rounded-t-lg border-b border-input bg-accent/40 px-2 py-1.5 font-medium">
                 {first && (
-                    <span title="The first step" aria-label="first step">
+                    <span title="The first step" aria-label="first step" className="text-primary">
                         ▶
                     </span>
                 )}
                 <span className="flex-1 truncate">{name}</span>
                 {flagged && (
-                    <span title="This step has a mistake" aria-label="has a mistake" className="text-amber-600">
+                    <span title="This step has a mistake" aria-label="has a mistake" className="text-destructive">
                         ⚠
                     </span>
                 )}
@@ -74,7 +74,7 @@ export function StepNode({ data, selected }: NodeProps<StepFlowNode>) {
             {Array.isArray(step.next) ? (
                 <div className="mt-auto flex flex-col">
                     {step.next.map((rule, index) => (
-                        <div key={handles[index]} className="relative h-6 truncate border-t px-2 text-xs leading-6">
+                        <div key={handles[index]} className="relative h-6 truncate border-t border-input px-2 text-xs leading-6">
                             {ruleLabel(rule.when)} →
                             <Handle type="source" position={Position.Right} id={handles[index] ?? `rule-${index}`} />
                         </div>

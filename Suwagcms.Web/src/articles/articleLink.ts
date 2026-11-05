@@ -65,7 +65,8 @@ export const ArticleLink = Mention.extend<ArticleLinkOptions>({
             dom.contentEditable = "false";
             dom.setAttribute("role", "link");
             dom.dataset["articleLink"] = id;
-            dom.className = "mx-0.5 inline-block cursor-pointer rounded bg-primary/10 px-1.5 text-primary hover:bg-primary/20";
+            dom.className =
+                "mx-0.5 inline-block cursor-pointer rounded-full bg-primary-light px-2 text-primary-light-foreground hover:bg-primary-light-hover";
             dom.textContent = titleOf(id) ?? String(node.attrs["label"] ?? id);
             dom.addEventListener("click", () => {
                 onOpen(id);

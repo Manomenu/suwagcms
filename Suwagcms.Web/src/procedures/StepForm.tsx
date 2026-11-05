@@ -3,6 +3,7 @@ import { Link } from "wouter";
 
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
+import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 
 import type { Fact } from "./api";
@@ -16,7 +17,7 @@ function NoFacts({ bot, onLeave }: { bot: string; onLeave: (href: string) => voi
             This bot has no facts yet.{" "}
             <Link
                 href={`~${href}`}
-                className="text-primary underline underline-offset-4"
+                className="text-anchor underline underline-offset-4"
                 onClick={(event) => {
                     event.preventDefault();
                     onLeave(href);
@@ -53,6 +54,7 @@ function CollectForm({
                 <label key={name} className="flex items-center gap-2 text-sm">
                     <input
                         type="checkbox"
+                        className="accent-primary"
                         checked={picked.includes(name)}
                         onChange={(event) => {
                             onChange(event.target.checked ? [...picked, name] : picked.filter((other) => other !== name));
@@ -97,16 +99,15 @@ function AssignForm({
                         {values === null ? (
                             <Input
                                 aria-label={`Value of ${name}`}
-                                className="h-8"
                                 value={value}
                                 onChange={(event) => {
                                     set(event.target.value);
                                 }}
                             />
                         ) : (
-                            <select
+                            <Select
                                 aria-label={`Value of ${name}`}
-                                className="h-8 flex-1 rounded-md border bg-background px-2"
+                                className="flex-1"
                                 value={value}
                                 onChange={(event) => {
                                     set(event.target.value);
@@ -118,7 +119,7 @@ function AssignForm({
                                         {option}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         )}
                         <Button
                             type="button"
@@ -135,9 +136,8 @@ function AssignForm({
                 );
             })}
             {free[0] !== undefined && (
-                <select
+                <Select
                     aria-label="Assign another fact"
-                    className="h-8 rounded-md border bg-background px-2 text-sm"
                     value=""
                     onChange={(event) => {
                         if (event.target.value !== "") onChange({ ...assigned, [event.target.value]: "" });
@@ -149,7 +149,7 @@ function AssignForm({
                             {fact.name}
                         </option>
                     ))}
-                </select>
+                </Select>
             )}
         </fieldset>
     );
@@ -182,7 +182,7 @@ export function StepForm({
     const context = { draft, step: name, facts, edit };
     return (
         <section aria-label={`Step ${name}`} className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Step: {name}</h2>
+            <h2 className="text-base font-semibold">Step: {name}</h2>
             <label
                 className="flex flex-col gap-1 text-sm"
                 title="The step's name, used by next and firstStep. camelCase, unique in the procedure."
@@ -208,6 +208,7 @@ export function StepForm({
             <label className="flex items-center gap-2 text-sm" title="The procedure starts here. One step at a time carries the mark.">
                 <input
                     type="radio"
+                    className="accent-primary"
                     name="first-step"
                     checked={draft.firstStep === name}
                     onChange={() => {
@@ -251,7 +252,7 @@ export function StepForm({
                 />
             )}
             <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium">Next</h3>
+                <h3 className="text-base font-semibold">Next</h3>
                 {Array.isArray(step.next) ? (
                     <RuleEditor rules={step.next} context={context} />
                 ) : (

@@ -1,12 +1,13 @@
 import { useState } from "react";
 
+import type { Bot } from "@/api/bots";
 import { ApiError } from "@/api/client";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
 import { Label } from "@/design/label";
 
-import { registerBot, type Bot } from "./api";
+import { registerBot } from "./api";
 
 /** The form that registers a bot; a refusal shows every mistake with its fix, and nothing is registered. */
 export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot: Bot) => void; onCancel: () => void }) {
@@ -26,7 +27,7 @@ export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot
     }
 
     return (
-        <form onSubmit={submit} className="flex flex-col gap-3 rounded-lg border p-4">
+        <form onSubmit={submit} className="flex max-w-2xl flex-col gap-3">
             <div className="flex flex-col gap-2">
                 <Label htmlFor="bot-id">Id</Label>
                 <Input

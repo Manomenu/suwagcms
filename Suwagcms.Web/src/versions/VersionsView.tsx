@@ -1,7 +1,9 @@
-import { Link } from "wouter";
-
 import type { Mistake } from "@/api/client";
+import { Alert } from "@/design/alert";
+import { Anchor } from "@/design/anchor";
 import { Button } from "@/design/button";
+import { Page, Paper } from "@/design/page";
+import { Table } from "@/design/table";
 
 import { numberOf, type BotStatus, type PushResult, type VersionDetail, type VersionSummary } from "./api";
 import { statusView, whenOf } from "./pushStatus";
@@ -57,18 +59,16 @@ export function VersionsView({
     const base = `~/bots/${encodeURIComponent(bot)}`;
     const bots = status === null ? null : statusView(status);
     return (
-        <main className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
-            <header className="flex items-center gap-2">
-                <h1 className="flex-1 text-2xl font-semibold">Versions of {bot}</h1>
-                <Link href={base} className="text-sm text-primary underline underline-offset-4">
-                    Bots
-                </Link>
+        <Page
+            title={`Versions of ${bot}`}
+            actions={
                 <Button variant={bots?.push ? "outline" : "default"} onClick={onCreate}>
                     Create version
                 </Button>
-            </header>
+            }
+        >
             {status !== null && bots !== null && (
-                <section className="flex flex-col gap-2 rounded-lg border p-3">
+                <Paper className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
                         <p className={`flex-1 font-medium ${bots.problem ? "text-destructive" : ""}`}>{bots.headline}</p>
                         {bots.push && (
@@ -93,29 +93,28 @@ export function VersionsView({
                         </p>
                     )}
                     {pushFailure !== null && (
-                        <div role="alert" className="flex flex-col gap-1 rounded-lg border border-destructive p-3 text-sm text-destructive">
-                            <p className="font-medium">failed</p>
-                            <p>
-                                Push of v{Number(pushFailure.version)}: {pushFailure.reason}
-                            </p>
-                            <ul className="flex flex-col gap-1">
-                                {pushFailure.mistakes.map((mistake, index) => (
-                                    <li key={`${mistake.code}-${index}`}>
-                                        {mistake.message} {mistake.fix}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        <Alert variant="destructive">
+                            <div className="flex flex-col gap-1">
+                                <p className="font-medium">failed</p>
+                                <p>
+                                    Push of v{Number(pushFailure.version)}: {pushFailure.reason}
+                                </p>
+                                <ul className="flex flex-col gap-1">
+                                    {pushFailure.mistakes.map((mistake, index) => (
+                                        <li key={`${mistake.code}-${index}`}>
+                                            {mistake.message} {mistake.fix}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </Alert>
                     )}
                     {status.attempts.length > 0 && (
                         <div className="flex flex-col gap-1 text-sm">
                             <p className="font-medium">Recent pushes</p>
                             <ul className="flex flex-col gap-1">
                                 {status.attempts.map((attempt) => (
-                                    <li
-                                        key={attempt.id}
-                                        className={attempt.outcome === "Failed" ? "text-destructive" : "text-muted-foreground"}
-                                    >
+                                    <li key={attempt.id} className={attempt.outcome === "Failed" ? "text-destructive" : "text-success"}>
                                         {whenOf(attempt.at)} · v{Number(attempt.version)} ·{" "}
                                         {attempt.outcome === "Failed" ? "failed" : "pushed"}
                                         {attempt.error === null ? "" : `: ${attempt.error}`}
@@ -124,68 +123,84 @@ export function VersionsView({
                             </ul>
                         </div>
                     )}
-                </section>
+                </Paper>
             )}
             {refused !== null && (
-                <div role="alert" className="flex flex-col gap-1 rounded-lg border border-destructive p-3 text-sm text-destructive">
-                    <p className="font-medium">
-                        Not created, {refused.length} {refused.length === 1 ? "mistake" : "mistakes"}
-                    </p>
-                    <ul className="flex flex-col gap-1">
-                        {refused.map((mistake, index) => (
-                            <li key={`${mistake.code}-${mistake.resource.id}-${mistake.path}-${index}`}>
-                                {mistake.message} {mistake.fix}{" "}
-                                <Link href={`${base}/${screenOf(mistake)}`} className="underline underline-offset-4">
-                                    {mistake.resource.id === "" ? "Open" : `Open ${mistake.resource.id}`}
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+                <Alert variant="destructive">
+                    <div className="flex flex-col gap-1">
+                        <p className="font-medium">
+                            Not created, {refused.length} {refused.length === 1 ? "mistake" : "mistakes"}
+                        </p>
+                        <ul className="flex flex-col gap-1">
+                            {refused.map((mistake, index) => (
+                                <li key={`${mistake.code}-${mistake.resource.id}-${mistake.path}-${index}`}>
+                                    {mistake.message} {mistake.fix}{" "}
+                                    <Anchor href={`${base}/${screenOf(mistake)}`} className="underline">
+                                        {mistake.resource.id === "" ? "Open" : `Open ${mistake.resource.id}`}
+                                    </Anchor>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </Alert>
             )}
             {versions.length === 0 ? (
                 <p className="text-muted-foreground">No versions yet. Create one: the whole working state is checked and frozen.</p>
             ) : (
-                <ul className="flex flex-col gap-2">
-                    {versions.map((version) => (
-                        <li key={numberOf(version)} className="flex items-center gap-3 rounded-lg border p-3">
-                            <div className="flex flex-1 flex-col gap-1">
-                                <span className="font-medium">
-                                    v{numberOf(version)} · {dateOf(version)}
-                                </span>
-                                <span className="text-sm text-muted-foreground">
-                                    {version.facts} facts, {version.knowledgeBases} knowledge bases, {version.articles} articles,{" "}
-                                    {version.procedures} procedures
-                                </span>
-                            </div>
-                            <code className="text-sm text-muted-foreground" title={version.sha256}>
-                                {digestOf(version.sha256)}
-                            </code>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                    onOpen(version);
-                                }}
-                            >
-                                Open
-                            </Button>
-                        </li>
-                    ))}
-                </ul>
+                <Paper>
+                    <Table>
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Content</th>
+                                <th>Digest</th>
+                                <th />
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {versions.map((version) => (
+                                <tr key={numberOf(version)}>
+                                    <td className="font-medium">
+                                        v{numberOf(version)} · {dateOf(version)}
+                                    </td>
+                                    <td className="text-muted-foreground">
+                                        {version.facts} facts, {version.knowledgeBases} knowledge bases, {version.articles} articles,{" "}
+                                        {version.procedures} procedures
+                                    </td>
+                                    <td>
+                                        <code className="text-muted-foreground" title={version.sha256}>
+                                            {digestOf(version.sha256)}
+                                        </code>
+                                    </td>
+                                    <td className="text-right">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                                onOpen(version);
+                                            }}
+                                        >
+                                            Open
+                                        </Button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </Table>
+                </Paper>
             )}
             {shown !== null && (
-                <section className="flex flex-col gap-2 rounded-lg border p-3">
-                    <header className="flex items-center gap-2">
-                        <h2 className="flex-1 font-medium">Version {numberOf(shown.version)}</h2>
+                <Paper className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                        <h2 className="flex-1 text-xl font-bold">Version {numberOf(shown.version)}</h2>
                         <Button variant="outline" size="sm" onClick={onClose}>
                             Close
                         </Button>
-                    </header>
+                    </div>
                     <p className="text-sm text-muted-foreground">sha256 {shown.version.sha256}</p>
                     <pre className="max-h-96 overflow-auto text-xs whitespace-pre-wrap">{shown.document}</pre>
-                </section>
+                </Paper>
             )}
-        </main>
+        </Page>
     );
 }

@@ -43,7 +43,7 @@ export function pickerOf(targets: () => LinkTarget[], selfId: () => string): Omi
                     ...(props.items.length === 0
                         ? [element("li", "px-2 py-1 text-muted-foreground", "No article matches")]
                         : props.items.map((item, index) => {
-                              const row = element("li", "cursor-pointer rounded px-2 py-1", `${item.title}  `);
+                              const row = element("li", "cursor-pointer rounded px-2 py-1 hover:bg-accent", `${item.title}  `);
                               row.setAttribute("role", "option");
                               row.dataset["articleOption"] = item.id;
                               row.setAttribute("aria-selected", String(index === chosen));
@@ -69,7 +69,7 @@ export function pickerOf(targets: () => LinkTarget[], selfId: () => string): Omi
                     list.setAttribute("role", "listbox");
                     list.setAttribute("aria-label", "Articles to link");
                     list.className =
-                        "fixed z-50 max-h-64 min-w-64 overflow-auto rounded-md border bg-popover p-1 text-sm text-popover-foreground shadow-md";
+                        "fixed z-50 max-h-64 min-w-64 overflow-auto rounded-md border border-border bg-secondary p-1 text-sm text-foreground shadow-md";
                     document.body.append(list);
                     chosen = 0;
                     last = props;

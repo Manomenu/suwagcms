@@ -59,13 +59,9 @@ export function FactsScreen({ bot }: { bot: string }) {
     }, [openParam, location, navigate, bot]);
 
     if (failure !== null) {
-        return (
-            <main className="mx-auto max-w-2xl p-4">
-                <Alert variant="destructive">{failure}</Alert>
-            </main>
-        );
+        return <Alert variant="destructive">{failure}</Alert>;
     }
-    if (facts === null) return <main className="mx-auto max-w-2xl p-4 text-muted-foreground">Loading facts…</main>;
+    if (facts === null) return <p className="text-muted-foreground">Loading facts…</p>;
 
     const editedName = open?.kind === "edit" ? open.fact.name : null;
     const latest = editedName === null ? undefined : facts.find((fact) => fact.name === editedName);

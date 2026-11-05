@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ApiError } from "@/api/client";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
+import { Paper } from "@/design/page";
 
 import { fetchArticles, saveArticle, type KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";
@@ -66,17 +67,6 @@ export function ArticleForm({
         };
     }, [dirty, onDirtyChange]);
 
-    useEffect(() => {
-        if (!dirty) return undefined;
-        const warn = (event: BeforeUnloadEvent) => {
-            event.preventDefault();
-        };
-        window.addEventListener("beforeunload", warn);
-        return () => {
-            window.removeEventListener("beforeunload", warn);
-        };
-    }, [dirty]);
-
     function submit(event: React.SyntheticEvent) {
         event.preventDefault();
         setRefusal(null);
@@ -91,58 +81,60 @@ export function ArticleForm({
     const loose = mistakes.filter((mistake) => fieldOf(mistake, form.id) === null);
     const moved = mistakes.some((mistake) => mistake.code === "resource.stale");
     return (
-        <form onSubmit={submit} className="flex flex-col gap-3 rounded-lg border p-4">
-            {targetsFailure !== null && <Alert variant="destructive">{targetsFailure}</Alert>}
-            {targets === null && targetsFailure === null && <p className="text-muted-foreground">Loading the form…</p>}
-            {targets !== null && (
-                <ArticleFields
-                    form={form}
-                    bases={bases}
-                    mistakes={mistakes}
-                    idLocked={editing}
-                    targets={targets}
-                    onOpenArticle={onOpenArticle}
-                    onChange={(change) => {
-                        setForm((before) => ({ ...before, ...change }));
-                    }}
-                />
-            )}
-            {refusal !== null && mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
-            {loose.length > 0 && (
-                <Alert variant="destructive">
-                    <ul className="list-disc pl-4">
-                        {loose.map((mistake) => (
-                            <li key={`${mistake.code}:${mistake.path}`}>
-                                {mistake.message} {mistake.fix}
-                            </li>
-                        ))}
-                    </ul>
-                </Alert>
-            )}
-            <div className="flex gap-2">
-                <Button type="submit">{editing ? "Save" : "Add"}</Button>
-                {moved && (
+        <Paper>
+            <form onSubmit={submit} className="flex flex-col gap-3">
+                {targetsFailure !== null && <Alert variant="destructive">{targetsFailure}</Alert>}
+                {targets === null && targetsFailure === null && <p className="text-muted-foreground">Loading the form…</p>}
+                {targets !== null && (
+                    <ArticleFields
+                        form={form}
+                        bases={bases}
+                        mistakes={mistakes}
+                        idLocked={editing}
+                        targets={targets}
+                        onOpenArticle={onOpenArticle}
+                        onChange={(change) => {
+                            setForm((before) => ({ ...before, ...change }));
+                        }}
+                    />
+                )}
+                {refusal !== null && mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
+                {loose.length > 0 && (
+                    <Alert variant="destructive">
+                        <ul className="list-disc pl-4">
+                            {loose.map((mistake) => (
+                                <li key={`${mistake.code}:${mistake.path}`}>
+                                    {mistake.message} {mistake.fix}
+                                </li>
+                            ))}
+                        </ul>
+                    </Alert>
+                )}
+                <div className="flex gap-2">
+                    <Button type="submit">{editing ? "Save" : "Add"}</Button>
+                    {moved && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setRefusal(null);
+                                onReload();
+                            }}
+                        >
+                            Reload the article
+                        </Button>
+                    )}
                     <Button
                         type="button"
                         variant="outline"
                         onClick={() => {
-                            setRefusal(null);
-                            onReload();
+                            if (!dirty || window.confirm(DISCARD_QUESTION)) onCancel();
                         }}
                     >
-                        Reload the article
+                        Cancel
                     </Button>
-                )}
-                <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                        if (!dirty || window.confirm(DISCARD_QUESTION)) onCancel();
-                    }}
-                >
-                    Cancel
-                </Button>
-            </div>
-        </form>
+                </div>
+            </form>
+        </Paper>
     );
 }
