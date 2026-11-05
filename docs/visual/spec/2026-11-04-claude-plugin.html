@@ -381,8 +381,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The plugin holds no rules of its own: the CLI and the server stay the only place that decides anything.</p>
   </div>
   <div class="stats">
-    <div><b>5</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>6</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -402,7 +402,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>An MCP endpoint: README rules it out; the CLI is the agent's door.</li>
-      <li>Skills for pushing a version or for batches: see “Criteria after other features”.</li>
+      <li>A skill for pushing a version: see “Criteria after other features”.</li>
       <li>A session-start hook: the CMS leaves no file in a repository that could tell the hook it is relevant.</li>
       <li>Updating the plugin through a skill of its own.</li>
     </ul></div>
@@ -458,6 +458,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-claude-plugin-3</code> A command of the CLI that has no line in the main skill fails the gate, with a message naming the command and the fix.</li>
     <li><code>AC-claude-plugin-4</code> A line in the main skill naming a command the CLI does not have fails the gate.</li>
     <li><code>AC-claude-plugin-5</code> The main skill says how to install the CLI, how to pick the server and the bot, to use <code>--json</code>, how to read a refusal and that resources are never edited as local files; a guard checks each of these is present.</li>
+    <li><code>AC-claude-plugin-6</code> A skill for batch changes starts with a dry run.</li>
   </ul>
 </section>
 
@@ -466,7 +467,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>version-push</code>:</b> a skill for versions shows what will change before an agent pushes.</li>
-    <li><b>after <code>batch-apply</code>:</b> a skill for batch changes starts with a dry run.</li>
   </ul>
 </section>
 

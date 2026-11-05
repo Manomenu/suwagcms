@@ -3,10 +3,12 @@ import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
 import { renamer } from "@/api/rename";
+import { useResourceHistory } from "@/api/history";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
+import { HistoryPanel } from "@/design/historyPanel";
 import { UsagePanel } from "@/design/usagePanel";
 
 import { deleteFact, fetchFact, fetchFacts, revisionOf, type Fact } from "./api";
@@ -30,6 +32,12 @@ export function FactsScreen({ bot }: { bot: string }) {
     const openFact = open?.kind === "edit" ? open.fact : null;
     const openRevision = openFact === null ? 0 : revisionOf(facts?.find((fact) => fact.name === openFact.name) ?? openFact);
     const changer = useMemo(() => renamer(bot, "facts", openFact?.name ?? "", openRevision), [bot, openFact?.name, openRevision]);
+    const history = useResourceHistory(
+        bot,
+        "facts",
+        open?.kind === "edit" ? open.fact.name : null,
+        open?.kind === "edit" ? revisionOf(open.fact) : 0,
+    );
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -161,6 +169,7 @@ export function FactsScreen({ bot }: { bot: string }) {
                             }}
                         />
                     )}
+                    {open?.kind === "edit" && <HistoryPanel {...history} />}
                 </>
             }
         />

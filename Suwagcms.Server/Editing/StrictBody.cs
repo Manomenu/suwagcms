@@ -40,49 +40,57 @@ internal static class StrictBody
 
         using (document)
         {
-            if (document.RootElement.ValueKind != JsonValueKind.Object)
-            {
-                return (null, [Make(Invalid, target, "$", "The body is not a JSON object.", "Send one JSON object.")]);
-            }
-            var known = Strict.GetTypeInfo(typeof(T)).Properties.Select(property => property.Name).ToList();
-            var unknown = document
-                .RootElement.EnumerateObject()
-                .Where(property => !known.Contains(property.Name, StringComparer.Ordinal))
-                .Select(property =>
-                    Make(
-                        UnknownField,
-                        target,
-                        property.Name,
-                        $"'{property.Name}' is not a field of this {ResourceKinds.Noun(target.Kind)}.",
-                        $"Remove '{property.Name}', or fix its spelling: the fields are {string.Join(", ", known)}."
-                    )
-                )
-                .ToList();
-            if (unknown.Count > 0)
-            {
-                return (null, unknown);
-            }
-            try
-            {
-                return (document.RootElement.Deserialize<T>(Strict), []);
-            }
-            catch (JsonException exception)
-            {
-                return (
-                    null,
-                    [
-                        Make(
-                            Invalid,
-                            target,
-                            (exception.Path ?? "$").Replace("$.", "", StringComparison.Ordinal),
-                            $"The body does not fit: {exception.Message}",
-                            "Fix the value at the path: numbers are whole numbers, lists hold strings."
-                        ),
-                    ]
-                );
-            }
+            return Read<T>(document.RootElement, target);
         }
     }
+
+    public static (T? Body, IReadOnlyList<Mistake> Mistakes) Read<T>(JsonElement root, ResourceRef target)
+        where T : class
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            return (null, [Make(Invalid, target, "$", "The body is not a JSON object.", "Send one JSON object.")]);
+        }
+        var known = Strict.GetTypeInfo(typeof(T)).Properties.Select(property => property.Name).ToList();
+        var unknown = root.EnumerateObject()
+            .Where(property => !known.Contains(property.Name, StringComparer.Ordinal))
+            .Select(property => Unknown(target, property.Name, string.Join(", ", known)))
+            .ToList();
+        if (unknown.Count > 0)
+        {
+            return (null, unknown);
+        }
+        try
+        {
+            return (root.Deserialize<T>(Strict), []);
+        }
+        catch (JsonException exception)
+        {
+            return (
+                null,
+                [
+                    Make(
+                        Invalid,
+                        target,
+                        (exception.Path ?? "$").Replace("$.", "", StringComparison.Ordinal),
+                        $"The body does not fit: {exception.Message}",
+                        "Fix the value at the path: numbers are whole numbers, lists hold strings."
+                    ),
+                ]
+            );
+        }
+    }
+
+    public static Mistake Unknown(ResourceRef target, string field, string known) =>
+        Make(
+            UnknownField,
+            target,
+            field,
+            $"'{field}' is not a field of this {ResourceKinds.Noun(target.Kind)}.",
+            known.Length == 0
+                ? $"Remove '{field}': this takes no fields."
+                : $"Remove '{field}', or fix its spelling: the fields are {known}."
+        );
 
     private static Mistake Make(string code, ResourceRef target, string path, string message, string fix) =>
         new(code, ValidationStage.Save, target, path, message, fix, []);

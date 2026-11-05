@@ -15,6 +15,7 @@ import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation } from "wouter";
 
 import { renamer } from "@/api/rename";
+import { useResourceHistory } from "@/api/history";
 import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
@@ -127,6 +128,7 @@ function CreatorBody({
     const { draft } = state;
     const check = useLiveCheck(bot, id, state.revision, draft);
     const usage = useUsage(bot, "procedures", id, state.revision);
+    const history = useResourceHistory(bot, "procedures", id, state.revision);
     const dirty = isDirty(state);
     const changer = useMemo(() => renamer(bot, "procedures", id, state.revision), [bot, id, state.revision]);
     const drawn = useMemo(() => placed(draft, positions), [draft, positions]);
@@ -350,7 +352,7 @@ function CreatorBody({
                             onLeave={leave}
                         />
                     ) : (
-                        <ProcedurePanel bot={bot} id={id} draft={draft} usage={usage} edit={edit} />
+                        <ProcedurePanel bot={bot} id={id} draft={draft} usage={usage} history={history} edit={edit} />
                     )}
                     <MistakeList
                         check={check}

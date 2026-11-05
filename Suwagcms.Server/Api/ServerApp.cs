@@ -3,10 +3,12 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 using Suwagcms.Server.Articles;
 using Suwagcms.Server.Bots;
+using Suwagcms.Server.Changes;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Facts;
 using Suwagcms.Server.Health;
+using Suwagcms.Server.History;
 using Suwagcms.Server.KnowledgeBases;
 using Suwagcms.Server.ProcedureLayouts;
 using Suwagcms.Server.Procedures;
@@ -54,6 +56,8 @@ internal static class ServerApp
         api.MapUsage();
         api.MapRenames();
         api.MapProcedureLayouts();
+        api.MapChanges();
+        api.MapHistory();
         return app;
     }
 }

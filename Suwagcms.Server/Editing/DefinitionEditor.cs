@@ -20,9 +20,19 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         var before = (await ResourceStore.LoadAsync(connection, transaction, bot, cancellationToken)).ToDictionary(item => item.Target);
 
-        if (Unmet(changes, before) is { } unmet)
+        var twice = Twice(changes);
+        var unmet = Unmet(changes, before, twice);
+        // Why: a list based on an old read has no result worth judging, so what is out of date comes before the rules, every piece of it at once; one piece alone keeps its own answer, a conflict or a 404.
+        if (twice.Count == 0 && unmet.Count == 1)
         {
-            return unmet;
+            return unmet[0];
+        }
+        if (twice.Count + unmet.Count > 0)
+        {
+            return new EditResult.Refused([
+                .. twice.Select(entry => EditProblems.Twice(entry.Key, entry.Value)),
+                .. unmet.SelectMany(result => EditProblems.MistakesOf(result, bot)),
+            ]);
         }
         if (Conflict(changes, before) is { } conflict)
         {
@@ -30,8 +40,12 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         var rewritten = Rewrites(changes, before);
         var after = Applied(changes, before, rewritten);
-        // Why: one pass at the Version stage finds both kinds, since it runs every Save rule too; only the Save ones refuse.
-        var assembled = ResourceKinds.Assemble(after.Values);
+        // Why: one pass at the Version stage finds both kinds, since it runs every Save rule too; only the Save ones refuse. The order is fixed so that a list means the same in any order.
+        var assembled = ResourceKinds.Assemble(
+            after
+                .Values.OrderBy(item => ResourceKinds.Column(item.Target.Kind), StringComparer.Ordinal)
+                .ThenBy(item => item.Target.Id, StringComparer.Ordinal)
+        );
         var found = DefinitionValidator.Validate(assembled, ValidationStage.Version);
         // Why: an edit is judged by the rules on its result and only worded for its cause, so the same break is refused however it came about.
         var edited = EditGuard.Reshape(
@@ -78,27 +92,51 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         else
         {
+            // Why: a rename also rewrites the resources that refer to it, so history covers every row that changed, not only the targets named.
+            var touched = before
+                .Keys.Where(target => !after.ContainsKey(target))
+                .Concat(
+                    after.Values.Where(item => !ReferenceEquals(item, before.GetValueOrDefault(item.Target))).Select(item => item.Target)
+                )
+                .ToList();
+            foreach (var entry in ChangeEntries.Of(touched, before, after))
+            {
+                await HistoryStore.WriteAsync(connection, transaction, bot, entry, now, cancellationToken);
+            }
             await transaction.CommitAsync(cancellationToken);
         }
         return new EditResult.Saved(revisions, !dryRun, found) { Rewritten = rewritten };
     }
 
-    // Why: expected revisions are checked against the state found under the lock, before any change is applied, so a stale edit loses to no mistake.
-    private static EditResult? Unmet(IReadOnlyList<Change> changes, Dictionary<ResourceRef, StoredResource> before)
+    // Why: the outcome of two changes to one resource would depend on their order, and a list means the same in any order; positions count from 1, as a file is read.
+    private static Dictionary<ResourceRef, List<int>> Twice(IReadOnlyList<Change> changes) =>
+        changes
+            .Select((change, index) => (change.Target, Position: index + 1))
+            .GroupBy(item => item.Target)
+            .Where(group => group.Count() > 1)
+            .ToDictionary(group => group.Key, group => group.Select(item => item.Position).ToList());
+
+    // Why: expected revisions are checked against the state found under the lock, before any change is applied, so a stale edit loses to no mistake. A resource named twice is refused for that alone: judged against the state before the list, a delete of what the list adds would only say "missing".
+    private static List<EditResult> Unmet(
+        IReadOnlyList<Change> changes,
+        Dictionary<ResourceRef, StoredResource> before,
+        Dictionary<ResourceRef, List<int>> twice
+    )
     {
-        foreach (var change in changes)
+        var unmet = new List<EditResult>();
+        foreach (var change in changes.Where(change => !twice.ContainsKey(change.Target)))
         {
             before.TryGetValue(change.Target, out var found);
-            if (change is Remove or Rename && found is null)
+            if (change is Remove or Rename or Edit && found is null)
             {
-                return new EditResult.Missing(change.Target);
+                unmet.Add(new EditResult.Missing(change.Target));
             }
-            if (change.ExpectedRevision is { } expected && expected != (found?.Revision ?? 0))
+            else if (change.ExpectedRevision is { } expected && expected != (found?.Revision ?? 0))
             {
-                return new EditResult.Stale(change.Target, expected, found?.Revision);
+                unmet.Add(new EditResult.Stale(change.Target, expected, found?.Revision));
             }
         }
-        return null;
+        return unmet;
     }
 
     // Why: a new id in the wrong form makes every link rewritten to it malformed too; that has one cause, so it is said once.
@@ -157,6 +195,10 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
                     }
                     before.TryGetValue(put.Target, out var was);
                     after[put.Target] = new StoredResource(was?.Id ?? Guid.NewGuid(), put.Target, (was?.Revision ?? 0) + 1, put.Record);
+                    break;
+                case Edit edit:
+                    var stored = before[edit.Target];
+                    after[edit.Target] = stored with { Revision = stored.Revision + 1, Record = edit.Merge(stored.Record) };
                     break;
                 case Remove remove:
                     after.Remove(remove.Target);

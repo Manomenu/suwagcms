@@ -7,6 +7,7 @@ const TABS = [
     ["Articles", "articles"],
     ["Procedures", "procedures"],
     ["Versions", "versions"],
+    ["History", "history"],
 ] as const;
 
 function freshId(prefix: string): string {

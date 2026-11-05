@@ -79,7 +79,7 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
         return $", step {parts[1]} ({(block == "next" ? "when" : block)})";
     }
 
-    private static string Noun(string kind) =>
+    public static string Noun(string kind) =>
         kind switch
         {
             "GlobalFact" => "fact",

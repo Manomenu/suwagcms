@@ -40,6 +40,20 @@ internal static class ResourceKinds
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
+    // Why: the word a file of changes and the history use for a kind, the one a person reads.
+    public static string Word(ResourceKind kind) =>
+        kind switch
+        {
+            ResourceKind.GlobalFact => "fact",
+            ResourceKind.KnowledgeBase => "knowledgeBase",
+            ResourceKind.Article => "article",
+            ResourceKind.Procedure => "procedure",
+            ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
+                $"{kind} resources are not stored yet: add the kind to ResourceKinds."
+            ),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
+
     public static BotDefinition Assemble(IEnumerable<StoredResource> resources)
     {
         var all = resources.ToList();

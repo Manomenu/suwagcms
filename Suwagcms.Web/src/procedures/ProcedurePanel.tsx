@@ -1,5 +1,7 @@
+import type { HistoryState } from "@/api/history";
 import { usageHref, type UsageState } from "@/api/usage";
 import { Field } from "@/design/field";
+import { HistoryPanel } from "@/design/historyPanel";
 import { Input } from "@/design/input";
 import { Textarea } from "@/design/textarea";
 import { UsagePanel } from "@/design/usagePanel";
@@ -13,12 +15,14 @@ export function ProcedurePanel({
     id,
     draft,
     usage,
+    history,
     edit,
 }: {
     bot: string;
     id: string;
     draft: Draft;
     usage: UsageState;
+    history: HistoryState;
     edit: (change: (draft: Draft) => Draft) => void;
 }) {
     return (
@@ -60,6 +64,7 @@ export function ProcedurePanel({
             </Field>
             <LocalFactsPanel draft={draft} edit={edit} />
             <UsagePanel usage={usage.usage} failure={usage.failure} hrefOf={(entry) => usageHref(bot, entry)} />
+            <HistoryPanel {...history} />
             <p className="text-sm text-muted-foreground">Select a step on the graph to edit it.</p>
         </section>
     );

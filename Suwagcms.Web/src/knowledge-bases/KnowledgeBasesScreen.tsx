@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { ApiError } from "@/api/client";
 import { renamer } from "@/api/rename";
+import { useResourceHistory } from "@/api/history";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
+import { HistoryPanel } from "@/design/historyPanel";
 
 import { deleteKnowledgeBase, fetchKnowledgeBases, revisionOf, type KnowledgeBase } from "./api";
 import { emptyForm } from "./knowledgeBaseForm";
@@ -24,6 +26,12 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
     const shown = bases?.find((base) => base.id === openId);
     const openRevision = shown === undefined ? 0 : revisionOf(shown);
     const changer = useMemo(() => renamer(bot, "knowledge-bases", openId, openRevision), [bot, openId, openRevision]);
+    const history = useResourceHistory(
+        bot,
+        "knowledge-bases",
+        open?.kind === "edit" ? open.base.id : null,
+        open?.kind === "edit" ? revisionOf(open.base) : 0,
+    );
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -138,6 +146,7 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
                             }}
                         />
                     )}
+                    {open?.kind === "edit" && <HistoryPanel {...history} />}
                 </>
             }
         />

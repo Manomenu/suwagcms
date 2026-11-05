@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-change-history.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-batch-apply.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>History of changes</title>
+<title>Applying a change file</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -360,12 +360,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <!-- CONTENT START -->
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>History of changes</h1>
+  <h1>Applying a file of changes</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 35 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>articles</code></span>
+    <span><b>Feature:</b> 34 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>global-facts</code>, <code>article-links</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/6C6uU57WFQmRkvKE6Xaij1">Feature map</a>
@@ -376,149 +376,152 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>Every change to a resource records what changed and when, with the old and new values. The resource's <b>History</b> panel and <code>suwagcms history</code> show it, even after the resource is deleted.</p>
-    <p>README lets agents change a bot by themselves, and history is part of what makes that safe. The record cannot be edited. It does not yet say who made a change: that waits for <code>cms-identity</code>, listed below as a criterion for later.</p>
+    <p><code>suwagcms apply changes.yaml</code> applies a file of changes all or nothing. The rules judge the result of the whole file, so the order of the changes inside it does not matter, and every mistake comes back at once. <code>--dry-run</code> gives the same answer and changes nothing.</p>
+    <p>It is the one way to make changes that only work together, and it is an ordinary save with more than one change in it, so it knows no rule of its own. A file says what to change. It is not a local copy of the bot.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>8</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>16</b><span>criteria</span></div>
+    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>A customer gets the wrong price. The version shows the text that went out, and <code>version-diff</code> shows which version changed it, but neither says when the text was changed, what it said in between, or what else changed that morning. Several saves can fall between two versions, and many never reach one, so versions alone cannot answer.</p>
+  <p>An agent writing 40 articles for a new product has to save each one separately, in an order where each link's target exists first. If number 23 is refused, the bot is left with half a product, and the agent has to work out what is left to do. Some changes also cannot be made one at a time at all, such as removing a link and the article it points at, when a guard refuses each step taken alone in the wrong order.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>For any resource, see each change: when and what.</li>
-      <li>A record that nobody can edit, and that outlives the resource.</li>
-      <li>See recent changes across one bot.</li>
+      <li>Many changes take effect together, or none do.</li>
+      <li>One pass fixes a whole batch, because all mistakes come at once.</li>
+      <li>The same rules and the same refusals as any save.</li>
+      <li>Try a batch without changing anything.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Saying who made a change: see “Criteria after other features”.</li>
-      <li>Restoring an old value from history: a rollback changes only the bot, and an edit is a new change anyone can make.</li>
-      <li>Recording reads, or refused attempts.</li>
-      <li>Node positions in the creator: moving a node is not a change of a procedure.</li>
-      <li>A note on a change: no one has asked for it.</li>
+      <li>Keeping a bot in local files: resources not named in the file stay as they are, and nothing is deleted for being absent (README: no local editing).</li>
+      <li>Reading an export back: export files are for reading only.</li>
+      <li>A screen for this: the CLI may do more than the web (README), and the web's forms save one resource at a time.</li>
+      <li>Renaming an <code>id</code> inside a file: <code>resource-rename</code> is one operation of its own.</li>
+      <li>Creating a version or pushing: separate steps on purpose.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. Marta finds out when a price changed</h3>
-  <div class="term"><span class="dim">$</span> suwagcms history article cennik
-2026-11-04 21:40  edited   revision 8
-  content
-    - Wycena domu: 900 zł
-    + Wycena domu: 1100 zł
-2026-11-02 09:12  added    revision 1</div>
-  <h3>2. A deleted article</h3>
+  <h3>1. An agent tries a batch first</h3>
+  <div class="term"><span class="dim">$</span> suwagcms apply changes.yaml --dry-run
+Would not apply, 2 mistakes:
+  change 3, article 'rabaty'  link.missing   content links to article 'wycena', which does not exist. Add it, or remove the link.
+  change 7, fact 'city'       fact.noDescription   A fact needs a description. Say what it holds.
+<span class="dim">$</span> echo $?
+1</div>
+  <h3>2. It fixes both, and applies</h3>
+  <div class="term"><span class="dim">$</span> suwagcms apply changes.yaml --dry-run
+Would apply: 5 added, 2 edited, 1 deleted.
+<span class="dim">$</span> suwagcms apply changes.yaml
+Applied: 5 added, 2 edited, 1 deleted.
+<span class="dim">$</span> echo $?
+0</div>
+  <h3>3. Order does not matter</h3>
   <ol class="steps">
-    <li><p><code>stary-cennik</code> is gone, and a customer quotes it. <code>suwagcms history article stary-cennik</code> still shows when it was deleted and what it said last.</p></li>
+    <li><p>The file adds article <code>cennik</code>, linking to <code>rabaty</code>, then adds <code>rabaty</code>, then adds the knowledge base both belong to. It applies, as the same changes in any other order would.</p></li>
   </ol>
-  <h3>3. What happened this morning</h3>
+  <h3>4. Someone else got there first</h3>
   <ol class="steps">
-    <li><p>On the bot's <b>History</b> page, Marta sees every change to the bot, newest first.</p></li>
-  </ol>
-  <h3>4. A resource older than history</h3>
-  <ol class="steps">
-    <li><p><code>rabaty</code> has not changed since before this feature. Its panel says no changes have been recorded since the day history started.</p></li>
+    <li><p>A change in the file says <code>ifRevision: 7</code>, but Marta has saved <code>cennik</code> since. The whole file is refused, naming the current revision, and nothing is saved.</p></li>
   </ol>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>An entry</h3>
-  <table>
-    <tr><th>Field</th><th>Meaning</th></tr>
-    <tr><td>when</td><td>the server's time of the save</td></tr>
-    <tr><td>what</td><td>the resource's kind and <code>id</code>, and added, edited or deleted</td></tr>
-    <tr><td>changes</td><td>each changed field, with its old and new values; an add holds all the fields, and a delete all the last ones</td></tr>
-    <tr><td>revision</td><td>the revision the change produced, as a save returns it</td></tr>
-  </table>
-  <h3>Edge cases</h3>
+  <p>A file goes down the same path as any save, so it follows “How every save behaves” in <code>global-facts</code>. This table holds only what is specific to a file.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a refused save, or a dry run</td><td>no entry</td></tr>
-    <tr><td>an entry that cannot be written</td><td>the save fails too: a change is either recorded or did not happen</td></tr>
-    <tr><td>a save with no real change</td><td>no entry</td></tr>
-    <tr><td>a resource deleted</td><td>its history stays readable by kind and <code>id</code></td></tr>
-    <tr><td>a new resource with a deleted one's <code>id</code></td><td>the entries of both are listed under that <code>id</code>, with the delete and the add between them</td></tr>
-    <tr><td>a resource no change has reached since history began</td><td>says no change has been recorded since that date, rather than showing a blank that looks like “never changed”</td></tr>
-    <tr><td>another bot's resource with the same <code>id</code></td><td>not listed: history belongs to one bot</td></tr>
-    <tr><td>a long history</td><td>newest first, one page at a time; <code>--limit</code> sets the size, 50 by default</td></tr>
+    <tr><td>any change is bad, or the result breaks a rule</td><td>nothing saved; every mistake returned, each naming its change's position and resource; exit 1</td></tr>
+    <tr><td>two changes to one resource</td><td>refused, naming both: their outcome would depend on their order</td></tr>
+    <tr><td>a change without <code>ifRevision</code></td><td>applies to the latest revision; an edit changes only the fields it gives</td></tr>
+    <tr><td>a change with an old <code>ifRevision</code></td><td>the whole file refused, with the current revision</td></tr>
+    <tr><td>a field the API does not know</td><td>refused, naming the change and the field</td></tr>
+    <tr><td>a file that is not readable YAML, or has no <code>changes</code> list</td><td>wrong use, naming the line where possible; exit 2</td></tr>
+    <tr><td>an empty <code>changes</code> list</td><td>says there is nothing to apply; exit 0</td></tr>
+    <tr><td><code>bot</code> in the file differs from the bot in use</td><td>refused, naming both, so a file written for one bot cannot land on another by accident</td></tr>
+    <tr><td>a save of the same bot at the same moment</td><td>one after the other, each checked against what the previous one left</td></tr>
+    <tr><td>a dry run</td><td>the same answer, with “would”, and nothing changed</td></tr>
+    <tr><td>a large file</td><td>the bot's other saves wait for it, as for any save, and the request's ordinary size limit applies</td></tr>
   </table>
 </section>
-<section data-role="ui">
-  <h2>Screen</h2>
-  <div class="wire after"><span class="wf-label">Article cennik, History panel</span>
-    <div class="wf-bar"><b>History</b></div>
-    <div class="wf-body">
-      <div class="wf-card"><b>edited</b> <span class="wf-muted">2026-11-04 21:40 · revision 8</span><p class="wf-muted">content: − Wycena domu: 900 zł · + Wycena domu: 1100 zł</p></div>
-      <div class="wf-card"><b>added</b> <span class="wf-muted">2026-11-02 09:12 · revision 1</span></div>
-    </div>
-  </div>
+<section data-role="data">
+  <h2>The file</h2>
+  <p>This is a contract with whoever writes such files. A change's other fields are those of the resource's own API, so nothing about them is new.</p>
+  <script type="text/x-code" data-file="changes.yaml" data-lang="yaml">
+bot: rzeczoznawca            # optional; refused if it is not the bot in use
+changes:
+  - add: article             # add, edit or delete; kinds: fact, knowledgeBase, article, procedure
+    id: rabaty
+    knowledgeBase: oferta
+    title: Rabaty
+    description: Discounts on a valuation.
+    llmGuide: Ask about the kind of property first.
+    content: Zobacz [Cennik](cms://article/cennik).
+  - edit: fact
+    name: customer.city
+    ifRevision: 7            # optional
+    description: The city of the property.
+  - delete: article
+    id: stary-cennik
+</script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>The entry is part of the save, so a change can never exist unrecorded.</li>
-    <li>History is not built from versions, because several changes fall between two versions, and many never reach one.</li>
-    <li>History starts without saying who made a change (owner's decision): what and when are useful now, and nothing here assumes how identity will work.</li>
+    <li>A file is judged by its result, not change by change, so order means nothing (README), which is why two changes to one resource are refused and not resolved.</li>
+    <li>A file is a list of changes, not a desired state: absent resources are left alone, and no one can delete half a bot by working from an old copy.</li>
+    <li>The API takes the changes as a request, and the YAML is only the CLI's form of it: the server knows one write path and one rule set.</li>
+    <li>Without <code>ifRevision</code> a change applies to the latest revision, as a CLI edit does.</li>
+    <li>A file holds a list of add, edit and delete, not the state wanted: it says what it does, and a typo in an <code>id</code> cannot silently add a resource.</li>
+    <li>A file has no size limit of its own beyond the request's ordinary one: no measurement exists, and any number would be a guess.</li>
+    <li>An add of a resource and a delete of it in one file are two changes to one resource, refused for that, never as a missing resource: the outcome would depend on their order.</li>
+    <li>What is wrong with a file's shape (an unknown field, a change that says no kind) comes back first and all at once, as an unreadable body does on a save; the rules then judge a file whose every change could be read.</li>
+    <li>What is out of date (an old <code>ifRevision</code>, a resource that is gone, two changes to one resource) comes back together, before the rules: a file based on an old read has no result worth judging, as a single save does.</li>
+    <li>A refused file answers with the same status whatever refused it, and every mistake it holds carries its change's position; a mistake on a resource the file does not name has none.</li>
+    <li>An edit is merged with what is stored under the bot's lock, so a save just before it is kept, not refused; <code>ifRevision</code> is what asks for a refusal.</li>
+    <li>Changing a resource's availability is not part of a file: availability is a live setting outside versions and not a field of a resource.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-change-history-1</code> Adding, editing and deleting an article or a knowledge base each adds one entry with its time, the action, the revision and the changed fields with old and new values, shown in the resource's History panel and by <code>suwagcms history &lt;kind&gt; &lt;id&gt;</code>.</li>
-    <li><code>AC-change-history-2</code> A refused save and a dry run add no entry, and a save with no real change adds none.</li>
-    <li><code>AC-change-history-3</code> When an entry cannot be written, the save fails too and the resource stays as it was.</li>
-    <li><code>AC-change-history-4</code> A deleted resource's history stays readable, with what it held last, and a new resource with that <code>id</code> lists both, with the delete between them.</li>
-    <li><code>AC-change-history-5</code> No route of the API changes or deletes an entry, and a guard fails when one appears.</li>
-    <li><code>AC-change-history-6</code> The bot's History page and <code>suwagcms history</code> list all changes to the bot, newest first, one page at a time, with <code>--limit</code>.</li>
-    <li><code>AC-change-history-7</code> An entry of one bot is not listed for another, also when two resources share an <code>id</code>.</li>
-    <li><code>AC-change-history-8</code> A resource without entries says no change has been recorded since the date history started.</li>
-    <li><code>AC-change-history-9</code> <code>suwagcms history --json</code> returns the same entries, and <code>--open</code> opens the matching panel; each <code>suwagcms history</code> form has its line in the plugin's main skill.</li>
+    <li><code>AC-batch-apply-1</code> <code>suwagcms apply</code> with adds, edits and deletes of facts, knowledge bases and articles saves them all, and each resource then reads back as the file said, with a summary of the counts and exit code 0.</li>
+    <li><code>AC-batch-apply-2</code> A file with one bad change saves nothing: every resource keeps its value and revision, and the CLI exits 1.</li>
+    <li><code>AC-batch-apply-3</code> A file with several mistakes returns all of them at once, each naming its change's position and resource.</li>
+    <li><code>AC-batch-apply-4</code> The same bad resource is refused with the same codes and messages through a file as through its own save.</li>
+    <li><code>AC-batch-apply-5</code> The changes of a file applied in any order give the same result, including an article linking to one added later in the file, and articles listed before their knowledge base.</li>
+    <li><code>AC-batch-apply-6</code> Two changes to one resource are refused, naming both.</li>
+    <li><code>AC-batch-apply-7</code> Resources the file does not name stay byte-identical, and their revisions do not move.</li>
+    <li><code>AC-batch-apply-8</code> <code>--dry-run</code> gives the same mistakes or the same counts as the real command, and leaves the working state unchanged; the real command afterwards gives that answer.</li>
+    <li><code>AC-batch-apply-9</code> An old <code>ifRevision</code> refuses the whole file with the current revision; a change without one applies to the latest revision, and an edit changes only the fields it gives.</li>
+    <li><code>AC-batch-apply-10</code> A field the API does not know is refused, naming the change and the field; an unreadable file exits 2, naming the line; an empty list says there is nothing to apply and exits 0; a <code>bot</code> other than the one in use is refused, naming both.</li>
+    <li><code>AC-batch-apply-11</code> A file of changes can set a knowledge base's language, and <code>en</code> applies without it.</li>
+    <li><code>AC-batch-apply-12</code> A file and a save of the same bot arriving at the same moment run one after the other: each is checked against the state the other left, and a refused file leaves no trace of itself.</li>
+    <li><code>AC-batch-apply-13</code> <code>--json</code> returns the result per change, and the mistakes as a save returns them.</li>
+    <li><code>AC-batch-apply-14</code> <code>suwagcms apply</code> has its line in the plugin's main skill, and a separate skill for batch changes starts with a dry run.</li>
+    <li><code>AC-batch-apply-15</code> A dry run shows the same refusals as an ordinary save, judged on the whole file's result: a used article and every reference to it can go in one file, and two new articles linking to each other are refused as a loop.</li>
+    <li><code>AC-batch-apply-16</code> A file of changes covers procedures, and a successful answer also lists the <code>Version</code> stage's mistakes without refusing.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>cms-identity</code>:</b> each entry says who made the change, a person or an agent, and entries made earlier say this is not known.</li>
-    <li><b>after <code>global-facts</code>, <code>procedure-model</code>, <code>http-actions</code>:</b> history covers facts, procedures and actions, with secrets only as the references they hold.</li>
-    <li><b>after <code>version-push</code>:</b> history also records a push, with the version and the result.</li>
-    <li><b>after <code>version-rollback</code>:</b> a push of an older version is recorded with the version it left and the version it chose.</li>
-    <li><b>after <code>version-create</code>:</b> creating a version is recorded.</li>
-    <li><b>after <code>batch-apply</code>:</b> each resource a file changes gets its own entry, and the entries of one file can be told apart as one batch.</li>
-    <li><b>after <code>resource-rename</code>:</b> a resource's history follows it across a change of <code>id</code>, and is found under either.</li>
-    <li><b>after <code>availability</code>:</b> turning a resource on or off is recorded, as a change outside versions.</li>
+    <li><b>after <code>edit-guard</code>:</b> a dry run shows the refusals of the edit guard too, judged on the whole file's result.</li>
+    <li><b>after <code>http-actions</code>:</b> a file of changes covers actions.</li>
+    <li><b>after <code>version-export</code>:</b> an exported file given to <code>apply</code> is refused, saying that exports are for reading and how to write a file of changes.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>Deleted text stays in history.</b> Personal data pasted into an article is kept even after a delete, and no route removes it. If a legal request ever demands removal, it will be a task of its own against the database; see Open questions.</p></div>
-  <div class="callout warn"><p><b>Without who, history cannot say whose change it was.</b> Entries made before <code>cms-identity</code> stay without an author for good. Anyone who can reach the CMS can make a change, so an entry proves what happened, not who did it.</p></div>
-  <div class="callout warn"><p>History grows with each save and holds old and new values of long articles. Nobody has measured it; reads are paged so that the page stays quick.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>How long is history kept?</legend>
-      <p class="why">README promises a full history, while storage and personal data argue for an end. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="forever"><span><b>For good</b><small>what README says; the simplest; a limit can come when a real need shows up</small></span></label>
-      <label><input type="radio" value="limit"><span><b>A set period, then removed</b><small>less data, but the question “when did this change?” has an expiry date</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>What does an edit's entry keep?</legend>
-      <p class="why">Keeping whole copies makes reading any past state easy, at the cost of storing long articles on every small edit. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="changed"><span><b>Only changed fields, old and new</b><small>answers what changed; an unchanged field costs nothing</small></span></label>
-      <label><input type="radio" value="whole"><span><b>A whole copy of the resource</b><small>every past state is one read away, but much larger, and no question here asks for it</small></span></label>
-    </fieldset>
-  </form>
+  <div class="callout warn"><p><b>A large file holds up the bot's other saves.</b> Saves of one bot run one at a time, so a big file delays others for as long as it takes. With one team this is acceptable, and it never waits on a person or a network. Nobody has measured it for thousands of changes.</p></div>
+  <div class="callout warn"><p><b>An all-or-nothing file does not suit partial progress.</b> One mistake in 500 changes stops them all, by design: the list of mistakes is the way forward.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

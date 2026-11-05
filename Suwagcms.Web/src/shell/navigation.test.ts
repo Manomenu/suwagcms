@@ -13,7 +13,7 @@ describe("navigationOf", () => {
         expect(navigationOf("/bots/sklep")).toEqual({ bot: "sklep", tab: null, fills: false });
     });
 
-    it("has each of the five tabs as the current tab", () => {
+    it("has each of the tabs as the current tab", () => {
         for (const { id } of TABS) {
             expect(navigationOf(`/bots/sklep/${id}`)).toEqual({ bot: "sklep", tab: id, fills: false });
         }

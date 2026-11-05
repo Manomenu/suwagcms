@@ -3,11 +3,13 @@ import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
 import { renamer } from "@/api/rename";
+import { useResourceHistory } from "@/api/history";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
+import { HistoryPanel } from "@/design/historyPanel";
 import { UsagePanel } from "@/design/usagePanel";
 
 import {
@@ -44,6 +46,12 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     const openId = open?.kind === "edit" ? open.article.id : "";
     const openRevision = open?.kind === "edit" ? revisionOf(open.article) : 0;
     const changer = useMemo(() => renamer(bot, "articles", openId, openRevision), [bot, openId, openRevision]);
+    const history = useResourceHistory(
+        bot,
+        "articles",
+        open?.kind === "edit" ? open.article.id : null,
+        open?.kind === "edit" ? revisionOf(open.article) : 0,
+    );
 
     const fail = useCallback((signal: AbortSignal) => {
         return (error: unknown) => {
@@ -234,6 +242,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
                             onOpenArticle={openLinked}
                         />
                     )}
+                    {open?.kind === "edit" && <HistoryPanel {...history} />}
                 </>
             }
         />
