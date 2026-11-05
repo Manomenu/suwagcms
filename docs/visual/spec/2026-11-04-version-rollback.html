@@ -533,7 +533,7 @@ flowchart TD
     <li><code>AC-version-rollback-13</code> The web's select lists the bot's kept versions other than the latest and the one the bot has, newest first, and pushing one asks once, saying the bot's current and chosen versions; the CLI asks nothing.</li>
     <li><code>AC-version-rollback-14</code> <code>--dry-run</code> says whether the version would be sent, made current, or needs nothing, and the bot's state stays as it was.</li>
     <li><code>AC-version-rollback-15</code> The smoke test of <code>PUT /suwagcms/current</code> passes through the packed <code>Suwagcms.Sdk</code> package, with the default file store and a store supplied by a test.</li>
-    <li><code>AC-version-rollback-16</code> <code>suwagcms push --version</code> has its line in the plugin's main skill, which says that this is the rollback and that it changes only the bot.</li>
+    <li><code>AC-version-rollback-16</code> The plugin's main skill says of <code>suwagcms push --version</code> that this is the rollback and that it changes only the bot.</li>
     <li><code>AC-version-rollback-18</code> Before a rollback, the page shows what will go back, and <code>--dry-run</code> lists the same changes.</li>
     <li><code>AC-version-rollback-20</code> A rollback also delivers the current availability set before it changes what the bot runs, and availability of a resource the chosen version does not hold has no effect.</li>
   </ul>

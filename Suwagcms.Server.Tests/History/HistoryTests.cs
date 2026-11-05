@@ -310,6 +310,29 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-change-history-11")]
+    public async Task A_succeeded_push_is_recorded_with_the_version_and_the_result()
+    {
+        _ = database.Pool;
+        var client = app.CreateClient();
+        var id = PushScene.FreshId();
+        await using var bot = await TestBot.StartAsync(id);
+        var scene = await PushScene.RegisterAsync(client, id, bot.Address);
+        await scene.FillAsync();
+        var history = new HistoryScene(client, scene.Bot);
+        await scene.CreateAsync();
+
+        Assert.Equal(PushOutcome.Succeeded, (await scene.PushAsync(1)).Outcome);
+
+        var entry = Assert.Single((await history.Of("versions", "1")).Entries, line => line.Action == "pushed");
+        Assert.Equal(("version", "1"), (entry.Kind, entry.ResourceId));
+        var result = Assert.Single(entry.Changes, change => change.Field == "result");
+        Assert.Equal("Succeeded", HistoryScene.TextOf(result, old: false));
+        var botVersion = Assert.Single(entry.Changes, change => change.Field == "botVersion");
+        Assert.Equal(1, botVersion.New?.GetInt32());
+    }
+
+    [Fact]
     [Trait("criterion", "AC-change-history-12")]
     public async Task Creating_a_version_is_recorded_and_a_dry_run_or_a_refusal_is_not()
     {

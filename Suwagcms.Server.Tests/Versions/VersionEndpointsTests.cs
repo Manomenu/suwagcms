@@ -247,6 +247,12 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
         await one.Procedures.Facts.Add("alpha.first", FactApi.Text("First"));
         await other.Procedures.Facts.Add("alpha.first", FactApi.Text("First"));
         await other.Procedures.Facts.Add("zeta.last", FactApi.Text("Last"));
+        var oneBases = new ArticleApi(one.Client, one.Bot).KnowledgeBases;
+        var otherBases = new ArticleApi(other.Client, other.Bot).KnowledgeBases;
+        await oneBases.Add("zulu", "Zulu");
+        await oneBases.Add("alpha", "Alpha");
+        await otherBases.Add("alpha", "Alpha");
+        await otherBases.Add("zulu", "Zulu");
 
         await one.Created();
         await other.Created();
@@ -256,6 +262,11 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
         Assert.Contains(
             "\"name\":\"alpha.first\"",
             first[..first.IndexOf("zeta.last", StringComparison.Ordinal)],
+            StringComparison.Ordinal
+        );
+        Assert.Contains(
+            "\"id\":\"alpha\"",
+            first[first.IndexOf("knowledgeBases=", StringComparison.Ordinal)..first.IndexOf("zulu", StringComparison.Ordinal)],
             StringComparison.Ordinal
         );
     }
@@ -273,6 +284,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
             document.EnumerateObject().Select(member => member.Name)
         );
         await api.Procedures.Put("orderValuation", ProcedureApi.Valuation);
+        Assert.True((await api.Procedures.PutLayout("orderValuation", """{"positions":{"ask":{"x":10.5,"y":20}}}""")).IsSuccessStatusCode);
         var refused = await api.Create();
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);

@@ -75,4 +75,18 @@ public sealed class EditGuardTests
         Assert.Equal("orderValuation", related[0].GetProperty("resource").GetProperty("id").GetString());
         Assert.Equal("steps.ask.next[0].when.order.kind", related[0].GetProperty("location").GetString());
     }
+
+    [Fact]
+    [Trait("criterion", "AC-edit-guard-12")]
+    public async Task A_refused_dry_run_gives_the_same_refusal_and_asks_the_server_for_a_dry_run()
+    {
+        var server = Refusing();
+
+        var result = await TestCli.Run([.. Edit, "--dry-run"], server);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("fact.enum.valueInUse", result.Error, StringComparison.Ordinal);
+        Assert.Contains("Change these steps first, or keep the value.", result.Error, StringComparison.Ordinal);
+        Assert.Contains("dryRun=true", server.Requests.Last().Query, StringComparison.Ordinal);
+    }
 }

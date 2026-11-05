@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Procedures;
 
@@ -187,6 +188,16 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
         }
         Assert.NotEmpty(own);
         Assert.Equal(own.Select(Shown).Order(StringComparer.Ordinal), through.Select(Shown).Order(StringComparer.Ordinal));
+
+        var ownArticle = await FactApi.MistakesOf(await scene.Articles.Add("bad", ArticleApi.Body(knowledgeBase: "nope", description: "")));
+        var articleResponse = await scene.Post(
+            ChangeScene.File(
+                """{"add":"article","id":"bad","knowledgeBase":"nope","title":"Price list","content":"What a valuation costs.","llmGuide":"Ask which kind of property first.","description":""}"""
+            )
+        );
+        var throughArticle = Mistakes(await ChangeScene.JsonOf(articleResponse));
+        Assert.NotEmpty(ownArticle);
+        Assert.Equal(ownArticle.Select(Shown).Order(StringComparer.Ordinal), throughArticle.Select(Shown).Order(StringComparer.Ordinal));
     }
 
     [Fact]

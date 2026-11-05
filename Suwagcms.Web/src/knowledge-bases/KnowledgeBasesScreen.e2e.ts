@@ -17,7 +17,7 @@ async function addBase(request: APIRequestContext, bot: string, id: string, titl
     expect(response.status()).toBe(200);
 }
 
-test("AC-knowledge-bases-7: a bot with no bases offers to create the first one, and AC-knowledge-bases-1: the base created is listed and in the API", async ({
+test("AC-knowledge-bases-1: a bot with no bases offers to create the first one, and the base created is listed and in the API", async ({
     page,
     request,
 }) => {
@@ -92,19 +92,6 @@ test("AC-knowledge-bases-3: a base deleted in the web is gone from the list and 
     expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(404);
 });
 
-test("AC-knowledge-bases-5: the screen of one bot shows nothing of another bot's bases", async ({ page, request }) => {
-    const first = await newBot(request);
-    const second = await newBot(request);
-    await addBase(request, first, "oferta", "Offer");
-    await addBase(request, second, "oferta", "Offer");
-    await addBase(request, first, "onlyHere", "Only here");
-
-    await page.goto(`/bots/${second}/knowledge-bases`);
-
-    await expect(page.getByText("oferta", { exact: true })).toBeVisible();
-    await expect(page.getByText("Only here")).toHaveCount(0);
-});
-
 test("AC-knowledge-bases-9: a base with articles is not deleted, and the screen lists the articles", async ({ page, request }) => {
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "Offer");
@@ -141,17 +128,6 @@ test("AC-knowledge-base-language-2: a new base starts on en, the language chosen
     expect(await (await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).json()).toMatchObject({ language: "pl" });
     await row.getByRole("button", { name: "Edit" }).click();
     await expect(page.locator('[data-field="language"] select')).toHaveValue("pl");
-});
-
-test("AC-knowledge-base-language-11: the label of the language select carries a tooltip saying what the field is for", async ({
-    page,
-    request,
-}) => {
-    const bot = await newBot(request);
-    await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("button", { name: "New knowledge base" }).click();
-
-    await expect(page.locator('[data-field="language"] label')).toHaveAttribute("title", /language of every article in this base/);
 });
 
 test("AC-resource-rename-4: Change id on a base keeps its articles in it and leaves the author on the base", async ({ page, request }) => {

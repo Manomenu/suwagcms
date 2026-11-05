@@ -102,6 +102,7 @@ public sealed class VersionComparerTests
             ],
             content.Lines
         );
+        Assert.Equal([new TextLine(LineChange.Removed, "Be brief"), new TextLine(LineChange.Added, "Be kind")], article.Fields[1].Lines);
         Assert.Equal(("Old title", "New title", null), (article.Fields[2].Old, article.Fields[2].New, article.Fields[2].Lines));
     }
 

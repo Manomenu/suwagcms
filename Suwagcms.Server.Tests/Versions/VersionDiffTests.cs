@@ -240,6 +240,10 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
         await scene.CreateAsync();
         Assert.True((await scene.Facts.Put("customer.city", FactApi.Text(length: 120))).IsSuccessStatusCode);
         await scene.ChangeAsync();
+        var articles = new ArticleApi(scene.Client, scene.Bot);
+        Assert.True((await articles.Add("zebra", ArticleApi.Body(title: "Zebra"))).IsSuccessStatusCode);
+        Assert.True((await articles.Add("bravo", ArticleApi.Body(title: "Bravo"))).IsSuccessStatusCode);
+        Assert.True((await articles.KnowledgeBases.Add("zulu", "Zulu")).IsSuccessStatusCode);
         await scene.CreateAsync();
 
         var once = await scene.CliAsync("diff", "1", "2", "--json");
@@ -249,8 +253,11 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
         using var document = JsonDocument.Parse(once.Output);
         Assert.Equal(1, document.RootElement.GetProperty("from").GetInt32());
         Assert.Equal(
-            ["customer.city", "extra.n1"],
-            document.RootElement.GetProperty("resources").EnumerateArray().Select(item => item.GetProperty("id").GetString())
+            ["GlobalFact:customer.city", "GlobalFact:extra.n1", "KnowledgeBase:zulu", "Article:bravo", "Article:zebra"],
+            document
+                .RootElement.GetProperty("resources")
+                .EnumerateArray()
+                .Select(item => $"{item.GetProperty("kind").GetString()}:{item.GetProperty("id").GetString()}")
         );
     }
 }

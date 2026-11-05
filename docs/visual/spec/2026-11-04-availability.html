@@ -546,7 +546,7 @@ sequenceDiagram
     <li><code>AC-availability-7</code> Changing availability creates no new revision of the resource or of anything else in the working state: an open edit based on the earlier revision still saves.</li>
     <li><code>AC-availability-8</code> A kind or a resource that does not exist, a fact and a knowledge base are each refused with a mistake naming what can be turned off.</li>
     <li><code>AC-availability-9</code> A change reaches a running test bot with no version created and no push: its state and the SDK's answer show the resource off, and the CMS shows it as confirmed from the bot's answer.</li>
-    <li><code>AC-availability-10</code> A change of availability takes effect at once, also on an older version: the SDK answers the same for the bot's code whichever version its conversation is on.</li>
+    <li><code>AC-availability-10</code> A change of availability takes effect at once, also on an older version: the SDK answers the same whichever version it is asked about.</li>
     <li><code>AC-availability-11</code> In a bot with two instances sharing a store, a change delivered to one is what the other answers after its next poll, and the state route says the same on both.</li>
     <li><code>AC-availability-12</code> After a restart, a bot reports the same setting, the default file store and a store supplied by a test give the same state for the same scenario, and a store that fails answers 503 and the setting stays.</li>
     <li><code>AC-availability-13</code> With the SDK told an article is off, the article is still given by id and in its version's definition, and the SDK's answer says it is off.</li>

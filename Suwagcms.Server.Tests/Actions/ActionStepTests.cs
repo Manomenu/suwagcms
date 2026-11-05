@@ -440,6 +440,15 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
         var scene = await BotSceneAsync();
         await using var _ = scene.Bot;
         var actions = scene.Inner.Actions;
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (
+                await scene.Inner.PutProcedure(
+                    "usesIt",
+                    """{"description":"d","firstStep":"run","steps":{"run":{"action":"lookupPolicy","with":{"address":"customer.address"},"onFailure":"again"},"again":{"action":"lookupPolicy","with":{"address":"customer.address"},"onFailure":"failed"},"failed":{"say":"Sorry."}}}"""
+                )
+            ).StatusCode
+        );
 
         scene.Answers();
         await scene.AskAsync();
@@ -452,10 +461,13 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
             null,
             TestContext.Current.CancellationToken
         );
-        var undeclared = (await FactApi.MistakesOf(refused)).Single(mistake =>
-            mistake.GetProperty("code").GetString() == MistakeCodes.ActionCodeUndeclared
-        );
-        Assert.Contains("steps.run.action of procedure 'usesIt'", undeclared.GetProperty("message").GetString(), StringComparison.Ordinal);
+        var undeclared = (await FactApi.MistakesOf(refused))
+            .Where(mistake => mistake.GetProperty("code").GetString() == MistakeCodes.ActionCodeUndeclared)
+            .Select(mistake => mistake.GetProperty("message").GetString() ?? "")
+            .ToList();
+        var named = Assert.Single(undeclared);
+        Assert.Contains("steps.run.action of procedure 'usesIt'", named, StringComparison.Ordinal);
+        Assert.Contains("steps.again.action of procedure 'usesIt'", named, StringComparison.Ordinal);
 
         scene.Answers(Lookup);
         await scene.AskAsync();

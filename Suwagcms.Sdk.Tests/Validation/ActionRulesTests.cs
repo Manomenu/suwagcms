@@ -123,8 +123,13 @@ public sealed class ActionRulesTests
     [InlineData(1, false)]
     [InlineData(60, false)]
     [Trait("criterion", "AC-http-actions-5")]
-    public void A_timeout_outside_1_to_60_is_refused(int seconds, bool refused) =>
-        Assert.Equal(refused, Codes(Http(timeout: seconds)).Contains(MistakeCodes.ActionTimeoutInvalid));
+    public void A_timeout_outside_1_to_60_is_refused(int seconds, bool refused)
+    {
+        var mistakes = Check(Http(timeout: seconds)).Where(mistake => mistake.Code == MistakeCodes.ActionTimeoutInvalid).ToList();
+
+        Assert.Equal(refused, mistakes.Count > 0);
+        Assert.All(mistakes, mistake => Assert.NotEmpty(mistake.Fix));
+    }
 
     [Fact]
     [Trait("criterion", "AC-http-actions-5")]

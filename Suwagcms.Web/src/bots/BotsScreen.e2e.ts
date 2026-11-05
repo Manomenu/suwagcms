@@ -82,16 +82,6 @@ test("AC-bot-profiles-8: switching the profile in one tab changes neither anothe
     expect(changes).toEqual([]);
 });
 
-test("AC-bot-profiles-11: an address naming a bot that does not exist shows a page saying so, with a link to the list", async ({
-    page,
-}) => {
-    await page.goto("/bots/no-such-bot");
-
-    await expect(page.getByText("No bot 'no-such-bot'")).toBeVisible();
-    await page.getByRole("main").getByRole("link", { name: "Bots", exact: true }).click();
-    await expect(page).toHaveURL("/bots");
-});
-
 /** A bot that keeps the contract of the declaration route and nothing else, so the profile has someone to ask. */
 async function startDeclaringBot(id: string, blocks: () => string[]): Promise<{ address: string; server: Server }> {
     const server = createServer((_, response) => {

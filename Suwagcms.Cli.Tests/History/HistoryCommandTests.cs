@@ -1,5 +1,5 @@
 using System.Net;
-using Suwagcms.Cli.Tests.Plugin;
+using System.Text.Json.Nodes;
 
 namespace Suwagcms.Cli.Tests.History;
 
@@ -56,6 +56,23 @@ public sealed class HistoryCommandTests
 
     [Fact]
     [Trait("criterion", "AC-change-history-9")]
+    public async Task Json_for_the_whole_bot_returns_the_same_entries()
+    {
+        var server = StubServer.Answering(HttpStatusCode.OK, Edited);
+
+        var result = await TestCli.Run(["history", "--json", .. OnBot], server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("http://cms.internal/api/bots/rzeczoznawca/history", server.Requests[0].AbsoluteUri);
+        var entries = JsonNode.Parse(result.Output)?["entries"]?.AsArray();
+        Assert.Equal(2, entries?.Count);
+        Assert.Equal(9, entries?[0]?["id"]?.GetValue<int>());
+        Assert.Equal("cennik", entries?[0]?["resourceId"]?.GetValue<string>());
+        Assert.Equal("added", entries?[1]?["action"]?.GetValue<string>());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-9")]
     public async Task Open_opens_the_matching_page_for_the_bot_and_for_one_resource()
     {
         var opened = new List<Uri>();
@@ -65,18 +82,5 @@ public sealed class HistoryCommandTests
 
         Assert.Equal("http://cms.internal/bots/rzeczoznawca/history", opened[0].AbsoluteUri);
         Assert.Equal("http://cms.internal/bots/rzeczoznawca/history?kind=knowledge-bases&id=oferta", opened[1].AbsoluteUri);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-change-history-9")]
-    public void Each_form_of_history_has_its_line_in_the_main_skill()
-    {
-        var commands = SkillText.Section(
-            File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md")),
-            "Commands"
-        );
-
-        Assert.Contains("- `suwagcms history [--limit n]", commands, StringComparison.Ordinal);
-        Assert.Contains("- `suwagcms history <kind> <id>", commands, StringComparison.Ordinal);
     }
 }

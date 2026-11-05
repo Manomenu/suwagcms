@@ -214,6 +214,16 @@ describe("local facts", () => {
         expect(toSave(with1).localFacts).toEqual({ visitDate: { type: "text", description: "When", maxLength: 10 } });
         expect(toSave(removeLocalFact(with1, "visitDate"))).not.toHaveProperty("localFacts");
     });
+
+    it("AC-procedure-creator-18: an int and an enum local fact keep their own constraints, are edited by replacing and removed by name", () => {
+        const withInt = setLocalFact(bare, "rooms", { type: "int", description: "Rooms", min: 1, max: 9, writableBy: "set" });
+        const withBoth = setLocalFact(withInt, "kind", { type: "enum", description: "Kind", values: ["house", "flat"], writableBy: "set" });
+        const edited = setLocalFact(withBoth, "rooms", { type: "int", description: "Rooms", min: 2, max: 12, writableBy: "set" });
+
+        expect(factsSeen(edited, []).find((fact) => fact.name === "rooms")).toMatchObject({ type: "int", min: 2, max: 12 });
+        expect(factsSeen(edited, []).find((fact) => fact.name === "kind")).toMatchObject({ type: "enum", values: ["house", "flat"] });
+        expect(Object.keys(toSave(removeLocalFact(edited, "rooms")).localFacts ?? {})).toEqual(["kind"]);
+    });
 });
 
 describe("an action step", () => {

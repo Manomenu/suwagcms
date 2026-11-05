@@ -498,7 +498,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
   <h2>Acceptance criteria</h2>
   <ul class="checks">
     <li><code>AC-resource-rename-1</code> <code>suwagcms rename article cennik priceList</code> gives the article the new <code>id</code>, and every link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles then targets <code>priceList</code>; the article can no longer be read as <code>cennik</code>.</li>
-    <li><code>AC-resource-rename-2</code> The same change made with “Change id” in the web gives the same result, lists the referrers before it is confirmed, and leaves the author on the resource at its new address.</li>
+    <li><code>AC-resource-rename-2</code> The same change made with “Change id” in the web gives the same result, lists the referrers before it is confirmed, and leaves the author on the resource under its new <code>id</code>, and in the procedure creator at its new address.</li>
     <li><code>AC-resource-rename-3</code> In a rewritten referrer only the link targets differ: for a test set covering labels, code spans and blocks, plain text naming the <code>id</code>, longer ids starting with the old one, and ordinary web links, everything else is identical, byte for byte.</li>
     <li><code>AC-resource-rename-4</code> Changing a knowledge base's <code>id</code> updates the <code>knowledgeBase</code> of each of its articles, which stay in that base.</li>
     <li><code>AC-resource-rename-5</code> A global fact's name can be changed the same way, including one with dots, and the form rules for a fact's name apply to the new one.</li>

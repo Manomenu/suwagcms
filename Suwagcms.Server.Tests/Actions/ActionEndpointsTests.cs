@@ -225,6 +225,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal(HttpStatusCode.Conflict, edit.StatusCode);
         Assert.Contains("revision 2", (await FactApi.MistakesOf(edit))[0].GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.Conflict, delete.StatusCode);
+        Assert.Contains("revision 2", (await FactApi.MistakesOf(delete))[0].GetProperty("message").GetString(), StringComparison.Ordinal);
         var named = await FactApi.MistakesOf(unknown);
         Assert.Equal("secretValue", named[0].GetProperty("path").GetString());
     }

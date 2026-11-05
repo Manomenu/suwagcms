@@ -160,13 +160,22 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
         await scene.AddArticle("priceList");
         await scene.AddArticle("wycena", "[a](cms://article/cennik)");
 
-        Assert.Equal(["resource.duplicateId"], await FactApi.CodesOf(await scene.Rename("articles", "cennik", "priceList")));
-        Assert.Equal(["article.id.invalid"], await FactApi.CodesOf(await scene.Rename("articles", "cennik", "Bad Id")));
-        Assert.Equal(["resource.sameId"], await FactApi.CodesOf(await scene.Rename("articles", "cennik", "cennik")));
+        var refusals = new[]
+        {
+            (await scene.Rename("articles", "cennik", "priceList"), "resource.duplicateId"),
+            (await scene.Rename("articles", "cennik", "Bad Id"), "article.id.invalid"),
+            (await scene.Rename("articles", "cennik", "cennik"), "resource.sameId"),
+        };
+        foreach (var (refusal, code) in refusals)
+        {
+            Assert.Equal([code], await FactApi.CodesOf(refusal));
+            Assert.False(string.IsNullOrWhiteSpace(Text(Assert.Single(await FactApi.MistakesOf(refusal)), "fix")));
+        }
         var missing = await scene.Rename("articles", "ghost", "other");
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(missing));
         Assert.Contains("'ghost'", Text(mistake, "message"), StringComparison.Ordinal);
+        Assert.False(string.IsNullOrWhiteSpace(Text(mistake, "fix")));
         Assert.Equal(1, Revision(await scene.Read("articles", "cennik")));
         Assert.Equal(1, Revision(await scene.Read("articles", "priceList")));
         Assert.Equal("[a](cms://article/cennik)", Text(await scene.Read("articles", "wycena"), "content"));

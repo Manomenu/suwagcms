@@ -159,9 +159,28 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     public async Task A_resource_in_use_turns_off_and_no_reference_to_it_is_refused_or_broken()
     {
         await using var scene = await SceneAsync();
+        var dryOn = await scene.Push.Client.PostAsync(
+            $"/api/bots/{scene.Id}/versions?dryRun=true",
+            null,
+            TestContext.Current.CancellationToken
+        );
+        var answerOn = await dryOn.Content.ReadFromJsonAsync<VersionCreated>(Web, TestContext.Current.CancellationToken);
 
         Assert.True((await scene.Turn("off")).Off);
 
+        var dryOff = await scene.Push.Client.PostAsync(
+            $"/api/bots/{scene.Id}/versions?dryRun=true",
+            null,
+            TestContext.Current.CancellationToken
+        );
+        Assert.Equal(HttpStatusCode.OK, dryOn.StatusCode);
+        Assert.Equal(dryOn.StatusCode, dryOff.StatusCode);
+        var answerOff = await dryOff.Content.ReadFromJsonAsync<VersionCreated>(Web, TestContext.Current.CancellationToken);
+        Assert.NotNull(answerOn);
+        Assert.NotNull(answerOff);
+        Assert.False(answerOn.Written);
+        Assert.Equal(answerOn.Version with { CreatedAt = default }, answerOff.Version with { CreatedAt = default });
+        Assert.Equal(answerOn.Written, answerOff.Written);
         var referrer = await scene.Articles.Get(AvailabilityScene.Referrer);
         var revision = (await ArticleApi.ViewOf(referrer)).Revision;
         var saved = await scene.Articles.Put(

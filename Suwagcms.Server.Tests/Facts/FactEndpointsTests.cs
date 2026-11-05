@@ -329,7 +329,9 @@ public sealed class FactEndpointsTests(TestDatabase database) : IDisposable
         var response = await api.Delete("customer.city", "?ifRevision=1");
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
-        Assert.Equal(["resource.stale"], await FactApi.CodesOf(response));
+        var mistake = Assert.Single(await FactApi.MistakesOf(response));
+        Assert.Equal("resource.stale", mistake.GetProperty("code").GetString());
+        Assert.Contains("revision 2", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Single(await api.List());
     }
 

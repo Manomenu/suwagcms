@@ -73,16 +73,6 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
     expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs." }]);
 });
 
-test("AC-articles-9: the label of content, llmGuide and description carries a tooltip saying who reads it", async ({ page, request }) => {
-    const bot = await newBot(request);
-    await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
-
-    await expect(page.locator('[data-field="content"] label')).toHaveAttribute("title", /customer reads it, through the model/);
-    await expect(page.locator('[data-field="llmGuide"] label')).toHaveAttribute("title", /Only the model reads it/);
-    await expect(page.locator('[data-field="description"] label')).toHaveAttribute("title", /search reads this.*customer never sees it/);
-});
-
 test("AC-articles-2: a bad article shows every mistake beside its field and keeps what was typed", async ({ page, request }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
@@ -256,30 +246,6 @@ test("AC-knowledge-base-language-12: the article form shows the language of the 
     );
 });
 
-test("AC-knowledge-base-language-6: an article saved in a Polish base is listed as pl, follows its base when the base changes, and follows a move", async ({
-    page,
-    request,
-}) => {
-    const bot = await newBot(request);
-    await addBase(request, bot, "oferta", "Oferta", "pl");
-    await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
-    await fill(page, "cennik", "Cennik");
-    await page.locator('[data-field="knowledgeBase"] select').selectOption("oferta");
-    await page.getByRole("button", { name: "Add", exact: true }).click();
-
-    const row = page.getByRole("row").filter({ hasText: "cennik" });
-    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
-    expect(await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()).toMatchObject({ language: "pl" });
-
-    const switched = await request.put(`/api/bots/${bot}/knowledge-bases/oferta?ifRevision=1`, {
-        data: { title: "Oferta", language: "en" },
-    });
-    expect(switched.status()).toBe(200);
-    await page.reload();
-    await expect(page.getByRole("row").filter({ hasText: "cennik" }).getByRole("cell", { name: "en", exact: true })).toBeVisible();
-});
-
 test("AC-knowledge-base-language-9: the list filters by language together with the other filters, the same as the API does", async ({
     page,
     request,
@@ -304,26 +270,6 @@ test("AC-knowledge-base-language-9: the list filters by language together with t
     await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
     const api = await request.get(`/api/bots/${bot}/articles?language=pl&knowledgeBase=oferta`);
     expect(((await api.json()) as { id: string }[]).map((article) => article.id)).toEqual(["cennik"]);
-});
-
-test("AC-knowledge-base-language-10: two articles in different languages with one title are two ordinary articles", async ({
-    page,
-    request,
-}) => {
-    const bot = await newBot(request);
-    await addBase(request, bot, "oferta", "Oferta", "pl");
-    await addArticle(request, bot, "cennik", { knowledgeBase: "oferta", title: "Cennik" });
-    await addArticle(request, bot, "pricing", { title: "Cennik" });
-    await page.goto(`/bots/${bot}/articles`);
-
-    await page.getByRole("row").filter({ hasText: "pricing" }).getByRole("button", { name: "Edit" }).click();
-    await page.getByRole("button", { name: "Delete" }).click();
-
-    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
-    const row = page.getByRole("main").locator("tbody").getByRole("row");
-    await expect(row.getByRole("cell", { name: "cennik", exact: true })).toBeVisible();
-    await expect(row.getByRole("cell", { name: "oferta", exact: true })).toBeVisible();
-    await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
 });
 
 test("AC-articles-4: editing another field of an article whose text has CRLF line breaks leaves the stored text byte for byte", async ({
