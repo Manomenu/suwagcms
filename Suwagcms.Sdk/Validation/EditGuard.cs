@@ -374,7 +374,6 @@ public static class EditGuard
             FactUse.Condition => "when",
             FactUse.Parameter => "with",
             FactUse.Result => "results",
-            FactUse.Inform => "inform",
             _ => throw new ArgumentOutOfRangeException(nameof(use)),
         }})";
 }

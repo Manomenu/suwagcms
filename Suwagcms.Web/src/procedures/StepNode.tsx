@@ -21,7 +21,7 @@ function blocksOf(step: Step): string[] {
         ...(step.say !== undefined ? [`say: ${step.say || "nothing yet"}`] : []),
         ...(step.assign ? [`assign: ${Object.keys(step.assign).join(", ") || "nothing yet"}`] : []),
         ...(step.start !== undefined ? [`start: ${step.start || "nothing yet"}`] : []),
-        ...(step.inform ? [`inform: ${[...(step.inform.articles ?? []), ...(step.inform.facts ?? [])].join(", ") || "nothing yet"}`] : []),
+        ...(step.inform ? [`inform: ${Object.keys(step.inform.points ?? {}).join(", ") || "nothing yet"}`] : []),
         ...(step.action === undefined ? [] : [`action: ${step.action || "nothing yet"}`]),
     ];
 }

@@ -207,11 +207,11 @@ steps:
 - `start: <procedure id>` starts another procedure of this bot, and the step's `next` is where this one goes on once that one ends. The
   target must exist (`suwagcms procedures list`); `conversation` cannot be started (`start.target.conversation`), and a loop of starts is
   refused (`reference.loop`). A blank target is saved and listed as unfinished.
-- `inform: { instruction: text, articles: [id, ...], facts: [fact, ...] }` passes on articles and facts to the customer by reference. Where
-  `say` sends a fixed text, inform leaves the words to the model, following the instruction, and the article stays the one place that holds the
-  truth. Everything named must exist (`reference.missing`), a fact with any `writableBy` may be named, and the article may be in any knowledge
-  base of the bot. Naming nothing (`step.inform.empty`) or a blank instruction (`instruction.blank`) is saved and listed as unfinished.
-- `next` is a step's id, or a list of rules `{ when, to }` tried from the top; the last rule has no `when` and is the default.
+- `inform: { instruction: text, context: { ... }, points: { name: what must be said } }` has the model tell the customer each point. Where
+  `say` sends a fixed text, inform leaves the words to the model, following the instruction, and the bot checks by name that each point was told.
+  A point name is camelCase (`step.inform.pointName`), and the points keep the order written. No points (`step.inform.empty`), a point with no text
+  (`step.inform.pointBlank`) or a blank instruction (`instruction.blank`) is saved and listed as unfinished. A point is fixed text and names no fact.
+- `next` is a step's id, or a list of rules `{ when, to }` tried from the top; the last rule has no `when` and is the default, and only the last may (`next.default.notLast`).
   A step without `next` ends the procedure. Steps may loop back (a `conversation` returns to its own `listen`).
 - `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)
   or `known: true|false` (any fact).

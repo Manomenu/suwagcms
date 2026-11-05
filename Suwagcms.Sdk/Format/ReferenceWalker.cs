@@ -129,7 +129,6 @@ public static class ReferenceWalker
                         Assign = step.Value.Assign?.ToDictionary(entry => Renamed(entry.Key), entry => entry.Value),
                         With = step.Value.With?.ToDictionary(entry => entry.Key, entry => Renamed(entry.Value)),
                         Results = step.Value.Results?.ToDictionary(entry => entry.Key, entry => Renamed(entry.Value)),
-                        Inform = step.Value.Inform is { } inform ? inform with { Facts = inform.Facts?.Select(Renamed).ToList() } : null,
                         Next = step.Value.Next is { Rules: { } rules } next
                             ? next with
                             {
@@ -169,7 +168,7 @@ public static class ReferenceWalker
                     step.Value.Inform is { } inform
                         ? step.Value with
                         {
-                            Inform = inform with { Articles = Renamed(inform.Articles), Context = InContext(inform.Context) },
+                            Inform = inform with { Context = InContext(inform.Context) },
                         }
                         : step.Value
             ),

@@ -5,6 +5,7 @@ import {
     FAILURE,
     factsThatFit,
     addRule,
+    addPoint,
     addStep,
     canRemoveRule,
     collectable,
@@ -17,7 +18,9 @@ import {
     fromDetail,
     markFirst,
     removeLocalFact,
+    removePoint,
     removeRule,
+    renamePoint,
     renameStep,
     setBlock,
     startable,
@@ -140,19 +143,23 @@ describe("the draft", () => {
         expect(startable(["conversation", "documentsList", "orderValuation"], "orderValuation")).toEqual(["documentsList"]);
     });
 
-    it("AC-procedure-creator-22: an inform keeps its instruction and lists in order, an untouched one goes back as stored, and a stored name stays listed", () => {
+    it("AC-procedure-creator-22: an inform keeps its instruction and its points in order, an untouched one goes back as stored, and a renamed point keeps its place", () => {
         let draft = addStep(empty(), "inform").draft;
         expect(toSave(draft).steps).toEqual({ inform: { inform: { instruction: "" } } });
-        draft = setBlock(draft, "inform", { inform: { instruction: "Tell it.", articles: ["zebra", "alpha"], facts: ["order.kind"] } });
+        draft = setBlock(draft, "inform", { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } });
 
-        expect(toSave(draft).steps).toEqual({
-            inform: { inform: { instruction: "Tell it.", articles: ["zebra", "alpha"], facts: ["order.kind"] } },
-        });
+        expect(toSave(draft).steps).toEqual({ inform: { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } } });
         const stored = fromDetail({
             ...detail,
-            steps: { tell: { inform: { instruction: "Tell it.", facts: ["order.kind"], articles: null } } },
+            steps: { tell: { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } } },
         });
-        expect(toSave(stored).steps).toEqual({ tell: { inform: { instruction: "Tell it.", facts: ["order.kind"] } } });
+        expect(Object.keys(stored.steps["tell"]?.inform?.points ?? {})).toEqual(["zebra", "alpha"]);
+        expect(toSave(stored).steps).toEqual({ tell: { inform: { instruction: "Tell it.", points: { zebra: "Z", alpha: "A" } } } });
+        expect(Object.keys(renamePoint({ zebra: "Z", alpha: "A" }, "zebra", "yak"))).toEqual(["yak", "alpha"]);
+        expect(renamePoint({ zebra: "Z", alpha: "A" }, "zebra", "alpha")).toEqual({ zebra: "Z", alpha: "A" });
+        expect(addPoint({ point2: "x" })).toEqual({ point2: "x", point3: "" });
+        expect(addPoint({ point2: "x", point3: "y" })).toEqual({ point2: "x", point3: "y", point4: "" });
+        expect(removePoint({ zebra: "Z", alpha: "A" }, "zebra")).toEqual({ alpha: "A" });
         expect(withStored(["a", "b"], ["c", "a"])).toEqual(["a", "b", "c"]);
     });
 
@@ -161,11 +168,11 @@ describe("the draft", () => {
         const draft = fromDetail({
             ...detail,
             whenStalled: { instruction: "Say it.", context },
-            steps: { tell: { inform: { instruction: "Tell it.", facts: ["order.kind"], articles: null, context } } },
+            steps: { tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." }, context } } },
         });
 
         expect(toSave(draft).whenStalled).toEqual({ instruction: "Say it.", context });
-        expect(toSave(draft).steps).toEqual({ tell: { inform: { instruction: "Tell it.", facts: ["order.kind"], context } } });
+        expect(toSave(draft).steps).toEqual({ tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." }, context } } });
         expect(withStallText(draft.whenStalled, "")).toEqual({ instruction: "", context });
         expect(withStallText({ instruction: "Say it." }, "")).toBeNull();
         expect(withStallText(null, "Say it.")).toEqual({ instruction: "Say it." });

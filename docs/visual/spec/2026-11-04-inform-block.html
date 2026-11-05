@@ -376,8 +376,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A step can hold a new block, <code>inform</code>, naming the articles and facts to pass on to the customer, with an instruction saying how. Where <code>say</code> sends a fixed text, <code>inform</code> lets the model say it in its own words.</p>
-    <p>The CMS checks that everything named exists in this bot, and an article or fact named this way becomes a reference that protects its target. Saying it, and checking it was said, belong to the bot.</p>
+    <p>A step can hold the block <code>inform</code>: an instruction for the agent, with its optional <code>context</code>, and <code>points</code>, a map from a name to what the customer must hear. Where <code>say</code> sends a fixed text, <code>inform</code> leaves the words to the model.</p>
+    <p>The CMS checks the block's form and that an article named in its context exists. Saying the points, and checking each was told, belong to the bot.</p>
   </div>
   <div class="stats">
     <div><b>10</b><span>criteria</span></div>
@@ -385,115 +385,118 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>After the land register number and the customer's name are collected, the customer must hear where to bring the documents, and that address is already in the article <code>officeContact</code>. With <code>say</code> the author copies it into the procedure as fixed text, in one language, and it goes stale when the article changes. A free answer from the model can leave it out. <code>inform</code> names the article by <code>id</code>, so the procedure holds a reference, not a copy, that the CMS can check and protect.</p>
+  <p>After the land register number and the customer's name are collected, the customer must hear when the report will be ready and how it reaches them. With <code>say</code> the text is fixed, in one language, and ignores the conversation. A free answer from the model can leave the turnaround out. <code>inform</code> names each point that must get across, so a bot can check each one was told, and the first bot's engine already runs this shape.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>A step names what must reach the customer, by reference.</li>
-      <li>Anything named that does not exist is refused on save.</li>
+      <li>A step lists what must reach the customer, each point with a name.</li>
+      <li>A real procedure file of the first bot loads through this format unchanged.</li>
       <li>A half-built step can still be saved, as any other block can.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Writing the text, or checking what the model said: bots do that, and the first bot's specs are in its own repository.</li>
-      <li>Background the model reads but need not pass on, and search queries: <code>instruction-context</code>.</li>
-      <li>Refusing a loop through <code>inform</code>: <code>loop-guard</code>. Refusing to delete what it names: <code>delete-guard</code>.</li>
+      <li>Passing the value of a fact: a customer's fact is already in the conversation, and a constant is written in the point.</li>
+      <li>The rules on <code>context</code>: <code>instruction-context</code>. Refusing to delete or loop through an article it names: <code>delete-guard</code>, <code>loop-guard</code>.</li>
       <li>The form in the creator: <code>procedure-creator</code>.</li>
-      <li>Checking that a fact has a value when the step is reached: only a running conversation knows.</li>
     </ul></div>
   </div>
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. An agent adds a step that tells the customer where to go</h3>
-  <div class="term"><span class="dim">$</span> suwagcms procedures edit orderValuation --file orderValuation.yaml
-Saved orderValuation, revision 6.
-<span class="dim">$</span> suwagcms procedures show orderValuation
+  <h3>1. An agent adds a step that tells the customer what happens next</h3>
+  <div class="term"><span class="dim">$</span> suwagcms procedures edit valuationReport --file valuationReport.yaml
+Saved valuationReport, revision 6.
+<span class="dim">$</span> suwagcms procedures show valuationReport
 <span class="dim">…</span>
   whatHappensNext:
     inform:
-      instruction: Tell the customer where to bring the documents.
-      articles: [officeContact]
-      facts: [customer.city]
-    next: wait</div>
-  <h3>2. A missing article and a missing fact</h3>
+      instruction: Thank the customer and tell them what happens next with their valuation report.
+      points:
+        turnaround: The report is ready within 7 working days of the inspection.
+        delivery: The report is sent by e-mail as a PDF.</div>
+  <h3>2. A misspelt article and a point name in the wrong form</h3>
   <div class="term">Refused, 2 mistakes:
-  reference.missing  'inform' of step 'whatHappensNext' in 'orderValuation' names article 'officeContacts', which this bot does not have. 'suwagcms articles list' shows them.
-  reference.missing  'inform' of step 'whatHappensNext' in 'orderValuation' names fact 'customer.cty', which this bot does not have. Facts: customer.city, order.kind.</div>
+  reference.missing      'context' of step 'whatHappensNext' in 'valuationReport' names article 'officeContacts', which this bot does not have. 'suwagcms articles list' shows them.
+  step.inform.pointName  The point name 'when_ready' in 'inform' of step 'whatHappensNext' is not camelCase. Rename it to 'whenReady'.</div>
   <h3>3. A step not finished yet</h3>
-  <div class="term">Saved orderValuation, revision 7. Not ready for a version, 2 mistakes:
-  step.inform.empty        'inform' of step 'whatHappensNext' names nothing to pass on. Add an article or a fact.
-  instruction.blank        'inform' of step 'whatHappensNext' has no instruction. Say how to pass this on.</div>
+  <div class="term">Saved valuationReport, revision 7. Not ready for a version, 2 mistakes:
+  step.inform.empty   'inform' of step 'whatHappensNext' has no points. List what the customer must hear: points: { name: what must be said }.
+  instruction.blank   'inform' of step 'whatHappensNext' has no instruction. Say what the agent should do with these points.</div>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
   <h3>What the block means</h3>
-  <p>When a procedure reaches the step, the bot has the model pass on the named articles and facts following the instruction, then goes on from <code>next</code> without waiting for a message, as with <code>say</code>. Unlike <code>say</code>, the customer gets the model's words.</p>
+  <p>When a procedure reaches the step, the bot has the model tell the customer the points, following the instruction, then goes on from <code>next</code> without waiting for a message, as with <code>say</code>. Unlike <code>say</code>, the customer gets the model's words.</p>
   <table>
     <tr><th>Field</th><th>Holds</th><th>Rule</th></tr>
-    <tr><td><code>instruction</code></td><td>how to pass it on: the same instruction form as <code>whenStalled</code></td><td>required before a version, not blank</td></tr>
-    <tr><td><code>articles</code></td><td>ids of articles of this bot, from any knowledge base</td><td>each must exist on save; order is kept</td></tr>
-    <tr><td><code>facts</code></td><td>names of facts this procedure sees</td><td>each must exist on save; order is kept</td></tr>
+    <tr><td><code>instruction</code></td><td>what the agent does: the same instruction form as <code>whenStalled</code></td><td>required before a version, not blank</td></tr>
+    <tr><td><code>context</code></td><td>optional: <code>articles</code> and <code>searchQueries</code>, as on every instruction</td><td>the rules of <code>instruction-context</code></td></tr>
+    <tr><td><code>points</code></td><td>a map from a camelCase name to what the customer must hear</td><td>at least one before a version, none blank; the order written is kept</td></tr>
   </table>
   <h3>What is checked when</h3>
   <table>
     <tr><th>Mistake</th><th>Stage</th></tr>
-    <tr><td>an article or fact this bot does not have, including one only another bot has</td><td>Save, with <code>reference.missing</code></td></tr>
-    <tr><td>an <code>id</code> or fact name not in the right form</td><td>Save</td></tr>
+    <tr><td>an article this bot does not have, in the context</td><td>Save, with <code>reference.missing</code></td></tr>
+    <tr><td>a point name that is not camelCase</td><td>Save, with <code>step.inform.pointName</code></td></tr>
     <tr><td>a field the block does not have</td><td>Save, on the server: unknown fields are refused on every save</td></tr>
-    <tr><td>neither an article nor a fact; a blank or missing <code>instruction</code></td><td>Version</td></tr>
+    <tr><td>no points</td><td>Version, with <code>step.inform.empty</code></td></tr>
+    <tr><td>a point with no text</td><td>Version, with <code>step.inform.pointBlank</code></td></tr>
+    <tr><td>a blank or missing <code>instruction</code></td><td>Version, with <code>instruction.blank</code></td></tr>
   </table>
   <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing. The rules are in the validator, so they hold offline too.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>a fact with any <code>writableBy</code>, including <code>assign</code></td><td>allowed: naming it is the author's choice to pass it on; the model still cannot write it</td></tr>
-    <tr><td>the same article or fact named twice</td><td>accepted, and read back as written; it means one thing to pass on</td></tr>
-    <tr><td>an article in another knowledge base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
+    <tr><td>a text that looks like a number or a boolean, in YAML</td><td>read as text: a point is always text</td></tr>
     <tr><td><code>inform</code> beside another block in one step</td><td>refused, as for any two blocks</td></tr>
     <tr><td><code>next</code> on an <code>inform</code> step</td><td>the same rules as on any step; with none, the procedure ends</td></tr>
   </table>
 </section>
 <section data-role="data">
   <h2>Format</h2>
-  <p>This is part of the public contract with bots.</p>
+  <p>This is part of the public contract with bots, in the shape the first bot's engine reads.</p>
   <script type="text/x-code" data-file="in a procedure" data-lang="yaml">
 whatHappensNext:
   inform:
-    instruction: Tell the customer where to bring the documents.
-    articles: [officeContact]
-    facts: [customer.city]
+    instruction: Thank the customer and tell them what happens next.
+    context:
+      articles: [deliveryTimes]
+      searchQueries: [how a report is sent]
+    points:
+      turnaround: The report is ready within 7 working days of the inspection.
+      delivery: The report is sent by e-mail as a PDF.
   next: wait
   </script>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>The block lists articles and facts, as README and the feature map say. What must be said that neither holds belongs in an article, which keeps one place for what is true.</li>
-    <li>An empty block and a blank instruction are <code>Version</code> mistakes, for the reason <code>procedure-model</code> gives: they are work still to do. A name with no target breaks a reference, so it is a <code>Save</code> mistake.</li>
+    <li>The set of blocks is fixed and defined in the SDK, so this block has the shape the first bot's engine runs, and that engine can consume the SDK's definition instead of its own.</li>
+    <li>No points and a blank text or instruction are <code>Version</code> mistakes, for the reason <code>procedure-model</code> gives: they are work still to do. A wrong name breaks the form, so it is a <code>Save</code> mistake.</li>
     <li>The instruction is required, as on <code>whenStalled</code>: without it a bot would have to invent how to phrase the step, and two bots would do it differently.</li>
-    <li>A fact with <code>writableBy: assign</code> can be named: naming it is the author's explicit choice to pass on its value, the model still cannot write it, and that is how an action's result reaches the customer.</li>
-    <li>The block takes articles and facts only, with no named points: what is true lives in one place, and an optional field can arrive later without raising <code>formatVersion</code> if a bot needs it.</li>
+    <li>What the model should read goes in the context, and an article named there is the reference; a point holds the words that must get across. A point names no fact, since a customer's fact is already in the conversation.</li>
+    <li>Points are a map, not a list, because a bot reports by name which point was told. The store keeps the keys as written, so the map's order survives.</li>
   </ul>
 </section>
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-inform-block-1</code> A procedure with an <code>inform</code> step naming articles and facts, saved with <code>suwagcms procedures add --file</code>, reads back with its instruction, its lists in the order written, and its <code>next</code>, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
-    <li><code>AC-inform-block-2</code> An article this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step; an article in another knowledge base of this bot is accepted.</li>
-    <li><code>AC-inform-block-3</code> A fact this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step and listing the facts this procedure sees.</li>
-    <li><code>AC-inform-block-4</code> A fact with <code>writableBy</code> <code>assign</code>, <code>set</code> or <code>correct</code> can each be named.</li>
-    <li><code>AC-inform-block-5</code> A save holding several bad names returns a mistake for each at once.</li>
-    <li><code>AC-inform-block-6</code> An <code>inform</code> naming nothing, and one with a blank or missing instruction, are each saved, and the answer lists them among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports them.</li>
+    <li><code>AC-inform-block-1</code> A procedure with an <code>inform</code> step holding an instruction, a context and points, saved with <code>suwagcms procedures add --file</code>, reads back with all of them and its <code>next</code>, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-inform-block-2</code> An article in the context that this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming the step; an article in another knowledge base of this bot is accepted.</li>
+    <li><code>AC-inform-block-5</code> A save holding several bad names, articles and point names alike, returns a mistake for each at once.</li>
+    <li><code>AC-inform-block-6</code> An <code>inform</code> with no points, one with a blank point, and one with a blank or missing instruction, are each saved, and the answer lists them among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports them.</li>
     <li><code>AC-inform-block-7</code> An <code>inform</code> beside another block in one step is refused, a save with a field the block does not have is refused naming the field, and the mistakes that list the blocks now name <code>inform</code>.</li>
     <li><code>AC-inform-block-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
     <li><code>AC-inform-block-9</code> The plugin's main skill gives the form of the block and how it differs from <code>say</code>.</li>
-    <li><code>AC-inform-block-10</code> An <code>inform</code> can pass on a local fact of its procedure by short name, and a local fact of another procedure is refused with <code>reference.missing</code>.</li>
+    <li><code>AC-inform-block-11</code> A point name that is not camelCase is refused with <code>step.inform.pointName</code> and the name to use.</li>
+    <li><code>AC-inform-block-12</code> Copies of the first bot's procedure files, <code>conversation.yaml</code> and <code>valuationReport.yaml</code> among them, read by the CLI's file reader, are accepted by the validator at stage <code>Version</code> given matching facts and a declaration of the blocks that bot runs, with the points in the order written.</li>
+    <li><code>AC-inform-block-13</code> The points of an <code>inform</code> read back from the server in the order written.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>Suwchatbot's draft of this block differs.</b> Its <code>inform-step</code> spec, still with an open question on this, lists named <code>points</code> and leaves out facts, while its <code>procedure-building-blocks</code> expects facts. The CMS owns the format, so this spec follows README; whichever way that question is settled, the two must agree before a bot runs the block.</p></div>
+  <div class="callout risk"><p><b>An action's result has no way to the customer yet.</b> A point is fixed text and names no fact. The first bot's <code>inform-step</code> spec leaves this to its first real need; when that comes, an optional field can arrive without raising <code>formatVersion</code>.</p></div>
   <div class="callout assumption"><p>A new block does not raise <code>formatVersion</code>, as it changes the meaning of nothing that exists. A bot on an older SDK reports it as an unknown block and refuses the version, which is loud.</p></div>
 </section>
 <!-- CONTENT END -->

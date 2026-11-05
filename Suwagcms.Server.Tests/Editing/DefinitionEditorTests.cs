@@ -201,7 +201,7 @@ public sealed class DefinitionEditorTests(TestDatabase database)
 
         var (_, _, body, updatedAt) = Assert.Single(await Rows(bot));
         Assert.Equal(moment, updatedAt);
-        Assert.Contains("\"name\": \"customer.city\"", body, StringComparison.Ordinal);
+        Assert.Contains("\"name\":\"customer.city\"", body, StringComparison.Ordinal);
         Assert.DoesNotContain("values", body, StringComparison.Ordinal);
     }
 

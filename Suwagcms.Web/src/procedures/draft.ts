@@ -30,8 +30,8 @@ export interface Instruction {
 }
 
 export interface Inform extends Instruction {
-    articles?: string[];
-    facts?: string[];
+    /** Name to what the customer must hear, in the order written. */
+    points?: Record<string, string>;
 }
 
 export interface Step {
@@ -104,8 +104,7 @@ function instructionOf(wire: NonNullable<ProcedureDetail["whenStalled"]>): Instr
 function informOf(wire: NonNullable<Wire["inform"]>): Inform {
     return {
         ...instructionOf({ instruction: wire.instruction ?? "", context: wire.context ?? null }),
-        ...(wire.articles ? { articles: [...wire.articles] } : {}),
-        ...(wire.facts ? { facts: [...wire.facts] } : {}),
+        ...(wire.points ? { points: { ...wire.points } } : {}),
     };
 }
 
@@ -461,4 +460,24 @@ function holds(target: ContractField, source: ContractField): boolean {
 /** The facts a row of an action step offers: every value the source can hold must fit the target, so a parameter takes from a fact and a result writes to one. */
 export function factsThatFit(kind: "with" | "results", field: ContractField, facts: Fact[]): Fact[] {
     return facts.filter((fact) => (kind === "with" ? holds(field, fact) : holds(fact, field)));
+}
+
+function freePointName(points: Record<string, string>): string {
+    let number = Object.keys(points).length + 1;
+    while (`point${number}` in points) number++;
+    return `point${number}`;
+}
+
+export function addPoint(points: Record<string, string>): Record<string, string> {
+    return { ...points, [freePointName(points)]: "" };
+}
+
+/** Keeps the point in its place. A name another point already has is not taken, because the map could not hold both. */
+export function renamePoint(points: Record<string, string>, name: string, newName: string): Record<string, string> {
+    if (newName in points) return points;
+    return Object.fromEntries(Object.entries(points).map(([key, text]) => [key === name ? newName : key, text]));
+}
+
+export function removePoint(points: Record<string, string>, name: string): Record<string, string> {
+    return Object.fromEntries(Object.entries(points).filter(([key]) => key !== name));
 }

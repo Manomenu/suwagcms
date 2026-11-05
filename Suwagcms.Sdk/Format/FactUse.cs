@@ -5,7 +5,6 @@ public enum FactUse
     Collect,
     Assign,
     Condition,
-    Inform,
     Parameter,
     Result,
 }

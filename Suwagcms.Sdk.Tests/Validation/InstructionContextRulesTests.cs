@@ -33,7 +33,7 @@ public sealed class InstructionContextRulesTests
                 Inform = new InformArguments
                 {
                     Instruction = "Tell it.",
-                    Facts = ["order.kind"],
+                    Points = new Dictionary<string, string?> { ["office"] = "Where the office is." },
                     Context = context,
                 },
             }

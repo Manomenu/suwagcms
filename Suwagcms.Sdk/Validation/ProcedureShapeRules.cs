@@ -13,6 +13,7 @@ internal static class ProcedureShapeRules
         Save(MistakeCodes.StepBlockMultiple, MultipleBlocks),
         Save(MistakeCodes.StepMissing, MissingSteps),
         Save(MistakeCodes.StartTargetConversation, StartsConversation),
+        Save(MistakeCodes.StepInformPointName, PointNames),
     ];
 
     private static Rule Save(string code, Func<Procedure, IEnumerable<Mistake>> check) =>
@@ -129,6 +130,21 @@ internal static class ProcedureShapeRules
                     "End the procedure here instead, by leaving out 'next'."
                 )
             );
+
+    private static IEnumerable<Mistake> PointNames(Procedure procedure) =>
+        procedure.Steps.SelectMany(step =>
+            (step.Value.Inform?.Points?.Keys ?? [])
+                .Where(name => !ResourceIds.IsCamelCase(name))
+                .Select(name =>
+                    Make(
+                        procedure,
+                        MistakeCodes.StepInformPointName,
+                        $"steps.{step.Key}.inform.points.{name}",
+                        $"The point name '{name}' in 'inform' of step '{step.Key}' is not camelCase.",
+                        $"Rename it to '{ResourceIds.Suggest(name)}'."
+                    )
+                )
+        );
 
     private static Mistake Missing(Procedure procedure, string path, string what) =>
         Make(procedure, MistakeCodes.StepMissing, path, $"{what} names no step of '{procedure.Id}'.", ProcedureMistake.StepList(procedure));

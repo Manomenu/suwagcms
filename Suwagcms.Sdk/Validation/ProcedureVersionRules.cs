@@ -11,9 +11,11 @@ internal static class ProcedureVersionRules
         For(MistakeCodes.StepBlockMissing, NoBlock),
         For(MistakeCodes.StepBlockEmpty, EmptyBlocks),
         For(MistakeCodes.StepInformEmpty, InformsNothing),
+        For(MistakeCodes.StepInformPointBlank, BlankPoints),
         For(MistakeCodes.InstructionBlank, InformBlank),
         For(MistakeCodes.StepUnreachable, Unreachable),
         For(MistakeCodes.NextDefaultMissing, NoDefault),
+        For(MistakeCodes.NextDefaultNotLast, DefaultNotLast),
         For(MistakeCodes.ProcedureNoWhenStalled, NoWhenStalled),
         For(MistakeCodes.ProcedureInstructionBlank, BlankInstruction),
         For(MistakeCodes.ContextQueryBlank, BlankQueries),
@@ -69,16 +71,31 @@ internal static class ProcedureVersionRules
 
     private static IEnumerable<Mistake> InformsNothing(Procedure procedure) =>
         procedure
-            .Steps.Where(step => step.Value.Inform is { } inform && (inform.Articles?.Count ?? 0) + (inform.Facts?.Count ?? 0) == 0)
+            .Steps.Where(step => step.Value.Inform is { } inform && (inform.Points?.Count ?? 0) == 0)
             .Select(step =>
                 Make(
                     procedure,
                     MistakeCodes.StepInformEmpty,
                     $"steps.{step.Key}.inform",
-                    $"'inform' of step '{step.Key}' names nothing to pass on.",
-                    "Add an article or a fact."
+                    $"'inform' of step '{step.Key}' has no points.",
+                    "List what the customer must hear: points: { name: what must be said }."
                 )
             );
+
+    private static IEnumerable<Mistake> BlankPoints(Procedure procedure) =>
+        procedure.Steps.SelectMany(step =>
+            (step.Value.Inform?.Points ?? new Dictionary<string, string?>())
+                .Where(point => !ProcedureMistake.Given(point.Value))
+                .Select(point =>
+                    Make(
+                        procedure,
+                        MistakeCodes.StepInformPointBlank,
+                        $"steps.{step.Key}.inform.points.{point.Key}",
+                        $"Point '{point.Key}' of 'inform' of step '{step.Key}' has no text.",
+                        "Write what the customer must hear after the point's name."
+                    )
+                )
+        );
 
     private static IEnumerable<Mistake> InformBlank(Procedure procedure) =>
         procedure
@@ -89,7 +106,7 @@ internal static class ProcedureVersionRules
                     MistakeCodes.InstructionBlank,
                     $"steps.{step.Key}.inform.instruction",
                     $"'inform' of step '{step.Key}' has no instruction.",
-                    "Say how to pass this on."
+                    "Say what the agent should do with these points."
                 )
             );
 
@@ -137,6 +154,26 @@ internal static class ProcedureVersionRules
                     "Add a last rule with only 'to: <step>', taken when no other rule holds."
                 )
             );
+
+    private static IEnumerable<Mistake> DefaultNotLast(Procedure procedure) =>
+        procedure.Steps.SelectMany(step =>
+            (step.Value.Next?.Rules ?? [])
+                .SkipLast(1)
+                .Select((rule, index) => (rule, index))
+                .Where(item => item.rule.When is not { Count: > 0 })
+                .Select(item =>
+                    Make(
+                        procedure,
+                        MistakeCodes.NextDefaultNotLast,
+                        string.Create(CultureInfo.InvariantCulture, $"steps.{step.Key}.next[{item.index}]"),
+                        string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"Rule {item.index + 1} of step '{step.Key}' has no 'when' but is not the last one, so the rules after it never apply."
+                        ),
+                        "Move it to the end or give it a 'when'."
+                    )
+                )
+        );
 
     private static IEnumerable<Mistake> NoWhenStalled(Procedure procedure)
     {

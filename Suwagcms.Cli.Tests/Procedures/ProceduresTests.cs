@@ -632,8 +632,11 @@ public sealed class ProceduresTests : IDisposable
           whatHappensNext:
             inform:
               instruction: Tell the customer where to bring the documents.
-              articles: [zebraRules, officeContact]
-              facts: [order.kind, customer.city]
+              context:
+                articles: [zebraRules, officeContact]
+              points:
+                turnaround: The report is ready within 7 working days.
+                delivery: 5
             next: wait
           wait:
             listen:
@@ -658,8 +661,9 @@ public sealed class ProceduresTests : IDisposable
         var sent = JsonNode.Parse(recorder.Calls[0].Body);
         var inform = At(sent, "steps", "whatHappensNext", "inform");
         Assert.Equal("Tell the customer where to bring the documents.", At(inform, "instruction").GetValue<string>());
-        Assert.Equal(["zebraRules", "officeContact"], At(inform, "articles").AsArray().Select(item => item?.GetValue<string>()));
-        Assert.Equal(["order.kind", "customer.city"], At(inform, "facts").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(["zebraRules", "officeContact"], At(inform, "context", "articles").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(["turnaround", "delivery"], At(inform, "points").AsObject().Select(point => point.Key));
+        Assert.Equal("5", At(inform, "points", "delivery").GetValue<string>());
         Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
         Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[^1].Body)));
     }
@@ -679,9 +683,9 @@ public sealed class ProceduresTests : IDisposable
             """;
         const string notReady = """
             [{"code":"step.inform.empty","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.tell.inform",
-              "message":"'inform' of step 'tell' names nothing to pass on.","fix":"Add an article or a fact.","related":[]},
+              "message":"'inform' of step 'tell' has no points.","fix":"List what the customer must hear: points: { name: what must be said }.","related":[]},
              {"code":"instruction.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.tell.inform.instruction",
-              "message":"'inform' of step 'tell' has no instruction.","fix":"Say how to pass this on.","related":[]}]
+              "message":"'inform' of step 'tell' has no instruction.","fix":"Say what the agent should do with these points.","related":[]}]
             """;
         var recorder = new Recorder();
         var server = recorder.Serving((_, body) => Echo(body, "orderValuation", 1, notReady));

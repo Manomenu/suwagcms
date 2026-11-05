@@ -13,6 +13,12 @@ public sealed class InformBlockRulesTests
 
     private static readonly KnowledgeBase Offer = new() { Id = "offer", Title = "Offer" };
 
+    private static readonly Dictionary<string, string?> TwoPoints = new()
+    {
+        ["turnaround"] = "The report is ready within 7 working days.",
+        ["delivery"] = "The report is sent by e-mail.",
+    };
+
     private static Article Office(string id = "officeContact", string knowledgeBase = "faq") =>
         Samples.Pricing with
         {
@@ -21,9 +27,9 @@ public sealed class InformBlockRulesTests
         };
 
     private static Procedure Informing(
-        IReadOnlyList<string>? articles = null,
-        IReadOnlyList<string>? facts = null,
-        string instruction = "Tell the customer."
+        IReadOnlyDictionary<string, string?>? points = null,
+        string instruction = "Tell the customer.",
+        IReadOnlyList<string>? articles = null
     ) =>
         ProcedureSamples.Alone(
             new ProcedureStep
@@ -31,8 +37,8 @@ public sealed class InformBlockRulesTests
                 Inform = new InformArguments
                 {
                     Instruction = instruction,
-                    Articles = articles,
-                    Facts = facts,
+                    Points = points,
+                    Context = articles is null ? null : new InstructionContext { Articles = articles },
                 },
             }
         );
@@ -52,106 +58,86 @@ public sealed class InformBlockRulesTests
 
     [Fact]
     [Trait("criterion", "AC-inform-block-1")]
-    public void An_inform_keeps_its_instruction_and_its_lists_in_the_order_written_through_the_format()
+    public void An_inform_keeps_its_instruction_its_context_and_its_points_in_the_order_written_through_the_format()
     {
-        var procedure = Informing(["zebra", "alpha", "zebra"], ["order.kind", "customer.city"]);
+        var procedure = Informing(TwoPoints, articles: ["zebra", "alpha"]);
 
         var back = JsonSerializer.Deserialize<Procedure>(JsonSerializer.Serialize(procedure, Wire), Wire);
 
         Assert.NotNull(back);
         var block = Assert.IsType<InformBlock>(Assert.Single(back.Steps["only"].Blocks));
         Assert.Equal("Tell the customer.", block.Arguments.Instruction);
-        Assert.Equal(["zebra", "alpha", "zebra"], block.Arguments.Articles);
-        Assert.Equal(["order.kind", "customer.city"], block.Arguments.Facts);
+        Assert.Equal(["zebra", "alpha"], block.Arguments.Context?.Articles);
+        Assert.Equal(["turnaround", "delivery"], block.Arguments.Points?.Keys);
     }
 
     [Fact]
     [Trait("criterion", "AC-inform-block-2")]
     public void An_article_the_bot_does_not_have_is_refused_naming_the_step_and_one_in_another_base_is_accepted()
     {
-        var mistake = Assert.Single(Save(Informing(["officeContacts"]), Office()));
+        var mistake = Assert.Single(Save(Informing(TwoPoints, articles: ["officeContacts"]), Office()));
 
         Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
-        Assert.Equal(new ResourceRef(ResourceKind.Procedure, "p"), mistake.Resource);
-        Assert.Equal("steps.only.inform.articles[0]", mistake.Path);
-        Assert.Equal("'inform' of step 'only' in 'p' names article 'officeContacts', which this bot does not have.", mistake.Message);
-        Assert.Contains("'suwagcms articles list' shows them", mistake.Fix, StringComparison.Ordinal);
-        Assert.Empty(Save(Informing(["officeContact"]), Office("officeContact", "offer")));
+        Assert.Equal("steps.only.inform.context.articles[0]", mistake.Path);
+        Assert.Contains("'context' of step 'only'", mistake.Message, StringComparison.Ordinal);
+
+        Assert.Empty(Save(Informing(TwoPoints, articles: ["officeContact"]), Office(knowledgeBase: "offer")));
     }
 
     [Fact]
-    [Trait("criterion", "AC-inform-block-3")]
-    public void A_fact_the_bot_does_not_have_is_refused_naming_the_step_and_listing_the_facts()
+    [Trait("criterion", "AC-inform-block-5")]
+    public void A_save_holding_several_bad_names_returns_a_mistake_for_each_at_once()
     {
-        var mistake = Assert.Single(Save(Informing(facts: ["customer.cty"])));
+        var points = new Dictionary<string, string?> { ["bad_name"] = "Text.", ["Other Name"] = "Text." };
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
-        Assert.Equal("steps.only.inform.facts[0]", mistake.Path);
-        Assert.Equal("'inform' of step 'only' in 'p' names fact 'customer.cty', which this procedure does not see.", mistake.Message);
         Assert.Equal(
-            "Facts it sees: customer.city, order.floors, order.kind, system.flag. Local facts of other procedures are not visible.",
-            mistake.Fix
-        );
-    }
-
-    [Theory]
-    [Trait("criterion", "AC-inform-block-4")]
-    [InlineData(FactWriters.Assign)]
-    [InlineData(FactWriters.Set)]
-    [InlineData(FactWriters.Correct)]
-    public void A_fact_with_any_writable_by_can_be_named(string writableBy)
-    {
-        var fact = new GlobalFact
-        {
-            Name = "result.value",
-            Type = FactTypes.Text,
-            Description = "d",
-            MaxLength = 9,
-            WritableBy = writableBy,
-        };
-
-        Assert.Empty(
-            DefinitionValidator.Validate(Bot(Informing(facts: ["result.value"])) with { Facts = [fact] }, ValidationStage.Version)
+            [
+                "steps.only.inform.context.articles[0]",
+                "steps.only.inform.context.articles[1]",
+                "steps.only.inform.points.Other Name",
+                "steps.only.inform.points.bad_name",
+            ],
+            Save(Informing(points, articles: ["one", "two"])).Select(mistake => mistake.Path).Order(StringComparer.Ordinal)
         );
     }
 
     [Fact]
     [Trait("criterion", "AC-inform-block-5")]
-    public void A_save_holding_several_bad_names_returns_a_mistake_for_each_at_once() =>
-        Assert.Equal(
-            ["steps.only.inform.articles[0]", "steps.only.inform.articles[1]", "steps.only.inform.facts[0]"],
-            Save(Informing(["one", "two"], ["three.four"])).Select(mistake => mistake.Path).Order(StringComparer.Ordinal)
-        );
-
-    [Fact]
-    [Trait("criterion", "AC-inform-block-5")]
-    public void An_id_or_fact_name_in_the_wrong_form_or_null_is_refused_as_malformed_and_not_also_as_missing()
+    public void An_id_in_the_wrong_form_or_null_is_refused_as_malformed_and_not_also_as_missing()
     {
         const string json = """
             {"formatVersion":1,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
-              "a":{"inform":{"instruction":"Say it.","articles":["Office Contact",null],"facts":["Customer City"]}}}}]}
+              "a":{"inform":{"instruction":"Say it.","points":{"one":"Text."},"context":{"articles":["Office Contact",null]}}}}}]}
             """;
 
         var mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Save);
 
         Assert.All(mistakes, mistake => Assert.Equal(MistakeCodes.ReferenceMalformed, mistake.Code));
-        Assert.Equal(3, mistakes.Count);
+        Assert.Equal(2, mistakes.Count);
         Assert.Contains(mistakes, mistake => mistake.Fix.Contains("'officeContact'", StringComparison.Ordinal));
-        Assert.Contains(mistakes, mistake => mistake.Fix.Contains("'customerCity'", StringComparison.Ordinal));
     }
 
     [Fact]
     [Trait("criterion", "AC-inform-block-6")]
-    public void An_empty_inform_and_a_blank_instruction_pass_the_save_stage_and_are_version_mistakes()
+    public void No_points_a_blank_point_and_a_blank_instruction_pass_the_save_stage_and_are_version_mistakes()
     {
         var nothing = Informing(instruction: " ");
+        var blank = Informing(new Dictionary<string, string?> { ["turnaround"] = " ", ["delivery"] = null });
 
         Assert.Empty(Save(nothing));
+        Assert.Empty(Save(blank));
         Assert.Equal(
             [(MistakeCodes.StepInformEmpty, "steps.only.inform"), (MistakeCodes.InstructionBlank, "steps.only.inform.instruction")],
             DefinitionValidator.Validate(Bot(nothing), ValidationStage.Version).Select(mistake => (mistake.Code, mistake.Path))
         );
-        Assert.Empty(DefinitionValidator.Validate(Bot(Informing(facts: ["order.kind"])), ValidationStage.Version));
+        Assert.Equal(
+            [
+                (MistakeCodes.StepInformPointBlank, "steps.only.inform.points.delivery"),
+                (MistakeCodes.StepInformPointBlank, "steps.only.inform.points.turnaround"),
+            ],
+            DefinitionValidator.Validate(Bot(blank), ValidationStage.Version).Select(mistake => (mistake.Code, mistake.Path))
+        );
+        Assert.Empty(DefinitionValidator.Validate(Bot(Informing(TwoPoints)), ValidationStage.Version));
     }
 
     [Fact]
@@ -161,7 +147,7 @@ public sealed class InformBlockRulesTests
         var two = ProcedureSamples.Alone(
             new ProcedureStep
             {
-                Inform = new InformArguments { Facts = ["order.kind"] },
+                Inform = new InformArguments { Points = TwoPoints },
                 Say = "Hi",
             }
         );
@@ -180,7 +166,7 @@ public sealed class InformBlockRulesTests
     {
         const string missing = """
             {"formatVersion":1,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
-              "a":{"inform":{"instruction":"Say it.","articles":["ghost"],"facts":["no.fact"]}}}}]}
+              "a":{"inform":{"instruction":"Say it.","points":{"bad_name":"Text."},"context":{"articles":["ghost"]}}}}}]}
             """;
         const string unfinished = """
             {"formatVersion":1,"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{
@@ -188,7 +174,7 @@ public sealed class InformBlockRulesTests
             """;
 
         Assert.Equal(
-            [MistakeCodes.ReferenceMissing, MistakeCodes.ReferenceMissing],
+            [MistakeCodes.ReferenceMissing, MistakeCodes.StepInformPointName],
             DefinitionValidator.ValidateJson(missing, ValidationStage.Save).Select(mistake => mistake.Code)
         );
         Assert.Equal(
@@ -198,47 +184,24 @@ public sealed class InformBlockRulesTests
     }
 
     [Fact]
-    public void The_walker_yields_each_named_article_and_fact_with_its_place_and_use()
+    [Trait("criterion", "AC-inform-block-11")]
+    public void A_point_name_that_is_not_camel_case_is_refused_with_the_name_to_use()
     {
-        var references = ReferenceWalker.From(Informing(["officeContact"], ["customer.city"])).ToList();
+        var mistake = Assert.Single(Save(Informing(new Dictionary<string, string?> { ["when_ready"] = "Text." })));
 
-        Assert.Equal(
-            [
-                ("steps.only.inform.facts[0]", ResourceKind.GlobalFact, "customer.city", (FactUse?)FactUse.Inform),
-                ("steps.only.inform.articles[0]", ResourceKind.Article, "officeContact", null),
-            ],
-            references.Select(reference => (reference.Path, reference.To.Kind, reference.To.Id, reference.Use))
-        );
+        Assert.Equal(MistakeCodes.StepInformPointName, mistake.Code);
+        Assert.Equal("steps.only.inform.points.when_ready", mistake.Path);
+        Assert.Contains("'whenReady'", mistake.Fix, StringComparison.Ordinal);
     }
 
     [Fact]
-    [Trait("criterion", "AC-inform-block-10")]
-    public void An_inform_passes_on_a_local_fact_by_its_short_name_and_a_local_fact_of_another_procedure_is_refused()
+    public void The_walker_yields_only_the_articles_of_the_context_with_their_place()
     {
-        var mine = Informing(facts: ["visitDate"]) with
-        {
-            LocalFacts = new Dictionary<string, LocalFact>
-            {
-                ["visitDate"] = new()
-                {
-                    Type = FactTypes.Text,
-                    Description = "When to visit",
-                    MaxLength = 20,
-                },
-            },
-        };
-        var other = Informing(facts: ["visitDate"]) with { Id = "other" };
+        var references = ReferenceWalker.From(Informing(TwoPoints, articles: ["officeContact"])).ToList();
 
-        var mistakes = DefinitionValidator.Validate(
-            Bot(mine) with
-            {
-                Procedures = [Samples.Procedure(Procedure.ConversationId), mine, other],
-            },
-            ValidationStage.Save
+        Assert.Equal(
+            [("steps.only.inform.context.articles[0]", ResourceKind.Article, "officeContact")],
+            references.Select(reference => (reference.Path, reference.To.Kind, reference.To.Id))
         );
-
-        var missing = Assert.Single(mistakes);
-        Assert.Equal(MistakeCodes.ReferenceMissing, missing.Code);
-        Assert.Equal("other", missing.Resource.Id);
     }
 }

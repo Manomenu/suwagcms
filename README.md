@@ -110,8 +110,12 @@ The creator draws a procedure as a graph of steps. Each step holds one block and
 | `say`     | sends a fixed text                                |
 | `assign`  | overwrites facts with values the author chose     |
 | `start`   | starts another procedure                          |
-| `inform`  | passes on articles and facts to the customer      |
+| `inform`  | has the model tell the customer named points      |
 | `action`  | runs an action, maps parameters and results       |
+
+The SDK defines this fixed set of blocks: a bot declares which of them it runs, and a bot's custom logic is an action.
+
+An `inform` holds an `instruction`, an optional `context` (`articles`, `searchQueries`) and `points`, a map from a name to what must be said.
 
 The creator offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
 no unreachable steps, and `whenStalled` when the procedure collects.
@@ -132,12 +136,12 @@ checkAddress:
 
 ```mermaid
 flowchart LR
-  P[Procedure] -->|inform, instruction context| A[Article]
+  P[Procedure] -->|instruction context| A[Article]
   A -->|link in content or guide| A
   A -->|link in guide| P
   P -->|start| P
   P -->|action step| X[Action]
-  P -->|collect, assign, when, inform, action mapping| G[Global fact]
+  P -->|collect, assign, when, action mapping| G[Global fact]
   P -->|contains| L[Local fact]
 ```
 
@@ -371,6 +375,7 @@ Rasa concepts in this project's terms:
 | Does the CMS know who is asking?                                  | Not at first: it stays in a trusted network until `cms-identity`         |
 | How are bots and knowledge bases organised?                       | One CMS with several bot profiles; references only within one bot        |
 | Do bots declare what they support?                                | Yes: format version, blocks and actions in code                          |
+| Can a bot add a block of its own?                                 | No: the SDK defines a fixed set, a bot declares which it runs, and custom logic is an action |
 | Can an article reference a procedure?                             | Yes, with a link from the picker in its guide                            |
 | What language is an article in?                                   | The language of its knowledge base: `pl` or `en`, `en` by default; no linked translations |
 | How do agents work with the CMS?                                  | Through a CLI and a Claude Code plugin with the same abilities as the web |

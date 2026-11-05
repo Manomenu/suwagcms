@@ -3879,21 +3879,12 @@
               }
             ]
           },
-          "articles": {
+          "points": {
             "type": [
               "null",
-              "array"
+              "object"
             ],
-            "items": {
-              "type": "string"
-            }
-          },
-          "facts": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
+            "additionalProperties": {
               "type": "string"
             }
           }

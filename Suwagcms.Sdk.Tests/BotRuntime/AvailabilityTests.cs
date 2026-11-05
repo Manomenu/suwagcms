@@ -316,7 +316,7 @@ public sealed class AvailabilityTests
                         {
                             ["instruction"] = "Tell where the office is.",
                             ["context"] = new JsonObject { ["articles"] = new JsonArray("officeContact") },
-                            ["articles"] = new JsonArray("officeContact"),
+                            ["points"] = new JsonObject { ["address"] = "The office is on Main street." },
                         },
                     },
                 },

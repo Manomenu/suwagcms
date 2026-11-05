@@ -151,7 +151,7 @@ public sealed class InstructionContextTests(TestDatabase database) : IDisposable
         var scene = await NewBot();
         const string inform = """
             {"description":"Tells.","firstStep":"tell","steps":{"tell":{"inform":
-              {"instruction":"Tell it.","articles":["officeContact"],"context":{"articles":["ARTICLE"],"searchQueries":["hours"]}}}}}
+              {"instruction":"Tell it.","points":{"hours":"When it is open."},"context":{"articles":["ARTICLE"],"searchQueries":["hours"]}}}}}
             """;
 
         var refused = await scene.Procedures.Add("orderValuation", inform.Replace("ARTICLE", "ghost", StringComparison.Ordinal));

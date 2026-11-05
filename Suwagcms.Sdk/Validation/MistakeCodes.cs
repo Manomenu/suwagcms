@@ -53,11 +53,14 @@ public static class MistakeCodes
     public const string StepBlockMissing = "step.block.missing";
     public const string StepBlockEmpty = "step.block.empty";
     public const string StepInformEmpty = "step.inform.empty";
+    public const string StepInformPointBlank = "step.inform.pointBlank";
+    public const string StepInformPointName = "step.inform.pointName";
     public const string InstructionBlank = "instruction.blank";
     public const string ContextQueryBlank = "context.query.blank";
     public const string ContextQueryNoArticles = "context.query.noArticles";
     public const string StepUnreachable = "step.unreachable";
     public const string NextDefaultMissing = "next.default.missing";
+    public const string NextDefaultNotLast = "next.default.notLast";
     public const string ProcedureNoWhenStalled = "procedure.collect.noWhenStalled";
     public const string ProcedureInstructionBlank = "procedure.whenStalled.blank";
     public const string BotConversationMissing = "bot.conversation.missing";

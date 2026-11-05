@@ -432,25 +432,6 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-resource-rename-25")]
-    public async Task Changing_an_articles_id_or_a_facts_name_rewrites_each_inform_that_names_it()
-    {
-        var scene = await NewScene();
-        await scene.AddArticle("cennik");
-        await scene.AddArticle("rabaty");
-        var body =
-            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","articles":["cennik","rabaty"],"facts":["customer.city"]}}}}""";
-        Assert.Equal(HttpStatusCode.OK, (await scene.Api.Add("orderValuation", body)).StatusCode);
-
-        Assert.Equal(HttpStatusCode.OK, (await scene.Rename("articles", "cennik", "priceList")).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await scene.Rename("facts", "customer.city", "customer.town")).StatusCode);
-
-        var inform = (await scene.Read("procedures", "orderValuation")).GetProperty("steps").GetProperty("tell").GetProperty("inform");
-        Assert.Equal(["priceList", "rabaty"], inform.GetProperty("articles").EnumerateArray().Select(item => item.GetString()));
-        Assert.Equal(["customer.town"], inform.GetProperty("facts").EnumerateArray().Select(item => item.GetString()));
-    }
-
-    [Fact]
     [Trait("criterion", "AC-resource-rename-26")]
     public async Task Changing_an_articles_id_rewrites_each_context_and_a_query_holding_those_words_stays_as_it_is()
     {
@@ -458,7 +439,7 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
         await scene.AddArticle("cennik");
         var context = """{"articles":["cennik"],"searchQueries":["cennik of the office"]}""";
         var body =
-            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","articles":["cennik"],"context":CONTEXT}}},"whenStalled":{"instruction":"Say so.","context":CONTEXT}}""".Replace(
+            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","points":{"prices":"The prices."},"context":CONTEXT}}},"whenStalled":{"instruction":"Say so.","context":CONTEXT}}""".Replace(
                 "CONTEXT",
                 context,
                 StringComparison.Ordinal

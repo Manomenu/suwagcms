@@ -306,24 +306,9 @@
                         }
                       }
                     },
-                    "articles": {
-                      "type": [
-                        "array",
-                        "null"
-                      ],
-                      "items": {
-                        "type": [
-                          "string",
-                          "null"
-                        ]
-                      }
-                    },
-                    "facts": {
-                      "type": [
-                        "array",
-                        "null"
-                      ],
-                      "items": {
+                    "points": {
+                      "type": "object",
+                      "additionalProperties": {
                         "type": [
                           "string",
                           "null"

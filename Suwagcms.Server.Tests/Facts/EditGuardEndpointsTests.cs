@@ -387,20 +387,4 @@ public sealed class EditGuardEndpointsTests(TestDatabase database) : IDisposable
 
         Assert.Equal([code], await FactApi.CodesOf(await api.Put("first", Declaring(steps, now))));
     }
-
-    [Fact]
-    [Trait("criterion", "AC-edit-guard-19")]
-    public async Task A_fact_named_in_an_inform_counts_as_a_use_so_its_type_cannot_change()
-    {
-        var api = await NewBot();
-        var inform = """ "ask":{"inform":{"instruction":"Tell it.","facts":["kind"]}} """;
-        Assert.Equal(HttpStatusCode.OK, (await api.Add("first", Procedure(inform))).StatusCode);
-
-        var refused = await api.Facts.Put("kind", """{"type":"text","description":"What is valued","maxLength":9}""");
-
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal("fact.type.inUse", Code(mistake));
-        Assert.Contains("procedure first, step ask (inform)", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
-    }
 }

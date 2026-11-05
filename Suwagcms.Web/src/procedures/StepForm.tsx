@@ -10,8 +10,8 @@ import type { ActionView, Fact } from "./api";
 import { Checklist } from "./Checklist";
 import { ContextForm } from "./ContextForm";
 import {
+    addPoint,
     addRule,
-    articleLabel,
     collectable,
     connect,
     disconnect,
@@ -19,6 +19,8 @@ import {
     FAILURE,
     factsThatFit,
     markFirst,
+    removePoint,
+    renamePoint,
     renameStep,
     setBlock,
     startable,
@@ -185,62 +187,75 @@ function StartForm({ target, offered, onChange }: { target: string; offered: str
     );
 }
 
-function InformForm({
-    inform,
-    articles,
-    facts,
-    onChange,
-}: {
-    inform: Inform;
-    articles: LinkableArticle[];
-    facts: Fact[];
-    onChange: (inform: Inform) => void;
-}) {
-    const articleNames = withStored(
-        articles.map((article) => article.id),
-        inform.articles ?? [],
+function PointsForm({ points, onChange }: { points: Record<string, string>; onChange: (points: Record<string, string>) => void }) {
+    const entries = Object.entries(points);
+    return (
+        <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium">Points the customer must hear</legend>
+            {entries.map(([name, text], index) => (
+                // Why: a point's name is what is being typed, so its place in the list is what keeps the field focused.
+                <div key={index} className="flex items-start gap-1">
+                    <Input
+                        aria-label={`Name of point ${index + 1}`}
+                        className="w-32 shrink-0"
+                        value={name}
+                        onChange={(event) => {
+                            onChange(renamePoint(points, name, event.target.value));
+                        }}
+                    />
+                    <Textarea
+                        aria-label={`Text of point ${index + 1}`}
+                        value={text}
+                        onChange={(event) => {
+                            onChange({ ...points, [name]: event.target.value });
+                        }}
+                    />
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Remove point ${index + 1}`}
+                        onClick={() => {
+                            onChange(removePoint(points, name));
+                        }}
+                    >
+                        ✕
+                    </Button>
+                </div>
+            ))}
+            <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                    onChange(addPoint(points));
+                }}
+            >
+                Add point
+            </Button>
+        </fieldset>
     );
-    const factNames = withStored(
-        facts.map((fact) => fact.name),
-        inform.facts ?? [],
-    );
+}
+
+function InformForm({ inform, articles, onChange }: { inform: Inform; articles: LinkableArticle[]; onChange: (inform: Inform) => void }) {
     return (
         <div className="flex flex-col gap-3">
             <label className="flex flex-col gap-1 text-sm font-medium">
                 Instruction
                 <Textarea
-                    placeholder="How to pass this on"
+                    placeholder="What the agent does with these points"
                     value={inform.instruction}
                     onChange={(event) => {
                         onChange({ ...inform, instruction: event.target.value });
                     }}
                 />
             </label>
-            {articleNames.length === 0 ? (
-                <p className="text-sm text-muted-foreground">This bot has no articles yet.</p>
-            ) : (
-                <Checklist
-                    legend="Articles to pass on"
-                    names={articleNames}
-                    picked={inform.articles ?? []}
-                    labelOf={(id) => articleLabel(articles, id)}
-                    onChange={(picked) => {
-                        onChange({ ...inform, articles: picked });
-                    }}
-                />
-            )}
-            {factNames.length === 0 ? (
-                <p className="text-sm text-muted-foreground">This bot has no facts yet.</p>
-            ) : (
-                <Checklist
-                    legend="Facts to pass on"
-                    names={factNames}
-                    picked={inform.facts ?? []}
-                    onChange={(picked) => {
-                        onChange({ ...inform, facts: picked });
-                    }}
-                />
-            )}
+            <PointsForm
+                points={inform.points ?? {}}
+                onChange={(points) => {
+                    onChange({ ...inform, points });
+                }}
+            />
             <ContextForm
                 context={inform.context}
                 articles={articles}
@@ -491,7 +506,6 @@ export function StepForm({
                 <InformForm
                     inform={step.inform}
                     articles={articles}
-                    facts={facts}
                     onChange={(inform) => {
                         edit((current) => setBlock(current, name, { inform }));
                     }}

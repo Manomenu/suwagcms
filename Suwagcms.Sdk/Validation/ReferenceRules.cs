@@ -78,14 +78,11 @@ internal static class ReferenceRules
         return $"'{(parts.Length > 3 && parts[3] == "context" ? "context" : parts[2])}' of step '{parts[1]}' in '{reference.From.Id}'";
     }
 
-    // Why: a link's id is judged by the link's own form, and a collect or a rule names a fact it then finds missing; a name an author writes for a target has to have the right form before it can be looked up, and saying so beats saying it is missing.
+    // Why: a link's id is judged by the link's own form, and a collect or a rule names a fact it then finds missing; an id an author writes for a target has to have the right form before it can be looked up, and saying so beats saying it is missing.
     public static bool WrongName(Reference reference) =>
         reference.From.Kind == ResourceKind.Procedure
-        && (
-            reference.To.Kind == ResourceKind.GlobalFact
-                ? reference.Use == FactUse.Inform && !FactNames.IsValid(reference.To.Id)
-                : !ResourceIds.IsCamelCase(reference.To.Id)
-        );
+        && reference.To.Kind is ResourceKind.Article or ResourceKind.Procedure
+        && !ResourceIds.IsCamelCase(reference.To.Id);
 
     private static IEnumerable<Mistake> WrongNames(BotDefinition definition) =>
         ReferenceWalker
@@ -96,12 +93,8 @@ internal static class ReferenceRules
                 ValidationStage.Save,
                 reference.From,
                 reference.Path,
-                reference.To.Kind == ResourceKind.GlobalFact
-                    ? $"{Holder(reference)} names '{reference.To.Id}', which is not the name of a fact: camelCase words joined by dots, like customer.city."
-                    : $"{Holder(reference)} names '{reference.To.Id}', which is not an id: the id of {An(reference.To.Kind)} is one camelCase word.",
-                reference.To.Kind == ResourceKind.GlobalFact
-                    ? $"Use the name of the fact, like '{FactNames.Suggest(reference.To.Id)}'."
-                    : $"Use the id of the {DeleteGuard.Noun(reference.To.Kind)}, like '{ResourceIds.Suggest(reference.To.Id)}'.",
+                $"{Holder(reference)} names '{reference.To.Id}', which is not an id: the id of {An(reference.To.Kind)} is one camelCase word.",
+                $"Use the id of the {DeleteGuard.Noun(reference.To.Kind)}, like '{ResourceIds.Suggest(reference.To.Id)}'.",
                 []
             ));
 

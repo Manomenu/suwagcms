@@ -491,7 +491,7 @@ whenStalled:
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p>A query can find the wrong text without anyone in the CMS noticing, and what it finds changes whenever articles do. The CMS cannot run it, so this is left to the bot's own tests. An author who wants certainty names the article.</p></div>
-  <div class="callout assumption"><p>Suwchatbot refuses a named article that does not exist, a blank query and a query in a bot with no articles when it starts. The stages here are chosen so that a version it receives passes those checks.</p></div>
+  <div class="callout assumption"><p>Suwchatbot today checks the form of a named article and that a query is not blank, and has no articles to check against. The stages here are chosen so that a version it receives passes those checks.</p></div>
 </section>
 <!-- CONTENT END -->
 </main>

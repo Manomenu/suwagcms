@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Facts;
 
@@ -19,15 +20,6 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
         var client = app.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         var facts = new FactApi(client, articles.Bot);
-        Assert.True((await facts.Add("customer.city", FactApi.Text())).IsSuccessStatusCode);
-        Assert.True(
-            (
-                await facts.Add(
-                    "result.value",
-                    """{"type":"text","description":"The result of an action","maxLength":9,"writableBy":"assign"}"""
-                )
-            ).IsSuccessStatusCode
-        );
         Assert.True((await articles.Add("officeContact", ArticleApi.Body(knowledgeBase: "offer"))).IsSuccessStatusCode);
         var procedures = new ProcedureApi(client, facts);
         Assert.True((await procedures.Add("conversation", ProcedureApi.Conversation)).IsSuccessStatusCode);
@@ -40,12 +32,11 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
             """.Replace("INFORM", inform, StringComparison.Ordinal);
 
     private const string Filled =
-        """{"instruction":"Tell the customer where to go.","articles":["officeContact"],"facts":["result.value","customer.city"]}""";
+        """{"instruction":"Tell the customer what happens next.","context":{"articles":["officeContact"],"searchQueries":["delivery times"]},"points":{"turnaround":"Ready within 7 working days.","delivery":"Sent by e-mail.","anotherLongerName":"A third point.","a":"The shortest name."}}""";
 
     [Fact]
     [Trait("criterion", "AC-inform-block-1")]
-    [Trait("criterion", "AC-inform-block-4")]
-    public async Task An_inform_reads_back_with_its_instruction_its_lists_in_order_and_its_next_naming_an_assign_fact()
+    public async Task An_inform_reads_back_with_its_instruction_its_context_its_points_and_its_next()
     {
         var scene = await NewBot();
 
@@ -54,32 +45,52 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
 
         var inform = read.Steps["tell"].Inform;
         Assert.NotNull(inform);
-        Assert.Equal("Tell the customer where to go.", inform.Instruction);
-        Assert.Equal(["officeContact"], inform.Articles);
-        Assert.Equal(["result.value", "customer.city"], inform.Facts);
+        Assert.Equal("Tell the customer what happens next.", inform.Instruction);
+        Assert.Equal(["officeContact"], inform.Context?.Articles);
+        Assert.Equal(["delivery times"], inform.Context?.SearchQueries);
+        Assert.Equal("Sent by e-mail.", inform.Points?["delivery"]);
         Assert.Equal("wait", read.Steps["tell"].Next?.Step);
         Assert.Empty(read.NotReady);
     }
 
     [Fact]
+    [Trait("criterion", "AC-inform-block-13")]
+    public async Task The_points_come_back_from_the_store_and_in_a_version_in_the_order_written()
+    {
+        var scene = await NewBot();
+        Assert.Equal(HttpStatusCode.OK, (await scene.Procedures.Add("orderValuation", Informing(Filled))).StatusCode);
+
+        var response = await scene.Procedures.Get("orderValuation");
+        var read = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).RootElement;
+
+        Assert.Equal(
+            ["turnaround", "delivery", "anotherLongerName", "a"],
+            read.GetProperty("steps")
+                .GetProperty("tell")
+                .GetProperty("inform")
+                .GetProperty("points")
+                .EnumerateObject()
+                .Select(point => point.Name)
+        );
+    }
+
+    [Fact]
     [Trait("criterion", "AC-inform-block-2")]
-    [Trait("criterion", "AC-inform-block-3")]
     [Trait("criterion", "AC-inform-block-5")]
-    public async Task What_only_another_bot_has_is_refused_each_at_once_with_nothing_saved()
+    public async Task What_only_another_bot_has_and_a_wrong_point_name_are_refused_each_at_once_with_nothing_saved()
     {
         var scene = await NewBot();
         var other = await NewBot();
         Assert.True((await other.Articles.Add("elsewhere", ArticleApi.Body())).IsSuccessStatusCode);
-        Assert.True((await other.Procedures.Facts.Add("other.fact", FactApi.Text())).IsSuccessStatusCode);
 
         var response = await scene.Procedures.Add(
             "orderValuation",
-            Informing("""{"instruction":"Say it.","articles":["elsewhere"],"facts":["other.fact"]}""")
+            Informing("""{"instruction":"Say it.","context":{"articles":["elsewhere"]},"points":{"bad_name":"Text."}}""")
         );
         var mistakes = await FactApi.MistakesOf(response);
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Equal(["reference.missing", "reference.missing"], mistakes.Select(mistake => mistake.GetProperty("code").GetString()));
+        Assert.Equal(["reference.missing", "step.inform.pointName"], mistakes.Select(mistake => mistake.GetProperty("code").GetString()));
         Assert.All(
             mistakes,
             mistake => Assert.Contains("step 'tell'", mistake.GetProperty("message").GetString(), StringComparison.Ordinal)
@@ -91,8 +102,9 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
     [Trait("criterion", "AC-inform-block-6")]
     [InlineData("""{"instruction":" "}""", new[] { "instruction.blank", "step.inform.empty" })]
     [InlineData("{}", new[] { "instruction.blank", "step.inform.empty" })]
-    [InlineData("""{"instruction":"Say it."}""", new[] { "step.inform.empty" })]
-    [InlineData("""{"facts":["customer.city"]}""", new[] { "instruction.blank" })]
+    [InlineData("""{"instruction":"Say it.","points":{}}""", new[] { "step.inform.empty" })]
+    [InlineData("""{"instruction":"Say it.","points":{"turnaround":" "}}""", new[] { "step.inform.pointBlank" })]
+    [InlineData("""{"points":{"turnaround":"Text."}}""", new[] { "instruction.blank" })]
     public async Task An_unfinished_inform_is_saved_listed_and_creating_a_version_reports_it(string inform, string[] codes)
     {
         var scene = await NewBot();
@@ -113,7 +125,7 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
     {
         var scene = await NewBot();
 
-        var field = await scene.Procedures.Add("orderValuation", Informing("""{"instruction":"Say it.","points":["turnaround"]}"""));
+        var field = await scene.Procedures.Add("orderValuation", Informing("""{"instruction":"Say it.","facts":["customer.city"]}"""));
         var two = await scene.Procedures.Add(
             "orderValuation",
             """{"description":"d","firstStep":"a","steps":{"a":{"inform":{"instruction":"Say it."},"say":"Hi"}}}"""
@@ -121,29 +133,8 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
 
         var mistake = Assert.Single(await FactApi.MistakesOf(field));
         Assert.Equal("save.invalid", mistake.GetProperty("code").GetString());
-        Assert.Contains("points", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Contains("facts", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Contains("removed", mistake.GetProperty("fix").GetString(), StringComparison.Ordinal);
         Assert.Equal(["step.block.multiple"], await ProcedureApi.CodesOf(two));
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-delete-guard-14")]
-    [Trait("criterion", "AC-delete-guard-15")]
-    public async Task A_fact_or_an_article_an_inform_names_cannot_be_deleted_and_can_once_the_inform_is_gone()
-    {
-        var scene = await NewBot();
-        Assert.True((await scene.Procedures.Add("orderValuation", Informing(Filled))).IsSuccessStatusCode);
-
-        var fact = await scene.Procedures.Facts.Delete("result.value");
-        var article = await scene.Articles.Delete("officeContact");
-
-        Assert.Equal(["reference.missing"], await FactApi.CodesOf(fact));
-        Assert.Equal(["reference.missing"], await FactApi.CodesOf(article));
-        var related = Assert.Single(Assert.Single(await FactApi.MistakesOf(article)).GetProperty("related").EnumerateArray());
-        Assert.Equal("steps.tell.inform.articles[0]", related.GetProperty("location").GetString());
-
-        Assert.True((await scene.Procedures.Delete("orderValuation")).IsSuccessStatusCode);
-        Assert.True((await scene.Procedures.Facts.Delete("result.value")).IsSuccessStatusCode);
-        Assert.True((await scene.Articles.Delete("officeContact")).IsSuccessStatusCode);
     }
 }

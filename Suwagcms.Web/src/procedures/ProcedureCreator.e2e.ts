@@ -304,42 +304,41 @@ test("AC-procedure-creator-21: a start step is built with its form, which leaves
     await expect(page.getByLabel("Start this procedure")).toHaveValue("documentsList");
 });
 
-test("AC-procedure-creator-22: an inform step is built with its form and reads back from the server with its lists", async ({
+test("AC-procedure-creator-22: an inform step is built with its form and reads back from the server with its points in order", async ({
     page,
     request,
 }) => {
     const bot = await newBot(request);
-    expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, { data: { title: "Offer" } })).status()).toBe(200);
-    expect(
-        (
-            await request.put(`/api/bots/${bot}/articles/officeContact?ifRevision=0`, {
-                data: { knowledgeBase: "offer", title: "The office", content: "c", llmGuide: "g", description: "d" },
-            })
-        ).status(),
-    ).toBe(200);
     await agentSaves(request, bot, "orderValuation", { description: "The customer orders a valuation", firstStep: null, steps: {} }, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
 
     await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "inform" }).click();
     await node(page, "inform").click();
-    await page.getByLabel("Instruction").fill("Tell the customer where to go.");
-    const passOn = page.getByRole("group", { name: "Articles to pass on" });
-    await passOn.getByLabel("The office (officeContact)").check();
-    await page.getByLabel("system.flag").check();
-    await page.getByLabel("customer.city").check();
-    await expect(node(page, "inform")).toContainText("inform: officeContact, system.flag, customer.city");
+    await page.getByLabel("Instruction").fill("Tell the customer what happens next.");
+    await page.getByRole("button", { name: "Add point" }).click();
+    await page.getByLabel("Name of point 1").fill("turnaround");
+    await page.getByLabel("Text of point 1").fill("Ready within 7 working days.");
+    await page.getByRole("button", { name: "Add point" }).click();
+    await page.getByLabel("Name of point 2").fill("a");
+    await page.getByLabel("Text of point 2").fill("Sent by e-mail.");
+    await expect(node(page, "inform")).toContainText("inform: turnaround, a");
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await expect(async () => {
-        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
-            steps: Record<string, { inform?: { instruction: string; articles: string[]; facts: string[] } }>;
+        const raw = await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).text();
+        const stored = JSON.parse(raw) as {
+            steps: Record<string, { inform?: { instruction: string; points: Record<string, string> } }>;
         };
-        expect(stored.steps["inform"]?.inform).toEqual({
-            instruction: "Tell the customer where to go.",
-            articles: ["officeContact"],
-            facts: ["system.flag", "customer.city"],
-        });
+        expect(stored.steps["inform"]?.inform?.instruction).toBe("Tell the customer what happens next.");
+        expect(Object.entries(stored.steps["inform"]?.inform?.points ?? {})).toEqual([
+            ["turnaround", "Ready within 7 working days."],
+            ["a", "Sent by e-mail."],
+        ]);
     }).toPass();
+    await page.reload();
+    await node(page, "inform").click();
+    await expect(page.getByLabel("Name of point 1")).toHaveValue("turnaround");
+    await expect(page.getByLabel("Text of point 2")).toHaveValue("Sent by e-mail.");
 });
 
 test("AC-procedure-creator-20: a context is edited on whenStalled and on an inform, with articles and queries, and reads back from the server", async ({
@@ -362,7 +361,7 @@ test("AC-procedure-creator-20: a context is edited on whenStalled and on an info
         {
             description: "The customer orders a valuation",
             firstStep: "tell",
-            steps: { tell: { inform: { instruction: "Tell it.", facts: ["customer.city"] } } },
+            steps: { tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." } } } },
             whenStalled: { instruction: "Say you could not finish." },
         },
         0,
