@@ -382,7 +382,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>3</b><span>fact types</span></div>
-    <div><b>14</b><span>criteria</span></div>
+    <div><b>15</b><span>criteria</span></div>
+    <div><b>1</b><span>criterion after another feature</span></div>
   </div>
 </section>
 
@@ -446,9 +447,9 @@ Would delete 'customer.city'. Nothing was changed.</div>
   </table>
   <table>
     <tr><th>Type</th><th>Constraints</th></tr>
-    <tr><td><code>enum</code></td><td><code>values</code>: at least two, none repeated, none blank</td></tr>
+    <tr><td><code>enum</code></td><td><code>values</code>: at least two, none repeated, none blank, none with a line break or a NUL, none the exact word <code>other</code></td></tr>
     <tr><td><code>int</code></td><td><code>min</code> and <code>max</code>: whole numbers, both required, <code>min</code> ≤ <code>max</code></td></tr>
-    <tr><td><code>text</code></td><td><code>maxLength</code>: a whole number above 0</td></tr>
+    <tr><td><code>text</code></td><td><code>maxLength</code>: a whole number above 0; optionally a pattern, see <code>fact-pattern</code></td></tr>
   </table>
   <p>A constraint of another type (<code>values</code> on an <code>int</code>) is a mistake. Each level of <code>writableBy</code> includes the ones above it, as README lays out; the level has no effect in the CMS until a procedure uses the fact.</p>
   <p>A fact belongs to one bot. The same name in another bot is another fact.</p>
@@ -491,6 +492,7 @@ flowchart LR
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
+    <li><code>other</code> is reserved in every bot, because a reply writes it for a value outside the list. The same rules hold for an enum parameter or result of an HTTP action, which is typed by the same rules.</li>
     <li>The rules for every save are specified here and not in <code>sdk-validator</code>: that library has no server and no resource, so its refusal could not be observed there. Later resource specs refer to this section instead of repeating it.</li>
     <li>The server refuses unknown fields on a save while the validator ignores them: bots must load newer versions, but a person or an agent writing today should hear about a typo.</li>
     <li>An <code>int</code> fact needs both bounds, <code>min</code> and <code>max</code>: the same as Suwchatbot, so a definition means the same in both, and the model cannot write an absurd value. A number with no natural upper limit gets a generous bound chosen by its author.</li>
@@ -515,6 +517,15 @@ flowchart LR
     <li><code>AC-global-facts-12</code> When two saves of one bot arrive at the same moment, both are checked in turn against a consistent state: two adds of one name leave one fact and one refusal.</li>
     <li><code>AC-global-facts-13</code> A fact of one bot is not listed for another bot, and two bots can each have a fact with the same name.</li>
     <li><code>AC-global-facts-15</code> The view of a fact shows the procedures that use it, in the web and in <code>suwagcms facts show</code>.</li>
+    <li><code>AC-global-facts-16</code> An enum value with a line break or a NUL, and the exact value <code>other</code>, are refused beside the value with a fix; <code>Other</code> and <code>otherType</code> are accepted.</li>
+  </ul>
+</section>
+
+<section data-role="deferred-acceptance">
+  <h2>Criteria after other features</h2>
+  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above.</p>
+  <ul>
+    <li><b>after <code>suwchatbot-sdk-format</code>:</b> Suwchatbot takes its enum value rules from the SDK, so the bot and the SDK hold one set.</li>
   </ul>
 </section>
 

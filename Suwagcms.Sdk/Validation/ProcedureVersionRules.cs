@@ -263,7 +263,7 @@ internal static class ProcedureVersionRules
                 new ResourceRef(ResourceKind.Definition, string.Empty),
                 "procedures",
                 $"This bot has no '{Procedure.ConversationId}' procedure, the base of every conversation.",
-                $"Add a procedure with the id '{Procedure.ConversationId}': a step that listens and one that answers, joined by next.",
+                $"Add a procedure with the id '{Procedure.ConversationId}': one listen step whose next returns to itself, or a step that listens and one that answers, joined by next.",
                 []
             );
         }

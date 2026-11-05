@@ -440,6 +440,7 @@ Refused, 1 mistake:
     <tr><td>change the type</td><td>any procedure uses the fact, even if each use would still fit the new type</td><td>a fact nothing uses</td><td><code>fact.type.inUse</code></td></tr>
     <tr><td>narrow an <code>int</code> range</td><td>a value in <code>assign</code> or <code>oneOf</code>, or a bound in <code>range</code>, falls outside it</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.range.inUse</code></td></tr>
     <tr><td>narrow <code>maxLength</code></td><td>a value in <code>assign</code> or <code>oneOf</code> is longer</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.range.inUse</code></td></tr>
+    <tr><td>add or change a <code>pattern</code></td><td>a value in <code>assign</code> or <code>oneOf</code> does not match it</td><td>a <code>collect</code> or <code>known</code> on the fact</td><td><code>fact.pattern.inUse</code></td></tr>
     <tr><td>set <code>writableBy: assign</code></td><td>a <code>collect</code> names the fact</td><td>an <code>assign</code> or <code>when</code> on the fact</td><td><code>fact.writableBy.inUse</code></td></tr>
     <tr><td>name a global fact <code>&lt;procedureId&gt;.&lt;anything&gt;</code>, or give a procedure an id that an existing global fact's name starts with, followed by a dot</td><td>always: that is how a local fact is named outside its procedure</td><td></td><td><code>fact.name.procedurePrefix</code></td></tr>
   </table>

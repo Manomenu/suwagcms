@@ -50,6 +50,26 @@
               "integer",
               "null"
             ]
+          },
+          "pattern": {
+            "type": "object",
+            "properties": {
+              "regex": {
+                "type": "string"
+              },
+              "means": {
+                "type": "string"
+              },
+              "example": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "tellCustomer": {
+                "type": "string"
+              }
+            }
           }
         },
         "required": [
@@ -476,6 +496,26 @@
                     "integer",
                     "null"
                   ]
+                },
+                "pattern": {
+                  "type": "object",
+                  "properties": {
+                    "regex": {
+                      "type": "string"
+                    },
+                    "means": {
+                      "type": "string"
+                    },
+                    "example": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "tellCustomer": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }

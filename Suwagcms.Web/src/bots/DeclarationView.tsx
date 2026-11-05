@@ -73,6 +73,12 @@ function Declared({ status }: { status: DeclarationStatus }) {
                     <dd>Required: a version without one is refused</dd>
                 </>
             )}
+            {declaration.persona === "complete" && (
+                <>
+                    <dt className="text-muted-foreground">Persona</dt>
+                    <dd>Complete: a version with any part left empty is refused</dd>
+                </>
+            )}
         </dl>
     );
 }

@@ -392,6 +392,7 @@ export function factsSeen(draft: Draft, facts: Fact[]): Fact[] {
         min: fact.min ?? null,
         max: fact.max ?? null,
         maxLength: fact.maxLength ?? null,
+        pattern: fact.pattern ?? null,
         revision: 0,
         usedBy: [],
     }));

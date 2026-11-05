@@ -153,6 +153,59 @@ export function FactFields({
                     )}
                 </Field>
             )}
+            {form.type === "text" && (
+                <>
+                    <Field bot={bot} field="pattern.regex" label="Pattern: regular expression" mistakes={mistakes}>
+                        {(props) => (
+                            <Input
+                                {...props}
+                                value={form.patternRegex}
+                                placeholder="Left empty: any text"
+                                onChange={(event) => {
+                                    onChange({ patternRegex: event.currentTarget.value });
+                                }}
+                            />
+                        )}
+                    </Field>
+                    <Field bot={bot} field="pattern.means" label="Pattern: what it means" mistakes={mistakes}>
+                        {(props) => (
+                            <Input
+                                {...props}
+                                value={form.patternMeans}
+                                onChange={(event) => {
+                                    onChange({ patternMeans: event.currentTarget.value });
+                                }}
+                            />
+                        )}
+                    </Field>
+                    <Field bot={bot} field="pattern.example" label="Pattern: example" mistakes={mistakes}>
+                        {(props) => (
+                            <Input
+                                {...props}
+                                value={form.patternExample}
+                                onChange={(event) => {
+                                    onChange({ patternExample: event.currentTarget.value });
+                                }}
+                            />
+                        )}
+                    </Field>
+                    <Field bot={bot} field="pattern.tellCustomer" label="Pattern: tell the customer" mistakes={mistakes}>
+                        {(props) => (
+                            <Select
+                                {...props}
+                                className="w-full"
+                                value={form.patternTellCustomer}
+                                onChange={(event) => {
+                                    onChange({ patternTellCustomer: event.currentTarget.value });
+                                }}
+                            >
+                                <option value="upfront">upfront</option>
+                                <option value="afterRefusal">afterRefusal</option>
+                            </Select>
+                        )}
+                    </Field>
+                </>
+            )}
             <Field bot={bot} field="description" label="Description" mistakes={mistakes}>
                 {(props) => (
                     <Input

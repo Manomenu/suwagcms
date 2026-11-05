@@ -12,7 +12,8 @@ internal static class FactText
         {
             "enum" => $"enum: {string.Join(", ", fact.Values ?? [])}",
             "int" => string.Create(CultureInfo.InvariantCulture, $"int, {fact.Min} to {fact.Max}"),
-            "text" => string.Create(CultureInfo.InvariantCulture, $"text, up to {fact.MaxLength}"),
+            "text" => string.Create(CultureInfo.InvariantCulture, $"text, up to {fact.MaxLength}")
+                + (fact.Pattern is null ? "" : $", pattern {fact.Pattern.Regex}"),
             _ => fact.Type,
         };
     }
@@ -35,17 +36,32 @@ internal static class FactText
         );
     }
 
+    private static string[] PatternLines(Fact fact) =>
+        fact.Pattern is not { } pattern
+            ? []
+            :
+            [
+                $"  pattern:     {pattern.Regex}",
+                $"    means:     {pattern.Means}",
+                .. pattern.Example is null ? Array.Empty<string>() : [$"    example:   {pattern.Example}"],
+                $"    tell:      {pattern.TellCustomer}",
+            ];
+
     public static string Detail(Fact fact)
     {
         ArgumentNullException.ThrowIfNull(fact);
         return string.Join(
             Environment.NewLine,
-            $"{fact.Name}",
-            $"  type:        {Constraint(fact)}",
-            $"  writableBy:  {fact.WritableBy}",
-            $"  description: {fact.Description}",
-            fact.UsedBy is { Count: > 0 } ? $"  used by:     {string.Join(", ", fact.UsedBy)}" : "  used by:     no procedure",
-            string.Create(CultureInfo.InvariantCulture, $"  revision:    {fact.Revision}")
+            (string[])
+                [
+                    $"{fact.Name}",
+                    $"  type:        {Constraint(fact)}",
+                    $"  writableBy:  {fact.WritableBy}",
+                    $"  description: {fact.Description}",
+                    .. PatternLines(fact),
+                    fact.UsedBy is { Count: > 0 } ? $"  used by:     {string.Join(", ", fact.UsedBy)}" : "  used by:     no procedure",
+                    string.Create(CultureInfo.InvariantCulture, $"  revision:    {fact.Revision}"),
+                ]
         );
     }
 }

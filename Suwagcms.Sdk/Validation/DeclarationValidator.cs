@@ -146,17 +146,32 @@ public static class DeclarationValidator
                 []
             );
         }
+        if (declaration.Persona == BotDeclaration.PersonaComplete)
+        {
+            foreach (var (path, _) in (definition.Persona ?? new Persona()).Texts().Where(text => string.IsNullOrWhiteSpace(text.Text)))
+            {
+                yield return new(
+                    MistakeCodes.PersonaIncomplete,
+                    ValidationStage.Version,
+                    new ResourceRef(ResourceKind.Persona, Persona.PublicId),
+                    path,
+                    $"This bot declares 'persona: complete', and '{path}' is empty.",
+                    $"Fill in '{path}' on the Persona page or with `suwagcms persona edit --file <file>`, or change 'persona: complete' in the bot's setup and deploy.",
+                    []
+                );
+            }
+        }
     }
 
     private static IEnumerable<Mistake> Format(BotDeclaration declaration)
     {
-        if (declaration.Persona is { } persona && persona != BotDeclaration.PersonaRequired)
+        if (declaration.Persona is { } persona && persona is not (BotDeclaration.PersonaRequired or BotDeclaration.PersonaComplete))
         {
             yield return Whole(
                 MistakeCodes.DeclarationPersonaUnknown,
                 "persona",
                 $"'{persona}' is not something a bot can say about a persona.",
-                $"Say 'persona: {BotDeclaration.PersonaRequired}', or leave it out if the bot works without one."
+                $"Say 'persona: {BotDeclaration.PersonaRequired}' or 'persona: {BotDeclaration.PersonaComplete}', or leave it out if the bot works without one."
             );
         }
 

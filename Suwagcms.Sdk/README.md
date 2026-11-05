@@ -48,6 +48,7 @@ A bot outside .NET serves the same route and validates a definition through the 
 
 A version may hold a `persona`: `personality`, and `scope` with `inScope`, `outOfScope` and `whenOutOfScope`, each one text with its line
 breaks. `GetAsync` gives it as `BotDefinition.Persona`, null when the version has none; what the bot does with it is its own concern.
+`PersonaRequired` is satisfied by any text; `BotDeclaration.PersonaComplete` only by all four parts.
 
 The bot's code uses `IBotDefinitions`:
 
@@ -98,6 +99,9 @@ Without the runtime, the validator alone needs no database and no network:
 ```csharp
 IReadOnlyList<Mistake> mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Version);
 ```
+
+A bot that handles definitions itself reads one with `BotDefinition.Read(json)`, which uses the format's own options, and tests a value of
+a fact with `FactValues.Accepts(fact, value)` and words what it takes with `FactValues.Valid(fact)`, so it keeps no second copy of a pattern's rules.
 
 Pass a `BotDeclaration` as a third argument and the `Version` stage also reports what that bot cannot run; `Save` never looks at it.
 

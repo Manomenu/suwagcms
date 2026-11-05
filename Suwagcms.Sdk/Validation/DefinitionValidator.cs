@@ -53,10 +53,7 @@ public static class DefinitionValidator
             return mistakes;
         }
 
-        var definition =
-            JsonSerializer.Deserialize<BotDefinition>(json, DefinitionFormat.Options)
-            ?? throw new InvalidOperationException("A document the validator read is not a definition.");
-        return [.. mistakes, .. DeclarationValidator.CheckDefinition(definition, declaration)];
+        return [.. mistakes, .. DeclarationValidator.CheckDefinition(BotDefinition.Read(json), declaration)];
     }
 
     internal static IReadOnlyList<Mistake> ValidateJson(string? json, ValidationStage stage, IReadOnlyList<Rule> rules)

@@ -44,6 +44,7 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
                 or "fact.enum.valueInUse"
                 or "fact.type.inUse"
                 or "fact.range.inUse"
+                or "fact.pattern.inUse"
                 or "fact.writableBy.inUse"
             ? "  Used by:"
             : "  Related:";

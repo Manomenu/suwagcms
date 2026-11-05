@@ -33,7 +33,7 @@ internal sealed partial class VersionRuntime(
 
         var json =
             await store.ReadVersionAsync(number, cancellationToken) ?? throw new KeyNotFoundException($"Version {number} is not held.");
-        return loaded.GetOrAdd(number, Parse(json));
+        return loaded.GetOrAdd(number, BotDefinition.Read(json));
     }
 
     public async Task<IReadOnlyList<FeedArticle>> GetArticlesAsync(int number, CancellationToken cancellationToken = default)
@@ -220,7 +220,7 @@ internal sealed partial class VersionRuntime(
 
     private async Task<BotState> TakeEffectAsync(int number, string json, CancellationToken cancellationToken)
     {
-        loaded[number] = Parse(json);
+        loaded[number] = BotDefinition.Read(json);
         var current = await RefreshAsync(cancellationToken);
         if (current.Error is null)
         {
@@ -362,10 +362,6 @@ internal sealed partial class VersionRuntime(
             StoreError = from.Error,
             Availability = from.State.Availability ?? BotAvailability.Nothing,
         };
-
-    private static BotDefinition Parse(string json) =>
-        JsonSerializer.Deserialize<BotDefinition>(json, DefinitionFormat.Options)
-        ?? throw new InvalidDataException("A stored version is not a definition.");
 
     private static CurrentChoice? ChoiceIn(string body)
     {

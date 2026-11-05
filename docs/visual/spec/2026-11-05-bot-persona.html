@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A person who maintains a bot can then change its voice and limits through the CMS, with history, a comparison and a rollback, instead of through a change in the bot's files.</p>
   </div>
   <div class="stats">
-    <div><b>14</b><span>criteria</span></div>
+    <div><b>15</b><span>criteria</span></div>
     <div><b>1</b><span>criterion after another feature</span></div>
   </div>
 </section>
@@ -457,6 +457,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>A bot that does not use a persona</td><td>Nothing breaks: an optional part of a version it ignores</td></tr>
     <tr><td>A bot that declares it needs a persona, and has none</td><td>Saves go on; creating a version and pushing one are refused, saying what to fill in</td></tr>
     <tr><td>A persona with only some parts filled</td><td>Allowed; an empty part is left out of the version</td></tr>
+    <tr><td>A bot that declares it needs all four parts, and one is empty</td><td>Saves go on; creating a version and pushing one are refused, one mistake per empty part</td></tr>
     <tr><td>An older SDK reading a version with a persona</td><td>Loads it and ignores the field</td></tr>
   </table>
 </section>
@@ -497,7 +498,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   }
 }
 </script>
-  <p>The CLI: <code>suwagcms persona show</code> and <code>suwagcms persona edit</code>, the latter with <code>--file</code>, <code>--if-revision</code> and <code>--dry-run</code>. The file holds the same shape in YAML or JSON and replaces the whole persona; a YAML block such as <code>personality: |</code> keeps its line breaks. A bot says that it needs a persona with <code>persona: required</code> in its declaration.</p>
+  <p>The CLI: <code>suwagcms persona show</code> and <code>suwagcms persona edit</code>, the latter with <code>--file</code>, <code>--if-revision</code> and <code>--dry-run</code>. The file holds the same shape in YAML or JSON and replaces the whole persona; a YAML block such as <code>personality: |</code> keeps its line breaks. A bot says that it needs a persona with <code>persona: required</code> in its declaration, satisfied by any text, or with <code>persona: complete</code>, satisfied only by all four.</p>
 </section>
 
 <section data-role="decisions">
@@ -507,6 +508,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li>“Persona” names the whole, with sections labelled by what they do, because “front agent” and “reply agent” are one bot's internals and the CMS serves any bot.</li>
     <li>The persona lives in the definition rather than as a live setting like availability, because a change of voice should be compared, pushed and rolled back with the content it goes with.</li>
     <li>Each part of the scope is one text rather than a list, because a person writes it in one go and a line break already separates the lines; Suwchatbot will change to read it.</li>
+    <li><code>complete</code> sits beside <code>required</code> rather than replacing it, because this spec allows a partly filled persona for other bots, while Suwchatbot cannot run without all four parts.</li>
     <li>A bot can require a persona through its declaration, so a version it would refuse is stopped in the CMS; a bot that does not declare it is unaffected.</li>
     <li>A file replaces the whole persona rather than patching one list, because a whole text can be checked and repeated safely.</li>
   </ul>
@@ -529,6 +531,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-bot-persona-12</code> The main skill says how to show and edit the persona, gives the form of its file, and says it reaches the bot only with a version.</li>
     <li><code>AC-bot-persona-13</code> A bot that declares <code>persona: required</code> and has no persona gets a Version-stage mistake when a version is created or pushed, saves go on, and a bot that does not declare it is unaffected.</li>
     <li><code>AC-bot-persona-14</code> A persona cannot be added twice, deleted, renamed or turned off, through the routes, the CLI or a file of changes.</li>
+    <li><code>AC-bot-persona-15</code> A bot that declares <code>persona: complete</code> gets one Version-stage mistake naming each of the four parts left empty or only white space, saves go on, its profile says so, and <code>persona: required</code> keeps accepting a persona with only some parts.</li>
   </ul>
 </section>
 

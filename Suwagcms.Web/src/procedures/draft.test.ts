@@ -67,6 +67,7 @@ const fact = (name: string, type: string, writableBy = "set", values: string[] |
     min: null,
     max: null,
     maxLength: null,
+    pattern: null,
     revision: 1,
     usedBy: [],
 });
@@ -287,6 +288,7 @@ describe("an action step", () => {
         min: null,
         max: null,
         maxLength: 10,
+        pattern: null,
         revision: 1,
         usedBy: [],
         ...over,

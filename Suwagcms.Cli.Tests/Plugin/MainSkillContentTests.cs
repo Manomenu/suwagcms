@@ -33,6 +33,11 @@ public sealed class MainSkillContentTests
         ),
         ("the form of localFacts", "Procedure file", ["localFacts:", "one camelCase word", "fact.local.nameClash"]),
         (
+            "the form of a pattern on a text fact and how to take it off",
+            "Text patterns",
+            ["pattern: { regex:", "means:", "tellCustomer:", "--no-pattern", "pattern: null", "fact.pattern.inUse", "other"]
+        ),
+        (
             "what --dry-run on an edit answers and who sees a type change",
             "What would this change break?",
             ["--dry-run", "what would this change break?", "Only the server sees a type change"]
@@ -102,6 +107,11 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-edit-guard-16")]
     public void The_main_skill_says_what_a_dry_run_on_an_edit_answers_and_that_only_the_server_sees_a_type_change() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("what --dry-run on an edit", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-14")]
+    public void The_main_skill_gives_the_form_of_a_pattern_and_how_to_take_it_off() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of a pattern", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-local-facts-13")]
