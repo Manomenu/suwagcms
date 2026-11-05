@@ -11,6 +11,7 @@ using Suwagcms.Contracts;
 using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Server.Tests.Articles;
+using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.History;
 using Suwagcms.Server.Tests.Versions;
 
@@ -218,7 +219,7 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     public async Task Turning_off_makes_no_revision_an_open_edit_still_saves_and_a_version_finds_nothing_changed()
     {
         await using var scene = await SceneAsync();
-        var first = await scene.Push.CreateAsync();
+        await scene.Push.CreateAsync();
         var read = await ArticleApi.ViewOf(await scene.Articles.Get(AvailabilityScene.Used));
         var snapshot = await scene.Push.SnapshotAsync();
 
@@ -226,12 +227,8 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
 
         Assert.Equal(snapshot, await scene.Push.SnapshotAsync());
         var noChange = await scene.Push.Client.PostAsync($"/api/bots/{scene.Id}/versions", null, TestContext.Current.CancellationToken);
-        Assert.False(noChange.IsSuccessStatusCode);
-        var document = await scene.Push.Client.GetStringAsync(
-            $"/api/bots/{scene.Id}/versions/{first.Number}",
-            TestContext.Current.CancellationToken
-        );
-        Assert.DoesNotContain("availability", document, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, noChange.StatusCode);
+        Assert.Contains("version.unchanged", await FactApi.CodesOf(noChange));
 
         var saved = await scene.Articles.Put(
             AvailabilityScene.Used,
@@ -841,19 +838,21 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-export-11")]
-    public async Task An_export_holds_no_availability()
+    [Trait("criterion", "AC-version-create-17")]
+    public async Task A_version_created_while_a_resource_is_off_holds_nothing_about_it_nor_does_its_export()
     {
         await using var scene = await SceneAsync();
         await scene.Turn("off");
         var version = await scene.Push.CreateAsync();
 
-        var export = await scene.Push.Client.GetStringAsync(
-            $"/api/bots/{scene.Id}/versions/{version.Number}/export",
-            TestContext.Current.CancellationToken
-        );
-
-        Assert.DoesNotContain("availability", export, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains(AvailabilityScene.Used, export, StringComparison.Ordinal);
+        foreach (var path in new[] { "", "/export" })
+        {
+            var text = await scene.Push.Client.GetStringAsync(
+                $"/api/bots/{scene.Id}/versions/{version.Number}{path}",
+                TestContext.Current.CancellationToken
+            );
+            Assert.DoesNotContain("availability", text, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(AvailabilityScene.Used, text, StringComparison.Ordinal);
+        }
     }
 }

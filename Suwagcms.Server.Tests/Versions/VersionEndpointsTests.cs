@@ -370,22 +370,13 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
     [Trait("criterion", "AC-version-create-11")]
     public async Task Creating_a_version_sends_no_request_to_the_bot()
     {
-        var api = await (await NewBot()).Ready();
+        _ = database.Pool;
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var address = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}";
-        var registered = await api.Client.PostAsJsonAsync(
-            "/api/bots",
-            new RegisterBot("w" + Guid.NewGuid().ToString("N")[..10], "Listening bot", address),
-            TestContext.Current.CancellationToken
-        );
-        var listening = (await registered.Content.ReadFromJsonAsync<Bot>(TestContext.Current.CancellationToken))?.Id ?? "";
-        Assert.True(
-            (await api.Client.PostAsync($"/api/bots/{listening}/versions", null, TestContext.Current.CancellationToken)).StatusCode
-                == HttpStatusCode.UnprocessableEntity
-        );
-        Assert.True((await api.Create()).IsSuccessStatusCode);
+        var api = await (await VersionApi.NewBotAsync(app.CreateClient(), address)).Ready();
 
+        await api.Created();
         await Task.Delay(200, TestContext.Current.CancellationToken);
 
         Assert.False(listener.Pending(), "a connection reached the address of the bot");

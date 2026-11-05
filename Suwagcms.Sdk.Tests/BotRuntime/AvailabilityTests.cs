@@ -103,13 +103,13 @@ public sealed class AvailabilityTests
     {
         using var directory = new TempDirectory();
         await using var bot = await BotHost.StartAsync(Stores.Create(kind, directory));
-        await bot.PutAsync(1, Documents.Make(1, "keptFact"));
+        await bot.PutAsync(1, Documents.WithArticles(1, Documents.Article("cennik", "The prices.")));
 
-        await SendAsync(bot, Message(1, "keptFact"));
+        await SendAsync(bot, Message(1, "cennik"));
 
-        Assert.True(bot.Definitions.IsOff(1, ResourceKind.Article, "keptFact"));
+        Assert.True(bot.Definitions.IsOff(1, ResourceKind.Article, "cennik"));
         var definition = await bot.Definitions.GetAsync(1, TestContext.Current.CancellationToken);
-        Assert.Equal("keptFact", definition.Facts.Single().Name);
+        Assert.Equal("The prices.", definition.Articles.Single(article => article.Id == "cennik").Content);
     }
 
     [Theory]

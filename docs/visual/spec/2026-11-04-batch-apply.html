@@ -508,13 +508,13 @@ changes:
     <li><code>AC-batch-apply-15</code> A dry run shows the same refusals as an ordinary save, judged on the whole file's result: a used article and every reference to it can go in one file, and two new articles linking to each other are refused as a loop.</li>
     <li><code>AC-batch-apply-16</code> A file of changes covers procedures, and a successful answer also lists the <code>Version</code> stage's mistakes without refusing.</li>
     <li><code>AC-batch-apply-17</code> A file of changes covers actions.</li>
+    <li><code>AC-batch-apply-18</code> A file that breaks a rule of the edit guard gets the edit guard's refusal, with and without <code>--dry-run</code>, judged on the whole file's result: a file narrowing a used fact is refused with <code>fact.enum.valueInUse</code> and saves nothing, and a file changing the fact and the procedure using it together is accepted.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>edit-guard</code>:</b> a dry run shows the refusals of the edit guard too, judged on the whole file's result.</li>
     <li><b>after <code>version-export</code>:</b> an exported file given to <code>apply</code> is refused, saying that exports are for reading and how to write a file of changes.</li>
   </ul>
 </section>

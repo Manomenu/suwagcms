@@ -9,12 +9,14 @@ internal sealed class FactApi(HttpClient client, string bot)
 {
     public string Bot { get; } = bot;
 
-    public static async Task<FactApi> NewBotAsync(HttpClient client)
+    public const string NoBotAddress = "http://bot.internal:8080";
+
+    public static async Task<FactApi> NewBotAsync(HttpClient client, string address = NoBotAddress)
     {
         var id = "t" + Guid.NewGuid().ToString("N")[..12];
         var response = await client.PostAsJsonAsync(
             "/api/bots",
-            new RegisterBot(id, "A bot", "http://bot.internal:8080"),
+            new RegisterBot(id, "A bot", address),
             TestContext.Current.CancellationToken
         );
         response.EnsureSuccessStatusCode();
