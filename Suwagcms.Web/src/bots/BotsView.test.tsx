@@ -17,6 +17,18 @@ function render(bots: Bot[], openId: string | null): string {
 }
 
 describe("BotsView", () => {
+    it("AC-bot-profiles-14: the button that opens the register form is gone while the form is open", () => {
+        for (const bots of [[], [rzeczoznawca]]) {
+            const html = renderToStaticMarkup(
+                <Router ssrPath="/bots">
+                    <BotsView bots={bots} openId={null} onRegister={() => undefined} registerForm={<form />} />
+                </Router>,
+            );
+
+            expect(html).not.toContain("Register a bot");
+        }
+    });
+
     it("AC-bot-profiles-7: with no bot registered it says so and offers to register one", () => {
         const html = render([], null);
 
