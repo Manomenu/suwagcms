@@ -50,6 +50,7 @@ export function FactForm({
         <Paper>
             <form onSubmit={submit} className="flex max-w-2xl flex-col gap-3">
                 <FactFields
+                    bot={bot}
                     form={form}
                     mistakes={mistakes}
                     nameLocked={editing}

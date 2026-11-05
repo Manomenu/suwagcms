@@ -103,3 +103,66 @@ test("AC-version-push-1: Push in the web makes the bot hold the latest version, 
         bot.server.close();
     }
 });
+
+test("AC-version-diff-10: Changes on a version compares it with the one before, a select compares it with another, and the first offers neither (AC-version-diff-1)", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addConversation(request, bot);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+    const fact = { type: "text", description: "The city", maxLength: 80 };
+    expect((await request.put(`/api/bots/${bot}/facts/customer.city?ifRevision=0`, { data: fact })).status()).toBe(200);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+    expect((await request.put(`/api/bots/${bot}/facts/customer.city`, { data: { ...fact, maxLength: 120 } })).status()).toBe(200);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+    await page.goto(`/bots/${bot}/versions`);
+
+    await expect(page.getByRole("row").filter({ hasText: "v1 ·" }).getByRole("button", { name: "Changes" })).toHaveCount(0);
+    await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toContainText("Nothing before it");
+
+    await page.getByRole("row").filter({ hasText: "v3 ·" }).getByRole("button", { name: "Changes" }).click();
+    await expect(page.getByText("0 added · 0 removed · 1 changed")).toBeVisible();
+    await expect(page.getByText("maxLength:")).toBeVisible();
+
+    await page.getByLabel("From").selectOption("1");
+    await expect(page.getByText("1 added · 0 removed · 0 changed")).toBeVisible();
+});
+
+test("AC-version-diff-11: the address --open prints shows the same comparison, and AC-version-diff-13: the page compares what the bot has with the latest", async ({
+    page,
+    request,
+}) => {
+    const id = freshId();
+    const bot = await startBot(id);
+    try {
+        expect((await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: bot.address } })).status()).toBe(201);
+        await addConversation(request, id);
+        expect((await request.post(`/api/bots/${id}/versions`)).status()).toBe(201);
+        expect((await request.post(`/api/bots/${id}/versions/1/push`)).status()).toBe(200);
+        const fact = { type: "text", description: "The city", maxLength: 80 };
+        expect((await request.put(`/api/bots/${id}/facts/customer.city?ifRevision=0`, { data: fact })).status()).toBe(200);
+        expect((await request.post(`/api/bots/${id}/versions`)).status()).toBe(201);
+
+        await page.goto(`/bots/${id}/versions?from=2&to=1`);
+        await expect(page.getByText("0 added · 1 removed · 0 changed")).toBeVisible();
+        await expect(page).toHaveURL(`/bots/${id}/versions`);
+
+        await page.getByRole("button", { name: "Compare v1 with v2" }).click();
+        await expect(page.getByText("1 added · 0 removed · 0 changed")).toBeVisible();
+    } finally {
+        bot.server.close();
+    }
+});
+
+test("AC-version-export-10: the address export --open prints opens that version", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addConversation(request, bot);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+
+    await page.goto(`/bots/${bot}/versions?open=1`);
+
+    await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible();
+    await expect(page.getByText(`"bot":"${bot}"`)).toBeVisible();
+    await expect(page).toHaveURL(`/bots/${bot}/versions`);
+});

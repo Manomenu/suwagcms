@@ -1,13 +1,17 @@
 using System.CommandLine;
 using Suwagcms.Cli.Articles;
 using Suwagcms.Cli.Bots;
+using Suwagcms.Cli.Changes;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Facts;
+using Suwagcms.Cli.History;
 using Suwagcms.Cli.KnowledgeBases;
 using Suwagcms.Cli.Output;
 using Suwagcms.Cli.Procedures;
+using Suwagcms.Cli.Renames;
 using Suwagcms.Cli.Status;
 using Suwagcms.Cli.Usage;
+using Suwagcms.Cli.Validation;
 using Suwagcms.Cli.Versions;
 
 namespace Suwagcms.Cli;
@@ -37,7 +41,13 @@ internal static class CliApp
             ProceduresCommand.Create(options, environment),
             VersionsCommand.Create(options, environment),
             UsageCommand.Create(options, environment),
+            RenameCommand.Create(options, environment),
             PushCommand.Create(options, environment),
+            ApplyCommand.Create(options, environment),
+            HistoryCommand.Create(options, environment),
+            DiffCommand.Create(options, environment),
+            ExportCommand.Create(options, environment),
+            ValidateCommand.Create(options, environment),
         };
         options.AddTo(root);
         return root;

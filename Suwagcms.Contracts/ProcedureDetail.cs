@@ -11,5 +11,6 @@ public sealed record ProcedureDetail(
     IReadOnlyDictionary<string, ProcedureStep> Steps,
     StallInstruction? WhenStalled,
     int Revision,
-    IReadOnlyList<Mistake> NotReady
+    IReadOnlyList<Mistake> NotReady,
+    IReadOnlyDictionary<string, LocalFact>? LocalFacts = null
 );

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 
@@ -26,12 +27,17 @@ internal sealed class BotHost : IAsyncDisposable
 
     public IBotDefinitions Definitions => app.Services.GetRequiredService<IBotDefinitions>();
 
-    public static async Task<BotHost> StartAsync(IVersionStore? store, string botId = "rzeczoznawca", TimeSpan? pollInterval = null)
+    public static async Task<BotHost> StartAsync(
+        IVersionStore? store,
+        string botId = "rzeczoznawca",
+        TimeSpan? pollInterval = null,
+        BotCapabilities? declares = null
+    )
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
-        builder.Services.AddSuwagcmsBot(botId, store, pollInterval ?? TimeSpan.FromHours(1));
+        builder.Services.AddSuwagcmsBot(botId, store, pollInterval ?? TimeSpan.FromHours(1), declares);
         var app = builder.Build();
         app.MapSuwagcmsBot();
         await app.StartAsync();

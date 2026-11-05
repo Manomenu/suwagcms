@@ -1,0 +1,159 @@
+using System.Globalization;
+using System.Text.Json;
+using Suwagcms.Contracts;
+using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Validation;
+using Suwagcms.Server.Database;
+using Suwagcms.Server.Editing;
+
+namespace Suwagcms.Server.Bots;
+
+// Why: the one place that turns a bot's answer, or its absence, into what the CMS holds; it holds no lock or transaction while it waits on the bot.
+internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider time)
+{
+    private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
+
+    public async Task<DeclarationStatus?> ReadStoredAsync(string bot, CancellationToken cancellationToken)
+    {
+        return await DeclarationStore.FindAsync(pool, bot, cancellationToken) is { } row
+            ? await StatusAsync(bot, row, DeclarationAsk.NotAsked, null, [], true, cancellationToken)
+            : null;
+    }
+
+    public async Task<DeclarationStatus?> AskAsync(string bot, CancellationToken cancellationToken) =>
+        await AskAsync(bot, listCannotRun: true, cancellationToken);
+
+    // Why: a push checks one version itself, so it does not pay for reading the whole working state.
+    public async Task<DeclarationStatus?> AskForPushAsync(string bot, CancellationToken cancellationToken) =>
+        await AskAsync(bot, listCannotRun: false, cancellationToken);
+
+    private async Task<DeclarationStatus?> AskAsync(string bot, bool listCannotRun, CancellationToken cancellationToken)
+    {
+        if (await DeclarationStore.FindAsync(pool, bot, cancellationToken) is not { } row)
+        {
+            return null;
+        }
+
+        switch (await line.ReadDeclarationAsync(row.Address, cancellationToken))
+        {
+            case BotLine.Reply.Silent silent:
+                return await StatusAsync(bot, row, DeclarationAsk.Unreachable, silent.Reason, [], listCannotRun, cancellationToken);
+            // Why: a bot on an SDK older than this route has nothing to say, which is what declaring nothing means.
+            case BotLine.Reply.Answer { Status: StatusCodes.Status404NotFound }:
+                return await StoredAnswerAsync(bot, row.Address, null, listCannotRun, cancellationToken);
+            case BotLine.Reply.Answer { Status: StatusCodes.Status200OK } answer:
+                return await JudgeAsync(bot, row, answer.Body, listCannotRun, cancellationToken);
+            case BotLine.Reply.Answer answer:
+                var reason = string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{row.Address} answered {answer.Status}, which is not the answer of a bot's declaration route"
+                );
+                return await StatusAsync(bot, row, DeclarationAsk.Unreachable, reason, [], listCannotRun, cancellationToken);
+            default:
+                throw new InvalidOperationException("a bot's reply is an answer or silence");
+        }
+    }
+
+    private async Task<DeclarationStatus> JudgeAsync(
+        string bot,
+        DeclarationStore.StoredDeclaration row,
+        string body,
+        bool listCannotRun,
+        CancellationToken cancellationToken
+    )
+    {
+        var (declaration, unreadable) = DeclarationValidator.ParseJson(body);
+        var mistakes = declaration is null ? unreadable : DeclarationValidator.CheckAnswer(declaration, bot);
+        if (mistakes.Count > 0 || declaration is null)
+        {
+            return await StatusAsync(
+                bot,
+                row,
+                DeclarationAsk.Invalid,
+                "the bot's answer was refused",
+                mistakes,
+                listCannotRun,
+                cancellationToken
+            );
+        }
+        return await StoredAnswerAsync(
+            bot,
+            row.Address,
+            declaration.DeclaresNothing ? null : declaration,
+            listCannotRun,
+            cancellationToken
+        );
+    }
+
+    private async Task<DeclarationStatus> StoredAnswerAsync(
+        string bot,
+        string address,
+        BotDeclaration? declaration,
+        bool listCannotRun,
+        CancellationToken cancellationToken
+    )
+    {
+        var text = declaration is null ? null : JsonSerializer.Serialize(declaration, Web);
+        var at = time.GetUtcNow();
+        await DeclarationStore.StoreAsync(pool, bot, text, at, cancellationToken);
+        return await StatusAsync(
+            bot,
+            new DeclarationStore.StoredDeclaration(address, text, at.UtcDateTime),
+            DeclarationAsk.Answered,
+            null,
+            [],
+            listCannotRun,
+            cancellationToken
+        );
+    }
+
+    private async Task<DeclarationStatus> StatusAsync(
+        string bot,
+        DeclarationStore.StoredDeclaration row,
+        DeclarationAsk ask,
+        string? reason,
+        IReadOnlyList<Mistake> mistakes,
+        bool listCannotRun,
+        CancellationToken cancellationToken
+    )
+    {
+        var stored =
+            row.AnsweredAt is null ? DeclarationStored.NeverAnswered
+            : row.Declaration is null ? DeclarationStored.DeclaresNothing
+            : DeclarationStored.Declared;
+        var declaration = row.Parsed;
+        return new DeclarationStatus(
+            bot,
+            row.Address,
+            ask,
+            stored,
+            declaration,
+            row.AnsweredAt,
+            reason,
+            mistakes,
+            FormatFix(declaration),
+            declaration is null || !listCannotRun ? [] : await CannotRunAsync(bot, declaration, cancellationToken)
+        );
+    }
+
+    private static string? FormatFix(BotDeclaration? declaration) =>
+        declaration?.FormatVersion is { } wanted && wanted != BotDefinition.CurrentFormatVersion
+            ? string.Create(
+                CultureInfo.InvariantCulture,
+                $"The bot wants format {wanted} and this CMS reads format {BotDefinition.CurrentFormatVersion}: update Suwagcms.Sdk on the CMS, or declare format {BotDefinition.CurrentFormatVersion} in the bot."
+            )
+            : null;
+
+    // Why: what the bot stopped declaring matters to the authors of the procedures that use it, long before anyone creates a version.
+    private async Task<IReadOnlyList<Mistake>> CannotRunAsync(string bot, BotDeclaration declaration, CancellationToken cancellationToken)
+    {
+        await using var connection = await pool.OpenAsync(cancellationToken);
+        var resources = await ResourceStore.LoadAsync(connection, null, bot, cancellationToken);
+        return
+        [
+            .. DeclarationValidator
+                .CheckDefinition(ResourceKinds.Assemble(resources), declaration)
+                .Where(mistake => mistake.Code == MistakeCodes.DeclarationBlock),
+        ];
+    }
+}

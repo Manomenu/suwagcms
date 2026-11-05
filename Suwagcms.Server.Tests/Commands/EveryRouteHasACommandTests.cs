@@ -27,6 +27,8 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["GET /api/health"] = Coverage.Cli("status"),
         ["GET /api/bots"] = Coverage.Cli("bots list"),
         ["POST /api/bots"] = Coverage.Cli("bots add"),
+        ["GET /api/bots/{bot}/declaration"] = Coverage.Cli("bots declaration"),
+        ["POST /api/validate"] = Coverage.Cli("validate"),
         ["GET /api/bots/{bot}/facts"] = Coverage.Cli("facts list"),
         ["GET /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts show"),
         ["PUT /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts add"),
@@ -44,13 +46,19 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["PUT /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures add"),
         ["DELETE /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures delete"),
         ["GET /api/bots/{bot}/{kind}/{id}/usage"] = Coverage.Cli("usage"),
+        ["POST /api/bots/{bot}/{kind}/{id}/rename"] = Coverage.Cli("rename"),
         ["GET /api/bots/{bot}/versions"] = Coverage.Cli("versions list"),
         ["GET /api/bots/{bot}/versions/{number}"] = Coverage.Cli("versions show"),
         ["POST /api/bots/{bot}/versions"] = Coverage.Cli("versions create"),
+        ["GET /api/bots/{bot}/versions/{from}/diff/{to}"] = Coverage.Cli("diff"),
+        ["GET /api/bots/{bot}/versions/{number}/export"] = Coverage.Cli("export"),
         ["GET /api/bots/{bot}/versions/status"] = Coverage.Cli("versions status"),
         ["POST /api/bots/{bot}/versions/{number}/push"] = Coverage.Cli("push"),
         ["GET /api/bots/{bot}/procedures/{id}/layout"] = Coverage.Cli("procedures layout"),
         ["PUT /api/bots/{bot}/procedures/{id}/layout"] = Coverage.Cli("procedures layout"),
+        ["POST /api/bots/{bot}/changes"] = Coverage.Cli("apply"),
+        ["GET /api/bots/{bot}/history"] = Coverage.Cli("history"),
+        ["GET /api/bots/{bot}/{kind}/{id}/history"] = Coverage.Cli("history"),
     };
 
     public void Dispose() => app.Dispose();

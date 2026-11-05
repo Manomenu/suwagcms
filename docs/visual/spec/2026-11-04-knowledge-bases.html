@@ -430,7 +430,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>Behaviour</h2>
   <table>
     <tr><th>Field</th><th>Rule</th></tr>
-    <tr><td><code>id</code></td><td>required; camelCase; unique within the bot; fixed once created</td></tr>
+    <tr><td><code>id</code></td><td>required; camelCase; unique within the bot; changed only by <code>resource-rename</code></td></tr>
     <tr><td><code>title</code></td><td>required, not blank; unique within the bot, ignoring case and surrounding spaces</td></tr>
     <tr><td><code>language</code></td><td><code>pl</code> or <code>en</code>; <code>en</code> when none is given; the language of every article in the base</td></tr>
   </table>

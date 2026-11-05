@@ -12,16 +12,44 @@ internal static class EditProblems
     public const string ResourceMissing = "resource.missing";
     public const string ResourceExists = "resource.exists";
     public const string ResourceStale = "resource.stale";
+    public const string ResourceSameId = "resource.sameId";
+    public const string ChangedTwice = "change.twice";
 
     public static ProblemHttpResult For(EditResult result, string bot, string title) =>
+        Problem(
+            result switch
+            {
+                EditResult.Refused => StatusCodes.Status422UnprocessableEntity,
+                EditResult.Stale => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status404NotFound,
+            },
+            title,
+            MistakesOf(result, bot)
+        );
+
+    public static IReadOnlyList<Mistake> MistakesOf(EditResult result, string bot) =>
         result switch
         {
-            EditResult.Refused refused => Problem(StatusCodes.Status422UnprocessableEntity, title, refused.Mistakes),
-            EditResult.Stale stale => Problem(StatusCodes.Status409Conflict, title, [Stale(stale)]),
-            EditResult.Missing missing => Problem(StatusCodes.Status404NotFound, title, [Missing(missing.Target, bot)]),
-            EditResult.UnknownBot => Problem(StatusCodes.Status404NotFound, title, [UnknownBot(bot)]),
+            EditResult.Refused refused => refused.Mistakes,
+            EditResult.Stale stale => [Stale(stale)],
+            EditResult.Missing missing => [Missing(missing.Target, bot)],
+            EditResult.UnknownBot => [UnknownBot(bot)],
             _ => throw new ArgumentException($"{result.GetType().Name} is not a refusal."),
         };
+
+    public static Mistake Twice(ResourceRef target, IReadOnlyList<int> positions)
+    {
+        var noun = ResourceKinds.Noun(target.Kind);
+        return new(
+            ChangedTwice,
+            ValidationStage.Save,
+            target,
+            "changes",
+            $"Changes {string.Join(" and ", positions)} both change the {noun} '{target.Id}', and what they do together would depend on their order.",
+            $"Keep one change to the {noun} '{target.Id}', with everything it should say.",
+            []
+        );
+    }
 
     public static Mistake Missing(ResourceRef target, string bot) =>
         new(
@@ -44,6 +72,33 @@ internal static class EditProblems
             "Check the bot's id, or register the bot first.",
             []
         );
+
+    public static Mistake SameId(ResourceRef target) =>
+        new(
+            ResourceSameId,
+            ValidationStage.Save,
+            target,
+            IdField(target),
+            $"The {ResourceKinds.Noun(target.Kind)} '{target.Id}' already has this id, so nothing would change.",
+            "Give another id.",
+            []
+        );
+
+    public static Mistake Taken(ResourceRef target, ResourceRef wanted) =>
+        new(
+            MistakeCodes.DuplicateId,
+            ValidationStage.Save,
+            target,
+            IdField(target),
+            $"This bot already has {Noun(wanted)} '{wanted.Id}'.",
+            $"Choose another id, or delete that {ResourceKinds.Noun(wanted.Kind)} first.",
+            [new RelatedResource(wanted, IdField(wanted))]
+        );
+
+    private static string IdField(ResourceRef target) => target.Kind == ResourceKind.GlobalFact ? "name" : "id";
+
+    private static string Noun(ResourceRef target) =>
+        target.Kind == ResourceKind.Article ? "an article" : $"a {ResourceKinds.Noun(target.Kind)}";
 
     private static Mistake Stale(EditResult.Stale stale)
     {

@@ -381,8 +381,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>This spec delivers the mechanism, the shape of a mistake, the two stages and the versioned format envelope. The rules for facts, articles and procedures arrive with the features that add those resources.</p>
   </div>
   <div class="stats">
-    <div><b>12</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>14</b><span>criteria</span></div>
+    
   </div>
 </section>
 
@@ -405,7 +405,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>The rules of each resource: <code>global-facts</code>, <code>articles</code>, <code>article-links</code>, <code>delete-guard</code>, <code>loop-guard</code> and <code>procedure-model</code> add them.</li>
       <li>Refusing a save on the server: the first resource to be saved, in <code>global-facts</code>, specifies it.</li>
-      <li>Checking against what a bot declares, and a validate endpoint for bots outside .NET: see “Criteria after other features”.</li>
       <li>Publishing the package to nuget.org: the owner does that by hand.</li>
     </ul></div>
   </div>
@@ -491,17 +490,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-sdk-validator-10</code> A field the format does not know produces no mistake, and the known fields of that document are still checked.</li>
     <li><code>AC-sdk-validator-11</code> The published JSON schema of the format is compared with the format on the gate, so a format change without its schema fails with the command that regenerates it.</li>
     <li><code>AC-sdk-validator-12</code> Packing the SDK produces a NuGet package with the id <code>Suwagcms.Sdk</code>.</li>
+    <li><code>AC-sdk-validator-13</code> Given what a bot declares, the validator also reports what that bot cannot run.</li>
+    <li><code>AC-sdk-validator-14</code> A bot outside .NET can validate a definition through a validate endpoint of the CMS, with a matching <code>suwagcms validate</code> command, and gets the same mistakes as the library.</li>
   </ul>
 </section>
 
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>bot-declaration</code>:</b> given what a bot declares, the validator also reports what that bot cannot run.</li>
-    <li><b>after <code>bot-declaration</code>:</b> a bot outside .NET can validate a definition through a validate endpoint of the CMS, with a matching <code>suwagcms validate</code> command, and gets the same mistakes as the library.</li>
-  </ul>
-</section>
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>

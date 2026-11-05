@@ -11,11 +11,14 @@ import {
     deleteStep,
     disconnect,
     edgesOf,
+    factsSeen,
     fromDetail,
     markFirst,
+    removeLocalFact,
     removeRule,
     renameStep,
     setBlock,
+    setLocalFact,
     stepOrder,
     toSave,
     valuesOffered,
@@ -61,7 +64,7 @@ const fact = (name: string, type: string, writableBy = "set", values: string[] |
 });
 
 function empty(): Draft {
-    return { description: "d", firstStep: null, whenStalled: null, steps: {} };
+    return { description: "d", firstStep: null, whenStalled: null, steps: {}, localFacts: {} };
 }
 
 describe("the draft", () => {
@@ -195,5 +198,18 @@ describe("the draft", () => {
         expect(renamed.steps["confirm"]?.next).toBe("question");
         expect(Object.keys(renamed.steps)).toContain("question");
         expect(renameStep(draft, "ask", "mark")).toBe(draft);
+    });
+});
+
+describe("local facts", () => {
+    const bare: Draft = { description: "D", firstStep: null, whenStalled: null, steps: {}, localFacts: {} };
+
+    it("AC-procedure-creator-18: a local fact joins the facts its steps see, and a procedure without any sends no field", () => {
+        const with1 = setLocalFact(bare, "visitDate", { type: "text", description: "When", maxLength: 10 });
+
+        expect(factsSeen(with1, []).map((fact) => fact.name)).toEqual(["visitDate"]);
+        expect(factsSeen(with1, [])[0]).toMatchObject({ type: "text", writableBy: "set", maxLength: 10 });
+        expect(toSave(with1).localFacts).toEqual({ visitDate: { type: "text", description: "When", maxLength: 10 } });
+        expect(toSave(removeLocalFact(with1, "visitDate"))).not.toHaveProperty("localFacts");
     });
 });

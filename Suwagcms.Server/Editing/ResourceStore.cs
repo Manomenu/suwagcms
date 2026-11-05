@@ -114,10 +114,11 @@ internal static class ResourceStore
     ) =>
         await connection.ExecuteAsync(
             new CommandDefinition(
-                "UPDATE resource SET revision = @Revision, body = @body::jsonb, updated_at = @now WHERE id = @Id",
+                "UPDATE resource SET public_id = @publicId, revision = @Revision, body = @body::jsonb, updated_at = @now WHERE id = @Id",
                 new
                 {
                     resource.Id,
+                    publicId = resource.Target.Id,
                     resource.Revision,
                     body = ResourceKinds.Write(resource.Record),
                     now,

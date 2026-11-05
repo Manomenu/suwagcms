@@ -180,5 +180,104 @@
       "number",
       "digest"
     ]
+  },
+  "declaration": {
+    "type": "object",
+    "properties": {
+      "bot": {
+        "type": "string"
+      },
+      "declaresNothing": {
+        "type": "boolean"
+      },
+      "formatVersion": {
+        "type": [
+          "integer",
+          "null"
+        ]
+      },
+      "blocks": {
+        "type": "array",
+        "items": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "codeActions": {
+        "type": "array",
+        "items": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "values": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "min": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "max": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "maxLength": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            },
+            "results": {
+              "type": "array",
+              "items": {
+                "$ref": "#/properties/codeActions/items/properties/parameters/items"
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }

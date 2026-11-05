@@ -7,5 +7,6 @@ public sealed record SaveProcedure(
     string? Description,
     string? FirstStep,
     IReadOnlyDictionary<string, ProcedureStep>? Steps,
-    StallInstruction? WhenStalled
+    StallInstruction? WhenStalled,
+    IReadOnlyDictionary<string, LocalFact>? LocalFacts = null
 );

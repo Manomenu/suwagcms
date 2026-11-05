@@ -9,10 +9,11 @@ namespace Suwagcms.Cli.Bots;
 internal static class BotsCommand
 {
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
-        new("bots", "List the registered bots and register a new one.")
+        new("bots", "List the registered bots, register a new one, and ask a bot what it supports.")
         {
             CreateList(options, environment),
             CreateAdd(options, environment),
+            DeclarationCommand.Create(options, environment),
         };
 
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)

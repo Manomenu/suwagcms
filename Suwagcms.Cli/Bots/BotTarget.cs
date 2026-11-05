@@ -22,6 +22,9 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
             _ => null,
         };
 
+    // Why: a base is shown in its list, which opens no single base from the address.
+    public Uri PageAt(string kind, string id) => LinkTo(kind, id) is { } link ? new Uri(link) : PageOf("knowledge-bases");
+
     public Uri PageOf(string collection) => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/{collection}");
 
     public static async Task<(BotTarget? Target, int ExitCode)> ResolveAsync(

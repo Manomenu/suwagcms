@@ -195,7 +195,7 @@ public sealed class ProcedureRulesTests
 
         Assert.Equal(["steps.a.collect[0]", "steps.b.assign.nowhere", "steps.c.next[0].when.gone"], found.Select(mistake => mistake.Path));
         Assert.Contains(
-            "'collect' of step 'a' names fact 'customer.cty', which this bot does not have",
+            "'collect' of step 'a' in 'p' names fact 'customer.cty', which this procedure does not see",
             found[0].Message,
             StringComparison.Ordinal
         );
@@ -289,7 +289,9 @@ public sealed class ProcedureRulesTests
     [InlineData(9, 3)]
     [InlineData(50, null)]
     [InlineData(null, 0)]
-    public void A_range_no_value_of_the_fact_satisfies_is_refused(int? min, int? max)
+    [InlineData(5, 200)]
+    [InlineData(0, 5)]
+    public void A_range_with_a_bound_the_fact_cannot_take_is_refused(int? min, int? max)
     {
         var mistake = Assert.Single(
             Check(

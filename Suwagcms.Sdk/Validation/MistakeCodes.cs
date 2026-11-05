@@ -16,6 +16,12 @@ public static class MistakeCodes
     public const string FactIntRangeInverted = "fact.int.rangeInverted";
     public const string FactTextMaxLengthInvalid = "fact.text.maxLengthInvalid";
     public const string FactConstraintForeign = "fact.constraint.foreign";
+    public const string FactLocalNameClash = "fact.local.nameClash";
+    public const string FactNameProcedurePrefix = "fact.name.procedurePrefix";
+    public const string FactEnumValueInUse = "fact.enum.valueInUse";
+    public const string FactTypeInUse = "fact.type.inUse";
+    public const string FactRangeInUse = "fact.range.inUse";
+    public const string FactWritableByInUse = "fact.writableBy.inUse";
     public const string KnowledgeBaseIdInvalid = "knowledgeBase.id.invalid";
     public const string KnowledgeBaseTitleMissing = "knowledgeBase.title.missing";
     public const string KnowledgeBaseTitleRepeated = "knowledgeBase.title.repeated";
@@ -54,4 +60,14 @@ public static class MistakeCodes
     public const string VersionNumber = "version.number";
     public const string VersionDigest = "version.digest";
     public const string VersionConflict = "version.conflict";
+    public const string DeclarationInvalid = "declaration.invalid";
+    public const string DeclarationBot = "declaration.bot";
+    public const string DeclarationFormatMissing = "declaration.formatVersion.missing";
+    public const string DeclarationBlocksMissing = "declaration.blocks.missing";
+    public const string DeclarationBlockUnknown = "declaration.block.unknown";
+    public const string DeclarationFormatVersion = "declaration.formatVersion";
+    public const string DeclarationBlock = "declaration.block";
+    public const string CodeActionIdMissing = "codeAction.id.missing";
+    public const string CodeActionDescriptionMissing = "codeAction.description.missing";
+    public const string CodeActionRepeated = "codeAction.repeated";
 }

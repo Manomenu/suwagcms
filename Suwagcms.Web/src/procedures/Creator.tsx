@@ -14,13 +14,17 @@ import {
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation } from "wouter";
 
+import { renamer } from "@/api/rename";
+import { useResourceHistory } from "@/api/history";
 import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
+import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
 import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
-import { addStep, BLOCKS, connect, deleteStep, disconnect, edgesOf, stepOrder, toSave, type BlockName, type Draft } from "./draft";
+import { addStep, connect, deleteStep, disconnect, edgesOf, factsSeen, stepOrder, toSave, type BlockName, type Draft } from "./draft";
+import type { OfferedBlocks } from "./offeredBlocks";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
 import { MistakeList } from "./MistakeList";
 import { targetOf, stepsWithMistakes } from "./mistakes";
@@ -93,11 +97,13 @@ function CreatorBody({
     initial,
     facts,
     stored,
+    offered,
 }: {
     bot: string;
     id: string;
     initial: ProcedureDetail;
     facts: Fact[];
+    offered: OfferedBlocks;
     stored: Positions;
 }) {
     const [state, dispatch] = useReducer(reduce, initial, loaded);
@@ -107,12 +113,15 @@ function CreatorBody({
     const [reveal, setReveal] = useState<{ name: string; times: number } | null>(null);
     const [saving, setSaving] = useState(false);
     const [layoutFailure, setLayoutFailure] = useState<string | null>(null);
+    const [changingId, setChangingId] = useState(false);
     const [, navigate] = useLocation();
     const flow = useReactFlow();
     const { draft } = state;
     const check = useLiveCheck(bot, id, state.revision, draft);
     const usage = useUsage(bot, "procedures", id, state.revision);
+    const history = useResourceHistory(bot, "procedures", id, state.revision);
     const dirty = isDirty(state);
+    const changer = useMemo(() => renamer(bot, "procedures", id, state.revision), [bot, id, state.revision]);
     const drawn = useMemo(() => placed(draft, positions), [draft, positions]);
     // Why: a step is placed automatically once, and then stays, so drawing an edge never shuffles a graph the author is looking at.
     const fresh = Object.keys(drawn).filter((name) => !(name in positions));
@@ -225,16 +234,41 @@ function CreatorBody({
                 >
                     Arrange
                 </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={dirty}
+                    title={dirty ? "Save your changes first." : undefined}
+                    onClick={() => {
+                        setChangingId(true);
+                    }}
+                >
+                    Change id
+                </Button>
                 <Button type="button" onClick={save} disabled={saving || !dirty}>
                     Save
                 </Button>
             </header>
+            {changingId && (
+                <ChangeIdDialog
+                    noun="procedure"
+                    id={id}
+                    preview={changer.preview}
+                    apply={changer.apply}
+                    onChanged={(newId) => {
+                        navigate(`/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(newId)}`, { replace: true });
+                    }}
+                    onCancel={() => {
+                        setChangingId(false);
+                    }}
+                />
+            )}
             <Notices state={state} onReload={reload} />
             <div className="flex min-h-0 flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">
                     <aside className="flex items-center gap-2 border-b border-border px-3 py-2" aria-label="Blocks">
                         <h2 className="text-base font-semibold">Blocks</h2>
-                        {BLOCKS.map((block) => (
+                        {offered.blocks.map((block) => (
                             <Button
                                 key={block}
                                 type="button"
@@ -247,6 +281,7 @@ function CreatorBody({
                                 {block}
                             </Button>
                         ))}
+                        {offered.note !== null && <p className="text-sm text-muted-foreground">{offered.note}</p>}
                     </aside>
                     <div className="min-h-0 flex-1" aria-label="Graph">
                         <ReactFlow
@@ -300,7 +335,7 @@ function CreatorBody({
                             bot={bot}
                             name={selected}
                             draft={draft}
-                            facts={facts}
+                            facts={factsSeen(draft, facts)}
                             edit={edit}
                             onRenamed={setSelected}
                             onDeleted={() => {
@@ -309,7 +344,7 @@ function CreatorBody({
                             onLeave={leave}
                         />
                     ) : (
-                        <ProcedurePanel bot={bot} id={id} draft={draft} usage={usage} edit={edit} />
+                        <ProcedurePanel bot={bot} id={id} draft={draft} usage={usage} history={history} edit={edit} />
                     )}
                     <MistakeList
                         check={check}
@@ -334,7 +369,14 @@ function CreatorBody({
 }
 
 /** The creator of one procedure: a graph of its steps, the form of the selected one, and the live list of mistakes. */
-export function Creator(props: { bot: string; id: string; initial: ProcedureDetail; facts: Fact[]; stored: Positions }) {
+export function Creator(props: {
+    bot: string;
+    id: string;
+    initial: ProcedureDetail;
+    facts: Fact[];
+    stored: Positions;
+    offered: OfferedBlocks;
+}) {
     return (
         <ReactFlowProvider>
             <CreatorBody {...props} />

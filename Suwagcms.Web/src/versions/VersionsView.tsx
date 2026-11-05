@@ -5,7 +5,8 @@ import { Button } from "@/design/button";
 import { Page, Paper } from "@/design/page";
 import { Table } from "@/design/table";
 
-import { numberOf, type BotStatus, type PushResult, type VersionDetail, type VersionSummary } from "./api";
+import { numberOf, type BotStatus, type PushResult, type VersionComparison, type VersionDetail, type VersionSummary } from "./api";
+import { ComparisonPanel } from "./ComparisonPanel";
 import { statusView, whenOf } from "./pushStatus";
 
 /** The Resource kinds a mistake can name, and the screen that edits each; the bot as a whole (no conversation) is mended among the procedures. */
@@ -39,6 +40,9 @@ export function VersionsView({
     pushing,
     refused,
     shown,
+    comparison,
+    onCompare,
+    onCloseComparison,
     onPush,
     onCreate,
     onOpen,
@@ -51,6 +55,9 @@ export function VersionsView({
     pushing: boolean;
     refused: Mistake[] | null;
     shown: VersionDetail | null;
+    comparison: VersionComparison | null;
+    onCompare: (from: number, to: number) => void;
+    onCloseComparison: () => void;
     onPush: (number: number) => void;
     onCreate: () => void;
     onOpen: (version: VersionSummary) => void;
@@ -71,6 +78,16 @@ export function VersionsView({
                 <Paper className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
                         <p className={`flex-1 font-medium ${bots.problem ? "text-destructive" : ""}`}>{bots.headline}</p>
+                        {bots.compare && (
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    if (bots.compare) onCompare(bots.compare.from, bots.compare.to);
+                                }}
+                            >
+                                Compare v{bots.compare.from} with v{bots.compare.to}
+                            </Button>
+                        )}
                         {bots.push && (
                             <Button
                                 disabled={pushing}
@@ -158,7 +175,7 @@ export function VersionsView({
                             </tr>
                         </thead>
                         <tbody>
-                            {versions.map((version) => (
+                            {versions.map((version, index) => (
                                 <tr key={numberOf(version)}>
                                     <td className="font-medium">
                                         v{numberOf(version)} · {dateOf(version)}
@@ -172,22 +189,40 @@ export function VersionsView({
                                             {digestOf(version.sha256)}
                                         </code>
                                     </td>
-                                    <td className="text-right">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                                onOpen(version);
-                                            }}
-                                        >
-                                            Open
-                                        </Button>
+                                    <td>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {versions[index + 1] === undefined ? (
+                                                <span className="text-sm text-muted-foreground">Nothing before it</span>
+                                            ) : (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        onCompare(numberOf(versions[index + 1] ?? version), numberOf(version));
+                                                    }}
+                                                >
+                                                    Changes
+                                                </Button>
+                                            )}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    onOpen(version);
+                                                }}
+                                            >
+                                                Open
+                                            </Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </Table>
                 </Paper>
+            )}
+            {comparison !== null && (
+                <ComparisonPanel comparison={comparison} versions={versions} onCompare={onCompare} onClose={onCloseComparison} />
             )}
             {shown !== null && (
                 <Paper className="flex flex-col gap-2">

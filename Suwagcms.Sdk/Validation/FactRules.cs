@@ -7,7 +7,11 @@ internal static class FactRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        For(MistakeCodes.FactNameInvalid, Name),
+        new(
+            MistakeCodes.FactNameInvalid,
+            ValidationStage.Save,
+            definition => definition.Facts.SelectMany(Name).Concat(definition.Procedures.SelectMany(LocalNames))
+        ),
         For(MistakeCodes.FactTypeInvalid, Type),
         For(MistakeCodes.FactDescriptionMissing, Description),
         For(MistakeCodes.FactWritableByInvalid, WritableBy),
@@ -22,7 +26,26 @@ internal static class FactRules
 
     // Why: one rule per code, so a code that never fires is found by the test that every rule has a mistake.
     private static Rule For(string code, Func<GlobalFact, IEnumerable<Mistake>> check) =>
-        new(code, ValidationStage.Save, definition => definition.Facts.SelectMany(check));
+        new(code, ValidationStage.Save, definition => definition.Facts.SelectMany(check).Concat(Locals(definition, check)));
+
+    // Why: a local fact has the same rules with the same codes; only where the mistake sits differs, inside its procedure.
+    private static IEnumerable<Mistake> Locals(BotDefinition definition, Func<GlobalFact, IEnumerable<Mistake>> check) =>
+        definition.Procedures.SelectMany(procedure =>
+            procedure.Locals.SelectMany(local =>
+                check(local.Value.Named(local.Key)).Select(mistake => InProcedure(mistake, procedure, local.Key))
+            )
+        );
+
+    private static Mistake InProcedure(Mistake mistake, Procedure procedure, string name)
+    {
+        var resource = new ResourceRef(ResourceKind.Procedure, procedure.Id);
+        return mistake with
+        {
+            Resource = resource,
+            Path = $"localFacts.{name}.{mistake.Path}",
+            Related = [.. mistake.Related.Select(related => new RelatedResource(resource, $"localFacts.{name}.{related.Location}"))],
+        };
+    }
 
     private static IEnumerable<Mistake> Name(GlobalFact fact)
     {
@@ -37,6 +60,19 @@ internal static class FactRules
             );
         }
     }
+
+    private static IEnumerable<Mistake> LocalNames(Procedure procedure) =>
+        procedure
+            .Locals.Keys.Where(name => !ResourceIds.IsCamelCase(name))
+            .Select(name => new Mistake(
+                MistakeCodes.FactNameInvalid,
+                ValidationStage.Save,
+                new ResourceRef(ResourceKind.Procedure, procedure.Id),
+                $"localFacts.{name}",
+                $"'{name}' is not a local fact name: it is one camelCase word with no dots (visitDate).",
+                $"Rename the local fact to '{ResourceIds.Suggest(name)}'.",
+                []
+            ));
 
     private static IEnumerable<Mistake> Type(GlobalFact fact)
     {

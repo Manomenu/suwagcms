@@ -39,7 +39,14 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
         {
             yield break;
         }
-        yield return code == "reference.missing" ? "  Used by:" : "  Related:";
+        yield return code
+            is "reference.missing"
+                or "fact.enum.valueInUse"
+                or "fact.type.inUse"
+                or "fact.range.inUse"
+                or "fact.writableBy.inUse"
+            ? "  Used by:"
+            : "  Related:";
         foreach (var item in related.EnumerateArray())
         {
             if (
@@ -52,11 +59,27 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
             }
             var at = Text(item, "location");
             var page = link?.Invoke(kind, id);
-            yield return $"    {Noun(kind)} {id}{(at is null ? "" : $" ({at})")}{(page is null ? "" : $"  {page}")}";
+            yield return $"    {Noun(kind)} {id}{Where(at)}{(page is null ? "" : $"  {page}")}";
         }
     }
 
-    private static string Noun(string kind) =>
+    // Why: inside a procedure a place is a step and a block, which is how an author finds it; any other place is shown as the server names it.
+    private static string Where(string? location)
+    {
+        if (location is null)
+        {
+            return "";
+        }
+        var parts = location.Split('.');
+        if (parts is not ["steps", _, _, ..])
+        {
+            return $" ({location})";
+        }
+        var block = parts[2].Split('[')[0];
+        return $", step {parts[1]} ({(block == "next" ? "when" : block)})";
+    }
+
+    public static string Noun(string kind) =>
         kind switch
         {
             "GlobalFact" => "fact",

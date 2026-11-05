@@ -34,6 +34,21 @@ internal static class ResourceKinds
             ResourceKind.KnowledgeBase => "knowledge base",
             ResourceKind.Article => "article",
             ResourceKind.Procedure => "procedure",
+            ResourceKind.Definition => "definition",
+            ResourceKind.Action => throw new InvalidOperationException(
+                $"{kind} resources are not stored yet: add the kind to ResourceKinds."
+            ),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
+
+    // Why: the word a file of changes and the history use for a kind, the one a person reads.
+    public static string Word(ResourceKind kind) =>
+        kind switch
+        {
+            ResourceKind.GlobalFact => "fact",
+            ResourceKind.KnowledgeBase => "knowledgeBase",
+            ResourceKind.Article => "article",
+            ResourceKind.Procedure => "procedure",
             ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
@@ -55,6 +70,24 @@ internal static class ResourceKinds
             Procedures = [.. all.Where(item => item.Target.Kind == ResourceKind.Procedure).Select(item => (Procedure)item.Record)],
         };
     }
+
+    public static object WithId(object record, string id) =>
+        record switch
+        {
+            GlobalFact fact => fact with { Name = id },
+            KnowledgeBase knowledgeBase => knowledgeBase with { Id = id },
+            Article article => article with { Id = id },
+            Procedure procedure => procedure with { Id = id },
+            _ => throw new ArgumentException($"{record.GetType().Name} is not a stored resource."),
+        };
+
+    public static object Rewritten(object record, ResourceRef target, string newId) =>
+        record switch
+        {
+            Article article => ReferenceWalker.Rewrite(article, target, newId),
+            Procedure procedure => ReferenceWalker.Rewrite(procedure, target, newId),
+            _ => record,
+        };
 
     public static string Column(ResourceKind kind) => JsonNamingPolicy.CamelCase.ConvertName(kind.ToString());
 
