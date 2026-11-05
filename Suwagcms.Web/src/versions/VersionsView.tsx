@@ -3,7 +3,8 @@ import { Link } from "wouter";
 import type { Mistake } from "@/api/client";
 import { Button } from "@/design/button";
 
-import { numberOf, type VersionDetail, type VersionSummary } from "./api";
+import { numberOf, type BotStatus, type PushResult, type VersionDetail, type VersionSummary } from "./api";
+import { statusView, whenOf } from "./pushStatus";
 
 /** The Resource kinds a mistake can name, and the screen that edits each; the bot as a whole (no conversation) is mended among the procedures. */
 const SCREENS: Record<Mistake["resource"]["kind"], string> = {
@@ -31,21 +32,30 @@ function digestOf(sha256: string): string {
 export function VersionsView({
     bot,
     versions,
+    status,
+    pushFailure,
+    pushing,
     refused,
     shown,
+    onPush,
     onCreate,
     onOpen,
     onClose,
 }: {
     bot: string;
     versions: VersionSummary[];
+    status: BotStatus | null;
+    pushFailure: PushResult | null;
+    pushing: boolean;
     refused: Mistake[] | null;
     shown: VersionDetail | null;
+    onPush: (number: number) => void;
     onCreate: () => void;
     onOpen: (version: VersionSummary) => void;
     onClose: () => void;
 }) {
     const base = `~/bots/${encodeURIComponent(bot)}`;
+    const bots = status === null ? null : statusView(status);
     return (
         <main className="mx-auto flex max-w-2xl flex-col gap-4 p-4">
             <header className="flex items-center gap-2">
@@ -53,8 +63,69 @@ export function VersionsView({
                 <Link href={base} className="text-sm text-primary underline underline-offset-4">
                     Bots
                 </Link>
-                <Button onClick={onCreate}>Create version</Button>
+                <Button variant={bots?.push ? "outline" : "default"} onClick={onCreate}>
+                    Create version
+                </Button>
             </header>
+            {status !== null && bots !== null && (
+                <section className="flex flex-col gap-2 rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                        <p className={`flex-1 font-medium ${bots.problem ? "text-destructive" : ""}`}>{bots.headline}</p>
+                        {bots.push && (
+                            <Button
+                                disabled={pushing}
+                                onClick={() => {
+                                    if (bots.push) onPush(bots.push.number);
+                                }}
+                            >
+                                {pushing ? "Pushing…" : bots.push.label}
+                            </Button>
+                        )}
+                    </div>
+                    {bots.notes.map((note) => (
+                        <p key={note} className="text-sm text-muted-foreground">
+                            {note}
+                        </p>
+                    ))}
+                    {bots.inUse.length > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                            Still in use by conversations: {bots.inUse.map((number) => `v${number}`).join(", ")}
+                        </p>
+                    )}
+                    {pushFailure !== null && (
+                        <div role="alert" className="flex flex-col gap-1 rounded-lg border border-destructive p-3 text-sm text-destructive">
+                            <p className="font-medium">failed</p>
+                            <p>
+                                Push of v{Number(pushFailure.version)}: {pushFailure.reason}
+                            </p>
+                            <ul className="flex flex-col gap-1">
+                                {pushFailure.mistakes.map((mistake, index) => (
+                                    <li key={`${mistake.code}-${index}`}>
+                                        {mistake.message} {mistake.fix}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    {status.attempts.length > 0 && (
+                        <div className="flex flex-col gap-1 text-sm">
+                            <p className="font-medium">Recent pushes</p>
+                            <ul className="flex flex-col gap-1">
+                                {status.attempts.map((attempt) => (
+                                    <li
+                                        key={attempt.id}
+                                        className={attempt.outcome === "Failed" ? "text-destructive" : "text-muted-foreground"}
+                                    >
+                                        {whenOf(attempt.at)} · v{Number(attempt.version)} ·{" "}
+                                        {attempt.outcome === "Failed" ? "failed" : "pushed"}
+                                        {attempt.error === null ? "" : `: ${attempt.error}`}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </section>
+            )}
             {refused !== null && (
                 <div role="alert" className="flex flex-col gap-1 rounded-lg border border-destructive p-3 text-sm text-destructive">
                     <p className="font-medium">

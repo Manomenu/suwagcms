@@ -75,6 +75,30 @@ internal static class VersionStore
             );
     }
 
+    public static async Task<int?> LatestNumberAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    {
+        await using var connection = await pool.OpenAsync(cancellationToken);
+        return await connection.QuerySingleOrDefaultAsync<int?>(
+            new CommandDefinition(
+                "SELECT max(number) FROM bot_version WHERE bot_id = @bot",
+                new { bot },
+                cancellationToken: cancellationToken
+            )
+        );
+    }
+
+    public static async Task<bool> ExistsAsync(Pool pool, string bot, int number, CancellationToken cancellationToken)
+    {
+        await using var connection = await pool.OpenAsync(cancellationToken);
+        return await connection.ExecuteScalarAsync<bool>(
+            new CommandDefinition(
+                "SELECT EXISTS (SELECT 1 FROM bot_version WHERE bot_id = @bot AND number = @number)",
+                new { bot, number },
+                cancellationToken: cancellationToken
+            )
+        );
+    }
+
     // Why: the latest version's number and digest, read under the bot's lock, are all that decides the next number and whether anything changed.
     public static async Task<Latest?> LatestAsync(
         NpgsqlConnection connection,

@@ -26,3 +26,14 @@ export function createVersion(bot: string): Promise<VersionCreated> {
 export function numberOf(version: VersionSummary): number {
     return Number(version.number);
 }
+
+export type BotStatus = components["schemas"]["BotStatus"];
+export type PushResult = components["schemas"]["PushResult"];
+
+export function fetchStatus(bot: string, signal: AbortSignal): Promise<BotStatus> {
+    return request<BotStatus>(`${versionsPath(bot)}/status`, { signal });
+}
+
+export function pushVersion(bot: string, number: number): Promise<PushResult> {
+    return request<PushResult>(`${versionsPath(bot)}/${number}/push`, { method: "POST" });
+}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-version-push.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-version-push.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Pushing a version</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 30 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>version-create</code>, <code>bot-runtime-sdk</code></span>
@@ -383,7 +383,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>16</b><span>criteria</span></div>
     <div><b>2</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
   </div>
 </section>
 
@@ -504,6 +503,10 @@ stateDiagram-v2
     <li>A push makes no attempt of its own to retry: repeating is safe and simple, and a quiet retry would hide a sick bot.</li>
     <li>No save waits for a push, because a slow bot must never queue up edits of its own definition.</li>
     <li>The bot's routes have no key in the first cut (owner's decision), so the request carries none.</li>
+    <li>A push waits 30 seconds for a bot, a server setting (accepted assumption: long enough for a bot to validate a whole version; a repeat is safe if a slow bot was still working). Asking a bot for its state waits 5 seconds, because a person waits on the page.</li>
+    <li>A push counts as done only when the bot's answer names that version as current: a 200 alone proves nothing, since sending a document the bot already holds changes nothing. A version the bot holds that is not current is not made current by a push; that is version-rollback's route.</li>
+    <li>Only the latest version can be pushed: the route takes the number, but any other number is refused until version-rollback exists.</li>
+    <li>Neither a lock nor a transaction is held while the bot is called: the CMS reads what it needs, lets go, calls the bot, and then records the attempt.</li>
   </ul>
 </section>
 
@@ -545,17 +548,6 @@ stateDiagram-v2
   <div class="callout warn"><p><b>Old versions can pile up in a bot.</b> The page lists the versions still in use, so this shows; ending an abandoned conversation stays the bot's decision.</p></div>
 </section>
 
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>How long does a push wait for a bot?</legend>
-      <p class="why">A bot validates a whole version before it answers, and a large knowledge base takes time, while a person is waiting on the page. No source gives a number. This spec assumes the recommended one.</p>
-      <label data-recommended><input type="radio" value="30"><span><b>30 seconds, as a server setting</b><small>long enough for validation; a repeat is safe if a slow bot really was still working</small></span></label>
-      <label><input type="radio" value="120"><span><b>2 minutes</b><small>fewer false failures on huge bots, but a longer wait on a bot that is really down</small></span></label>
-    </fieldset>
-  </form>
-</section>
 <!-- CONTENT END -->
 </main>
 </div>

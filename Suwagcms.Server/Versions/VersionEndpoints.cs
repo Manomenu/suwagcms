@@ -22,6 +22,38 @@ internal static class VersionEndpoints
             .Produces<VersionCreated>(StatusCodes.Status201Created)
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+        routes.MapGet("/bots/{bot}/versions/status", Status).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes
+            .MapPost("/bots/{bot}/versions/{number:int}/push", Push)
+            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
+            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+    }
+
+    private static async Task<Results<Ok<BotStatus>, ProblemHttpResult>> Status(
+        string bot,
+        BotStatusReader reader,
+        CancellationToken cancellationToken
+    ) =>
+        await reader.ReadAsync(bot, cancellationToken) is { } status
+            ? TypedResults.Ok(status)
+            : EditProblems.For(new EditResult.UnknownBot(), bot, "The bot's state was not read.");
+
+    private static async Task<Results<Ok<PushResult>, ProblemHttpResult>> Push(
+        string bot,
+        int number,
+        VersionPusher pusher,
+        CancellationToken cancellationToken
+    )
+    {
+        var (result, rejected) = await pusher.PushAsync(bot, number, cancellationToken);
+        return result is not null
+            ? TypedResults.Ok(result)
+            : TypedResults.Problem(
+                title: "The version was not pushed.",
+                detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
+                statusCode: rejected?.Status ?? throw new InvalidOperationException("a push gave neither a result nor a refusal"),
+                extensions: new Dictionary<string, object?> { ["mistakes"] = new[] { rejected.Mistake } }
+            );
     }
 
     private static async Task<Results<Ok<List<VersionSummary>>, ProblemHttpResult>> List(
@@ -76,7 +108,7 @@ internal static class VersionEndpoints
             : TypedResults.Created($"/api/bots/{Uri.EscapeDataString(bot)}/versions/{created.Version.Number}", created);
     }
 
-    private static Mistake NoSuchVersion(string bot, int number) =>
+    internal static Mistake NoSuchVersion(string bot, int number) =>
         new(
             Missing,
             ValidationStage.Save,

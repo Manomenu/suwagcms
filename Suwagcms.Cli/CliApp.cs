@@ -35,6 +35,7 @@ internal static class CliApp
             KnowledgeBasesCommand.Create(options, environment),
             ProceduresCommand.Create(options, environment),
             VersionsCommand.Create(options, environment),
+            PushCommand.Create(options, environment),
         };
         options.AddTo(root);
         return root;
