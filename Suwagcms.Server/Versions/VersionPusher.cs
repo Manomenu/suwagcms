@@ -23,7 +23,13 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
         }
         if (await VersionStore.FindAsync(pool, bot, number, cancellationToken) is not { } version)
         {
-            return (null, new Rejected(StatusCodes.Status404NotFound, VersionEndpoints.NoSuchVersion(bot, number)));
+            return (
+                null,
+                new Rejected(
+                    StatusCodes.Status404NotFound,
+                    VersionEndpoints.NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(pool, bot, cancellationToken))
+                )
+            );
         }
         var latest = await VersionStore.LatestNumberAsync(pool, bot, cancellationToken);
         if (latest != number)

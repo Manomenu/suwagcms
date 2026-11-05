@@ -1401,6 +1401,65 @@
         }
       }
     },
+    "/api/bots/{bot}/versions/{from}/diff/{to}": {
+      "get": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionComparison"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/versions/status": {
       "get": {
         "tags": [
@@ -2043,6 +2102,14 @@
         ],
         "description": "What the CMS holds of a bot's declaration: no good answer yet, the answer that the bot declares nothing, or a declaration."
       },
+      "Difference": {
+        "enum": [
+          "Added",
+          "Removed",
+          "Changed"
+        ],
+        "description": "What happened to a resource, or to a part of one, going from one version to another."
+      },
       "Fact": {
         "required": [
           "name",
@@ -2123,6 +2190,42 @@
         },
         "description": "A global fact of a bot as the API shows it: the format's fields, the revision to send back to guard an edit, and the procedures that use it."
       },
+      "FieldDifference": {
+        "required": [
+          "field",
+          "old",
+          "new",
+          "lines"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "old": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "new": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lines": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TextLine"
+            }
+          }
+        },
+        "description": "A changed field: its old and new values (null when it had none), or for a long text its lines removed and added, with a few around them."
+      },
       "HealthStatus": {
         "required": [
           "status"
@@ -2163,6 +2266,15 @@
           }
         },
         "description": "A knowledge base of a bot as the API shows it: its id, title and language, and the revision to send back to guard an edit."
+      },
+      "LineChange": {
+        "enum": [
+          "Kept",
+          "Removed",
+          "Added",
+          "Folded"
+        ],
+        "description": "What a line of a long text is in a comparison: around a change, gone, new, or standing for unchanged lines left out."
       },
       "ListenArguments": {
         "type": "object"
@@ -2231,6 +2343,33 @@
           }
         },
         "description": "The top left corner of a step in the creator, in pixels of its canvas."
+      },
+      "PartDifference": {
+        "required": [
+          "part",
+          "name",
+          "difference",
+          "fields"
+        ],
+        "type": "object",
+        "properties": {
+          "part": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "difference": {
+            "$ref": "#/components/schemas/Difference"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          }
+        },
+        "description": "A part of a procedure that differs: a step or a local fact, by name, with what changed in it."
       },
       "ProcedureDetail": {
         "required": [
@@ -2566,6 +2705,40 @@
           }
         }
       },
+      "ResourceDifference": {
+        "required": [
+          "kind",
+          "id",
+          "difference",
+          "fields",
+          "parts"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "difference": {
+            "$ref": "#/components/schemas/Difference"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartDifference"
+            }
+          }
+        },
+        "description": "A resource that differs between two versions, by kind and id; only a changed one lists fields and parts."
+      },
       "ResourceKind": {
         "enum": [
           "Definition",
@@ -2776,6 +2949,22 @@
           }
         }
       },
+      "TextLine": {
+        "required": [
+          "change",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "change": {
+            "$ref": "#/components/schemas/LineChange"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "description": "One line of a compared text; a folded one says how many unchanged lines it stands for."
+      },
       "UsageLink": {
         "required": [
           "kind",
@@ -2861,6 +3050,77 @@
           "Save",
           "Version"
         ]
+      },
+      "VersionComparison": {
+        "required": [
+          "bot",
+          "from",
+          "to",
+          "added",
+          "removed",
+          "changed",
+          "definition",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "from": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "to": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "added": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "removed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "changed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "definition": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceDifference"
+            }
+          }
+        },
+        "description": "What going from one version of a bot to another changes, in a fixed order: by kind, then by id. `Definition` lists what differs outside the resources, such as the format version; numbers and digests are not differences."
       },
       "VersionCreated": {
         "required": [

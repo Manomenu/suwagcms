@@ -382,8 +382,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>2</b><span>languages</span></div>
-    <div><b>14</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>15</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -485,6 +485,7 @@ error: Unrecognized command or argument '--language'.</div>
     <li><code>AC-knowledge-base-language-12</code> The article form shows the language of the chosen base as read-only text beside the base selector, follows the selector, and its tooltip says the language comes from the base.</li>
     <li><code>AC-knowledge-base-language-13</code> The plugin's main skill mentions <code>--language</code> on the lines for adding and editing knowledge bases and for listing articles.</li>
     <li><code>AC-knowledge-base-language-14</code> A version document holds the language on each of its <code>knowledgeBases</code> and none on its <code>articles</code>.</li>
+    <li><code>AC-knowledge-base-language-16</code> A comparison of versions shows a change of a knowledge base's language.</li>
   </ul>
 </section>
 
@@ -492,7 +493,6 @@ error: Unrecognized command or argument '--language'.</div>
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>version-diff</code>:</b> a comparison of versions shows a change of a knowledge base's language.</li>
     <li><b>after <code>batch-apply</code>:</b> a file of changes can set the language of a knowledge base, and <code>en</code> applies without it.</li>
   </ul>
 </section>

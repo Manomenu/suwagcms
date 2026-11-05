@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Comparing versions</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 27 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>version-create</code></span>
@@ -380,9 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It only reads. It answers “what will this version change for customers?” before a push and “what did that version change?” after a bad one, and it is what lets a person or an agent decide on a rollback with facts.</p>
   </div>
   <div class="stats">
-    <div><b>12</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>13</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -472,6 +471,10 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
   <ul>
     <li>Finding differences exits 0, unlike <code>git diff --exit-code</code>: the CLI's exit 1 means a refusal everywhere, and a script reads <code>--json</code> for the result.</li>
     <li>A comparison is computed from the two documents and never reads the working state or asks the bot, so it answers the same for ever: versions never change.</li>
+    <li>A comparison takes versions only, as README says: a version is cheap to create when someone wants to compare, and the working state may not form a whole version.</li>
+    <li>Resources are listed by kind, then by id, whatever their change: the fixed order lets a script compare two answers.</li>
+    <li>Two long texts whose changed parts are too long to align (more than 4 million pairs of lines) read as all those lines removed and added, which is still true, so a request never holds that much memory.</li>
+    <li>A field the format gains later shows as a difference with no change to the comparison, since it reads the two documents as data.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -489,6 +492,7 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
     <li><code>AC-version-diff-10</code> On the Versions screen, each version offers its changes against the one before it and a select of other versions to compare with; the first version offers neither.</li>
     <li><code>AC-version-diff-11</code> <code>suwagcms diff --json</code> returns the same changes in a fixed order, so the same two versions always give the same output; <code>--open</code> opens the matching web comparison.</li>
     <li><code>AC-version-diff-12</code> <code>suwagcms diff</code> has its line in the plugin's main skill.</li>
+    <li><code>AC-version-diff-13</code> The bot's page offers a comparison between the version the bot reports and the one on offer, and the plugin's skill for versions shows that comparison before an agent pushes.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
@@ -496,24 +500,12 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>http-actions</code>:</b> a comparison covers actions: their contract and implementation, with secrets only as the references the version holds.</li>
-    <li><b>after <code>version-push</code>:</b> the bot's page offers a comparison between the version the bot reports and the one on offer, and the plugin's skill for versions shows that comparison before an agent pushes.</li>
     <li><b>after <code>resource-rename</code>:</b> a renamed resource is listed as removed under its old <code>id</code> and added under its new one, because a version holds only the <code>id</code>.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout warn"><p>A comparison of two versions of a large knowledge base reads both whole documents. Nobody has measured it; a request reads only frozen data and takes no hold on the bot's saves, so being slow delays only the person asking.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should a comparison also take the working state, to preview the next version?</legend>
-      <p class="why">An author would like to see what “Create version” will freeze. README says <code>diff</code> compares two versions, and an unfinished working state needs other rules, because it may not form a whole version. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="versions"><span><b>Versions only, for now</b><small>as README says; a version is cheap to create when someone needs to compare</small></span></label>
-      <label><input type="radio" value="working"><span><b>Also the working state</b><small>a useful preview, but a second kind of input and an answer that changes under the reader</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

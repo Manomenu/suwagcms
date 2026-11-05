@@ -480,7 +480,7 @@ flowchart LR
   <ul class="checks">
     <li><code>AC-version-create-1</code> With a working state that passes the <code>Version</code> stage, <code>suwagcms versions create</code> and the web's “Create version” each create a version with the next number and show it in the list.</li>
     <li><code>AC-version-create-2</code> With a working state that fails, every mistake is listed, with links to the resources on the web, the CLI exits 1, and no version or number is used up.</li>
-    <li><code>AC-version-create-3</code> A version's document holds <code>formatVersion</code>, the bot's id, its number, and all the bot's facts, knowledge bases, articles and procedures as they were saved.</li>
+    <li><code>AC-version-create-3</code> A version's document holds <code>formatVersion</code>, the bot's id, its number, and all the bot's facts, knowledge bases, articles and procedures as they were saved, except that the label of a link to an article holds that article's title at that moment.</li>
     <li><code>AC-version-create-4</code> A version's document, fed to the validator alone at the <code>Version</code> stage, returns no mistakes.</li>
     <li><code>AC-version-create-5</code> Edits to the working state after a version leave that version's document byte-identical, and its stored <code>sha256</code> matches it.</li>
     <li><code>AC-version-create-6</code> No route of the API changes or deletes a version, and a guard fails when one appears.</li>

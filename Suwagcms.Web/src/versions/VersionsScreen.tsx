@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
 import { Alert } from "@/design/alert";
 
 import {
     createVersion,
+    fetchComparison,
     fetchStatus,
     fetchVersion,
     fetchVersions,
@@ -12,6 +14,7 @@ import {
     pushVersion,
     type BotStatus,
     type PushResult,
+    type VersionComparison,
     type VersionDetail,
     type VersionSummary,
 } from "./api";
@@ -26,6 +29,22 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const [status, setStatus] = useState<BotStatus | null>(null);
     const [pushing, setPushing] = useState(false);
     const [pushFailure, setPushFailure] = useState<PushResult | null>(null);
+    const [comparison, setComparison] = useState<VersionComparison | null>(null);
+    const [params] = useSearchParams();
+    const [location, navigate] = useLocation();
+    const fromParam = params.get("from");
+    const toParam = params.get("to");
+
+    const compare = useCallback(
+        (from: number, to: number) => {
+            fetchComparison(bot, from, to)
+                .then(setComparison)
+                .catch((error: unknown) => {
+                    setFailure(error instanceof Error ? error.message : String(error));
+                });
+        },
+        [bot],
+    );
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -50,6 +69,13 @@ export function VersionsScreen({ bot }: { bot: string }) {
         };
     }, [load]);
 
+    // Why: `suwagcms diff --open` arrives as ?from=<n>&to=<n>; it is taken once and dropped from the address.
+    useEffect(() => {
+        if (fromParam === null || toParam === null) return;
+        navigate(location, { replace: true });
+        compare(Number(fromParam), Number(toParam));
+    }, [fromParam, toParam, location, navigate, compare]);
+
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
@@ -64,6 +90,11 @@ export function VersionsScreen({ bot }: { bot: string }) {
             pushing={pushing}
             refused={refused}
             shown={shown}
+            comparison={comparison}
+            onCompare={compare}
+            onCloseComparison={() => {
+                setComparison(null);
+            }}
             onPush={(number) => {
                 setPushing(true);
                 setPushFailure(null);

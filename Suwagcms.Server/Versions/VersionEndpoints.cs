@@ -22,11 +22,46 @@ internal static class VersionEndpoints
             .Produces<VersionCreated>(StatusCodes.Status201Created)
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+        routes.MapGet("/bots/{bot}/versions/{from:int}/diff/{to:int}", Diff).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
         routes.MapGet("/bots/{bot}/versions/status", Status).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
         routes
             .MapPost("/bots/{bot}/versions/{number:int}/push", Push)
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+    }
+
+    // Why: it reads two frozen documents and neither the working state nor the bot, so the answer is the same for ever.
+    private static async Task<Results<Ok<VersionComparison>, ProblemHttpResult>> Diff(
+        string bot,
+        int from,
+        int to,
+        Pool pool,
+        CancellationToken cancellationToken
+    )
+    {
+        var before = await VersionStore.FindAsync(pool, bot, from, cancellationToken);
+        var after = await VersionStore.FindAsync(pool, bot, to, cancellationToken);
+        if (before is not null && after is not null)
+        {
+            return TypedResults.Ok(VersionComparer.Compare(bot, from, to, before.Document, after.Document));
+        }
+        if (await VersionStore.ListAsync(pool, bot, cancellationToken) is null)
+        {
+            return EditProblems.For(new EditResult.UnknownBot(), bot, "The versions were not compared.");
+        }
+        var latest = await VersionStore.LatestNumberAsync(pool, bot, cancellationToken);
+        var missing = new (int Number, VersionDetail? Found)[] { (from, before), (to, after) }
+            .Where(side => side.Found is null)
+            .Select(side => side.Number)
+            .Distinct()
+            .Select(number => NoSuchVersion(bot, number, latest))
+            .ToList();
+        return TypedResults.Problem(
+            title: "The versions were not compared.",
+            detail: $"{missing.Count} mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
+            statusCode: StatusCodes.Status404NotFound,
+            extensions: new Dictionary<string, object?> { ["mistakes"] = missing }
+        );
     }
 
     private static async Task<Results<Ok<BotStatus>, ProblemHttpResult>> Status(
@@ -83,7 +118,10 @@ internal static class VersionEndpoints
                 title: "The version was not shown.",
                 detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
                 statusCode: StatusCodes.Status404NotFound,
-                extensions: new Dictionary<string, object?> { ["mistakes"] = new[] { NoSuchVersion(bot, number) } }
+                extensions: new Dictionary<string, object?>
+                {
+                    ["mistakes"] = new[] { NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(pool, bot, cancellationToken)) },
+                }
             );
     }
 
@@ -108,13 +146,15 @@ internal static class VersionEndpoints
             : TypedResults.Created($"/api/bots/{Uri.EscapeDataString(bot)}/versions/{created.Version.Number}", created);
     }
 
-    internal static Mistake NoSuchVersion(string bot, int number) =>
+    internal static Mistake NoSuchVersion(string bot, int number, int? latest) =>
         new(
             Missing,
             ValidationStage.Save,
             new ResourceRef(ResourceKind.Definition, bot),
             "number",
-            $"Bot '{bot}' has no version {number}.",
+            latest is { } last
+                ? $"Bot '{bot}' has no version {number}; its latest is {last}."
+                : $"Bot '{bot}' has no version {number}, and no version yet.",
             "List the bot's versions to see the numbers that exist.",
             []
         );

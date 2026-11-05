@@ -27,6 +27,33 @@ internal static partial class CmsLinks
         }
     }
 
+    // Why: a title holding a closing bracket or a line break cannot be a Markdown label, so that link keeps the label it has and stays a link.
+    public static string Relabel(string markdown, IReadOnlyDictionary<string, string> titles)
+    {
+        if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
+        {
+            return markdown;
+        }
+        var result = new StringBuilder();
+        var copied = 0;
+        foreach (Match match in LinkPattern().Matches(WithoutCode(markdown)))
+        {
+            var label = match.Groups["label"];
+            var link = Classify(label.Value, match.Groups["target"].Value);
+            if (
+                link.Form == CmsLinkForm.Article
+                && titles.TryGetValue(link.Id, out var title)
+                && !title.Contains(']')
+                && !title.Contains('\n')
+            )
+            {
+                result.Append(markdown, copied, label.Index - copied).Append(title);
+                copied = label.Index + label.Length;
+            }
+        }
+        return result.Append(markdown, copied, markdown.Length - copied).ToString();
+    }
+
     private static CmsLink Classify(string label, string target)
     {
         if (target.StartsWith(ProcedurePrefix, StringComparison.Ordinal))
@@ -44,7 +71,7 @@ internal static partial class CmsLinks
         return new CmsLink(label, target, CmsLinkForm.Malformed, string.Empty);
     }
 
-    // Why: a fenced block and a code span are text in Markdown, so they are blanked before links are looked for; line breaks stay so the lines still match.
+    // Why: a fenced block and a code span are text in Markdown, so they are blanked before links are looked for; every character keeps its place, so a link found here is at the same place in the text.
     private static string WithoutCode(string markdown)
     {
         var kept = new List<string>();
@@ -63,10 +90,10 @@ internal static partial class CmsLinks
                 {
                     fence = body[0];
                     fenceLength = run;
-                    kept.Add(string.Empty);
+                    kept.Add(new string(' ', raw.Length));
                     continue;
                 }
-                kept.Add(line);
+                kept.Add(raw);
             }
             else
             {
@@ -74,7 +101,7 @@ internal static partial class CmsLinks
                 {
                     fence = '\0';
                 }
-                kept.Add(string.Empty);
+                kept.Add(new string(' ', raw.Length));
             }
         }
         return BlankSpans(string.Join('\n', kept));

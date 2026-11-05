@@ -74,6 +74,10 @@ public sealed class CommandListTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-version-diff-12")]
+    public void The_main_skill_has_a_line_for_diff() => Assert.Contains("diff", CommandList.Listed(MainSkill()));
+
+    [Fact]
     public void The_main_skill_lists_at_least_the_commands_the_cli_has_today()
     {
         Assert.Contains("status", CommandList.Listed(MainSkill()));

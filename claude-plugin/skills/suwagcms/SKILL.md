@@ -107,11 +107,17 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms versions show <number>` - show one version with its document exactly as stored; `--json` gives it with its digest.
 - `suwagcms versions status` - ask the bot which version it has, as the bot answers and never as the CMS last sent it: the latest version, the versions conversations still use, and the recent pushes with their reasons. An unreachable bot shows its last reported version and when; an address that answers as another bot names it.
 - `suwagcms push` - push the latest version to the bot, which then reports the version it holds (`--json` gives the result, the reason and that version). It asks for no confirmation: validation by the bot and rollback are the safeguards, so push when the work calls for it. Exit code `0` when the bot holds the version, also when it already had it (nothing is sent); `1` with the reason when the version does not exist, the bot cannot be reached or does not answer within 30 seconds, or the bot refuses it with every mistake. A repeated push is safe. Only the latest version can be pushed.
+- `suwagcms diff <from> <to>` - say what going from one version to another changes: each resource added, removed or changed, and in a changed one its fields with old and new values, `content` and `llmGuide` as lines removed and added, and a procedure's steps and local facts. It reads two frozen versions only, never the working state or the bot. Exit code `0` also when differences are found; `1` for a number the bot does not have. `--json` gives the same in a fixed order; `--open` opens the comparison in the web app.
 - `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
 
 `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
+
+## Before a push
+
+Show what a push will change first: `suwagcms versions status` gives the version the bot has and the latest, and
+`suwagcms diff <has> <latest>` compares them. Say what it changes for customers, then push.
 
 ## Procedure file
 

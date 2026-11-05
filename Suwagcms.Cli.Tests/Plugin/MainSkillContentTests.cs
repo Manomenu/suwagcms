@@ -16,6 +16,7 @@ public sealed class MainSkillContentTests
             ["cms://article/<id>", "articles list --text", "reference.missing", "reference.malformed", "reference.loop"]
         ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
+        ("to compare before pushing", "Before a push", ["suwagcms versions status", "suwagcms diff <has> <latest>"]),
     ];
 
     private static string MainSkill() =>
@@ -44,6 +45,11 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-article-links-12")]
     public void The_main_skill_gives_the_link_form_and_how_to_find_a_target() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("how to link an article", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-version-diff-13")]
+    public void The_main_skill_shows_the_comparison_of_what_the_bot_has_with_the_latest_before_a_push() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("to compare before pushing", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-5")]
