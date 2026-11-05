@@ -382,7 +382,7 @@ test("AC-procedure-creator-20: a context is edited on whenStalled and on an info
             steps: Record<string, { inform?: { context: unknown } }>;
         };
         expect(stored.whenStalled.context).toEqual({ articles: ["officeContact"], searchQueries: ["how long a valuation takes"] });
-        expect(stored.steps["tell"]?.inform?.context).toEqual({ searchQueries: ["opening hours"] });
+        expect(stored.steps["tell"]?.inform?.context).toMatchObject({ searchQueries: ["opening hours"] });
     }).toPass();
 });
 

@@ -24,6 +24,15 @@ public static class ReferenceWalker
                 yield return new Reference(from, path, new ResourceRef(ResourceKind.Article, link.Id), null);
             }
         }
+        // Why: only the guide may hold a link to a procedure, and conversation is refused by a rule of its own, so neither is an edge that a loop or a missing-target rule should also report.
+        foreach (
+            var link in CmsLinks
+                .In(article.LlmGuide)
+                .Where(link => link.Form == CmsLinkForm.Procedure && link.Id != Procedure.ConversationId)
+        )
+        {
+            yield return new Reference(from, "llmGuide", new ResourceRef(ResourceKind.Procedure, link.Id), null);
+        }
     }
 
     // Why: a local fact is contained in its procedure, so a use of one is no reference to another resource and is invisible outside.
@@ -73,12 +82,16 @@ public static class ReferenceWalker
         {
             return article with { KnowledgeBase = newId };
         }
+        if (target.Kind == ResourceKind.Procedure)
+        {
+            return article with { LlmGuide = CmsLinks.Rewrite(article.LlmGuide, CmsLinks.ProcedurePrefix, target.Id, newId) };
+        }
         return target.Kind != ResourceKind.Article
             ? article
             : article with
             {
-                Content = CmsLinks.Rewrite(article.Content, target.Id, newId),
-                LlmGuide = CmsLinks.Rewrite(article.LlmGuide, target.Id, newId),
+                Content = CmsLinks.Rewrite(article.Content, CmsLinks.ArticlePrefix, target.Id, newId),
+                LlmGuide = CmsLinks.Rewrite(article.LlmGuide, CmsLinks.ArticlePrefix, target.Id, newId),
             };
     }
 

@@ -28,7 +28,7 @@ const CompactTable = Table.extend({
 export interface EditorLinks {
     targets: () => LinkTarget[];
     selfId: () => string;
-    onOpen: (id: string) => void;
+    onOpen: (id: string, kind: "article" | "procedure") => void;
 }
 
 /** What the editor knows: Markdown in and out, the tables the articles use, and the chip that links an article. */
@@ -41,7 +41,7 @@ export function extensionsOf(links: EditorLinks): Extensions {
         TableHeader,
         TableCell,
         ArticleLink.configure({
-            titleOf: (id) => links.targets().find((target) => target.id === id)?.title,
+            titleOf: (id) => links.targets().find((target) => target.id === id && target.kind !== "procedure")?.title,
             deleteTriggerWithBackspace: true,
             onOpen: links.onOpen,
             suggestion: pickerOf(links.targets, links.selfId),

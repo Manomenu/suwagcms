@@ -30,7 +30,6 @@ export interface Instruction {
 }
 
 export interface Inform extends Instruction {
-    /** Name to what the customer must hear, in the order written. */
     points?: Record<string, string>;
 }
 
@@ -472,7 +471,7 @@ export function addPoint(points: Record<string, string>): Record<string, string>
     return { ...points, [freePointName(points)]: "" };
 }
 
-/** Keeps the point in its place. A name another point already has is not taken, because the map could not hold both. */
+// Why: a name another point already has is not taken, because the map could not hold both.
 export function renamePoint(points: Record<string, string>, name: string, newName: string): Record<string, string> {
     if (newName in points) return points;
     return Object.fromEntries(Object.entries(points).map(([key, text]) => [key === name ? newName : key, text]));

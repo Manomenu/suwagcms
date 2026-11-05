@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LinkTarget } from "./articleLink";
-import { matching } from "./articlePicker";
+import { linkTargets, matching, targetsFor } from "./articlePicker";
 
 const targets: LinkTarget[] = [
     { id: "cennik", title: "Price list", knowledgeBase: "offer" },
@@ -22,5 +22,34 @@ describe("the articles the picker offers", () => {
 
     it("AC-article-links-2: it leaves out the article being edited", () => {
         expect(matching(targets, "", "wycena").map((target) => target.id)).toEqual(["cennik", "priceRules"]);
+    });
+});
+
+describe("the procedures the picker offers", () => {
+    const all = linkTargets(
+        [{ id: "cennik", title: "Price list", knowledgeBase: "offer" }],
+        [
+            { id: "conversation", description: "The base" },
+            { id: "orderValuation", description: "The customer orders a valuation" },
+            { id: "cennik", description: "A procedure named like an article" },
+        ],
+    );
+
+    it("AC-article-procedure-links-2: the guide lists articles and procedures marked by kind, and leaves out conversation", () => {
+        expect(targetsFor("llmGuide", all).map((target) => [target.kind ?? "article", target.id])).toEqual([
+            ["article", "cennik"],
+            ["procedure", "orderValuation"],
+            ["procedure", "cennik"],
+        ]);
+    });
+
+    it("AC-article-procedure-links-2: content lists no procedure", () => {
+        expect(targetsFor("content", all).map((target) => target.id)).toEqual(["cennik"]);
+    });
+
+    it("AC-article-procedure-links-2: it narrows by a procedure's id or description, and the article being edited does not hide a procedure", () => {
+        expect(matching(all, "ORDER", "other").map((target) => target.id)).toEqual(["orderValuation"]);
+        expect(matching(all, "customer orders", "other").map((target) => target.id)).toEqual(["orderValuation"]);
+        expect(matching(all, "named like", "cennik").map((target) => [target.kind, target.id])).toEqual([["procedure", "cennik"]]);
     });
 });

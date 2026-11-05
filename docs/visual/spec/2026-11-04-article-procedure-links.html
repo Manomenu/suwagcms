@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Links to procedures</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 21 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>article-links</code>, <code>procedure-model</code></span>
@@ -380,9 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Only the guide may hold such a link. In <code>content</code>, which is for the customer, it is refused, as is a link to a procedure this bot does not have, or to <code>conversation</code>.</p>
   </div>
   <div class="stats">
-    <div><b>11</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>12</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -443,7 +441,7 @@ orderValuation  The customer orders a valuation of a property
     <tr><th>Situation</th><th>Result</th></tr>
     <tr><td>a procedure this bot does not have, including one only another bot has</td><td>refused with <code>reference.missing</code>; the same in the validator offline</td></tr>
     <tr><td>a malformed target, such as <code>cms://procedure/</code></td><td>refused with a mistake giving the right form</td></tr>
-    <tr><td>the target <code>conversation</code></td><td>refused: it cannot be started (see Open questions)</td></tr>
+    <tr><td>the target <code>conversation</code></td><td>refused: it cannot be started</td></tr>
     <tr><td>a procedure with <code>Version</code> mistakes</td><td>allowed: the working state may be unfinished</td></tr>
     <tr><td>several bad links in one save</td><td>all reported at once</td></tr>
     <tr><td>one guide linking to a procedure and to articles</td><td>allowed</td></tr>
@@ -467,6 +465,7 @@ orderValuation  The customer orders a valuation of a property
   <ul>
     <li>The chip shows the <code>id</code> rather than the stored label: a procedure has no title that a chip could show instead, and it stays right after a change of <code>id</code>.</li>
     <li>The label of a link to a procedure stays as written, including in a version: only the model reads a guide, so no customer can meet an old name, and the rule that fills in current titles has no title to use here.</li>
+    <li>A guide cannot link to <code>conversation</code>: the base of every conversation is already running, so such a link can only mislead the model. It is refused with <code>link.procedure.conversation</code>, and the picker leaves it out.</li>
     <li>The article's link form is reused unchanged, so a bot that does nothing special still gets readable text, and an agent has one form to learn.</li>
   </ul>
 </section>
@@ -484,29 +483,12 @@ orderValuation  The customer orders a valuation of a property
     <li><code>AC-article-procedure-links-9</code> An article whose guide links to a procedure, opened in the web and saved, keeps the link and all its Markdown: the stored text is the same as before, and a link written through the CLI shows as a chip.</li>
     <li><code>AC-article-procedure-links-10</code> Clicking a chip's link opens the procedure, and removing a chip removes the link from the saved text.</li>
     <li><code>AC-article-procedure-links-11</code> The plugin's main skill gives the link form, says it belongs only in <code>llmGuide</code>, and says how to find a target.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>version-create</code>:</b> in a version, a link to a procedure is exactly as stored, with its label as written, and only links to articles get the current title.</li>
+    <li><code>AC-article-procedure-links-12</code> In a version, a link to a procedure is exactly as stored, with its label as written, and only links to articles get the current title.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout assumption"><p>Reading a link in a guide as “the model may start this procedure” is left to the bot, through what it hands to the model. README says only that availability stops it, even from a guide. The CMS delivers the text with the link as it stands.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Can a guide link to <code>conversation</code>?</legend>
-      <p class="why">README says <code>conversation</code> cannot be the target of <code>start</code>, but does not mention links. Suwchatbot treats an attempt to start it as a failure, and a link in a guide exists to start something. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="refuse"><span><b>No: refused, and the picker leaves it out</b><small>the base of every conversation is already running, so such a link can only mislead the model</small></span></label>
-      <label><input type="radio" value="allow"><span><b>Yes: any procedure of this bot</b><small>one rule fewer, with the failure left for a bot to find in a customer's turn</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

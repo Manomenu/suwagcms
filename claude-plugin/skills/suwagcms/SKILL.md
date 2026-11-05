@@ -75,8 +75,17 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 
 - Find the id with `suwagcms articles list --text <part of the title or id>`; the id is the first column.
 - Write the link as text in `--content` or `--guide` (or their files) of `articles add` or `articles edit`; no other command is needed.
-- A link to an article the bot does not have is refused with `reference.missing`, naming the field and the id; a malformed `cms://` target, or `cms://procedure/…`, is refused with `reference.malformed`; a link that closes a loop of articles, or an article linking to itself, is refused with `reference.loop` and the path, such as `pricing → discounts → pricing`: remove one link on it. `--dry-run` shows it without saving.
+- A link to an article the bot does not have is refused with `reference.missing`, naming the field and the id; a malformed `cms://` target is refused with `reference.malformed`; a link that closes a loop of articles, or an article linking to itself, is refused with `reference.loop` and the path, such as `pricing → discounts → pricing`: remove one link on it. `--dry-run` shows it without saving.
 - Text that only names an article stays plain text and is not protected. A `cms://` address inside a code span or code block, or an ordinary web link, is not a link to an article.
+
+## Link to a procedure
+
+In the `llmGuide` of an article, and only there, a link to a procedure is an ordinary Markdown link whose target is `cms://procedure/<id>`, for
+example `If the customer wants a valuation, start [the valuation](cms://procedure/orderValuation).` The web shows it as a chip with the id.
+
+- Find the id with `suwagcms procedures list`, and write the link as text in `--guide` (or its file) of `articles add` or `articles edit`.
+- In `content`, which a customer reads, it is refused with `link.procedure.notInGuide`; a procedure the bot does not have with `reference.missing`; `conversation` with `link.procedure.conversation`.
+- The link protects the procedure from being deleted, follows a change of its id, and a loop through it is refused (`reference.loop`).
 
 ## Commands
 

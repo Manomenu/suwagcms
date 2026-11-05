@@ -381,8 +381,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>So the references of a bot never form a loop, there is always a resource nobody refers to, and with the delete guard everything can still be removed in some order.</p>
   </div>
   <div class="stats">
-    <div><b>13</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>15</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -466,6 +466,8 @@ Refused, 1 mistake:
     <li><code>AC-loop-guard-11</code> <code>--dry-run</code> on a save closing a loop gives the same refusal, and nothing changes.</li>
     <li><code>AC-loop-guard-12</code> A loop between procedures through <code>start</code> is refused with <code>reference.loop</code> and the whole path.</li>
     <li><code>AC-loop-guard-13</code> A procedure starting itself is refused with <code>reference.loop</code>.</li>
+    <li><code>AC-loop-guard-14</code> A loop article → procedure → article is refused, such as evacuation guide → evacuation procedure → evacuation guide.</li>
+    <li><code>AC-loop-guard-15</code> A loop article → procedure → article through the context of an instruction is refused, naming the context on the path.</li>
   </ul>
 </section>
 
@@ -474,8 +476,6 @@ Refused, 1 mistake:
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>procedure-model</code>:</b> a loop between the steps of one procedure is not refused, as in a <code>conversation</code> returning to its own <code>listen</code>.</li>
-    <li><b>after <code>article-procedure-links</code>:</b> a loop article → procedure → article through a context is refused.</li>
-    <li><b>after <code>article-procedure-links</code>:</b> a loop article → procedure → article is refused, such as <code>evacuation guide → evacuation procedure → evacuation guide</code>.</li>
   </ul>
 </section>
 <!-- CONTENT END -->

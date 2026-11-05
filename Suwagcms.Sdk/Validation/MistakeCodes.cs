@@ -40,6 +40,8 @@ public static class MistakeCodes
     public const string StepBlockUnknown = "step.block.unknown";
     public const string StepBlockMultiple = "step.block.multiple";
     public const string StepMissing = "step.missing";
+    public const string LinkProcedureNotInGuide = "link.procedure.notInGuide";
+    public const string LinkProcedureConversation = "link.procedure.conversation";
     public const string ReferenceMissing = "reference.missing";
     public const string ReferenceMalformed = "reference.malformed";
     public const string ReferenceLoop = "reference.loop";
