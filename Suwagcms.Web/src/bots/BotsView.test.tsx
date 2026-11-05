@@ -25,6 +25,14 @@ describe("BotsView", () => {
         expect(html).not.toContain("<ul");
     });
 
+    it("every screen of a bot can be reached from the list", () => {
+        const html = render([rzeczoznawca], null);
+
+        for (const screen of ["facts", "knowledge-bases", "articles", "procedures", "versions"]) {
+            expect(html).toContain(`/bots/rzeczoznawca/${screen}`);
+        }
+    });
+
     it("AC-bot-profiles-1: every registered bot is listed with its name and address", () => {
         const html = render([rzeczoznawca, sklep], null);
 
