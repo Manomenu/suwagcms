@@ -62,7 +62,6 @@ public sealed class AvailabilityTests
     [Theory]
     [MemberData(nameof(Stores.Kinds), MemberType = typeof(Stores))]
     [Trait("criterion", "AC-availability-10")]
-    [Trait("criterion", "AC-bot-runtime-sdk-18")]
     public async Task The_answer_is_the_same_whichever_version_a_conversation_is_on_and_needs_no_new_version(string kind)
     {
         using var directory = new TempDirectory();
@@ -151,7 +150,6 @@ public sealed class AvailabilityTests
 
     [Fact]
     [Trait("criterion", "AC-availability-11")]
-    [Trait("criterion", "AC-bot-runtime-sdk-18")]
     public async Task A_change_delivered_to_one_instance_is_what_the_other_answers_after_its_next_poll()
     {
         var shared = new InMemoryVersionStore();

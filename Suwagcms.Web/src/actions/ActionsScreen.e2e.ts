@@ -214,7 +214,7 @@ test("AC-code-actions-9: the Actions screen shows an HTTP action whose id the bo
     running.close();
 });
 
-test("AC-http-actions-20: the view of an action shows the procedures that use it, and its Delete says why not", async ({
+test("AC-action-block-19: the view of an action shows the procedures that use it, and its Delete says why not", async ({
     page,
     request,
 }) => {

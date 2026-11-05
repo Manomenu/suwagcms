@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Facts;
 
@@ -339,16 +338,5 @@ public sealed class FactsTests
         var result = await TestCli.Run(Args("facts", word, "customer.city", "--open"), StubServer.Healthy());
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-global-facts-14")]
-    public void Every_facts_command_has_its_line_in_the_main_skill()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var factsCommands = CommandList.RunnableInCli().Where(words => words.StartsWith("facts ", StringComparison.Ordinal)).ToList();
-
-        Assert.Equal(["facts add", "facts delete", "facts edit", "facts list", "facts show"], factsCommands);
-        Assert.Empty(factsCommands.Except(CommandList.Listed(skill)));
     }
 }

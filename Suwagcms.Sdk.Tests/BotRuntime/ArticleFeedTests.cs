@@ -98,7 +98,6 @@ public sealed class ArticleFeedTests
     [Theory]
     [MemberData(nameof(Stores.Kinds), MemberType = typeof(Stores))]
     [Trait("criterion", "AC-article-search-feed-5")]
-    [Trait("criterion", "AC-bot-runtime-sdk-17")]
     public async Task The_bots_code_hears_the_number_of_a_new_version_once_it_is_current(string kind)
     {
         using var directory = new TempDirectory();

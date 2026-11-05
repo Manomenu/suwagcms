@@ -341,7 +341,7 @@ public sealed class ActionStepRulesTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-code-actions-17")]
+    [Trait("criterion", "AC-code-actions-18")]
     public void A_step_can_use_a_code_action_by_the_same_rules_of_mapping_and_types()
     {
         var fits = Bot(Action(Text, Text, code: true), Fact(Text), Step());

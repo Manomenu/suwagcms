@@ -95,7 +95,6 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-version-diff-4")]
-    [Trait("criterion", "AC-knowledge-base-language-16")]
     public async Task A_change_of_a_knowledge_bases_language_is_a_changed_field_with_both_values()
     {
         var (scene, bot) = await FilledAsync();

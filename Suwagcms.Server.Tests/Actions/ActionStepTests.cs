@@ -201,7 +201,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-http-actions-20")]
+    [Trait("criterion", "AC-action-block-19")]
     public async Task The_view_of_an_action_shows_the_procedures_that_use_it()
     {
         var scene = await SceneAsync();
@@ -387,7 +387,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-code-actions-16")]
+    [Trait("criterion", "AC-code-actions-18")]
     public async Task A_change_made_by_a_declaration_is_not_refused_even_when_a_step_maps_what_changed()
     {
         var scene = await BotSceneAsync();

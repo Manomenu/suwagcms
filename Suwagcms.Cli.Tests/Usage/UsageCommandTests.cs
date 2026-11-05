@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Usage;
 
@@ -121,14 +120,5 @@ public sealed class UsageCommandTests
         var result = await TestCli.Run(Args("usage", "kb", "offer"), Recording([], HttpStatusCode.OK, Nothing));
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-delete-guard-11")]
-    public void The_main_skill_has_a_line_for_suwagcms_usage()
-    {
-        var text = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-
-        Assert.Contains("usage", CommandList.Listed(text));
     }
 }

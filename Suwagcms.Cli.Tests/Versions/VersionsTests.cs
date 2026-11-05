@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Versions;
 
@@ -130,18 +129,5 @@ public sealed class VersionsTests
         Assert.Equal(("POST", "/api/bots/rzeczoznawca/versions?dryRun=true"), Assert.Single(recorder.Calls));
         Assert.Contains("A version could be created: v14", result.Output, StringComparison.Ordinal);
         Assert.Contains("Nothing was changed", result.Output, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-version-create-15")]
-    public void Each_versions_command_has_its_line_in_the_main_skill()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-
-        var listed = CommandList.Listed(skill);
-
-        Assert.Contains("versions list", listed);
-        Assert.Contains("versions create", listed);
-        Assert.Contains("versions show", listed);
     }
 }

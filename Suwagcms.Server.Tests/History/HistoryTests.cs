@@ -266,7 +266,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-change-history-10")]
+    [Trait("criterion", "AC-change-history-1")]
     public async Task History_covers_facts_and_procedures()
     {
         var (articles, history) = await NewBot();

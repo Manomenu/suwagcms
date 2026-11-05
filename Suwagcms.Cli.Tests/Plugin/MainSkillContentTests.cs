@@ -63,7 +63,7 @@ public sealed class MainSkillContentTests
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of localFacts", StringComparison.Ordinal));
 
     [Fact]
-    [Trait("criterion", "AC-version-diff-13")]
+    [Trait("criterion", "AC-claude-plugin-7")]
     public void The_main_skill_shows_the_comparison_of_what_the_bot_has_with_the_latest_before_a_push() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("to compare before pushing", StringComparison.Ordinal));
 

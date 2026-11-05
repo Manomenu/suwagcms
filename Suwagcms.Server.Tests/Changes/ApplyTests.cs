@@ -431,7 +431,6 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-batch-apply-11")]
-    [Trait("criterion", "AC-knowledge-base-language-15")]
     public async Task A_file_can_set_the_language_of_a_knowledge_base_and_en_applies_without_it()
     {
         var scene = await NewScene();
@@ -608,6 +607,7 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-batch-apply-16")]
+    [Trait("criterion", "AC-batch-apply-1")]
     public async Task A_file_covers_procedures_and_a_successful_answer_lists_what_still_stops_a_version()
     {
         var scene = await NewScene();

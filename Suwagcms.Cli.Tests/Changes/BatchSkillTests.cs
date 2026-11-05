@@ -13,7 +13,6 @@ public sealed class BatchSkillTests
 
     [Fact]
     [Trait("criterion", "AC-batch-apply-14")]
-    [Trait("criterion", "AC-claude-plugin-6")]
     public void The_batch_skill_starts_with_a_dry_run()
     {
         var steps = SkillText.Section(Skill("suwagcms-batch"), "Steps").ReplaceLineEndings("\n");

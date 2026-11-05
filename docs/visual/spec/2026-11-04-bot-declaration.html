@@ -505,7 +505,6 @@ Mistakes, 1:
   <ul class="checks">
     <li><code>AC-bot-declaration-1</code> A test bot built on the packed <code>Suwagcms.Sdk</code> package, whose setup states a format version, blocks and a code action, answers <code>GET /suwagcms/declaration</code> with them and its own id.</li>
     <li><code>AC-bot-declaration-2</code> A test bot whose setup states nothing answers that it declares nothing, and still accepts and reports versions.</li>
-    <li><code>AC-bot-declaration-3</code> The published schema of the declaration is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
     <li><code>AC-bot-declaration-4</code> Opening a bot's profile and running <code>suwagcms bots declaration</code> each ask the bot, store the answer with its time and show the format version, the blocks and the code actions; <code>--json</code> returns the same as data.</li>
     <li><code>AC-bot-declaration-5</code> A bot that has never answered shows that it has not, in the web and the CLI, and nothing else about the bot is refused because of it.</li>
     <li><code>AC-bot-declaration-6</code> With the bot unreachable, or not answering within the time limit, the last stored declaration stays and is shown with its time and the reason, and the CLI exits 1.</li>
@@ -518,7 +517,6 @@ Mistakes, 1:
     <li><code>AC-bot-declaration-13</code> Given no declaration, the validator returns the same mistakes as before this feature.</li>
     <li><code>AC-bot-declaration-14</code> <code>POST /api/validate</code> returns the same mistakes as the library for the same definition, stage and declaration, stores nothing, and contacts no bot.</li>
     <li><code>AC-bot-declaration-15</code> <code>suwagcms validate</code> reads YAML and JSON, checks the <code>Version</code> stage unless told otherwise, and exits 0 for no mistakes and 1 otherwise, with <code>--json</code> returning the mistakes.</li>
-    <li><code>AC-bot-declaration-16</code> <code>suwagcms bots declaration</code> and <code>suwagcms validate</code> each have their line in the plugin's main skill.</li>
     <li><code>AC-bot-declaration-17</code> Given a declaration, the validator returns at the <code>Version</code> stage a mistake for each step whose block the bot does not declare, naming the procedure, the step and the blocks it does declare.</li>
     <li><code>AC-bot-declaration-18</code> A change of declaration that leaves out a block in use lists the affected procedures on the profile and in <code>suwagcms bots declaration</code>.</li>
   </ul>

@@ -150,7 +150,6 @@ public sealed class DeclarationValidatorTests
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-12")]
-    [Trait("criterion", "AC-sdk-validator-13")]
     public void Another_format_version_is_a_version_mistake_naming_both_with_its_fix_and_nothing_at_save()
     {
         var declaration = Good() with { FormatVersion = 2 };
@@ -166,7 +165,6 @@ public sealed class DeclarationValidatorTests
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-17")]
-    [Trait("criterion", "AC-sdk-validator-13")]
     public void A_step_whose_block_the_bot_does_not_declare_names_the_procedure_the_step_and_what_it_declares_and_never_stops_a_save()
     {
         var declaration = Good("listen", "say", "assign");
@@ -200,7 +198,7 @@ public sealed class DeclarationValidatorTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-sdk-validator-13")]
+    [Trait("criterion", "AC-bot-declaration-17")]
     public void The_json_form_says_the_same_as_the_records_and_an_unreadable_document_stays_one_mistake()
     {
         var declaration = Good("listen", "say", "assign");

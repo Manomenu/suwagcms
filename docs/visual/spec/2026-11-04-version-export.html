@@ -471,17 +471,15 @@ content: |
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-version-export-1</code> <code>suwagcms export 14 --out ./v14</code> writes <code>version.yaml</code> and one file per fact, knowledge base, article and procedure of that version, named by its <code>id</code>, in a folder per kind.</li>
+    <li><code>AC-version-export-1</code> <code>suwagcms export 14 --out ./v14</code> writes <code>version.yaml</code> and one file per fact, knowledge base, article, action and procedure of that version, named by its <code>id</code>, in a folder per kind, with a secret only as the reference the version holds, never its value.</li>
     <li><code>AC-version-export-2</code> Reading the files back gives exactly the definition in the version's document, with <code>content</code> and <code>llmGuide</code> byte for byte, including their links and white space.</li>
     <li><code>AC-version-export-3</code> Exporting the same version twice gives byte-identical folders.</li>
     <li><code>AC-version-export-4</code> <code>version.yaml</code> holds the bot, number, <code>formatVersion</code> and digest of the version, and every other file starts with a comment naming the version, saying that changes do nothing, and naming the command that changes that resource.</li>
-    <li><code>AC-version-export-5</code> Changing or deleting exported files leaves the working state and every version as they were, and a later export of that version is unaffected.</li>
     <li><code>AC-version-export-6</code> Without a number the latest version is exported; a number the bot does not have, or a bot with no version, is refused with exit code 1, and a missing <code>--out</code> exits 2.</li>
     <li><code>AC-version-export-7</code> A folder that does not exist is created; a folder with anything in it is refused with exit code 1 and left untouched; a folder that cannot be written is refused with its reason and exit code 1.</li>
     <li><code>AC-version-export-8</code> An <code>id</code> that would write outside the folder is refused, naming it, and nothing is written.</li>
     <li><code>AC-version-export-9</code> Exporting changes nothing in the CMS and sends no request to the bot.</li>
     <li><code>AC-version-export-10</code> <code>--json</code> returns the folder, the version and the count of files per kind; <code>--open</code> opens the version's web page; <code>suwagcms export</code> has its line in the plugin's main skill.</li>
-    <li><code>AC-version-export-12</code> An export covers actions, with secrets only as the references the version holds, never their values.</li>
   </ul>
 </section>
 <section data-role="risks">

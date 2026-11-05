@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Articles;
 
@@ -343,17 +342,6 @@ public sealed class ArticlesTests
         var result = await TestCli.Run(Args("articles", word, "priceList", "--title", "x", "--open"), StubServer.Healthy());
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-articles-14")]
-    public void Every_articles_command_has_its_line_in_the_main_skill()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var commands = CommandList.RunnableInCli().Where(words => words.StartsWith("articles ", StringComparison.Ordinal)).ToList();
-
-        Assert.Equal(["articles add", "articles delete", "articles edit", "articles list", "articles show"], commands);
-        Assert.Empty(commands.Except(CommandList.Listed(skill)));
     }
 
     [Theory]

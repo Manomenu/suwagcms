@@ -458,7 +458,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-claude-plugin-3</code> A command of the CLI that has no line in the main skill fails the gate, with a message naming the command and the fix.</li>
     <li><code>AC-claude-plugin-4</code> A line in the main skill naming a command the CLI does not have fails the gate.</li>
     <li><code>AC-claude-plugin-5</code> The main skill says how to install the CLI, how to pick the server and the bot, to use <code>--json</code>, how to read a refusal and that resources are never edited as local files; a guard checks each of these is present.</li>
-    <li><code>AC-claude-plugin-6</code> A skill for batch changes starts with a dry run.</li>
+    <li><code>AC-claude-plugin-7</code> The main skill shows, before a push, the comparison of what the bot has with the latest version.</li>
   </ul>
 </section>
 
@@ -466,7 +466,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>version-push</code>:</b> a skill for versions shows what will change before an agent pushes.</li>
   </ul>
 </section>
 

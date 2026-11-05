@@ -33,7 +33,7 @@ public sealed class ArticleLinkTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-article-links-8")]
+    [Trait("criterion", "AC-article-links-7")]
     public async Task A_link_to_an_id_that_exists_only_in_another_bot_is_refused()
     {
         var mine = await NewBot();

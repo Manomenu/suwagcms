@@ -513,12 +513,10 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <li><code>AC-resource-rename-14</code> A resource with the same <code>id</code> in another bot, and the links to it, stay unchanged.</li>
     <li><code>AC-resource-rename-15</code> After the change the old <code>id</code> can be taken by a new resource, and a link to the old <code>id</code> before that is refused with <code>reference.missing</code>.</li>
     <li><code>AC-resource-rename-16</code> <code>suwagcms rename --open</code> opens the resource's page at its new address.</li>
-    <li><code>AC-resource-rename-17</code> <code>suwagcms rename</code> has its line in the plugin's main skill.</li>
     <li><code>AC-resource-rename-18</code> Changing a fact's name also rewrites it in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it.</li>
     <li><code>AC-resource-rename-19</code> A procedure's <code>id</code> can be changed, and <code>conversation</code> cannot change its <code>id</code>, since the format requires it as the base of every conversation; a new <code>id</code> that a global fact's name starts with, followed by a dot, is refused, and so is a fact's new name starting with a procedure's <code>id</code> and a dot.</li>
     <li><code>AC-resource-rename-20</code> A fact's new name that a local fact already has is refused.</li>
     <li><code>AC-resource-rename-21</code> A procedure's node positions stay after its <code>id</code> changes.</li>
-    <li><code>AC-resource-rename-22</code> A resource turned off stays off after its <code>id</code> changes, also for conversations on a version that still holds the old <code>id</code>.</li>
     <li><code>AC-resource-rename-23</code> Changing an action's <code>id</code> rewrites each <code>action</code> step, and changing a fact's name rewrites it in each step's mapping of parameters and results.</li>
   </ul>
 </section>

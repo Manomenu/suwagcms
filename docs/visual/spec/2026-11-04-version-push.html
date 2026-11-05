@@ -526,9 +526,8 @@ stateDiagram-v2
     <li><code>AC-version-push-12</code> Every attempt is recorded with its time, version, result and reason, and the page and <code>suwagcms versions status</code> list the recent ones.</li>
     <li><code>AC-version-push-13</code> The page and <code>suwagcms versions status</code> list the versions the bot still holds for conversations in use.</li>
     <li><code>AC-version-push-14</code> <code>suwagcms push</code> asks for no confirmation, and with <code>--json</code> returns the result, the reason and the version the bot reports.</li>
-    <li><code>AC-version-push-15</code> <code>suwagcms push</code> and <code>suwagcms versions status</code> each have their line in the plugin's main skill.</li>
     <li><code>AC-version-push-16</code> From a real server and a test bot, through the CLI: a fact, a base, two linked articles and the procedures are created, deleting a used article and closing a loop are refused, a version is created and pushed, and the CMS shows what the bot reports; with the bot stopped, a push fails visibly, and after its return the bot still reports the earlier version.</li>
-    <li><code>AC-version-push-17</code> A push is checked against what the bot declares now.</li>
+    <li><code>AC-version-push-17</code> A version, also an older one, holding a block the bot does not declare now is refused, naming the block, and nothing goes to the bot; a bot with no declaration or a wrong answer goes on to its own validation.</li>
   </ul>
 </section>
 

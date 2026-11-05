@@ -88,7 +88,6 @@ public sealed class LocalFactRulesTests
 
     [Theory]
     [Trait("criterion", "AC-local-facts-3")]
-    [Trait("criterion", "AC-local-facts-12")]
     [InlineData("", "text", MistakeCodes.FactDescriptionMissing, "description")]
     [InlineData("A note", "blob", MistakeCodes.FactTypeInvalid, "type")]
     [InlineData("A note", "int", MistakeCodes.FactConstraintForeign, "maxLength")]
@@ -112,7 +111,6 @@ public sealed class LocalFactRulesTests
 
     [Theory]
     [Trait("criterion", "AC-local-facts-4")]
-    [Trait("criterion", "AC-local-facts-12")]
     [InlineData("order.note", "orderNote")]
     [InlineData("Bad Name", "badName")]
     public void A_local_fact_name_with_a_dot_or_not_in_camelCase_is_refused_with_a_fix(string name, string fix)
@@ -126,7 +124,6 @@ public sealed class LocalFactRulesTests
 
     [Fact]
     [Trait("criterion", "AC-local-facts-5")]
-    [Trait("criterion", "AC-local-facts-12")]
     public void A_local_fact_with_a_global_facts_name_names_both_and_lists_every_procedure_holding_it()
     {
         var name = Samples.CityFact.Name.Replace(".", "", StringComparison.Ordinal);
@@ -153,7 +150,6 @@ public sealed class LocalFactRulesTests
 
     [Fact]
     [Trait("criterion", "AC-local-facts-6")]
-    [Trait("criterion", "AC-local-facts-12")]
     public void Steps_use_a_local_fact_by_its_short_name_under_the_rules_for_facts()
     {
         var locals = new Dictionary<string, LocalFact>
@@ -215,7 +211,6 @@ public sealed class LocalFactRulesTests
 
     [Theory]
     [Trait("criterion", "AC-local-facts-7")]
-    [Trait("criterion", "AC-local-facts-12")]
     [InlineData("note")]
     [InlineData("other.note")]
     [InlineData("mine.visitDate")]

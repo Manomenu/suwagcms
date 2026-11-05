@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Cli.Tests.Plugin;
 
 namespace Suwagcms.Cli.Tests.Versions;
 
@@ -217,18 +216,6 @@ public sealed class PushTests
         var result = await TestCli.Run(Args("push", "--yes"), new Recorder(Status(), Pushed).Serving());
 
         Assert.Equal(2, result.ExitCode);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-version-push-15")]
-    public void The_main_skill_has_a_line_for_push_and_one_for_versions_status()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-
-        var listed = CommandList.Listed(skill);
-
-        Assert.Contains("push", listed);
-        Assert.Contains("versions status", listed);
     }
 
     private const string Rolled = """{"outcome":"Succeeded","version":12,"botHas":12,"reason":null,"mistakes":[]}""";

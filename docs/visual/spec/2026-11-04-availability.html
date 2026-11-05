@@ -556,14 +556,12 @@ sequenceDiagram
     <li><code>AC-availability-17</code> A bot reporting a lower number than the CMS's, or having no such route, shows as not delivered with a way to send again or the fix.</li>
     <li><code>AC-availability-18</code> A save of the same bot during a change waiting on a slow bot completes without waiting for it, and a delete and a change of one resource at the same moment run one after the other.</li>
     <li><code>AC-availability-19</code> A deleted resource's setting is gone: created again with the same id, it is on.</li>
-    <li><code>AC-availability-20</code> The published schema of the new route and of the state is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
     <li><code>AC-availability-21</code> Each <code>suwagcms availability</code> command has its line in the plugin's main skill, which says it takes effect at once and that a resource in use needs <code>--yes</code>.</li>
     <li><code>AC-availability-22</code> A procedure can be turned off, and the procedures list shows its state; the SDK says the model cannot start it, even from an article's guide, while its definition stays available to a conversation already in it.</li>
     <li><code>AC-availability-23</code> Turning off <code>conversation</code> is refused with the reason.</li>
     <li><code>AC-availability-24</code> Every push sends the whole set before the version, so a missed change is repaired and a new version never runs without it.</li>
     <li><code>AC-availability-25</code> A renamed resource keeps its setting, and turning it off also reaches conversations on an older version that holds it under its old <code>id</code>.</li>
-    <li><code>AC-availability-26</code> An action can be turned off and on like an article, with its setting kept when its <code>id</code> changes, and the Actions screen shows its state.</li>
-    <li><code>AC-availability-27</code> A code action can be turned off the same way, though the rest of it is read-only.</li>
+    <li><code>AC-availability-26</code> An action, HTTP or in code, can be turned off and on like an article, with its setting kept when its <code>id</code> changes, and the Actions screen shows its state; the rest of a code action stays read-only.</li>
     <li><code>AC-availability-28</code> For a step running a turned-off action, the SDK says on any version that the action is off and still gives the step with its <code>onFailure</code> step; the CMS stores and delivers this, and taking that route is the bot's to carry out.</li>
   </ul>
 </section>

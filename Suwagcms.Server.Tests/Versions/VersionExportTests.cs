@@ -92,7 +92,6 @@ public sealed class VersionExportTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-version-export-3")]
-    [Trait("criterion", "AC-version-export-5")]
     public async Task Changing_or_deleting_exported_files_changes_nothing_and_a_later_export_is_byte_identical()
     {
         var (scene, bot) = await FilledAsync();

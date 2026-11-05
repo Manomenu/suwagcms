@@ -518,9 +518,7 @@ flowchart TB
     <li><code>AC-bot-runtime-sdk-13</code> When the store fails during a write, the route answers with the reason and the state stays what it was.</li>
     <li><code>AC-bot-runtime-sdk-14</code> When the store cannot be read while polling, the instance keeps serving what it has, and the state route says the store cannot be read.</li>
     <li><code>AC-bot-runtime-sdk-15</code> The same behaviour tests pass against the default file store and against a store supplied by a test.</li>
-    <li><code>AC-bot-runtime-sdk-16</code> The published schema of the state answer and of a refusal is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
-    <li><code>AC-bot-runtime-sdk-17</code> The SDK tells the bot's code about a new version, so it can update its search.</li>
-    <li><code>AC-bot-runtime-sdk-18</code> A change of availability takes effect at once, also on an older version, and reaches the other instances through the shared store.</li>
+    <li><code>AC-bot-runtime-sdk-16</code> The published schema of every bot route (the state answer, a refusal, <code>PUT /suwagcms/current</code>, the declaration, the availability message and the test route) is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
   </ul>
 </section>
 

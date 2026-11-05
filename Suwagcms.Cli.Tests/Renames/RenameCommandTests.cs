@@ -141,13 +141,4 @@ public sealed class RenameCommandTests
         Assert.Contains(page, result.Output, StringComparison.Ordinal);
         Assert.Equal(page, Assert.Single(opened).ToString());
     }
-
-    [Fact]
-    [Trait("criterion", "AC-resource-rename-17")]
-    public void The_main_skill_has_a_line_for_rename()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-
-        Assert.Contains("- `suwagcms rename <kind> <id> <newId>", skill, StringComparison.Ordinal);
-    }
 }

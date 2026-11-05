@@ -750,7 +750,6 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-availability-25")]
-    [Trait("criterion", "AC-resource-rename-22")]
     public async Task A_resource_off_stays_off_after_its_id_changes_also_on_a_version_holding_the_old_id()
     {
         await using var scene = await SceneAsync();
@@ -771,7 +770,6 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-availability-25")]
-    [Trait("criterion", "AC-resource-rename-22")]
     public async Task Turned_off_after_the_rename_it_reaches_a_version_holding_the_old_id_and_not_a_new_resource_with_that_id()
     {
         await using var scene = await SceneAsync();

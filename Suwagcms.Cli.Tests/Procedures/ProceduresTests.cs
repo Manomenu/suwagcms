@@ -582,7 +582,7 @@ public sealed class ProceduresTests : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-procedure-model-16")]
+    [Trait("criterion", "AC-global-facts-15")]
     public async Task Facts_show_names_the_procedures_that_use_the_fact_or_says_none_does()
     {
         const string used =

@@ -509,9 +509,7 @@ implementation: code
     <li><code>AC-code-actions-13</code> A definition holding a code action passes the validator offline, with no declaration and no bot.</li>
     <li><code>AC-code-actions-14</code> The plugin's main skill says in the lines of <code>suwagcms actions</code> that a code action is read-only and where to change it.</li>
     <li><code>AC-code-actions-15</code> A version holds a bot's code actions with their contracts, alongside its HTTP actions.</li>
-    <li><code>AC-code-actions-16</code> A change to a code action made by a declaration is not refused, even when a step maps what changed.</li>
-    <li><code>AC-code-actions-17</code> A procedure's step can use a code action, by the same rules of mapping and types as an HTTP action.</li>
-    <li><code>AC-code-actions-18</code> A mapping that does not fit a code action is a <code>Version</code> mistake, and refuses no save, including when a new declaration causes it.</li>
+    <li><code>AC-code-actions-18</code> A step can use a code action by the same rules of mapping and types as an HTTP action. A mapping that does not fit is a <code>Version</code> mistake and refuses no save, including when a new declaration causes it, and a change a declaration makes to a code action is never refused, even when a step maps what changed.</li>
     <li><code>AC-code-actions-19</code> A code action the declaration no longer lists, while a step uses it, stays in the CMS marked as no longer declared; saves go on working, the <code>Version</code> stage names each step, the next ask removes it once no step uses it, and asking again brings it back unmarked if the bot declares it again.</li>
   </ul>
 </section>

@@ -75,7 +75,7 @@ describe("FactsView", () => {
         expect(html).toMatch(/int, 1 to 40 · assign/);
     });
 
-    it("AC-procedure-model-16: a fact names the procedures that use it, and one no procedure uses says nothing", () => {
+    it("AC-global-facts-15: a fact names the procedures that use it, and one no procedure uses says nothing", () => {
         const html = view(facts);
 
         expect(html).toContain("Used by: conversation, orderValuation");

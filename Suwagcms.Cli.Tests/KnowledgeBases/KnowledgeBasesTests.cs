@@ -333,15 +333,4 @@ public sealed class KnowledgeBasesTests
 
         Assert.Equal(2, result.ExitCode);
     }
-
-    [Fact]
-    [Trait("criterion", "AC-knowledge-bases-8")]
-    public void Every_kb_command_has_its_line_in_the_main_skill()
-    {
-        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
-        var commands = CommandList.RunnableInCli().Where(words => words.StartsWith("kb ", StringComparison.Ordinal)).ToList();
-
-        Assert.Equal(["kb add", "kb delete", "kb edit", "kb list", "kb show"], commands);
-        Assert.Empty(commands.Except(CommandList.Listed(skill)));
-    }
 }
