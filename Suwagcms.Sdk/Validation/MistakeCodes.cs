@@ -48,6 +48,8 @@ public static class MistakeCodes
     public const string StepBlockEmpty = "step.block.empty";
     public const string StepInformEmpty = "step.inform.empty";
     public const string InstructionBlank = "instruction.blank";
+    public const string ContextQueryBlank = "context.query.blank";
+    public const string ContextQueryNoArticles = "context.query.noArticles";
     public const string StepUnreachable = "step.unreachable";
     public const string NextDefaultMissing = "next.default.missing";
     public const string ProcedureNoWhenStalled = "procedure.collect.noWhenStalled";

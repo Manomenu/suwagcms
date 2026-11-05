@@ -1,3 +1,4 @@
+using System.Globalization;
 using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.Validation;
@@ -15,6 +16,8 @@ internal static class ProcedureVersionRules
         For(MistakeCodes.NextDefaultMissing, NoDefault),
         For(MistakeCodes.ProcedureNoWhenStalled, NoWhenStalled),
         For(MistakeCodes.ProcedureInstructionBlank, BlankInstruction),
+        For(MistakeCodes.ContextQueryBlank, BlankQueries),
+        ProcedureMistake.For(MistakeCodes.ContextQueryNoArticles, ValidationStage.Version, QueriesWithNothingToSearch),
         new Rule(MistakeCodes.BotConversationMissing, ValidationStage.Version, NoConversation),
     ];
 
@@ -160,6 +163,56 @@ internal static class ProcedureVersionRules
             );
         }
     }
+
+    private sealed record ContextAt(string Path, string Where, InstructionContext Context);
+
+    // Why: every instruction has one shape, so the rules on a context read each one the same way.
+    private static IEnumerable<ContextAt> Contexts(Procedure procedure)
+    {
+        if (procedure.WhenStalled?.Context is { } stalled)
+        {
+            yield return new ContextAt("whenStalled.context", $"'context' of whenStalled in '{procedure.Id}'", stalled);
+        }
+        foreach (var (name, step) in procedure.Steps)
+        {
+            if (step.Inform?.Context is { } context)
+            {
+                yield return new ContextAt($"steps.{name}.inform.context", $"'context' of step '{name}' in '{procedure.Id}'", context);
+            }
+        }
+    }
+
+    private static IEnumerable<Mistake> BlankQueries(Procedure procedure) =>
+        Contexts(procedure)
+            .SelectMany(found =>
+                (found.Context.SearchQueries ?? [])
+                    .Select((query, index) => (query, index))
+                    .Where(item => !ProcedureMistake.Given(item.query))
+                    .Select(item =>
+                        Make(
+                            procedure,
+                            MistakeCodes.ContextQueryBlank,
+                            string.Create(CultureInfo.InvariantCulture, $"{found.Path}.searchQueries[{item.index}]"),
+                            $"{found.Where} has a blank search query.",
+                            "Write the query, or remove it."
+                        )
+                    )
+            );
+
+    private static IEnumerable<Mistake> QueriesWithNothingToSearch(BotDefinition definition, Procedure procedure) =>
+        definition.Articles.Count > 0
+            ? []
+            : Contexts(procedure)
+                .Where(found => (found.Context.SearchQueries ?? []).Any(ProcedureMistake.Given))
+                .Select(found =>
+                    Make(
+                        procedure,
+                        MistakeCodes.ContextQueryNoArticles,
+                        $"{found.Path}.searchQueries",
+                        $"{found.Where} has a search query, and this bot has no articles to search.",
+                        "Add an article to the bot, or remove the query."
+                    )
+                );
 
     private static IEnumerable<Mistake> NoConversation(BotDefinition definition)
     {

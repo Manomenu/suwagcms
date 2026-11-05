@@ -145,6 +145,11 @@ steps:
 - `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)
   or `known: true|false` (any fact).
 - `whenStalled: { instruction: text }` is required when a step collects.
+- An instruction (of `whenStalled` or of an `inform`) can carry `context: { articles: [id, ...], searchQueries: [text, ...] }`: what the model
+  should read before following it. Name an article when you know which one holds the fact: it cannot miss, a wrong id is refused
+  (`reference.missing`) and the article is protected. Write a query when you want what the articles say on a subject without knowing
+  which says it: the CMS stores it as text and never runs it, the bot searches. A blank query (`context.query.blank`) and a query in a
+  bot with no articles (`context.query.noArticles`) are saved and listed as unfinished.
 - Two stages: a mistake that makes the procedure unsound is refused (a step or fact that does not exist, an unwritable collect, a value the
   fact cannot take, a missing description); what only makes it unfinished (no `firstStep`, a step with no block, an unreachable step, rules
   without a default, a missing `whenStalled`, no `conversation`) is saved and listed after each save, so build a procedure step by step.

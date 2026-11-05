@@ -8,9 +8,9 @@ public sealed record InformBlock(InformArguments Arguments) : Block
         (Arguments.Facts ?? []).Select((name, index) => new BlockFact(name, $"inform.facts[{index}]", FactUse.Inform));
 
     public override IEnumerable<BlockTarget> Targets =>
-        (Arguments.Articles ?? []).Select(
-            (id, index) => new BlockTarget(new ResourceRef(ResourceKind.Article, id), $"inform.articles[{index}]")
-        );
+        (Arguments.Articles ?? [])
+            .Select((id, index) => new BlockTarget(new ResourceRef(ResourceKind.Article, id), $"inform.articles[{index}]"))
+            .Concat(Arguments.Context?.TargetsAt("inform.context") ?? []);
 
     // Why: an inform can miss two things at once, its content and its instruction, so its gaps are version rules with codes of their own.
     public override BlockGap? Gap => null;

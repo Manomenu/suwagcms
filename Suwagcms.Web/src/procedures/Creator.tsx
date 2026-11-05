@@ -328,7 +328,7 @@ function CreatorBody({
                             onLeave={leave}
                         />
                     ) : (
-                        <ProcedurePanel bot={bot} id={id} draft={draft} usage={usage} edit={edit} />
+                        <ProcedurePanel bot={bot} id={id} draft={draft} articles={articles} usage={usage} edit={edit} />
                     )}
                     <MistakeList
                         check={check}

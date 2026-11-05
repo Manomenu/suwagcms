@@ -26,6 +26,10 @@ public static class ReferenceWalker
     {
         ArgumentNullException.ThrowIfNull(procedure);
         var from = new ResourceRef(ResourceKind.Procedure, procedure.Id);
+        foreach (var target in procedure.WhenStalled?.Context?.TargetsAt("whenStalled.context") ?? [])
+        {
+            yield return new Reference(from, target.Path, target.To, null);
+        }
         foreach (var (stepName, step) in procedure.Steps)
         {
             foreach (var fact in step.Blocks.SelectMany(block => block.Facts))

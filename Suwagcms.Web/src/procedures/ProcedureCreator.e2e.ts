@@ -321,7 +321,8 @@ test("AC-procedure-creator-19: an inform step is built with its form and reads b
     await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "inform" }).click();
     await node(page, "inform").click();
     await page.getByLabel("Instruction").fill("Tell the customer where to go.");
-    await page.getByLabel("The office (officeContact)").check();
+    const passOn = page.getByRole("group", { name: "Articles to pass on" });
+    await passOn.getByLabel("The office (officeContact)").check();
     await page.getByLabel("system.flag").check();
     await page.getByLabel("customer.city").check();
     await expect(node(page, "inform")).toContainText("inform: officeContact, system.flag, customer.city");
@@ -336,5 +337,50 @@ test("AC-procedure-creator-19: an inform step is built with its form and reads b
             articles: ["officeContact"],
             facts: ["system.flag", "customer.city"],
         });
+    }).toPass();
+});
+
+test("AC-procedure-creator-20: a context is edited on whenStalled and on an inform, with articles and queries, and reads back from the server", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, { data: { title: "Offer" } })).status()).toBe(200);
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/articles/officeContact?ifRevision=0`, {
+                data: { knowledgeBase: "offer", title: "The office", content: "c", llmGuide: "g", description: "d" },
+            })
+        ).status(),
+    ).toBe(200);
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "The customer orders a valuation",
+            firstStep: "tell",
+            steps: { tell: { inform: { instruction: "Tell it.", facts: ["customer.city"] } } },
+            whenStalled: { instruction: "Say you could not finish." },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    await page.getByRole("group", { name: "Articles to read" }).getByLabel("The office (officeContact)").check();
+    await page.getByRole("button", { name: "Add search query" }).click();
+    await page.getByLabel("Search query 1", { exact: true }).fill("how long a valuation takes");
+    await node(page, "tell").click();
+    await page.getByRole("button", { name: "Add search query" }).click();
+    await page.getByLabel("Search query 1", { exact: true }).fill("opening hours");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(async () => {
+        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+            whenStalled: { context: unknown };
+            steps: Record<string, { inform?: { context: unknown } }>;
+        };
+        expect(stored.whenStalled.context).toEqual({ articles: ["officeContact"], searchQueries: ["how long a valuation takes"] });
+        expect(stored.steps["tell"]?.inform?.context).toEqual({ searchQueries: ["opening hours"] });
     }).toPass();
 });

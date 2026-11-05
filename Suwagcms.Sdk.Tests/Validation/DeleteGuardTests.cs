@@ -143,6 +143,31 @@ public sealed class DeleteGuardTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-16")]
+    public void An_article_a_context_names_is_refused_listing_each_instruction_that_names_it()
+    {
+        var context = new InstructionContext { Articles = ["cennik"] };
+        var procedure = ProcedureSamples.WithStep(
+            "tell",
+            new ProcedureStep
+            {
+                Inform = new InformArguments { Facts = ["order.kind"], Context = context },
+            }
+        ) with
+        {
+            WhenStalled = new StallInstruction { Instruction = "Say it.", Context = context },
+        };
+
+        var mistake = Assert.Single(Deleting(ProcedureSamples.Bot(procedure), Cennik));
+
+        Assert.Equal(Cennik, mistake.Resource);
+        Assert.Equal(
+            ["steps.tell.inform.context.articles[0]", "whenStalled.context.articles[0]"],
+            mistake.Related.Select(related => related.Location)
+        );
+    }
+
+    [Fact]
     [Trait("criterion", "AC-delete-guard-1")]
     public void A_typo_in_a_link_is_still_worded_for_the_referrer_not_as_a_delete()
     {

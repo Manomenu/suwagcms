@@ -69,7 +69,9 @@ internal static class ProcedureShapeRules
                         MistakeCodes.StepBlockUnknown,
                         $"steps.{step.Key}.{key}",
                         $"Step '{step.Key}' has the unknown block '{key}'.",
-                        $"Use one of the blocks: {string.Join(", ", Block.Names)}; next says where to go."
+                        key == "context"
+                            ? "A context belongs on an instruction: move it into whenStalled or into an inform."
+                            : $"Use one of the blocks: {string.Join(", ", Block.Names)}; next says where to go."
                     )
                 )
         );

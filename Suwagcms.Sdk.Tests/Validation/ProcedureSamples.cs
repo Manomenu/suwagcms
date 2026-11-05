@@ -176,7 +176,11 @@ internal static class ProcedureSamples
                     ["id"] = "noFirstStep",
                     ["description"] = "d",
                     ["steps"] = new JsonObject { ["ask"] = new JsonObject { ["collect"] = new JsonArray("order.kind") } },
-                    ["whenStalled"] = new JsonObject { ["instruction"] = " " },
+                    ["whenStalled"] = new JsonObject
+                    {
+                        ["instruction"] = " ",
+                        ["context"] = new JsonObject { ["searchQueries"] = new JsonArray("how long", " ") },
+                    },
                 },
                 new JsonObject
                 {

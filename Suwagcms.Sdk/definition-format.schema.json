@@ -186,6 +186,35 @@
                     "instruction": {
                       "type": "string"
                     },
+                    "context": {
+                      "type": "object",
+                      "properties": {
+                        "articles": {
+                          "type": [
+                            "array",
+                            "null"
+                          ],
+                          "items": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        },
+                        "searchQueries": {
+                          "type": [
+                            "array",
+                            "null"
+                          ],
+                          "items": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    },
                     "articles": {
                       "type": [
                         "array",
@@ -284,6 +313,17 @@
             "properties": {
               "instruction": {
                 "type": "string"
+              },
+              "context": {
+                "type": "object",
+                "properties": {
+                  "articles": {
+                    "$ref": "#/properties/procedures/items/properties/steps/additionalProperties/properties/inform/properties/context/properties/articles"
+                  },
+                  "searchQueries": {
+                    "$ref": "#/properties/procedures/items/properties/steps/additionalProperties/properties/inform/properties/context/properties/searchQueries"
+                  }
+                }
               }
             }
           }

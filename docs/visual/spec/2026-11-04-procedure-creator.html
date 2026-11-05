@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It edits the same procedure an agent saves through the CLI, and anything it does the CLI can do too. Where the nodes sit on the screen is not part of the procedure and never reaches a bot.</p>
   </div>
   <div class="stats">
-    <div><b>19</b><span>criteria</span></div>
+    <div><b>20</b><span>criteria</span></div>
     <div><b>3</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -513,6 +513,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-procedure-creator-17</code> Leaving the creator with unsaved changes asks before discarding them.</li>
     <li><code>AC-procedure-creator-18</code> A <code>start</code> step has its form in the creator: a list of this bot's procedures that leaves out <code>conversation</code> and the procedure itself, and the chosen target is saved.</li>
     <li><code>AC-procedure-creator-19</code> An <code>inform</code> step has its form in the creator: its instruction, the articles and the facts to pass on, kept in the order ticked, and what is saved reads back.</li>
+    <li><code>AC-procedure-creator-20</code> A context has its form in the creator, on <code>whenStalled</code> and on an <code>inform</code>: the articles to read and the search queries, and what is saved reads back.</li>
   </ul>
 </section>
 
@@ -522,7 +523,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ul>
     <li><b>after <code>bot-declaration</code>:</b> the creator offers only the blocks the bot declares.</li>
     <li><b>after <code>local-facts</code>:</b> a panel edits the procedure's local facts.</li>
-    <li><b>after <code>instruction-context</code>, <code>action-block</code>:</b> each new block or field has its form in the creator.</li>
+    <li><b>after <code>action-block</code>:</b> each new block or field has its form in the creator.</li>
   </ul>
 </section>
 

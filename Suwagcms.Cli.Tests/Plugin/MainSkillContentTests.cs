@@ -21,6 +21,11 @@ public sealed class MainSkillContentTests
             "Procedure file",
             ["inform: { instruction: text", "Where\n  `say` sends a fixed text"]
         ),
+        (
+            "the form of context and when to name an article or write a query",
+            "Procedure file",
+            ["context: { articles: [id, ...], searchQueries: [text, ...] }", "Name an article when", "Write a query when"]
+        ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
     ];
 
@@ -60,6 +65,11 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-inform-block-9")]
     public void The_main_skill_gives_the_form_of_the_inform_block_and_how_it_differs_from_say() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of the inform block", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-instruction-context-9")]
+    public void The_main_skill_gives_the_form_of_context_and_when_to_name_an_article_or_write_a_query() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of context", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-5")]

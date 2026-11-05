@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-instruction-context.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-instruction-context.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Instruction context</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 20 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>articles</code>, <code>procedure-model</code></span>
@@ -380,9 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A named article is a reference, so a missing one is refused on save and later guards protect it. A query is only text: the CMS stores it and never runs it, because the bot, or the search system it uses, does the searching.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>10</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -443,7 +441,7 @@ whenStalled:
     <tr><td>an article <code>id</code> that is not camelCase</td><td>Save</td></tr>
     <tr><td>a key <code>context</code> does not have, or <code>context</code> on something that is not an instruction</td><td>Save, on the server: unknown fields are refused on every save</td></tr>
     <tr><td>a blank query</td><td>Version, as a blank instruction is: work still to do</td></tr>
-    <tr><td>a query in a bot with no articles</td><td>Version: nothing could ever be found (see Open questions)</td></tr>
+    <tr><td>a query in a bot with no articles</td><td>Version: nothing could ever be found</td></tr>
   </table>
   <p>A save behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes, and an accepted save lists <code>Version</code> mistakes without refusing. The rules are in the validator, so they hold offline too.</p>
   <table>
@@ -472,6 +470,7 @@ whenStalled:
     <li>The same shape on every instruction: an instruction loads into one model, so a later block cannot define it differently.</li>
     <li>The CMS only stores a query: testing it would need an index or a call to the bot, and the CMS builds no index and does not read a bot's content to save an edit.</li>
     <li><code>context</code> names articles only, not procedures: a procedure is not something to read. A guide may name one with a link: <code>article-procedure-links</code>.</li>
+    <li>A query in a bot with no articles is a <code>Version</code> mistake: a bot fails at the push instead of at load, which is the earlier and clearer place, and it is easy to lift if a real bot needs it.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -486,30 +485,13 @@ whenStalled:
     <li><code>AC-instruction-context-7</code> A save holding a query succeeds with no bot reachable and no outside call made, and the query reads back byte for byte.</li>
     <li><code>AC-instruction-context-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
     <li><code>AC-instruction-context-9</code> The plugin's main skill gives the form of <code>context</code> and says when to name an article and when to write a query.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>inform-block</code>:</b> the instruction of an <code>inform</code> takes a <code>context</code>, under the same rules as on <code>whenStalled</code>.</li>
+    <li><code>AC-instruction-context-10</code> The instruction of an <code>inform</code> takes a context, under the same rules as on <code>whenStalled</code>.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p>A query can find the wrong text without anyone in the CMS noticing, and what it finds changes whenever articles do. The CMS cannot run it, so this is left to the bot's own tests. An author who wants certainty names the article.</p></div>
   <div class="callout assumption"><p>Suwchatbot refuses a named article that does not exist, a blank query and a query in a bot with no articles when it starts. The stages here are chosen so that a version it receives passes those checks.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Is a query in a bot with no articles a mistake?</legend>
-      <p class="why">Suwchatbot refuses it when it starts, so a version with one would fail there. But a bot may feed an external search system with data the CMS does not hold, where a query could find something with no article in the CMS. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="version"><span><b>Yes, a <code>Version</code> mistake</b><small>a bot fails at the push instead of at load, which is the earlier and clearer place; it is easy to lift if a real bot needs it</small></span></label>
-      <label><input type="radio" value="allow"><span><b>No: the CMS does not judge queries</b><small>fits a bot with its own search data, but the first bot refuses such a version only when it loads it</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

@@ -19,8 +19,17 @@ export interface Rule {
     to: string;
 }
 
-export interface Inform {
+export interface Context {
+    articles?: string[];
+    searchQueries?: string[];
+}
+
+export interface Instruction {
     instruction: string;
+    context?: Context;
+}
+
+export interface Inform extends Instruction {
     articles?: string[];
     facts?: string[];
 }
@@ -40,7 +49,7 @@ export interface Step {
 export interface Draft {
     description: string;
     firstStep: string | null;
-    whenStalled: string | null;
+    whenStalled: Instruction | null;
     steps: Record<string, Step>;
 }
 
@@ -66,9 +75,24 @@ function ruleOf(raw: unknown): Rule {
     return rest;
 }
 
-function informOf(wire: NonNullable<Wire["inform"]>): Inform {
+function instructionOf(wire: NonNullable<ProcedureDetail["whenStalled"]>): Instruction {
+    const context = wire.context;
     return {
         instruction: wire.instruction ?? "",
+        ...(context
+            ? {
+                  context: {
+                      ...(context.articles ? { articles: [...context.articles] } : {}),
+                      ...(context.searchQueries ? { searchQueries: [...context.searchQueries] } : {}),
+                  },
+              }
+            : {}),
+    };
+}
+
+function informOf(wire: NonNullable<Wire["inform"]>): Inform {
+    return {
+        ...instructionOf({ instruction: wire.instruction ?? "", context: wire.context ?? null }),
         ...(wire.articles ? { articles: [...wire.articles] } : {}),
         ...(wire.facts ? { facts: [...wire.facts] } : {}),
     };
@@ -92,7 +116,7 @@ export function fromDetail(detail: ProcedureDetail): Draft {
     return {
         description: detail.description,
         firstStep: detail.firstStep,
-        whenStalled: detail.whenStalled?.instruction ?? null,
+        whenStalled: detail.whenStalled ? instructionOf(detail.whenStalled) : null,
         steps: Object.fromEntries(Object.entries(detail.steps).map(([name, wire]) => [name, stepOf(wire)])),
     };
 }
@@ -102,7 +126,7 @@ export function toSave(draft: Draft): SaveProcedure {
     return {
         description: draft.description,
         firstStep: draft.firstStep,
-        whenStalled: draft.whenStalled === null ? null : { instruction: draft.whenStalled },
+        whenStalled: draft.whenStalled,
         steps: Object.fromEntries(
             Object.entries(draft.steps).map(([name, step]) => [
                 name,
@@ -331,6 +355,17 @@ export function collectable(facts: Fact[]): Fact[] {
 export interface LinkableArticle {
     id: string;
     title: string;
+}
+
+/** The text of a whenStalled as typed: emptying it removes the instruction, unless a context would be lost with it. */
+export function withStallText(whenStalled: Instruction | null, text: string): Instruction | null {
+    if (text === "" && !whenStalled?.context) return null;
+    return { ...whenStalled, instruction: text };
+}
+
+export function articleLabel(articles: LinkableArticle[], id: string): string {
+    const title = articles.find((article) => article.id === id)?.title;
+    return title === undefined ? id : `${title} (${id})`;
 }
 
 /** The procedures a start may target: not the base of every conversation, and not the procedure itself, which would be a loop. */

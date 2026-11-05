@@ -1861,6 +1861,16 @@
           "instruction": {
             "type": "string"
           },
+          "context": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InstructionContext"
+              }
+            ]
+          },
           "articles": {
             "type": [
               "null",
@@ -1871,6 +1881,29 @@
             }
           },
           "facts": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "InstructionContext": {
+        "type": "object",
+        "properties": {
+          "articles": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "searchQueries": {
             "type": [
               "null",
               "array"
@@ -2535,6 +2568,16 @@
         "properties": {
           "instruction": {
             "type": "string"
+          },
+          "context": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/InstructionContext"
+              }
+            ]
           }
         }
       },

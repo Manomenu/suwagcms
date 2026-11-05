@@ -50,7 +50,11 @@ internal static class ReferenceRules
     private static string Holder(Reference reference)
     {
         var parts = reference.Path.Split('.');
-        return $"'{parts[2]}' of step '{parts[1]}' in '{reference.From.Id}'";
+        if (parts[0] == "whenStalled")
+        {
+            return $"'context' of whenStalled in '{reference.From.Id}'";
+        }
+        return $"'{(parts.Length > 3 && parts[3] == "context" ? "context" : parts[2])}' of step '{parts[1]}' in '{reference.From.Id}'";
     }
 
     // Why: a link's id is judged by the link's own form, and a collect or a rule names a fact it then finds missing; a name an author writes for a target has to have the right form before it can be looked up, and saying so beats saying it is missing.

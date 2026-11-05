@@ -4,19 +4,22 @@ import { Input } from "@/design/input";
 import { Textarea } from "@/design/textarea";
 import { UsagePanel } from "@/design/usagePanel";
 
-import type { Draft } from "./draft";
+import { ContextForm } from "./ContextForm";
+import { withStallText, type Draft, type LinkableArticle } from "./draft";
 
 /** The fields of the procedure itself, shown when no step is selected. */
 export function ProcedurePanel({
     bot,
     id,
     draft,
+    articles,
     usage,
     edit,
 }: {
     bot: string;
     id: string;
     draft: Draft;
+    articles: LinkableArticle[];
     usage: UsageState;
     edit: (change: (draft: Draft) => Draft) => void;
 }) {
@@ -50,13 +53,24 @@ export function ProcedurePanel({
                 {(props) => (
                     <Textarea
                         {...props}
-                        value={draft.whenStalled ?? ""}
+                        value={draft.whenStalled?.instruction ?? ""}
                         onChange={(event) => {
-                            edit((current) => ({ ...current, whenStalled: event.target.value === "" ? null : event.target.value }));
+                            edit((current) => ({ ...current, whenStalled: withStallText(current.whenStalled, event.target.value) }));
                         }}
                     />
                 )}
             </Field>
+            {draft.whenStalled && (
+                <ContextForm
+                    context={draft.whenStalled.context}
+                    articles={articles}
+                    onChange={(context) => {
+                        edit((current) =>
+                            current.whenStalled ? { ...current, whenStalled: { ...current.whenStalled, context } } : current,
+                        );
+                    }}
+                />
+            )}
             <UsagePanel usage={usage.usage} failure={usage.failure} hrefOf={(entry) => usageHref(bot, entry)} />
             <p className="text-sm text-muted-foreground">Select a step on the graph to edit it.</p>
         </section>
