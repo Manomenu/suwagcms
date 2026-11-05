@@ -381,8 +381,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>People and agents may both push, through the web, the CLI and the plugin. With this feature, the first cut is complete: facts, articles and procedures reach a running bot.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -529,6 +529,7 @@ stateDiagram-v2
     <li><code>AC-version-push-14</code> <code>suwagcms push</code> asks for no confirmation, and with <code>--json</code> returns the result, the reason and the version the bot reports.</li>
     <li><code>AC-version-push-15</code> <code>suwagcms push</code> and <code>suwagcms versions status</code> each have their line in the plugin's main skill.</li>
     <li><code>AC-version-push-16</code> From a real server and a test bot, through the CLI: a fact, a base, two linked articles and the procedures are created, deleting a used article and closing a loop are refused, a version is created and pushed, and the CMS shows what the bot reports; with the bot stopped, a push fails visibly, and after its return the bot still reports the earlier version.</li>
+    <li><code>AC-version-push-17</code> A push is checked against what the bot declares now.</li>
   </ul>
 </section>
 
@@ -536,7 +537,6 @@ stateDiagram-v2
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>bot-declaration</code>:</b> a push is checked against what the bot declares now.</li>
     <li><b>after <code>cms-identity</code>:</b> a push carries the bot's key, and a wrong key shows as a failed push saying how to fix it.</li>
   </ul>
 </section>

@@ -1,4 +1,4 @@
-namespace Suwagcms.Server.Versions;
+namespace Suwagcms.Server.Bots;
 
 internal sealed class PushOptions
 {

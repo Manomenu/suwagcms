@@ -23,19 +23,8 @@ import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
 import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
-import {
-    addStep,
-    BLOCKS,
-    connect,
-    deleteStep,
-    disconnect,
-    edgesOf,
-    factsSeen,
-    stepOrder,
-    toSave,
-    type BlockName,
-    type Draft,
-} from "./draft";
+import { addStep, connect, deleteStep, disconnect, edgesOf, factsSeen, stepOrder, toSave, type BlockName, type Draft } from "./draft";
+import type { OfferedBlocks } from "./offeredBlocks";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
 import { MistakeList } from "./MistakeList";
 import { targetOf, stepsWithMistakes } from "./mistakes";
@@ -108,11 +97,13 @@ function CreatorBody({
     initial,
     facts,
     stored,
+    offered,
 }: {
     bot: string;
     id: string;
     initial: ProcedureDetail;
     facts: Fact[];
+    offered: OfferedBlocks;
     stored: Positions;
 }) {
     const [state, dispatch] = useReducer(reduce, initial, loaded);
@@ -277,7 +268,7 @@ function CreatorBody({
                 <div className="flex min-w-0 flex-1 flex-col">
                     <aside className="flex items-center gap-2 border-b border-border px-3 py-2" aria-label="Blocks">
                         <h2 className="text-base font-semibold">Blocks</h2>
-                        {BLOCKS.map((block) => (
+                        {offered.blocks.map((block) => (
                             <Button
                                 key={block}
                                 type="button"
@@ -290,6 +281,7 @@ function CreatorBody({
                                 {block}
                             </Button>
                         ))}
+                        {offered.note !== null && <p className="text-sm text-muted-foreground">{offered.note}</p>}
                     </aside>
                     <div className="min-h-0 flex-1" aria-label="Graph">
                         <ReactFlow
@@ -377,7 +369,14 @@ function CreatorBody({
 }
 
 /** The creator of one procedure: a graph of its steps, the form of the selected one, and the live list of mistakes. */
-export function Creator(props: { bot: string; id: string; initial: ProcedureDetail; facts: Fact[]; stored: Positions }) {
+export function Creator(props: {
+    bot: string;
+    id: string;
+    initial: ProcedureDetail;
+    facts: Fact[];
+    stored: Positions;
+    offered: OfferedBlocks;
+}) {
     return (
         <ReactFlowProvider>
             <CreatorBody {...props} />

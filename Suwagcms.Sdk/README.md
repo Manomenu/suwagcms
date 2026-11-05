@@ -14,7 +14,7 @@ It holds the definition format (`Suwagcms.Sdk.Format`, JSON schema in `definitio
 ```csharp
 builder.Services.AddSuwagcmsBot("rzeczoznawca");   // the bot's own id; versions are kept in files under the content root
 var app = builder.Build();
-app.MapSuwagcmsBot();                              // GET /suwagcms/state, PUT /suwagcms/versions/{number}
+app.MapSuwagcmsBot();                              // GET /suwagcms/state, GET /suwagcms/declaration, PUT /suwagcms/versions/{number}
 ```
 
 The CMS pushes a version with `PUT /suwagcms/versions/{number}`: one JSON object with `formatVersion`, `bot`, `number`,
@@ -24,6 +24,21 @@ mistake in `mistakes` (422 invalid, 409 the number holds another document, 503 t
 Sending the same document again succeeds and changes nothing; a lower number is accepted and becomes current.
 `GET /suwagcms/state` answers `bot`, `current` (null before the first version), `held`, `inUse` and `storeError`. The shapes
 are in `bot-runtime.schema.json`, so a bot outside .NET can implement the same routes.
+
+**What the bot supports.** State it in the setup, and the CMS asks for it with `GET /suwagcms/declaration` once the bot is running:
+
+```csharp
+builder.Services.AddSuwagcmsBot("rzeczoznawca", declares: new BotCapabilities
+{
+    FormatVersion = BotDefinition.CurrentFormatVersion,
+    Blocks = ["listen", "collect", "say", "assign"],       // what your engine runs: there is no default
+    CodeActions = [new CodeAction { Id = "lookupPolicy", Description = "Finds a policy" }],
+});
+```
+
+The CMS then builds and pushes only versions that fit it. Without `declares` the route answers `declaresNothing: true` and nothing
+is checked against the bot, so a bot that is not ready to say still works. The answer's shape is in `bot-runtime.schema.json`.
+A bot outside .NET serves the same route and validates a definition through the CMS with `POST /api/validate` (`suwagcms validate`).
 
 The bot's code uses `IBotDefinitions`:
 
@@ -45,5 +60,7 @@ Without the runtime, the validator alone needs no database and no network:
 ```csharp
 IReadOnlyList<Mistake> mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Version);
 ```
+
+Pass a `BotDeclaration` as a third argument and the `Version` stage also reports what that bot cannot run; `Save` never looks at it.
 
 It returns every mistake at once, each with a stable code and a fix; an empty list means the definition passes.

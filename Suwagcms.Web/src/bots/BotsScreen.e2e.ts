@@ -1,5 +1,7 @@
 // A person registers a bot in the browser and works on it; the bot is in the address, so two tabs never share it.
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { createServer, type Server } from "node:http";
+import type { AddressInfo } from "node:net";
 
 function freshId(prefix: string): string {
     return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -88,4 +90,59 @@ test("AC-bot-profiles-11: an address naming a bot that does not exist shows a pa
     await expect(page.getByText("No bot 'no-such-bot'")).toBeVisible();
     await page.getByRole("main").getByRole("link", { name: "Bots", exact: true }).click();
     await expect(page).toHaveURL("/bots");
+});
+
+/** A bot that keeps the contract of the declaration route and nothing else, so the profile has someone to ask. */
+async function startDeclaringBot(id: string, blocks: () => string[]): Promise<{ address: string; server: Server }> {
+    const server = createServer((_, response) => {
+        response.writeHead(200, { "content-type": "application/json" }).end(
+            JSON.stringify({
+                bot: id,
+                formatVersion: 1,
+                blocks: blocks(),
+                codeActions: [{ id: "lookupPolicy", description: "Finds a policy" }],
+            }),
+        );
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    return { address: `http://127.0.0.1:${(server.address() as AddressInfo).port}`, server };
+}
+
+test("AC-bot-declaration-4: opening the profile asks the bot and shows its answer, and Ask again shows the new one (AC-bot-declaration-9)", async ({
+    page,
+    request,
+}) => {
+    const id = freshId("declaring");
+    let blocks = ["listen", "say"];
+    const bot = await startDeclaringBot(id, () => blocks);
+    try {
+        expect((await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: bot.address } })).status()).toBe(201);
+
+        await page.goto(`/bots/${id}`);
+
+        const panel = page.getByRole("main");
+        await expect(panel.getByText("Asked just now")).toBeVisible();
+        await expect(panel.getByText("say", { exact: true })).toBeVisible();
+        await expect(panel.getByText("lookupPolicy")).toBeVisible();
+
+        blocks = ["listen"];
+        await panel.getByRole("button", { name: "Ask again" }).click();
+        await expect(panel.getByText("say", { exact: true })).toHaveCount(0);
+        await expect(panel.getByText("listen", { exact: true })).toBeVisible();
+    } finally {
+        bot.server.close();
+    }
+});
+
+test("AC-bot-declaration-5: a bot that has never answered shows that it has not, and the rest of the profile works", async ({
+    page,
+    request,
+}) => {
+    const id = freshId("silent");
+    expect((await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: "http://127.0.0.1:9" } })).status()).toBe(201);
+
+    await page.goto(`/bots/${id}`);
+
+    await expect(page.getByText(/it has never answered/)).toBeVisible();
+    await expect(page.getByRole("main").getByText("Choose Facts")).toBeVisible();
 });

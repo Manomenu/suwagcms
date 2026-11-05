@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using Suwagcms.Sdk.BotRuntime;
 
-namespace Suwagcms.Server.Versions;
+namespace Suwagcms.Server.Bots;
 
 // Why: the one place the CMS talks to a bot's routes; it holds no lock and no transaction, since a slow bot must never hold up anyone's editing.
 internal sealed class BotLine(HttpClient http, IOptions<PushOptions> options, TimeProvider time)
@@ -23,6 +23,14 @@ internal sealed class BotLine(HttpClient http, IOptions<PushOptions> options, Ti
         await SendAsync(
             address,
             new HttpRequestMessage(HttpMethod.Get, Route(address, "state")),
+            options.Value.StateTimeoutSeconds,
+            cancellationToken
+        );
+
+    public async Task<Reply> ReadDeclarationAsync(string address, CancellationToken cancellationToken) =>
+        await SendAsync(
+            address,
+            new HttpRequestMessage(HttpMethod.Get, Route(address, "declaration")),
             options.Value.StateTimeoutSeconds,
             cancellationToken
         );

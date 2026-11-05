@@ -60,4 +60,14 @@ public static class MistakeCodes
     public const string VersionNumber = "version.number";
     public const string VersionDigest = "version.digest";
     public const string VersionConflict = "version.conflict";
+    public const string DeclarationInvalid = "declaration.invalid";
+    public const string DeclarationBot = "declaration.bot";
+    public const string DeclarationFormatMissing = "declaration.formatVersion.missing";
+    public const string DeclarationBlocksMissing = "declaration.blocks.missing";
+    public const string DeclarationBlockUnknown = "declaration.block.unknown";
+    public const string DeclarationFormatVersion = "declaration.formatVersion";
+    public const string DeclarationBlock = "declaration.block";
+    public const string CodeActionIdMissing = "codeAction.id.missing";
+    public const string CodeActionDescriptionMissing = "codeAction.description.missing";
+    public const string CodeActionRepeated = "codeAction.repeated";
 }

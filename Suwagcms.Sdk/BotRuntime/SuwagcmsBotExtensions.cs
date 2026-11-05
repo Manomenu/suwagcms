@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.BotRuntime;
 
@@ -15,11 +16,13 @@ public static class SuwagcmsBotExtensions
         this IServiceCollection services,
         string botId,
         IVersionStore? store = null,
-        TimeSpan? pollInterval = null
+        TimeSpan? pollInterval = null,
+        BotCapabilities? declares = null
     )
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(botId);
+        services.AddSingleton(BotDeclaration.Of(botId, declares));
         services.AddSingleton(provider => new VersionRuntime(
             botId,
             store
@@ -42,6 +45,7 @@ public static class SuwagcmsBotExtensions
             async (VersionRuntime runtime, CancellationToken cancellationToken) =>
                 Results.Json(await runtime.ReadStateAsync(cancellationToken), BotRuntimeJson.Options)
         );
+        group.MapGet("/declaration", (BotDeclaration declaration) => Results.Json(declaration, BotRuntimeJson.Options));
         group.MapPut(
             "/versions/{number:int}",
             async (int number, HttpRequest request, VersionRuntime runtime, CancellationToken cancellationToken) =>

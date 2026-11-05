@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Bot declaration</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 6 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>bot-profiles</code>, <code>sdk-validator</code></span>
@@ -377,12 +377,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>TL;DR</h2>
   <div class="tldr">
     <p>A bot states what it supports: the format version it wants, the blocks it can run and the actions written in its code. The CMS asks the bot for this over a new route, keeps the last good answer and shows it in the web, the CLI and the plugin.</p>
-    <p>The validator can now check a definition against a declaration, and a bot outside .NET can validate through an endpoint of the CMS. Registering a bot still contacts nothing, so one thing to confirm: README says a bot declares “at registration”, while this spec has the CMS ask afterwards.</p>
+    <p>The validator can now check a definition against a declaration, and a bot outside .NET can validate through an endpoint of the CMS. Registering a bot still contacts nothing: the CMS asks afterwards.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>18</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -401,7 +400,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Showing declared actions as resources of the bot: <code>code-actions</code>. Here they are part of the answer, nothing more.</li>
-      <li>Offering only declared blocks in the creator, and checking a version or a push against the declaration: those items wait in the specs of <code>procedure-creator</code>, <code>version-create</code> and <code>version-push</code>.</li>
       <li>Declaring which secrets a bot holds: README lists three declared things, and a test run shows a missing secret.</li>
       <li>Asking on a timer: the CMS asks when someone looks or pushes.</li>
     </ul></div>
@@ -495,6 +493,11 @@ Mistakes, 1:
     <li>A mismatch with the declaration is a <code>Version</code> mistake, never a <code>Save</code> one: the working state may be unfinished, and the bot may change without anyone editing it.</li>
     <li>The endpoint takes the declaration as input rather than reading a stored one, so its answer depends only on what was sent, as the library's does.</li>
     <li>The bot's routes have no key until <code>cms-identity</code> (owner's decision), and this request carries none.</li>
+    <li>A bot with no declaration has nothing to check against: the creator offers every block and says nothing is being checked, and a version is created as usual. A bot can be prepared before it is deployed, and its own validation at a push remains the safeguard.</li>
+    <li>A bot whose route answers 404 declares nothing: that is how a bot on an SDK older than this route looks.</li>
+    <li>A push checks only a good answer the bot gives at that moment. When the bot does not answer, or its answer is refused, the push goes on to the bot, whose own validation and whose silence report the failure as before.</li>
+    <li>The creator reads the last answer without asking, so that opening a form never waits on a bot; <code>suwagcms bots declaration --stored</code> reads the same.</li>
+    <li>What is wrong with an answer is reported with the codes <code>declaration.*</code> and <code>codeAction.*</code>; a parameter or a result fails with the codes of a fact, since the rules of facts judge it.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -516,14 +519,14 @@ Mistakes, 1:
     <li><code>AC-bot-declaration-14</code> <code>POST /api/validate</code> returns the same mistakes as the library for the same definition, stage and declaration, stores nothing, and contacts no bot.</li>
     <li><code>AC-bot-declaration-15</code> <code>suwagcms validate</code> reads YAML and JSON, checks the <code>Version</code> stage unless told otherwise, and exits 0 for no mistakes and 1 otherwise, with <code>--json</code> returning the mistakes.</li>
     <li><code>AC-bot-declaration-16</code> <code>suwagcms bots declaration</code> and <code>suwagcms validate</code> each have their line in the plugin's main skill.</li>
+    <li><code>AC-bot-declaration-17</code> Given a declaration, the validator returns at the <code>Version</code> stage a mistake for each step whose block the bot does not declare, naming the procedure, the step and the blocks it does declare.</li>
+    <li><code>AC-bot-declaration-18</code> A change of declaration that leaves out a block in use lists the affected procedures on the profile and in <code>suwagcms bots declaration</code>.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>procedure-model</code>:</b> given a declaration, the validator returns at the <code>Version</code> stage a mistake for each step whose block the bot does not declare, naming the procedure, the step and the blocks it does declare.</li>
-    <li><b>after <code>procedure-model</code>:</b> a change of declaration that leaves out a block in use lists the affected procedures on the profile and in <code>suwagcms bots declaration</code>.</li>
     <li><b>after <code>cms-identity</code>:</b> the request carries the bot's key, and a wrong key shows as a failed ask saying how to fix it.</li>
   </ul>
 </section>
@@ -532,17 +535,6 @@ Mistakes, 1:
   <div class="callout risk"><p><b>The stored declaration can be stale when a version is created.</b> Creating a version never calls a bot, so it trusts the last answer. A push asks again, and the bot validates what it loads, so a stale answer delays the refusal and never lets a bad version run.</p></div>
   <div class="callout risk"><p><b>The route has no key.</b> Until <code>cms-identity</code>, anyone who can reach the bot reads what it can do, and anyone in the network path can answer in its place. README accepts this for a trusted network.</p></div>
   <div class="callout assumption"><p>The rules of parameter and result types come from the rules of facts in <code>global-facts</code>, which is expected to exist first: it belongs to the first cut.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>What does a bot with no declaration mean for its versions?</legend>
-      <p class="why">A bot may be undeployed, or on an older SDK. README says the CMS refuses what a bot does not declare, and says nothing about a bot that declares nothing. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="nocheck"><span><b>Nothing to check against: the creator offers every block, and the page says nothing is being checked</b><small>a bot can be prepared before it is deployed; the bot's own validation at a push remains the safeguard</small></span></label>
-      <label><input type="radio" value="refuse"><span><b>Refuse creating a version until the bot has declared</b><small>stricter, but it ties an offline step to a running bot, which <code>version-create</code> avoids</small></span></label>
-    </fieldset>
-  </form>
 </section>
 
 <!-- CONTENT END -->

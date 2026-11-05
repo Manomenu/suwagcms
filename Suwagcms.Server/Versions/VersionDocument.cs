@@ -14,7 +14,7 @@ internal static class VersionDocument
     public static (string Json, string Sha256) Write(string bot, int number, IEnumerable<StoredResource> resources)
     {
         ArgumentNullException.ThrowIfNull(resources);
-        var all = resources.ToList();
+        var all = WithCurrentTitles([.. resources]);
         var document = new JsonObject
         {
             ["formatVersion"] = BotDefinition.CurrentFormatVersion,
@@ -30,6 +30,18 @@ internal static class VersionDocument
         var digest = VersionDigest.Of(document.ToJsonString(Compact));
         document["digest"] = digest;
         return (document.ToJsonString(Compact), digest);
+    }
+
+    private static List<StoredResource> WithCurrentTitles(List<StoredResource> resources)
+    {
+        var articles = resources.Select(item => item.Record).OfType<Article>().ToList();
+        var titles = articles.ToDictionary(article => article.Id, article => article.Title);
+        return
+        [
+            .. resources.Select(item =>
+                item.Record is Article article ? item with { Record = ArticleLinkLabels.WithCurrentTitles(article, titles) } : item
+            ),
+        ];
     }
 
     // Why: resources are put in ordinal order of their ids whatever order they were saved or loaded in, so equal states give equal documents.

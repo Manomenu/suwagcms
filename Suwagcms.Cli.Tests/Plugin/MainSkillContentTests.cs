@@ -22,6 +22,7 @@ public sealed class MainSkillContentTests
             ["--dry-run", "what would this change break?", "Only the server sees a type change"]
         ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
+        ("to compare before pushing", "Before a push", ["suwagcms versions status", "suwagcms diff <has> <latest>"]),
     ];
 
     private static string MainSkill() =>
@@ -60,6 +61,11 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-local-facts-13")]
     public void The_main_skill_gives_the_form_of_local_facts() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of localFacts", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-version-diff-13")]
+    public void The_main_skill_shows_the_comparison_of_what_the_bot_has_with_the_latest_before_a_push() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("to compare before pushing", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-5")]

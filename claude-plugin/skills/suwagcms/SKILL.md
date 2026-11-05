@@ -56,7 +56,8 @@ with no force option: `fact.enum.valueInUse` (a removed value a `when` or `assig
 ## Never edit local files
 
 A resource of the CMS (a fact, an article, a procedure) is never edited as a local file, and no file in the repository is its
-copy. Change it only with the commands below, so the server's rules apply.
+copy. Change it only with the commands below, so the server's rules apply. The files `suwagcms export` writes are for reading:
+changing them changes nothing.
 
 ## Show a page
 
@@ -83,6 +84,7 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms server <url>` - save the server address that later commands use.
 - `suwagcms bots list` - list the registered bots, marking the one in use with `*`; `--open` opens the list in the web app.
 - `suwagcms bots add <id> --name <name> --address <url>` - register a bot; it never contacts the address, so a bot can be registered before it runs.
+- `suwagcms bots declaration [--stored]` - ask the bot what it supports (the format version it wants, the blocks it can run, the actions in its code), store a good answer with its time and show it, with the procedures using a block it no longer declares. Exit code `1` when the bot cannot be reached or its answer is refused: the last good answer is shown with its time and the reason. `--stored` shows the last answer without asking. `--open` opens the bot's profile.
 - `suwagcms use [<id>]` - store the bot later commands work on, or say which bot is in use.
 - `suwagcms facts list` - list the global facts of the bot; `--open` opens the Facts screen in the web app.
 - `suwagcms facts show <name>` - show one fact with its revision and the procedures that use it.
@@ -116,10 +118,18 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms history [--limit n] [--before id]` - list every change to the bot, newest first, one page at a time (50 unless `--limit` says otherwise): when, what and the changed fields with their old and new values, also creating and pushing a version. `--before` takes the id the last page says to go on from; `--json` gives the entries; `--open` opens the bot's History page. It says what and when, never who, and no command can change it.
 - `suwagcms history <kind> <id> [--limit n] [--before id]` - with `<kind>` fact, kb, article, procedure or version: the same for one resource, also after it is deleted, with what it held last; `--open` opens the page of its history. A resource with no entries says no change has been recorded since history started.
 - `suwagcms push` - push the latest version to the bot, which then reports the version it holds (`--json` gives the result, the reason and that version). It asks for no confirmation: validation by the bot and rollback are the safeguards, so push when the work calls for it. Exit code `0` when the bot holds the version, also when it already had it (nothing is sent); `1` with the reason when the version does not exist, the bot cannot be reached or does not answer within 30 seconds, or the bot refuses it with every mistake. A repeated push is safe. Only the latest version can be pushed.
+- `suwagcms diff <from> <to>` - say what going from one version to another changes: each resource added, removed or changed, and in a changed one its fields with old and new values, `content` and `llmGuide` as lines removed and added, and a procedure's steps and local facts. It reads two frozen versions only, never the working state or the bot. Exit code `0` also when differences are found; `1` for a number the bot does not have. `--json` gives the same in a fixed order; `--open` opens the comparison in the web app.
+- `suwagcms export [<number>] --out <folder>` - write a version (the latest when no number is given) to a new or empty folder of YAML files for reading and searching with ordinary tools: one file for the version itself and one per fact, knowledge base, article and procedure, in a folder per kind. Changes to those files do nothing: no command takes them back. A folder with anything in it, or a number the bot does not have, is refused with exit code `1`; no `--out` exits `2`. `--json` gives the folder, the version and the count of files per kind; `--open` opens the version in the web app.
+- `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
 
 `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
+
+## Before a push
+
+Show what a push will change first: `suwagcms versions status` gives the version the bot has and the latest, and
+`suwagcms diff <has> <latest>` compares them. Say what it changes for customers, then push.
 
 ## Procedure file
 

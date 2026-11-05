@@ -93,6 +93,92 @@
         }
       }
     },
+    "/api/bots/{bot}/declaration": {
+      "get": {
+        "tags": [
+          "BotEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ask",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclarationStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/validate": {
+      "post": {
+        "tags": [
+          "ValidationEndpoints"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateDefinition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationAnswer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/articles": {
       "get": {
         "tags": [
@@ -1315,6 +1401,114 @@
         }
       }
     },
+    "/api/bots/{bot}/versions/{from}/diff/{to}": {
+      "get": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionComparison"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/bots/{bot}/versions/{number}/export": {
+      "get": {
+        "tags": [
+          "VersionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionExport"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/versions/status": {
       "get": {
         "tags": [
@@ -1989,6 +2183,38 @@
         },
         "description": "A registered bot: the id that sits in addresses and commands, the name people see, and where the CMS reaches it."
       },
+      "BotDeclaration": {
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "declaresNothing": {
+            "type": "boolean"
+          },
+          "formatVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "codeActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeAction"
+            }
+          }
+        }
+      },
       "BotReach": {
         "enum": [
           "Answered",
@@ -2277,6 +2503,206 @@
         },
         "description": "The Problem Details of a refused file of changes: every mistake at once, each with its change's position. Nothing was saved."
       },
+      "CodeAction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeActionField"
+            }
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeActionField"
+            }
+          }
+        }
+      },
+      "CodeActionField": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "values": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "min": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "max": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxLength": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DeclarationAsk": {
+        "enum": [
+          "Answered",
+          "NotAsked",
+          "Unreachable",
+          "Invalid"
+        ],
+        "description": "What this look at a bot's declaration came to: the bot gave a good answer, was not asked (the stored one was read), could not be reached, or gave an answer that was refused."
+      },
+      "DeclarationStatus": {
+        "required": [
+          "bot",
+          "address",
+          "ask",
+          "stored",
+          "declaration",
+          "answeredAt",
+          "reason",
+          "mistakes",
+          "formatFix",
+          "cannotRun"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "ask": {
+            "$ref": "#/components/schemas/DeclarationAsk"
+          },
+          "stored": {
+            "$ref": "#/components/schemas/DeclarationStored"
+          },
+          "declaration": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BotDeclaration"
+              }
+            ]
+          },
+          "answeredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          },
+          "formatFix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cannotRun": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists the steps of the working state using a block the declaration leaves out."
+      },
+      "DeclarationStored": {
+        "enum": [
+          "NeverAnswered",
+          "DeclaresNothing",
+          "Declared"
+        ],
+        "description": "What the CMS holds of a bot's declaration: no good answer yet, the answer that the bot declares nothing, or a declaration."
+      },
+      "Difference": {
+        "enum": [
+          "Added",
+          "Removed",
+          "Changed"
+        ],
+        "description": "What happened to a resource, or to a part of one, going from one version to another."
+      },
+      "ExportedFile": {
+        "required": [
+          "kind",
+          "id",
+          "path",
+          "data"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ResourceKind"
+              }
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/JsonElement"
+          }
+        },
+        "description": "One file of an exported version: the resource it holds (no kind for `version.yaml`), where it goes inside the folder, and what the version holds for it."
+      },
       "Fact": {
         "required": [
           "name",
@@ -2390,6 +2816,42 @@
           }
         },
         "description": "One changed field of a history entry. Old is empty on an add, New is empty on a delete; each is the field's value as the API shows it."
+      },
+      "FieldDifference": {
+        "required": [
+          "field",
+          "old",
+          "new",
+          "lines"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "old": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "new": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lines": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TextLine"
+            }
+          }
+        },
+        "description": "A changed field: its old and new values (null when it had none), or for a long text its lines removed and added, with a few around them."
       },
       "HealthStatus": {
         "required": [
@@ -2521,6 +2983,15 @@
         },
         "description": "A knowledge base of a bot as the API shows it: its id, title and language, and the revision to send back to guard an edit."
       },
+      "LineChange": {
+        "enum": [
+          "Kept",
+          "Removed",
+          "Added",
+          "Folded"
+        ],
+        "description": "What a line of a long text is in a comparison: around a change, gone, new, or standing for unchanged lines left out."
+      },
       "ListenArguments": {
         "type": "object"
       },
@@ -2638,6 +3109,33 @@
           }
         },
         "description": "The top left corner of a step in the creator, in pixels of its canvas."
+      },
+      "PartDifference": {
+        "required": [
+          "part",
+          "name",
+          "difference",
+          "fields"
+        ],
+        "type": "object",
+        "properties": {
+          "part": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "difference": {
+            "$ref": "#/components/schemas/Difference"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          }
+        },
+        "description": "A part of a procedure that differs: a step or a local fact, by name, with what changed in it."
       },
       "ProcedureDetail": {
         "required": [
@@ -3071,6 +3569,40 @@
         },
         "description": "What changing a resource's id takes: the new id, which is checked by the same rules as a new resource's."
       },
+      "ResourceDifference": {
+        "required": [
+          "kind",
+          "id",
+          "difference",
+          "fields",
+          "parts"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ResourceKind"
+          },
+          "id": {
+            "type": "string"
+          },
+          "difference": {
+            "$ref": "#/components/schemas/Difference"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartDifference"
+            }
+          }
+        },
+        "description": "A resource that differs between two versions, by kind and id; only a changed one lists fields and parts."
+      },
       "ResourceKind": {
         "enum": [
           "Definition",
@@ -3290,6 +3822,22 @@
           }
         }
       },
+      "TextLine": {
+        "required": [
+          "change",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "change": {
+            "$ref": "#/components/schemas/LineChange"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "description": "One line of a compared text; a folded one says how many unchanged lines it stands for."
+      },
       "UsageLink": {
         "required": [
           "kind",
@@ -3332,11 +3880,120 @@
         },
         "description": "What refers to a resource and what it refers to, each with the field that holds the reference: the lists a refused delete is made of."
       },
+      "ValidateDefinition": {
+        "required": [
+          "definition"
+        ],
+        "type": "object",
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "stage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValidationStage"
+              }
+            ]
+          },
+          "declaration": { }
+        },
+        "description": "What the validate endpoint takes: a definition, the stage to check it at (Version when left out) and optionally what a bot declares. The two documents stay raw so that their mistakes are the validator's own."
+      },
+      "ValidationAnswer": {
+        "required": [
+          "mistakes"
+        ],
+        "type": "object",
+        "properties": {
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "What the validator says about a definition: every mistake, each with its fix; none means it passes."
+      },
       "ValidationStage": {
         "enum": [
           "Save",
           "Version"
         ]
+      },
+      "VersionComparison": {
+        "required": [
+          "bot",
+          "from",
+          "to",
+          "added",
+          "removed",
+          "changed",
+          "definition",
+          "resources"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "from": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "to": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "added": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "removed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "changed": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "definition": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          },
+          "resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceDifference"
+            }
+          }
+        },
+        "description": "What going from one version of a bot to another changes, in a fixed order: by kind, then by id. `Definition` lists what differs outside the resources, such as the format version; numbers and digests are not differences."
       },
       "VersionCreated": {
         "required": [
@@ -3369,6 +4026,34 @@
           }
         },
         "description": "One version with its document exactly as stored: the JSON a bot receives, whose sha256 can be checked against it."
+      },
+      "VersionExport": {
+        "required": [
+          "bot",
+          "number",
+          "files"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "number": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedFile"
+            }
+          }
+        },
+        "description": "A version split into the files of an export, for reading and searching; nothing takes them back. The same version always gives the same files."
       },
       "VersionSummary": {
         "required": [
@@ -3440,6 +4125,9 @@
     },
     {
       "name": "BotEndpoints"
+    },
+    {
+      "name": "ValidationEndpoints"
     },
     {
       "name": "ArticleEndpoints"

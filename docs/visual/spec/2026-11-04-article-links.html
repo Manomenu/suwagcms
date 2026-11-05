@@ -381,8 +381,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>An agent writes the same Markdown as text. A link to an article this bot does not have is refused on save, so an article of another bot can never be linked. This is the first real reference: the delete and loop guards are built on it.</p>
   </div>
   <div class="stats">
-    <div><b>12</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>13</b><span>criteria</span></div>
+    
   </div>
 </section>
 
@@ -495,16 +495,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-article-links-10</code> A <code>cms://</code> address in a code span or code block, plain text naming an article, and an ordinary web link are not treated as references.</li>
     <li><code>AC-article-links-11</code> A link to an article in another knowledge base of the same bot is accepted.</li>
     <li><code>AC-article-links-12</code> The plugin's main skill gives the link form and how to find a target.</li>
+    <li><code>AC-article-links-13</code> In a version, the label of a link to an article is the target's title at that moment, so a retitled article never reaches a customer under its old name.</li>
   </ul>
 </section>
 
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>version-create</code>:</b> in a version, the label of a link to an article is the target's title at that moment, so a retitled article never reaches a customer under its old name.</li>
-  </ul>
-</section>
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>

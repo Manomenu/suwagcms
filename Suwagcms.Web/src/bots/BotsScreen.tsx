@@ -5,6 +5,7 @@ import { fetchBots, type Bot } from "@/api/bots";
 import { Alert } from "@/design/alert";
 
 import { BotsView, profilePath } from "./BotsView";
+import { DeclarationPanel } from "./DeclarationPanel";
 import { RegisterBotForm } from "./RegisterBotForm";
 
 /**
@@ -39,6 +40,7 @@ export function BotsScreen({ openId }: { openId: string | null }) {
         <BotsView
             bots={bots}
             openId={openId}
+            declarationPanel={openId === null ? null : <DeclarationPanel bot={openId} />}
             onRegister={() => {
                 setRegistering(true);
             }}

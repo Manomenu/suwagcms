@@ -5,6 +5,8 @@ export interface StatusView {
     headline: string;
     notes: string[];
     push: { label: string; number: number } | null;
+    /** What the bot reports and what is on offer, when both are versions of this CMS that can be compared. */
+    compare: { from: number; to: number } | null;
     inUse: number[];
     problem: boolean;
 }
@@ -57,6 +59,8 @@ export function statusView(status: BotStatus): StatusView {
         headline,
         notes,
         push: latest === null || upToDate ? null : { label: `Push v${latest}`, number: latest },
+        compare:
+            answered && has !== null && latest !== null && has !== latest && !status.hasUnknownVersion ? { from: has, to: latest } : null,
         inUse: status.inUse.map(Number).filter((number) => number !== has),
         problem,
     };

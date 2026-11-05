@@ -43,6 +43,33 @@ internal static partial class CmsLinks
         return result.ToString();
     }
 
+    // Why: a title holding a closing bracket or a line break cannot be a Markdown label, so that link keeps the label it has and stays a link.
+    public static string Relabel(string markdown, IReadOnlyDictionary<string, string> titles)
+    {
+        if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
+        {
+            return markdown;
+        }
+        var result = new StringBuilder();
+        var copied = 0;
+        foreach (Match match in LinkPattern().Matches(WithoutCode(markdown)))
+        {
+            var label = match.Groups["label"];
+            var link = Classify(label.Value, match.Groups["target"].Value);
+            if (
+                link.Form == CmsLinkForm.Article
+                && titles.TryGetValue(link.Id, out var title)
+                && !title.Contains(']')
+                && !title.Contains('\n')
+            )
+            {
+                result.Append(markdown, copied, label.Index - copied).Append(title);
+                copied = label.Index + label.Length;
+            }
+        }
+        return result.Append(markdown, copied, markdown.Length - copied).ToString();
+    }
+
     private static CmsLink Classify(string label, string target)
     {
         if (target.StartsWith(ProcedurePrefix, StringComparison.Ordinal))

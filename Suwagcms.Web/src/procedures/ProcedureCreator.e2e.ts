@@ -1,5 +1,7 @@
 // A person draws a procedure in the browser: the graph, the forms, the live list of mistakes, and the save.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 
 function freshId(): string {
     return `pc-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -329,4 +331,35 @@ test("AC-resource-rename-21: Change id in the creator lands on the new address, 
     await expect(page.getByRole("heading", { name: /Creator: valuation/ })).toBeVisible();
     const layout = (await (await request.get(`/api/bots/${bot}/procedures/valuation/layout`)).json()) as { positions: unknown };
     expect(layout.positions).toEqual(positions);
+});
+
+test("AC-procedure-creator-19: the creator offers only the blocks the bot last declared, and every block when it has declared none", async ({
+    page,
+    request,
+}) => {
+    const id = freshId();
+    const server = createServer((_, response) => {
+        response
+            .writeHead(200, { "content-type": "application/json" })
+            .end(JSON.stringify({ bot: id, formatVersion: 1, blocks: ["listen", "say"] }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    try {
+        const address = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+        expect((await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address } })).status()).toBe(201);
+        await agentSaves(request, id, "conversation", CONVERSATION, 0);
+        const blocks = page.getByRole("complementary", { name: "Blocks" });
+
+        await page.goto(`/bots/${id}/procedures/conversation`);
+        await expect(blocks.getByRole("button", { name: "collect" })).toBeVisible();
+        await expect(blocks.getByText("nothing is being checked")).toBeVisible();
+
+        expect((await request.get(`/api/bots/${id}/declaration`)).status()).toBe(200);
+        await page.goto(`/bots/${id}/procedures/conversation`);
+        await expect(blocks.getByRole("button", { name: "say" })).toBeVisible();
+        await expect(blocks.getByRole("button", { name: "collect" })).toHaveCount(0);
+        await expect(blocks.getByText("nothing is being checked")).toHaveCount(0);
+    } finally {
+        server.close();
+    }
 });
