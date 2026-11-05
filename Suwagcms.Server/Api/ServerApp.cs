@@ -9,6 +9,7 @@ using Suwagcms.Server.Facts;
 using Suwagcms.Server.Health;
 using Suwagcms.Server.KnowledgeBases;
 using Suwagcms.Server.Procedures;
+using Suwagcms.Server.Versions;
 
 namespace Suwagcms.Server.Api;
 
@@ -28,6 +29,7 @@ internal static class ServerApp
         builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton<DefinitionEditor>();
+        builder.Services.AddSingleton<VersionCreator>();
         builder.Services.AddOpenApi();
 
         var app = builder.Build();
@@ -41,6 +43,7 @@ internal static class ServerApp
         api.MapFacts();
         api.MapKnowledgeBases();
         api.MapProcedures();
+        api.MapVersions();
         return app;
     }
 }

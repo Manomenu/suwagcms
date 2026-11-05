@@ -7,6 +7,7 @@ using Suwagcms.Cli.KnowledgeBases;
 using Suwagcms.Cli.Output;
 using Suwagcms.Cli.Procedures;
 using Suwagcms.Cli.Status;
+using Suwagcms.Cli.Versions;
 
 namespace Suwagcms.Cli;
 
@@ -33,6 +34,7 @@ internal static class CliApp
             ArticlesCommand.Create(options, environment),
             KnowledgeBasesCommand.Create(options, environment),
             ProceduresCommand.Create(options, environment),
+            VersionsCommand.Create(options, environment),
         };
         options.AddTo(root);
         return root;
