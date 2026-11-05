@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.BotRuntime;
@@ -22,11 +23,13 @@ public static class SuwagcmsBotExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(botId);
+        services.AddLogging();
         services.AddSingleton(BotDeclaration.Of(botId, declares));
         services.AddSingleton(provider => new VersionRuntime(
             botId,
             store
-                ?? new FileVersionStore(Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, "suwagcms-versions"))
+                ?? new FileVersionStore(Path.Combine(provider.GetRequiredService<IHostEnvironment>().ContentRootPath, "suwagcms-versions")),
+            provider.GetRequiredService<ILogger<VersionRuntime>>()
         ));
         services.AddSingleton<IBotDefinitions>(provider => provider.GetRequiredService<VersionRuntime>());
         services.AddHostedService(provider => new StorePoller(

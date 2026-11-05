@@ -1,14 +1,21 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.BotRuntime;
 
-internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDefinitions, IDisposable
+internal sealed partial class VersionRuntime(string botId, IVersionStore store, ILogger<VersionRuntime> logger)
+    : IBotDefinitions,
+        IDisposable
 {
     private readonly SemaphoreSlim writes = new(1, 1);
+    private readonly SemaphoreSlim refreshes = new(1, 1);
     private readonly ConcurrentDictionary<int, BotDefinition> loaded = new();
+    private readonly Lock publishing = new();
+    private readonly List<Func<int, CancellationToken, Task>> listeners = [];
+    private readonly CancellationTokenSource stopping = new();
     private View view = new(new VersionStoreState(null, [], null), null);
 
     public int? CurrentNumber => Volatile.Read(ref view).State.Current;
@@ -23,6 +30,32 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
         var json =
             await store.ReadVersionAsync(number, cancellationToken) ?? throw new KeyNotFoundException($"Version {number} is not held.");
         return loaded.GetOrAdd(number, Parse(json));
+    }
+
+    public async Task<IReadOnlyList<FeedArticle>> GetArticlesAsync(int number, CancellationToken cancellationToken = default)
+    {
+        var definition = await GetAsync(number, cancellationToken);
+        var languages = definition.KnowledgeBases.ToDictionary(knowledgeBase => knowledgeBase.Id, knowledgeBase => knowledgeBase.Language);
+        return
+        [
+            .. definition
+                .Articles.OrderBy(article => article.Id, StringComparer.Ordinal)
+                // Why: a version is held only after validation, which refuses an article whose base it does not have.
+                .Select(article => new FeedArticle(article, languages[article.KnowledgeBase])),
+        ];
+    }
+
+    public void OnCurrentChanged(Func<int, CancellationToken, Task> listener)
+    {
+        ArgumentNullException.ThrowIfNull(listener);
+        lock (publishing)
+        {
+            listeners.Add(listener);
+            if (view.State.Current is { } number)
+            {
+                Tell(listener, number);
+            }
+        }
     }
 
     public async Task ReportInUseAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken = default)
@@ -46,8 +79,10 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
 
     public async Task<BotState> ReadStateAsync(CancellationToken cancellationToken) => Answer(await RefreshAsync(cancellationToken));
 
+    // Why: one at a time, so a read that began before a write cannot publish after the read that saw it and tell the bot's code of a change that never happened.
     public async Task<View> RefreshAsync(CancellationToken cancellationToken)
     {
+        await refreshes.WaitAsync(cancellationToken);
         try
         {
             var state = await store.ReadStateAsync(cancellationToken);
@@ -61,6 +96,10 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             return Publish(Volatile.Read(ref view) with { Error = exception.Message });
+        }
+        finally
+        {
+            refreshes.Release();
         }
     }
 
@@ -186,13 +225,59 @@ internal sealed class VersionRuntime(string botId, IVersionStore store) : IBotDe
         await RefreshAsync(cancellationToken);
     }
 
-    public void Dispose() => writes.Dispose();
+    public void Dispose()
+    {
+        // Why: the container disposes it once per service it is registered as, and a disposed source cannot be cancelled.
+        if (!stopping.IsCancellationRequested)
+        {
+            stopping.Cancel();
+        }
+
+        stopping.Dispose();
+        refreshes.Dispose();
+        writes.Dispose();
+    }
 
     private View Publish(View next)
     {
-        Volatile.Write(ref view, next);
+        lock (publishing)
+        {
+            var before = view.State.Current;
+            Volatile.Write(ref view, next);
+            if (next.State.Current is { } number && number != before)
+            {
+                foreach (var listener in listeners)
+                {
+                    Tell(listener, number);
+                }
+            }
+        }
+
         return next;
     }
+
+    // Why: on its own task, so a slow or failing listener never holds up a route's answer or the next change; listeners may overlap and go by the number.
+    private void Tell(Func<int, CancellationToken, Task> listener, int number)
+    {
+        var token = stopping.Token;
+        _ = Task.Run(
+            async () =>
+            {
+                try
+                {
+                    await listener(number, token);
+                }
+                catch (Exception exception) when (!token.IsCancellationRequested)
+                {
+                    ListenerFailed(logger, number, exception);
+                }
+            },
+            CancellationToken.None
+        );
+    }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "The bot's code failed while handling the news that version {Number} is current")]
+    private static partial void ListenerFailed(ILogger logger, int number, Exception exception);
 
     private BotState Answer(View from) =>
         new()

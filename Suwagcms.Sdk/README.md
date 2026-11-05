@@ -49,6 +49,11 @@ The bot's code uses `IBotDefinitions`:
 
 - `CurrentNumber`: the number a new conversation starts on (null before the first version); keep it with the conversation.
 - `GetAsync(number)`: the definition of that version, also on an instance that was not pushed to.
+- `GetArticlesAsync(number)`: every article of that version, ordered by id, each with its base's `Language`, for your own search index or an
+  external one. `Content` and `LlmGuide` are as the version holds them, with `cms://` links; the CMS builds no index and is never called.
+- `OnCurrentChanged((number, cancellationToken) => …)`: tells your code each time this instance's current version changes, a rollback
+  included, and once at start when there is one. Each piece of news runs on its own task, never holding up a push: a failure is logged, and a slow
+  listener may overlap the next, so go by the number. Several instances each hear it. A version is current before you hear of it: nothing waits for your search.
 - `ReportInUseAsync(numbers)`: the versions your open conversations use, **across all instances of the bot**. Versions neither
   current nor reported are removed; until the first report nothing is. When a conversation expires is your decision.
 

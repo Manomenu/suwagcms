@@ -8,5 +8,9 @@ public interface IBotDefinitions
 
     Task<BotDefinition> GetAsync(int number, CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<FeedArticle>> GetArticlesAsync(int number, CancellationToken cancellationToken = default);
+
+    void OnCurrentChanged(Func<int, CancellationToken, Task> listener);
+
     Task ReportInUseAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken = default);
 }
