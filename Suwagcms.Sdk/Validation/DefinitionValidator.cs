@@ -14,6 +14,7 @@ public static class DefinitionValidator
         .. FactRules.All,
         .. KnowledgeBaseRules.All,
         .. ArticleRules.All,
+        .. ReferenceRules.All,
         .. ProcedureShapeRules.All,
         .. ProcedureFactRules.All,
         .. ProcedureVersionRules.All,

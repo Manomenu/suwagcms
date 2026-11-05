@@ -4,7 +4,8 @@ import { ApiError } from "@/api/client";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 
-import { saveArticle, type KnowledgeBase } from "./api";
+import { fetchArticles, saveArticle, type KnowledgeBase } from "./api";
+import type { LinkTarget } from "./articleLink";
 import { bodyOf, fieldOf, isDirty, type ArticleForm as FormState } from "./articleForm";
 import { ArticleFields } from "./ArticleFields";
 
@@ -24,6 +25,7 @@ export function ArticleForm({
     onReload,
     onCancel,
     onDirtyChange,
+    onOpenArticle,
 }: {
     bot: string;
     initial: FormState;
@@ -34,10 +36,28 @@ export function ArticleForm({
     onReload: () => void;
     onCancel: () => void;
     onDirtyChange: (dirty: boolean) => void;
+    onOpenArticle: (id: string) => void;
 }) {
     const [form, setForm] = useState(initial);
     const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const [targets, setTargets] = useState<LinkTarget[] | null>(null);
+    const [targetsFailure, setTargetsFailure] = useState<string | null>(null);
     const dirty = isDirty(form, initial);
+
+    // Why: the picker and the chips need every article of the bot, not the filtered list the screen shows.
+    useEffect(() => {
+        const controller = new AbortController();
+        fetchArticles(bot, { knowledgeBase: "", language: "", text: "" }, controller.signal)
+            .then((articles) => {
+                setTargets(articles.map((article) => ({ id: article.id, title: article.title, knowledgeBase: article.knowledgeBase })));
+            })
+            .catch((error: unknown) => {
+                if (!controller.signal.aborted) setTargetsFailure(error instanceof Error ? error.message : String(error));
+            });
+        return () => {
+            controller.abort();
+        };
+    }, [bot]);
 
     useEffect(() => {
         onDirtyChange(dirty);
@@ -72,15 +92,21 @@ export function ArticleForm({
     const moved = mistakes.some((mistake) => mistake.code === "resource.stale");
     return (
         <form onSubmit={submit} className="flex flex-col gap-3 rounded-lg border p-4">
-            <ArticleFields
-                form={form}
-                bases={bases}
-                mistakes={mistakes}
-                idLocked={editing}
-                onChange={(change) => {
-                    setForm((before) => ({ ...before, ...change }));
-                }}
-            />
+            {targetsFailure !== null && <Alert variant="destructive">{targetsFailure}</Alert>}
+            {targets === null && targetsFailure === null && <p className="text-muted-foreground">Loading the form…</p>}
+            {targets !== null && (
+                <ArticleFields
+                    form={form}
+                    bases={bases}
+                    mistakes={mistakes}
+                    idLocked={editing}
+                    targets={targets}
+                    onOpenArticle={onOpenArticle}
+                    onChange={(change) => {
+                        setForm((before) => ({ ...before, ...change }));
+                    }}
+                />
+            )}
             {refusal !== null && mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
             {loose.length > 0 && (
                 <Alert variant="destructive">

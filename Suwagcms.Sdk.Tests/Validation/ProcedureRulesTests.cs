@@ -498,7 +498,7 @@ public sealed class ProcedureRulesTests
                 ("steps.ask.next[1].when.customer.city", "customer.city", FactUse.Condition),
                 ("steps.mark.assign.system.flag", "system.flag", FactUse.Assign),
             }.Order(),
-            references.Select(reference => (reference.Path, reference.To.Id, reference.Use)).Order()
+            references.Select(reference => (reference.Path, reference.To.Id, reference.Use.GetValueOrDefault())).Order()
         );
     }
 }
