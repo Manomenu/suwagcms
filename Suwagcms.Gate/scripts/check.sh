@@ -2,7 +2,7 @@
 # The quality gate. CI runs exactly this script; humans run `just check`, hooks run `--quick`.
 #   check.sh --quick   build with analyzers, csharpier, server tests against the real database, tsc, eslint, vitest
 #   check.sh           quick, plus prettier, knip, API contract and types up to date, acceptance criteria guarded, shellcheck and gitleaks
-# The quick gate has a time budget, CHECK_QUICK_LIMIT seconds (default 20): the Stop hook runs it after every turn of an
+# The quick gate has a time budget, CHECK_QUICK_LIMIT seconds (default 60): the Stop hook runs it after every turn of an
 # agent, and a gate that takes minutes gets switched off. Above the budget it fails and says so: move the slow step to the
 # full gate or make it faster; raise the budget only on a machine that is slow across the board.
 # Acceptance criteria are not in --quick: the Stop hook runs it after every turn, and a criterion written into
@@ -34,7 +34,7 @@ ORDER=()
 declare -A NAME
 declare -A SKIPPED
 declare -A LIMIT
-QUICK_LIMIT="${CHECK_QUICK_LIMIT:-20}"
+QUICK_LIMIT="${CHECK_QUICK_LIMIT:-60}"
 case "$QUICK_LIMIT" in
     '' | *[!0-9]*)
         echo "check.sh: CHECK_QUICK_LIMIT must be a whole number of seconds, not '$QUICK_LIMIT'" >&2

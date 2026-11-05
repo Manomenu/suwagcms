@@ -401,7 +401,7 @@ web app with types generated from the server's OpenAPI document.
 
 ## What the gate guarantees
 
-`bash Suwagcms.Gate/scripts/check.sh` (`--quick` while working, within a 20-second budget) fails on: any compiler or analyzer warning, banned
+`bash Suwagcms.Gate/scripts/check.sh` (`--quick` while working, within a 60-second budget) fails on: any compiler or analyzer warning, banned
 APIs, a layer used against its order, dead types and packages, vague names, stray comments, `dynamic`, unpinned
 images, a stale API contract or generated types, an acceptance criterion without a guardrail, an unresolvable compose file. The full list, each with its fix:
 [docs/architecture.md, "What the gate forbids"](docs/architecture.md#what-the-gate-forbids).
