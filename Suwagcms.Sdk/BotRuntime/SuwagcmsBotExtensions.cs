@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -17,12 +18,20 @@ public static class SuwagcmsBotExtensions
         string botId,
         IVersionStore? store = null,
         TimeSpan? pollInterval = null,
-        BotCapabilities? declares = null
+        BotCapabilities? declares = null,
+        Func<string, string?>? findSecret = null,
+        Func<string, IReadOnlyDictionary<string, string>, CancellationToken, Task<ActionOutcome>>? runCodeAction = null
     )
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(botId);
         services.AddSingleton(BotDeclaration.Of(botId, declares));
+        services.AddSingleton(_ => new HttpActionRunner(findSecret));
+        services.AddSingleton(provider => new ActionTestRoute(
+            provider.GetRequiredService<HttpActionRunner>(),
+            runCodeAction,
+            TimeProvider.System
+        ));
         services.AddSingleton(provider => new VersionRuntime(
             botId,
             store
@@ -60,6 +69,35 @@ public static class SuwagcmsBotExtensions
                 return refused is null
                     ? Results.Json(accepted, BotRuntimeJson.Options)
                     : Results.Json(refused, BotRuntimeJson.Options, ProblemJson, refused.Status);
+            }
+        );
+        group.MapPost(
+            "/actions/test",
+            async (HttpRequest request, ActionTestRoute route, CancellationToken cancellationToken) =>
+            {
+                using var reader = new StreamReader(request.Body, Encoding.UTF8);
+                try
+                {
+                    return Results.Json(
+                        await route.RunAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken),
+                        BotRuntimeJson.Options
+                    );
+                }
+                catch (JsonException exception)
+                {
+                    return Results.Json(
+                        new BotRefusal
+                        {
+                            Title = "The test run was refused.",
+                            Status = StatusCodes.Status400BadRequest,
+                            Detail = $"The body does not fit the route: {exception.Message}",
+                            Mistakes = [],
+                        },
+                        BotRuntimeJson.Options,
+                        ProblemJson,
+                        StatusCodes.Status400BadRequest
+                    );
+                }
             }
         );
         return group;

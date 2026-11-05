@@ -14,7 +14,7 @@ It holds the definition format (`Suwagcms.Sdk.Format`, JSON schema in `definitio
 ```csharp
 builder.Services.AddSuwagcmsBot("rzeczoznawca");   // the bot's own id; versions are kept in files under the content root
 var app = builder.Build();
-app.MapSuwagcmsBot();                              // GET /suwagcms/state, GET /suwagcms/declaration, PUT /suwagcms/versions/{number}
+app.MapSuwagcmsBot();                              // GET /suwagcms/state, GET /suwagcms/declaration, PUT /suwagcms/versions/{number}, POST /suwagcms/actions/test
 ```
 
 The CMS pushes a version with `PUT /suwagcms/versions/{number}`: one JSON object with `formatVersion`, `bot`, `number`,
@@ -31,7 +31,7 @@ are in `bot-runtime.schema.json`, so a bot outside .NET can implement the same r
 builder.Services.AddSuwagcmsBot("rzeczoznawca", declares: new BotCapabilities
 {
     FormatVersion = BotDefinition.CurrentFormatVersion,
-    Blocks = ["listen", "collect", "say", "assign"],       // what your engine runs: there is no default
+    Blocks = ["listen", "collect", "say", "assign", "action"],       // what your engine runs: there is no default
     CodeActions = [new CodeAction { Id = "lookupPolicy", Description = "Finds a policy" }],
 });
 ```
@@ -68,7 +68,11 @@ retries. A secret written `{secret:CRM_TOKEN}` is read from the variable `SUWAGC
 definition can reach; pass your own `findSecret` to look elsewhere. A secret's value is masked in everything the outcome holds. A bot
 outside .NET does the same, by the same contract.
 
-**The routes have no key yet.** Anyone who can reach the bot can replace its definition, and the bot id check only stops a
+**Trying an action.** `POST /suwagcms/actions/test` takes `{ action, values }`, runs the action with the same runner, writes nothing,
+and answers `outcome` (`success` or `failure`), `results`, `reason`, `status`, `elapsedMs`, `answerStart` and `answerCut`; the shapes
+are in `bot-runtime.schema.json`. A code action runs through the `runCodeAction` you pass to `AddSuwagcmsBot`; without one the answer says so.
+
+**The routes have no key yet.** Anyone who can reach the bot can replace its definition or make it call any address with its secrets, and the bot id check only stops a
 mistyped address. Until the CMS has identity, expose `/suwagcms/*` to a trusted network only.
 
 Without the runtime, the validator alone needs no database and no network:

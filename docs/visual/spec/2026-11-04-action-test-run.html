@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Action test run</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 25 of the suwagcms feature map, optional</span>
     <span><b>Needs before it:</b> <code>http-actions</code>, <code>bot-runtime-sdk</code></span>
@@ -380,9 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The bot makes the call, never the CMS, for HTTP actions as well, because the secrets are only in the bot's environment. A test run is a real call to a real service, so anything other than a <code>GET</code> asks first.</p>
   </div>
   <div class="stats">
-    <div><b>15</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
-    <div><b>1</b><span>open questions</span></div>
+    <div><b>16</b><span>criteria</span></div>
+    <div><b>2</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -487,6 +486,8 @@ sequenceDiagram
     <li>The run uses the same runner as a conversation, from <code>http-actions</code>, so a test proves what a conversation will do.</li>
     <li>A run keeps no record, because the answer is the whole value of it; this keeps the feature small, in line with being optional on the feature map.</li>
     <li>A failure of the action and a failure to reach the bot are told apart in words and in <code>--json</code>, and both exit 1.</li>
+    <li>The CLI asks for <code>--yes</code> before a real call for every method but <code>GET</code>: a plain test of a <code>POST</code> then does nothing by accident, and a call to another system has no rollback.</li>
+    <li>An outcome of <code>unreachable</code> or <code>notOffered</code> says the action has not been judged, in words and in <code>--json</code>.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -507,35 +508,23 @@ sequenceDiagram
     <li><code>AC-action-test-run-13</code> While a form holds unsaved changes, the web's <span class="btn">Run</span> is disabled and says to save first.</li>
     <li><code>AC-action-test-run-14</code> <code>suwagcms actions test</code> with <code>--json</code> returns the outcome, the results, the reason, the status and the time taken, and has its line in the plugin's main skill, which says a test run really calls the service.</li>
     <li><code>AC-action-test-run-15</code> The published schema of the test route is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
+    <li><code>AC-action-test-run-16</code> A test run of a code action goes through the bot and runs its code with the given values, asks first as for a non-<code>GET</code> action because the CMS cannot know what it does, and a bot that has no way to run it from the SDK says so.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>code-actions</code>:</b> a test run of a code action goes through the bot and runs its code with the given values, asks first as for a non-<code>GET</code> action because the CMS cannot know what it does, and a bot that has no way to run it from the SDK says so.</li>
     <li><b>after <code>availability</code>:</b> a turned-off action can still be tried, and the answer says procedures will not run it while it is off.</li>
     <li><b>after <code>cms-identity</code>:</b> the request carries the bot's key, and a wrong key shows as a failed run saying how to fix it.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>The route lets anyone who reaches the bot make it call any address with its secrets.</b> The CMS never sees the values, but the caller chooses the URL. A pushed version carries the same danger, and this route makes it one request away. Until <code>cms-identity</code> the bot's routes must be reachable only from a trusted network, and the SDK's documentation has to say so here too. The open question in <code>http-actions</code> about which names a definition can reach narrows it.</p></div>
+  <div class="callout risk"><p><b>The route lets anyone who reaches the bot make it call any address with its secrets.</b> The CMS never sees the values, but the caller chooses the URL. A pushed version carries the same danger, and this route makes it one request away. Until <code>cms-identity</code> the bot's routes must be reachable only from a trusted network, and the SDK's documentation has to say so here too. The prefix <code>http-actions</code> decided, which limits the names a definition can reach, narrows it.</p></div>
   <div class="callout risk"><p><b>A test run can do real work.</b> Trying <code>sendOffer</code> really sends an offer. The dialog and <code>--yes</code> make that a choice, and they cannot make it safe.</p></div>
   <div class="callout warn"><p><b>Masking catches a secret repeated as it is.</b> A service that encodes it, for example in Base64, gets past the mask, and the start of its answer reaches the CMS's page.</p></div>
 </section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should the CLI ask an agent for <code>--yes</code> before a real call?</legend>
-      <p class="why">README lets an agent push by itself, with validation and rollback as the safeguards, and a push asks for nothing. A call to another system has no rollback. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="yes"><span><b>Yes, for every method but <code>GET</code></b><small>a plain test of a <code>POST</code> does nothing by accident, and one flag is little for an agent to add</small></span></label>
-      <label><input type="radio" value="no"><span><b>No: the CLI never asks, as with a push</b><small>one rule across the CLI, but an agent checking its work could send a real offer</small></span></label>
-    </fieldset>
-  </form>
-</section>
-
 <!-- CONTENT END -->
 </main>
 </div>

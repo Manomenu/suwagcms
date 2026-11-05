@@ -5,6 +5,7 @@ import type { components } from "../api/openapi";
 export type ActionView = components["schemas"]["ActionView"];
 export type SaveAction = components["schemas"]["SaveAction"];
 export type ActionField = components["schemas"]["ActionField"];
+export type ActionTestAnswer = components["schemas"]["ActionTestAnswer"];
 
 /** The generated type cannot see through the format's converter: an implementation is the word `code`, or an HTTP call. */
 interface HttpCall {
@@ -46,6 +47,14 @@ export function saveAction(bot: string, id: string, body: SaveAction, ifRevision
 
 export function deleteAction(bot: string, id: string, ifRevision: number): Promise<undefined> {
     return request<undefined>(`${actionsPath(bot)}/${encodeURIComponent(id)}?ifRevision=${ifRevision}`, { method: "DELETE" });
+}
+
+/** A test run: the bot really calls the service, so nothing here is safe to repeat by itself. */
+export function runAction(bot: string, id: string, values: Record<string, string>): Promise<ActionTestAnswer> {
+    return request<ActionTestAnswer>(`${actionsPath(bot)}/${encodeURIComponent(id)}/test`, {
+        method: "POST",
+        body: JSON.stringify({ values }),
+    });
 }
 
 /** The generated type allows a string for an int32; the server sends a number. */

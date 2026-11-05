@@ -16,6 +16,7 @@ import { ActionForm } from "./ActionForm";
 import { ActionsView } from "./ActionsView";
 import { deleteAction, fetchAction, fetchActions, isCode, revisionOf, type ActionView } from "./api";
 import { CodeActionPanel } from "./CodeActionPanel";
+import { TestRunPanel } from "./TestRunPanel";
 
 type Open = { kind: "add" } | { kind: "edit"; action: ActionView } | null;
 
@@ -173,8 +174,12 @@ export function ActionsScreen({ bot }: { bot: string }) {
                             onCancel={() => {
                                 setOpen(null);
                             }}
+                            {...(openAction === null
+                                ? {}
+                                : { testRun: (unsaved: boolean) => <TestRunPanel bot={bot} action={openAction} unsaved={unsaved} /> })}
                         />
                     )}
+                    {openAction !== null && isCode(openAction) && <TestRunPanel bot={bot} action={openAction} unsaved={false} />}
                     {openAction !== null && <HistoryPanel {...history} />}
                 </>
             }

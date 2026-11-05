@@ -238,3 +238,106 @@ test("AC-http-actions-20: the view of an action shows the procedures that use it
     await expect(usedBy).toContainText("steps.run.action");
     await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
 });
+
+/** A bot that answers a test run as the SDK would, and counts what reached it. */
+async function runningBot(): Promise<{ address: string; runs: () => number; close: () => void }> {
+    let runs = 0;
+    const server = createServer((request, response) => {
+        response.setHeader("content-type", "application/json");
+        if (request.url === "/suwagcms/actions/test") {
+            runs++;
+            response.end(
+                JSON.stringify({
+                    outcome: "success",
+                    results: { serviceable: "yes" },
+                    reason: null,
+                    status: 200,
+                    elapsedMs: 320,
+                    answerStart: "{}",
+                    answerCut: false,
+                }),
+            );
+        } else {
+            response.statusCode = 404;
+            response.end("{}");
+        }
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    return {
+        address: `http://127.0.0.1:${(server.address() as AddressInfo).port}`,
+        runs: () => runs,
+        close: () => {
+            server.close();
+        },
+    };
+}
+
+async function botWithAction(request: APIRequestContext, address: string, method: string): Promise<string> {
+    const bot = freshId();
+    await request.post("/api/bots", { data: { id: bot, name: bot, address } });
+    await request.put(`/api/bots/${bot}/actions/check?ifRevision=0`, {
+        data: {
+            description: "Checks",
+            parameters: { address: { type: "text", maxLength: 50, description: "Where" } },
+            results: { serviceable: { type: "enum", values: ["yes", "no"], description: "Served" } },
+            implementation: { http: { method, url: "https://crm.internal/check", headers: null, timeoutSeconds: null } },
+        },
+    });
+    return bot;
+}
+
+test("AC-action-test-run-1: a run from the action's page shows success with the results, the status and the time taken, and AC-action-test-run-12: a GET runs at once", async ({
+    page,
+    request,
+}) => {
+    const running = await runningBot();
+    const bot = await botWithAction(request, running.address, "GET");
+    await page.goto(`/bots/${bot}/actions?open=check`);
+
+    const panel = page.getByRole("region", { name: "Test run" });
+    await panel.getByLabel("address").fill("Polna 3");
+    await panel.getByRole("button", { name: "Run" }).click();
+
+    const result = page.getByRole("region", { name: "Test run result" });
+    await expect(result).toContainText("success");
+    await expect(result).toContainText("serviceable = yes");
+    await expect(result).toContainText("Answer 200");
+    await expect(result).toContainText("320 ms");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    running.close();
+});
+
+test("AC-action-test-run-12: for another method the web shows a dialog with the method and URL before running", async ({
+    page,
+    request,
+}) => {
+    const running = await runningBot();
+    const bot = await botWithAction(request, running.address, "POST");
+    await page.goto(`/bots/${bot}/actions?open=check`);
+
+    const panel = page.getByRole("region", { name: "Test run" });
+    await panel.getByLabel("address").fill("Polna 3");
+    await panel.getByRole("button", { name: "Run" }).click();
+
+    const dialog = page.getByRole("dialog", { name: "Really call the service" });
+    await expect(dialog).toContainText("POST https://crm.internal/check");
+    expect(running.runs()).toBe(0);
+    await dialog.getByRole("button", { name: "Call it" }).click();
+    await expect(page.getByRole("region", { name: "Test run result" })).toContainText("success");
+    expect(running.runs()).toBe(1);
+    running.close();
+});
+
+test("AC-action-test-run-13: while the form holds unsaved changes, Run is disabled and says to save first", async ({ page, request }) => {
+    const running = await runningBot();
+    const bot = await botWithAction(request, running.address, "GET");
+    await page.goto(`/bots/${bot}/actions?open=check`);
+    const panel = page.getByRole("region", { name: "Test run" });
+    await expect(panel.getByRole("button", { name: "Run" })).toBeEnabled();
+
+    await page.getByLabel("URL").fill("https://crm.internal/other");
+
+    await expect(panel.getByRole("button", { name: "Run" })).toBeDisabled();
+    await expect(panel).toContainText("Save first");
+    running.close();
+});

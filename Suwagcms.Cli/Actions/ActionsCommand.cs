@@ -30,6 +30,7 @@ internal static class ActionsCommand
             CreateAdd(options, environment),
             CreateEdit(options, environment),
             CreateDelete(options, environment),
+            ActionTestCommand.Create(options, environment),
         };
 
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)

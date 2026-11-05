@@ -377,4 +377,155 @@ public sealed class ActionsTests : IDisposable
         Assert.Contains("action checkServiceability (steps.checkAddress.action)", result.Output, StringComparison.Ordinal);
         Assert.Contains("fact customer.address (steps.checkAddress.with.address)", result.Output, StringComparison.Ordinal);
     }
+
+    private const string Get = """
+        {"id":"lookup","description":"Looks.","parameters":{"address":{"type":"text","description":"Where.","maxLength":20}},"results":null,"implementation":{"http":{"method":"GET","url":"https://crm.internal/lookup"}},"revision":1,"usedBy":[],"alsoDeclared":false,"noLongerDeclared":false}
+        """;
+
+    private const string Won =
+        """{"outcome":"success","results":{"serviceable":"yes"},"reason":null,"status":200,"elapsedMs":320,"answerStart":"{}","answerCut":false}""";
+
+    private static StubServer Testing(string action, string answer) =>
+        new(request => request.Method == HttpMethod.Post ? Json(answer) : Json(action));
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-1")]
+    public async Task A_run_prints_success_with_the_results_the_status_and_the_time_and_exits_0()
+    {
+        var server = Testing(Get, Won);
+
+        var result = await TestCli.Run(["actions", "test", "lookup", "--param", "address=Polna 3, Suwałki", .. OnBot], server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Success. Answer 200. 320 ms.", result.Output, StringComparison.Ordinal);
+        Assert.Contains("serviceable = yes", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-4")]
+    public async Task A_failure_prints_the_reason_the_status_and_the_start_of_the_answer_and_exits_1()
+    {
+        const string Lost =
+            """{"outcome":"failure","results":{},"reason":"Answer 200: result 'serviceable' is missing from the answer.","status":200,"elapsedMs":320,"answerStart":"{\"status\":\"ok\"}","answerCut":false}""";
+
+        var result = await TestCli.Run(["actions", "test", "lookup", .. OnBot], Testing(Get, Lost));
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("Failed: Answer 200: result 'serviceable' is missing", result.Error, StringComparison.Ordinal);
+        Assert.Contains("{\"status\":\"ok\"}", result.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-5")]
+    public async Task Values_the_server_refuses_are_printed_with_their_fixes_and_exit_1()
+    {
+        const string Refusal =
+            """{"mistakes":[{"code":"action.test.value","stage":"Save","resource":{"kind":"Action","id":"lookup"},"path":"values.address","message":"Parameter 'address' has no value.","fix":"Give it a value.","related":[]}]}""";
+        var server = new StubServer(request =>
+            request.Method == HttpMethod.Post ? Json(Refusal, HttpStatusCode.UnprocessableEntity) : Json(Get)
+        );
+
+        var result = await TestCli.Run(["actions", "test", "lookup", .. OnBot], server);
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("Parameter 'address' has no value.", result.Error, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("unreachable", "The bot could not be asked: it is down. The action has not been judged.")]
+    [InlineData(
+        "notOffered",
+        "Bot rzeczoznawca does not offer test runs. Update its Suwagcms.Sdk and deploy; the action has not been judged."
+    )]
+    [Trait("criterion", "AC-action-test-run-6")]
+    [Trait("criterion", "AC-action-test-run-7")]
+    public async Task A_bot_not_asked_is_told_apart_from_a_failed_action_in_the_words_and_in_json_and_exits_1(string outcome, string reason)
+    {
+        var answer =
+            $$"""{"outcome":"{{outcome}}","results":{},"reason":"{{reason}}","status":null,"elapsedMs":0,"answerStart":null,"answerCut":false}""";
+
+        var text = await TestCli.Run(["actions", "test", "lookup", .. OnBot], Testing(Get, answer));
+        var json = await TestCli.Run(["actions", "test", "lookup", "--json", .. OnBot], Testing(Get, answer));
+
+        Assert.Equal(1, text.ExitCode);
+        Assert.Contains($"Not judged: {reason}", text.Error, StringComparison.Ordinal);
+        Assert.Equal(1, json.ExitCode);
+        Assert.Equal(outcome, JsonNode.Parse(json.Output)?["outcome"]?.GetValue<string>());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-9")]
+    public async Task A_cut_answer_says_so()
+    {
+        var long1 = new string('x', 2000);
+        var answer =
+            $$"""{"outcome":"failure","results":{},"reason":"The service answered 500, outside 2xx.","status":500,"elapsedMs":1,"answerStart":"{{long1}}","answerCut":true}""";
+
+        var result = await TestCli.Run(["actions", "test", "lookup", .. OnBot], Testing(Get, answer));
+
+        Assert.Contains("cut at its first 2000 characters", result.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-12")]
+    public async Task A_get_runs_at_once_and_another_method_without_yes_prints_the_call_sends_nothing_and_exits_1()
+    {
+        var posts = new List<string>();
+        StubServer Counting(string action)
+        {
+            return new(request =>
+            {
+                if (request.Method == HttpMethod.Post)
+                {
+                    posts.Add(request.RequestUri?.AbsolutePath ?? "");
+                    return Json(Won);
+                }
+                return Json(action);
+            });
+        }
+
+        var get = await TestCli.Run(["actions", "test", "lookup", .. OnBot], Counting(Get));
+        Assert.Equal(0, get.ExitCode);
+        Assert.Single(posts);
+        posts.Clear();
+
+        var refused = await TestCli.Run(["actions", "test", "checkServiceability", .. OnBot], Counting(Shown));
+        Assert.Equal(1, refused.ExitCode);
+        Assert.Contains("POST https://crm.internal/serviceability", refused.Error, StringComparison.Ordinal);
+        Assert.Contains("--yes", refused.Error, StringComparison.Ordinal);
+        Assert.Empty(posts);
+
+        var yes = await TestCli.Run(["actions", "test", "checkServiceability", "--yes", .. OnBot], Counting(Shown));
+        Assert.Equal(0, yes.ExitCode);
+        Assert.Single(posts);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-16")]
+    public async Task A_code_action_asks_first_as_a_call_that_may_do_work()
+    {
+        var result = await TestCli.Run(["actions", "test", "lookupPolicy", .. OnBot], Testing(Code, Won));
+
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("really runs the bot's code", result.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-test-run-14")]
+    public async Task Test_with_json_returns_the_outcome_and_the_main_skill_says_a_run_really_calls_the_service()
+    {
+        var json = await TestCli.Run(["actions", "test", "lookup", "--json", .. OnBot], Testing(Get, Won));
+
+        var answer = JsonNode.Parse(json.Output);
+        Assert.Equal("success", answer?["outcome"]?.GetValue<string>());
+        Assert.Equal("yes", answer?["results"]?["serviceable"]?.GetValue<string>());
+        Assert.Equal(200, answer?["status"]?.GetValue<int>());
+        Assert.Equal(320, answer?["elapsedMs"]?.GetValue<int>());
+        var skill = await File.ReadAllTextAsync(
+            Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"),
+            TestContext.Current.CancellationToken
+        );
+        Assert.Contains("actions test", CommandList.Listed(skill));
+        Assert.Contains("A test run really calls the service", skill, StringComparison.Ordinal);
+    }
 }

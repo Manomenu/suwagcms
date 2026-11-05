@@ -1507,6 +1507,73 @@
         }
       }
     },
+    "/api/bots/{bot}/actions/{id}/test": {
+      "post": {
+        "tags": [
+          "ActionEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionTestAnswer"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/versions": {
       "get": {
         "tags": [
@@ -2406,6 +2473,62 @@
         }
       },
       "ActionImplementation": { },
+      "ActionTestAnswer": {
+        "required": [
+          "outcome",
+          "results",
+          "reason",
+          "status",
+          "elapsedMs",
+          "answerStart",
+          "answerCut"
+        ],
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string"
+          },
+          "results": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "elapsedMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "answerStart": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "answerCut": {
+            "type": "boolean"
+          }
+        },
+        "description": "What a test run came to. `Outcome` is `success` or `failure` when the bot ran the action, `unreachable` when the bot could not be reached or gave no usable answer, and `notOffered` when the bot has no such route; in the last two the action has not been judged.\n`Status`, `ElapsedMs` and `AnswerStart` are what is known of the call; `AnswerCut` says the answer was longer than what is shown."
+      },
       "ActionView": {
         "required": [
           "id",
@@ -4038,6 +4161,24 @@
             "type": "string"
           }
         }
+      },
+      "RunAction": {
+        "required": [
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "What a test run of a saved action takes: the value of each parameter, as text."
       },
       "SaveAction": {
         "required": [

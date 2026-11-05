@@ -17,11 +17,22 @@ internal sealed class TestBot : IAsyncDisposable
     private IServiceProvider? services;
 
     private readonly BotCapabilities? declares;
+    private readonly Func<string, string?>? findSecret;
+    private readonly Func<string, IReadOnlyDictionary<string, string>, CancellationToken, Task<ActionOutcome>>? runCode;
     private int requests;
 
-    private TestBot(string id, IVersionStore store, int port, BotCapabilities? declares)
+    private TestBot(
+        string id,
+        IVersionStore store,
+        int port,
+        BotCapabilities? declares,
+        Func<string, string?>? findSecret,
+        Func<string, IReadOnlyDictionary<string, string>, CancellationToken, Task<ActionOutcome>>? runCode
+    )
     {
         this.declares = declares;
+        this.findSecret = findSecret;
+        this.runCode = runCode;
         Id = id;
         Store = store;
         Port = port;
@@ -41,15 +52,25 @@ internal sealed class TestBot : IAsyncDisposable
     // Why: lets a test answer the declaration route as a bot outside the SDK could: wrongly, slowly, or not at all.
     public Func<HttpContext, Task>? OnDeclaration { get; set; }
 
+    // Why: lets a test answer the test route as a bot on an older SDK or a stuck bot would.
+    public Func<HttpContext, Task>? OnActionTest { get; set; }
+
     // Why: a test proves that an operation contacts no bot by counting what reached it.
     public int Requests => Volatile.Read(ref requests);
 
     public IBotDefinitions Definitions =>
         (services ?? throw new InvalidOperationException("the test bot is stopped")).GetRequiredService<IBotDefinitions>();
 
-    public static async Task<TestBot> StartAsync(string id, IVersionStore? store = null, int? port = null, BotCapabilities? declares = null)
+    public static async Task<TestBot> StartAsync(
+        string id,
+        IVersionStore? store = null,
+        int? port = null,
+        BotCapabilities? declares = null,
+        Func<string, string?>? findSecret = null,
+        Func<string, IReadOnlyDictionary<string, string>, CancellationToken, Task<ActionOutcome>>? runCode = null
+    )
     {
-        var bot = new TestBot(id, store ?? new InMemoryVersionStore(), port ?? FreePort(), declares);
+        var bot = new TestBot(id, store ?? new InMemoryVersionStore(), port ?? FreePort(), declares, findSecret, runCode);
         await bot.StartAsync();
         return bot;
     }
@@ -59,7 +80,7 @@ internal sealed class TestBot : IAsyncDisposable
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls(Address);
         builder.Logging.ClearProviders();
-        builder.Services.AddSuwagcmsBot(Id, Store, TimeSpan.FromHours(1), declares);
+        builder.Services.AddSuwagcmsBot(Id, Store, TimeSpan.FromHours(1), declares, findSecret, runCode);
         var started = builder.Build();
         started.Use(
             async (context, next) =>
@@ -68,6 +89,11 @@ internal sealed class TestBot : IAsyncDisposable
                 if (context.Request.Path == "/suwagcms/declaration" && OnDeclaration is { } answer)
                 {
                     await answer(context);
+                    return;
+                }
+                if (context.Request.Path == "/suwagcms/actions/test" && OnActionTest is { } tested)
+                {
+                    await tested(context);
                     return;
                 }
                 if (HttpMethods.IsPut(context.Request.Method) && OnPush is { } hook)

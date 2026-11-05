@@ -28,6 +28,35 @@ internal static class ActionEndpoints
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
             .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+        routes
+            .MapPost("/bots/{bot}/actions/{id}/test", Test)
+            .Accepts<RunAction>("application/json")
+            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
+            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+    }
+
+    private static async Task<Results<Ok<ActionTestAnswer>, ProblemHttpResult>> Test(
+        string bot,
+        string id,
+        HttpRequest request,
+        ActionTester tester,
+        CancellationToken cancellationToken
+    )
+    {
+        const string NotRun = "The action was not run.";
+        var (body, unreadable) = await StrictBody.ReadAsync<RunAction>(
+            request.Body,
+            new ResourceRef(ResourceKind.Action, id),
+            cancellationToken
+        );
+        if (body is null)
+        {
+            return EditProblems.For(new EditResult.Refused(unreadable), bot, NotRun);
+        }
+        var (answer, refusal) = await tester.RunAsync(bot, id, body.Values ?? new Dictionary<string, string>(), cancellationToken);
+        return answer is null
+            ? EditProblems.For(refusal ?? throw new InvalidOperationException("a run gives an answer or a refusal"), bot, NotRun)
+            : TypedResults.Ok(answer);
     }
 
     private static async Task<Results<Ok<List<ActionView>>, ProblemHttpResult>> List(
