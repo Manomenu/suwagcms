@@ -27,6 +27,49 @@ internal static partial class CmsLinks
         }
     }
 
+    // Why: only the id inside a link's target changes, found by position in the original text, so every other byte stays as it was.
+    public static string Rewrite(string markdown, string oldId, string newId)
+    {
+        if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
+        {
+            return markdown;
+        }
+        var result = new StringBuilder(markdown);
+        var targets = LinkPattern().Matches(WithoutCode(markdown)).Select(match => match.Groups["target"]);
+        foreach (var target in targets.Reverse().Where(target => target.Value == ArticlePrefix + oldId))
+        {
+            result.Remove(target.Index + ArticlePrefix.Length, oldId.Length).Insert(target.Index + ArticlePrefix.Length, newId);
+        }
+        return result.ToString();
+    }
+
+    // Why: a title holding a closing bracket or a line break cannot be a Markdown label, so that link keeps the label it has and stays a link.
+    public static string Relabel(string markdown, IReadOnlyDictionary<string, string> titles)
+    {
+        if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
+        {
+            return markdown;
+        }
+        var result = new StringBuilder();
+        var copied = 0;
+        foreach (Match match in LinkPattern().Matches(WithoutCode(markdown)))
+        {
+            var label = match.Groups["label"];
+            var link = Classify(label.Value, match.Groups["target"].Value);
+            if (
+                link.Form == CmsLinkForm.Article
+                && titles.TryGetValue(link.Id, out var title)
+                && !title.Contains(']')
+                && !title.Contains('\n')
+            )
+            {
+                result.Append(markdown, copied, label.Index - copied).Append(title);
+                copied = label.Index + label.Length;
+            }
+        }
+        return result.Append(markdown, copied, markdown.Length - copied).ToString();
+    }
+
     private static CmsLink Classify(string label, string target)
     {
         if (target.StartsWith(ProcedurePrefix, StringComparison.Ordinal))
@@ -44,7 +87,7 @@ internal static partial class CmsLinks
         return new CmsLink(label, target, CmsLinkForm.Malformed, string.Empty);
     }
 
-    // Why: a fenced block and a code span are text in Markdown, so they are blanked before links are looked for; line breaks stay so the lines still match.
+    // Why: a fenced block and a code span are text in Markdown, so they are blanked before links are looked for; every character keeps its place, so a position found here holds in the original.
     private static string WithoutCode(string markdown)
     {
         var kept = new List<string>();
@@ -63,10 +106,10 @@ internal static partial class CmsLinks
                 {
                     fence = body[0];
                     fenceLength = run;
-                    kept.Add(string.Empty);
+                    kept.Add(new string(' ', raw.Length));
                     continue;
                 }
-                kept.Add(line);
+                kept.Add(raw);
             }
             else
             {
@@ -74,7 +117,7 @@ internal static partial class CmsLinks
                 {
                     fence = '\0';
                 }
-                kept.Add(string.Empty);
+                kept.Add(new string(' ', raw.Length));
             }
         }
         return BlankSpans(string.Join('\n', kept));

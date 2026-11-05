@@ -15,7 +15,16 @@ internal static class ProcedureMapping
             FirstStep = body.FirstStep,
             Steps = body.Steps ?? new Dictionary<string, ProcedureStep>(),
             WhenStalled = body.WhenStalled,
+            LocalFacts = body.LocalFacts,
         };
+
+    public static SaveProcedure Merged(Procedure stored, SaveProcedure given) =>
+        new(
+            given.Description ?? stored.Description,
+            given.FirstStep ?? stored.FirstStep,
+            given.Steps ?? stored.Steps,
+            given.WhenStalled ?? stored.WhenStalled
+        );
 
     public static ProcedureDetail Show(Procedure procedure, int revision, IReadOnlyList<Mistake> notReady) =>
         new(
@@ -25,7 +34,8 @@ internal static class ProcedureMapping
             procedure.Steps,
             procedure.WhenStalled,
             revision,
-            Of(notReady, procedure.Id)
+            Of(notReady, procedure.Id),
+            procedure.LocalFacts
         );
 
     public static ProcedureDetail Show(StoredResource stored, IReadOnlyList<Mistake> notReady) =>

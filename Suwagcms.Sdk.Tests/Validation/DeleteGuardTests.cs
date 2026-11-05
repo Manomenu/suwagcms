@@ -143,7 +143,7 @@ public sealed class DeleteGuardTests
     }
 
     [Fact]
-    [Trait("criterion", "AC-delete-guard-16")]
+    [Trait("criterion", "AC-delete-guard-17")]
     public void An_article_a_context_names_is_refused_listing_each_instruction_that_names_it()
     {
         var context = new InstructionContext { Articles = ["cennik"] };

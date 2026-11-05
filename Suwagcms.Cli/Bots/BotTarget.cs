@@ -18,9 +18,13 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
         {
             "GlobalFact" => new Uri(PageOf("facts"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
             "Article" => new Uri(PageOf("articles"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
+            "Action" => new Uri(PageOf("actions"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
             "Procedure" => new Uri(Address, $"bots/{Uri.EscapeDataString(Bot)}/procedures/{Uri.EscapeDataString(id)}").AbsoluteUri,
             _ => null,
         };
+
+    // Why: a base is shown in its list, which opens no single base from the address.
+    public Uri PageAt(string kind, string id) => LinkTo(kind, id) is { } link ? new Uri(link) : PageOf("knowledge-bases");
 
     public Uri PageOf(string collection) => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/{collection}");
 

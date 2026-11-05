@@ -212,9 +212,9 @@ public sealed class PushTests
 
     [Fact]
     [Trait("criterion", "AC-version-push-14")]
-    public async Task Push_takes_no_confirmation_option_and_no_version_option()
+    public async Task Push_takes_no_confirmation_option()
     {
-        var result = await TestCli.Run(Args("push", "--version", "3"), new Recorder(Status(), Pushed).Serving());
+        var result = await TestCli.Run(Args("push", "--yes"), new Recorder(Status(), Pushed).Serving());
 
         Assert.Equal(2, result.ExitCode);
     }
@@ -229,5 +229,73 @@ public sealed class PushTests
 
         Assert.Contains("push", listed);
         Assert.Contains("versions status", listed);
+    }
+
+    private const string Rolled = """{"outcome":"Succeeded","version":12,"botHas":12,"reason":null,"mistakes":[]}""";
+
+    private const string Plan = """
+        {"version":12,"botHas":14,"way":"MakeCurrent","problem":null,"mistakes":[],"changes":null}
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-version-rollback-1")]
+    [Trait("criterion", "AC-version-rollback-13")]
+    public async Task Push_with_a_version_sends_that_number_and_prints_it_with_the_latest()
+    {
+        var recorder = new Recorder(Status(has: 14), Rolled);
+
+        var result = await TestCli.Run(Args("push", "--version", "12"), recorder.Serving());
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("Bot rzeczoznawca has v12. The latest version is v14.", result.Output.Trim());
+        Assert.Equal(
+            [("GET", "/api/bots/rzeczoznawca/versions/status"), ("POST", "/api/bots/rzeczoznawca/versions/12/push")],
+            recorder.Calls
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-version-rollback-12")]
+    public async Task Push_of_the_version_already_current_says_so_sends_nothing_and_exits_0()
+    {
+        var recorder = new Recorder(Status(has: 12), Rolled);
+
+        var result = await TestCli.Run(Args("push", "--version", "12"), recorder.Serving());
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("Bot rzeczoznawca already has v12. Nothing was sent.", result.Output.Trim());
+        Assert.Equal([("GET", "/api/bots/rzeczoznawca/versions/status")], recorder.Calls);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-version-rollback-14")]
+    public async Task Dry_run_only_reads_the_plan_and_says_how_the_version_would_go()
+    {
+        var calls = new List<string>();
+        var server = new StubServer(request =>
+        {
+            var path = request.RequestUri?.PathAndQuery ?? "";
+            calls.Add($"{request.Method.Method} {path}");
+            var body = path.EndsWith("/push-plan", StringComparison.Ordinal) ? Plan : Status(has: 14);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
+        });
+
+        var result = await TestCli.Run(Args("push", "--version", "12", "--dry-run"), server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("v12 would be made current without sending it", result.Output, StringComparison.Ordinal);
+        Assert.Equal(["GET /api/bots/rzeczoznawca/versions/status", "GET /api/bots/rzeczoznawca/versions/12/push-plan"], calls);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-version-rollback-16")]
+    public void The_main_skill_has_a_line_for_push_with_a_version_saying_it_is_the_rollback_and_changes_only_the_bot()
+    {
+        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
+
+        var line = skill.Split('\n').Single(text => text.StartsWith("- `suwagcms push --version", StringComparison.Ordinal));
+
+        Assert.Contains("this is the rollback", line, StringComparison.Ordinal);
+        Assert.Contains("It changes only the bot", line, StringComparison.Ordinal);
     }
 }

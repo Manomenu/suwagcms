@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { LANGUAGES } from "@/api/languages";
 import { Anchor } from "@/design/anchor";
+import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
 import { Page, Paper } from "@/design/page";
@@ -15,6 +16,7 @@ export function ArticlesView({
     bot,
     articles,
     bases,
+    isOff,
     filters,
     form,
     onFilters,
@@ -25,6 +27,7 @@ export function ArticlesView({
     bot: string;
     articles: Article[];
     bases: KnowledgeBase[];
+    isOff?: (id: string) => boolean;
     filters: Filters;
     form: ReactNode;
     onFilters: (filters: Filters) => void;
@@ -106,6 +109,7 @@ export function ArticlesView({
                                 <th>Knowledge base</th>
                                 <th>Language</th>
                                 <th>Description</th>
+                                <th>Availability</th>
                                 <th />
                             </tr>
                         </thead>
@@ -117,6 +121,9 @@ export function ArticlesView({
                                     <td>{article.knowledgeBase}</td>
                                     <td>{article.language}</td>
                                     <td className="text-muted-foreground">{article.description}</td>
+                                    <td>
+                                        <AvailabilityBadge off={isOff?.(article.id) ?? false} />
+                                    </td>
                                     <td className="text-right">
                                         <Button
                                             variant="outline"

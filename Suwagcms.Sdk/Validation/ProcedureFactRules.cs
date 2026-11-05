@@ -22,14 +22,14 @@ internal static class ProcedureFactRules
 
     private static IEnumerable<Mistake> MissingFacts(BotDefinition definition, Procedure procedure)
     {
-        var facts = definition.Facts.Select(fact => fact.Name).ToHashSet(StringComparer.Ordinal);
+        var facts = definition.Facts.Select(fact => fact.Name).Concat(procedure.Locals.Keys).ToHashSet(StringComparer.Ordinal);
         var known =
             facts.Count == 0
-                ? "The bot has no facts yet: add one first."
-                : $"Facts: {string.Join(", ", facts.Order(StringComparer.Ordinal))}.";
+                ? "The procedure sees no facts yet: add one first."
+                : $"Facts it sees: {string.Join(", ", facts.Order(StringComparer.Ordinal))}. Local facts of other procedures are not visible.";
         foreach (
             var reference in ReferenceWalker
-                .From(procedure)
+                .Uses(procedure)
                 .Where(reference => reference.To.Kind == ResourceKind.GlobalFact && !facts.Contains(reference.To.Id))
                 .Where(reference => !ReferenceRules.WrongName(reference))
         )
@@ -38,7 +38,7 @@ internal static class ProcedureFactRules
                 procedure,
                 MistakeCodes.ReferenceMissing,
                 reference.Path,
-                $"{Where(reference)} names fact '{reference.To.Id}', which this bot does not have.",
+                $"{Where(reference)} in '{procedure.Id}' names fact '{reference.To.Id}', which this procedure does not see.",
                 known
             );
         }
@@ -46,9 +46,9 @@ internal static class ProcedureFactRules
 
     private static IEnumerable<Mistake> NotWritable(BotDefinition definition, Procedure procedure)
     {
-        foreach (var reference in ReferenceWalker.From(procedure).Where(reference => reference.Use == FactUse.Collect))
+        foreach (var reference in ReferenceWalker.Uses(procedure).Where(reference => reference.Use == FactUse.Collect))
         {
-            if (Fact(definition, reference.To.Id) is { WritableBy: FactWriters.Assign })
+            if (Fact(definition, procedure, reference.To.Id) is { WritableBy: FactWriters.Assign })
             {
                 yield return Make(
                     procedure,
@@ -56,7 +56,14 @@ internal static class ProcedureFactRules
                     reference.Path,
                     $"{Where(reference)} names fact '{reference.To.Id}', which only an assign step may write.",
                     "Remove it from collect, or give the fact 'writableBy: set'.",
-                    [new RelatedResource(reference.To, "writableBy")]
+                    [
+                        procedure.Locals.ContainsKey(reference.To.Id)
+                            ? new RelatedResource(
+                                new ResourceRef(ResourceKind.Procedure, procedure.Id),
+                                $"localFacts.{reference.To.Id}.writableBy"
+                            )
+                            : new RelatedResource(reference.To, "writableBy"),
+                    ]
                 );
             }
         }
@@ -79,7 +86,7 @@ internal static class ProcedureFactRules
     {
         foreach (var entry in Conditions(procedure).Where(entry => entry.Condition.Range is not null))
         {
-            if (Fact(definition, entry.Fact) is { } fact && fact.Type != FactTypes.WholeNumber)
+            if (Fact(definition, procedure, entry.Fact) is { } fact && fact.Type != FactTypes.WholeNumber)
             {
                 yield return Make(
                     procedure,
@@ -96,7 +103,7 @@ internal static class ProcedureFactRules
     {
         foreach (var entry in Conditions(procedure))
         {
-            if (Fact(definition, entry.Fact) is not { } fact)
+            if (Fact(definition, procedure, entry.Fact) is not { } fact)
             {
                 continue;
             }
@@ -145,11 +152,12 @@ internal static class ProcedureFactRules
         {
             yield return string.Create(CultureInfo.InvariantCulture, $"range of '{fact.Name}' has min {range.Min} above max {range.Max}.");
         }
-        else if (range.Min > fact.Max || range.Max < fact.Min)
+        // Why: a bound the fact cannot reach means the condition says more than it can ever hold, so any such bound is a mistake, not only a range wholly outside.
+        else if (range.Min < fact.Min || range.Min > fact.Max || range.Max < fact.Min || range.Max > fact.Max)
         {
             yield return string.Create(
                 CultureInfo.InvariantCulture,
-                $"range {range.Min}..{range.Max} of '{fact.Name}' holds no value the fact can take."
+                $"range {range.Min}..{range.Max} of '{fact.Name}' has a bound the fact cannot take."
             );
         }
     }
@@ -160,7 +168,7 @@ internal static class ProcedureFactRules
         {
             foreach (var (name, value) in step.Assign ?? new Dictionary<string, string>())
             {
-                if (Fact(definition, name) is { } fact && !FactValues.Accepts(fact, value))
+                if (Fact(definition, procedure, name) is { } fact && !FactValues.Accepts(fact, value))
                 {
                     yield return Make(
                         procedure,
@@ -174,9 +182,9 @@ internal static class ProcedureFactRules
         }
     }
 
-    private sealed record ConditionAt(string Path, string Fact, Condition Condition);
+    internal sealed record ConditionAt(string Path, string Fact, Condition Condition);
 
-    private static IEnumerable<ConditionAt> Conditions(Procedure procedure) =>
+    internal static IEnumerable<ConditionAt> Conditions(Procedure procedure) =>
         procedure.Steps.SelectMany(step =>
             (step.Value.Next?.Rules ?? []).SelectMany(
                 (rule, index) =>
@@ -188,7 +196,9 @@ internal static class ProcedureFactRules
             )
         );
 
-    private static GlobalFact? Fact(BotDefinition definition, string name) => definition.Facts.FirstOrDefault(fact => fact.Name == name);
+    // Why: inside a procedure a short name means its own local fact first; the name clash rule keeps that from hiding a global one.
+    private static GlobalFact? Fact(BotDefinition definition, Procedure procedure, string name) =>
+        procedure.Locals.TryGetValue(name, out var local) ? local.Named(name) : definition.Facts.FirstOrDefault(fact => fact.Name == name);
 
     private static string Where(Reference reference) =>
         reference.Use switch
@@ -196,7 +206,9 @@ internal static class ProcedureFactRules
             FactUse.Collect => $"'collect' of step '{Step(reference)}'",
             FactUse.Assign => $"'assign' of step '{Step(reference)}'",
             FactUse.Condition => $"'when' of a rule of step '{Step(reference)}'",
-            FactUse.Inform => $"'inform' of step '{Step(reference)}' in '{reference.From.Id}'",
+            FactUse.Inform => $"'inform' of step '{Step(reference)}'",
+            FactUse.Parameter => $"'with' of step '{Step(reference)}'",
+            FactUse.Result => $"'results' of step '{Step(reference)}'",
             _ => throw new ArgumentOutOfRangeException(nameof(reference)),
         };
 

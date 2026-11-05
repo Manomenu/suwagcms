@@ -1,6 +1,9 @@
+using System.Globalization;
+using System.Text.Json;
 using Dapper;
 using Suwagcms.Contracts;
 using Suwagcms.Server.Database;
+using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
@@ -56,6 +59,7 @@ internal static class PushStore
         Pool pool,
         string bot,
         int version,
+        int? left,
         PushOutcome outcome,
         string? error,
         DateTimeOffset at,
@@ -63,6 +67,7 @@ internal static class PushStore
     )
     {
         await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await connection.ExecuteAsync(
             new CommandDefinition(
                 """
@@ -78,9 +83,42 @@ internal static class PushStore
                     error,
                     at,
                 },
+                transaction,
                 cancellationToken: cancellationToken
             )
         );
+        await HistoryStore.WriteAsync(
+            connection,
+            transaction,
+            bot,
+            new HistoryStore.Recorded(
+                HistoryStore.VersionKind,
+                version.ToString(CultureInfo.InvariantCulture),
+                "pushed",
+                null,
+                [
+                    new FieldChange(
+                        "result",
+                        null,
+                        JsonSerializer.SerializeToElement(error is null ? outcome.ToString() : $"{outcome}: {error}")
+                    ),
+                    // Why: only a bot that moved left a version behind; a failed push names just the version it chose, as the entry's id.
+                    .. outcome == PushOutcome.Succeeded && left != version
+                        ?
+                        [
+                            new FieldChange(
+                                "botVersion",
+                                left is { } before ? JsonSerializer.SerializeToElement(before) : null,
+                                JsonSerializer.SerializeToElement(version)
+                            ),
+                        ]
+                        : Array.Empty<FieldChange>(),
+                ]
+            ),
+            at,
+            cancellationToken
+        );
+        await transaction.CommitAsync(cancellationToken);
     }
 
     public static async Task<List<PushAttempt>> RecentAsync(Pool pool, string bot, int take, CancellationToken cancellationToken)

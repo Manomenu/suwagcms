@@ -1,17 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
 import { Alert } from "@/design/alert";
 
 import {
     createVersion,
+    fetchComparison,
+    fetchPushPlan,
     fetchStatus,
     fetchVersion,
     fetchVersions,
     numberOf,
     pushVersion,
     type BotStatus,
+    type PushPlan,
     type PushResult,
+    type VersionComparison,
     type VersionDetail,
     type VersionSummary,
 } from "./api";
@@ -26,6 +31,24 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const [status, setStatus] = useState<BotStatus | null>(null);
     const [pushing, setPushing] = useState(false);
     const [pushFailure, setPushFailure] = useState<PushResult | null>(null);
+    const [plan, setPlan] = useState<PushPlan | null>(null);
+    const [comparison, setComparison] = useState<VersionComparison | null>(null);
+    const [params] = useSearchParams();
+    const [location, navigate] = useLocation();
+    const fromParam = params.get("from");
+    const toParam = params.get("to");
+    const openParam = params.get("open");
+
+    const compare = useCallback(
+        (from: number, to: number) => {
+            fetchComparison(bot, from, to)
+                .then(setComparison)
+                .catch((error: unknown) => {
+                    setFailure(error instanceof Error ? error.message : String(error));
+                });
+        },
+        [bot],
+    );
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -50,6 +73,24 @@ export function VersionsScreen({ bot }: { bot: string }) {
         };
     }, [load]);
 
+    // Why: `suwagcms diff --open` arrives as ?from=<n>&to=<n>; it is taken once and dropped from the address.
+    useEffect(() => {
+        if (fromParam === null || toParam === null) return;
+        navigate(location, { replace: true });
+        compare(Number(fromParam), Number(toParam));
+    }, [fromParam, toParam, location, navigate, compare]);
+
+    // Why: `suwagcms export --open` arrives as ?open=<n>; it is taken once and dropped from the address.
+    useEffect(() => {
+        if (openParam === null) return;
+        navigate(location, { replace: true });
+        fetchVersion(bot, Number(openParam))
+            .then(setShown)
+            .catch((error: unknown) => {
+                setFailure(error instanceof Error ? error.message : String(error));
+            });
+    }, [openParam, location, navigate, bot]);
+
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
@@ -64,7 +105,24 @@ export function VersionsScreen({ bot }: { bot: string }) {
             pushing={pushing}
             refused={refused}
             shown={shown}
+            comparison={comparison}
+            onCompare={compare}
+            onCloseComparison={() => {
+                setComparison(null);
+            }}
+            plan={plan}
+            onPlan={(number) => {
+                fetchPushPlan(bot, number)
+                    .then(setPlan)
+                    .catch((error: unknown) => {
+                        setFailure(error instanceof Error ? error.message : String(error));
+                    });
+            }}
+            onCancelPlan={() => {
+                setPlan(null);
+            }}
             onPush={(number) => {
+                setPlan(null);
                 setPushing(true);
                 setPushFailure(null);
                 pushVersion(bot, number)

@@ -1,7 +1,9 @@
 using System.Globalization;
+using System.Text.Json;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
+using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
@@ -28,7 +30,9 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
         }
         var resources = await ResourceStore.LoadAsync(connection, transaction, bot, cancellationToken);
 
-        var mistakes = DefinitionValidator.Validate(ResourceKinds.Assemble(resources), ValidationStage.Version);
+        // Why: creating a version never calls a bot, so it trusts the last answer; a push asks again, and the bot validates what it loads.
+        var declared = await DeclarationStore.FindAsync(connection, transaction, bot, cancellationToken);
+        var mistakes = DefinitionValidator.Validate(ResourceKinds.Assemble(resources), ValidationStage.Version, declared?.Parsed);
         if (mistakes.Count > 0)
         {
             return (null, new EditResult.Refused(mistakes));
@@ -47,6 +51,20 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
         if (!dryRun)
         {
             await VersionStore.InsertAsync(connection, transaction, bot, number, document, sha256, now, cancellationToken);
+            await HistoryStore.WriteAsync(
+                connection,
+                transaction,
+                bot,
+                new HistoryStore.Recorded(
+                    HistoryStore.VersionKind,
+                    number.ToString(CultureInfo.InvariantCulture),
+                    "created",
+                    null,
+                    [new FieldChange("sha256", null, JsonSerializer.SerializeToElement(sha256))]
+                ),
+                now,
+                cancellationToken
+            );
             await transaction.CommitAsync(cancellationToken);
         }
         else
@@ -61,6 +79,7 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
             resources.Count(item => item.Target.Kind == ResourceKind.KnowledgeBase),
             resources.Count(item => item.Target.Kind == ResourceKind.Article),
             resources.Count(item => item.Target.Kind == ResourceKind.Procedure),
+            resources.Count(item => item.Target.Kind == ResourceKind.Action),
             sha256
         );
         return (new VersionCreated(summary, !dryRun), null);

@@ -14,6 +14,9 @@ internal static class KnowledgeBaseMapping
             Language = body.Language ?? KnowledgeBaseLanguages.English,
         };
 
+    public static SaveKnowledgeBase Merged(KnowledgeBase stored, SaveKnowledgeBase given) =>
+        new(given.Title ?? stored.Title, given.Language ?? stored.Language);
+
     public static KnowledgeBaseView Show(StoredResource stored) => Show((KnowledgeBase)stored.Record, stored.Revision);
 
     public static KnowledgeBaseView Show(KnowledgeBase knowledgeBase, int revision) =>

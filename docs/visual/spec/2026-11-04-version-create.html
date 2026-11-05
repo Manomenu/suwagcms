@@ -381,8 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Creating and pushing are separate on purpose: unfinished work is not sent by accident, and a version can wait until someone has checked it. The frozen document is the public contract with every bot.</p>
   </div>
   <div class="stats">
-    <div><b>15</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>18</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -480,7 +479,7 @@ flowchart LR
   <ul class="checks">
     <li><code>AC-version-create-1</code> With a working state that passes the <code>Version</code> stage, <code>suwagcms versions create</code> and the web's “Create version” each create a version with the next number and show it in the list.</li>
     <li><code>AC-version-create-2</code> With a working state that fails, every mistake is listed, with links to the resources on the web, the CLI exits 1, and no version or number is used up.</li>
-    <li><code>AC-version-create-3</code> A version's document holds <code>formatVersion</code>, the bot's id, its number, and all the bot's facts, knowledge bases, articles and procedures as they were saved.</li>
+    <li><code>AC-version-create-3</code> A version's document holds <code>formatVersion</code>, the bot's id, its number, and all the bot's facts, knowledge bases, articles and procedures as they were saved, except that the label of a link to an article holds that article's title at that moment.</li>
     <li><code>AC-version-create-4</code> A version's document, fed to the validator alone at the <code>Version</code> stage, returns no mistakes.</li>
     <li><code>AC-version-create-5</code> Edits to the working state after a version leave that version's document byte-identical, and its stored <code>sha256</code> matches it.</li>
     <li><code>AC-version-create-6</code> No route of the API changes or deletes a version, and a guard fails when one appears.</li>
@@ -493,16 +492,9 @@ flowchart LR
     <li><code>AC-version-create-13</code> The list of versions shows each one's number, date, counts of resources and digest, in the web and with <code>suwagcms versions list</code>, and any one can be read in the web and with <code>suwagcms versions show</code>.</li>
     <li><code>AC-version-create-14</code> Numbers are per bot: a version of one bot does not affect another's numbering or list.</li>
     <li><code>AC-version-create-15</code> Each <code>suwagcms versions</code> command has its line in the plugin's main skill.</li>
-  </ul>
-</section>
-
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>bot-declaration</code>:</b> a version is checked against what the bot declares.</li>
-    <li><b>after <code>http-actions</code>:</b> a version holds the bot's actions.</li>
-    <li><b>after <code>availability</code>:</b> availability is not part of a version.</li>
+    <li><code>AC-version-create-16</code> A version is checked against what the bot declares.</li>
+    <li><code>AC-version-create-17</code> Availability is not part of a version: a version holds nothing about what is off, and turning a resource off gives no reason for a new version.</li>
+    <li><code>AC-version-create-18</code> A version holds the bot's actions.</li>
   </ul>
 </section>
 

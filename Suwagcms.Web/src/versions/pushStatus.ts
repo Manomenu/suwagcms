@@ -5,6 +5,8 @@ export interface StatusView {
     headline: string;
     notes: string[];
     push: { label: string; number: number } | null;
+    /** What the bot reports and what is on offer, when both are versions of this CMS that can be compared. */
+    compare: { from: number; to: number } | null;
     inUse: number[];
     problem: boolean;
 }
@@ -16,6 +18,13 @@ function whole(value: number | string | null): number | null {
 
 export function whenOf(iso: string): string {
     return `${iso.slice(0, 16).replace("T", " ")} UTC`;
+}
+
+/** The rule of the rollback's select: every kept version except the latest, which the main button pushes, and the one the bot has; newest first. */
+export function otherVersions(kept: number[], status: BotStatus): number[] {
+    const latest = whole(status.latest);
+    const has = whole(status.has);
+    return kept.filter((number) => number !== latest && number !== has).sort((a, b) => b - a);
 }
 
 function lastKnown(status: BotStatus): string {
@@ -57,6 +66,8 @@ export function statusView(status: BotStatus): StatusView {
         headline,
         notes,
         push: latest === null || upToDate ? null : { label: `Push v${latest}`, number: latest },
+        compare:
+            answered && has !== null && latest !== null && has !== latest && !status.hasUnknownVersion ? { from: has, to: latest } : null,
         inUse: status.inUse.map(Number).filter((number) => number !== has),
         problem,
     };

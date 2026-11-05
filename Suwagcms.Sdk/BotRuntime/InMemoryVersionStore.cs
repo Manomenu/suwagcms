@@ -6,12 +6,13 @@ public sealed class InMemoryVersionStore : IVersionStore
     private readonly SortedDictionary<int, string> documents = [];
     private int? current;
     private int[]? inUse;
+    private BotAvailability? availability;
 
     public Task<VersionStoreState> ReadStateAsync(CancellationToken cancellationToken)
     {
         lock (gate)
         {
-            return Task.FromResult(new VersionStoreState(current, [.. documents.Keys], inUse is null ? null : [.. inUse]));
+            return Task.FromResult(new VersionStoreState(current, [.. documents.Keys], inUse is null ? null : [.. inUse], availability));
         }
     }
 
@@ -34,11 +35,35 @@ public sealed class InMemoryVersionStore : IVersionStore
         return Task.CompletedTask;
     }
 
+    public Task WriteCurrentAsync(int number, CancellationToken cancellationToken)
+    {
+        lock (gate)
+        {
+            current = number;
+        }
+
+        return Task.CompletedTask;
+    }
+
     public Task WriteInUseAsync(IReadOnlyList<int> numbers, CancellationToken cancellationToken)
     {
         lock (gate)
         {
             inUse = [.. numbers];
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task WriteAvailabilityAsync(BotAvailability availability, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(availability);
+        lock (gate)
+        {
+            if (this.availability is null || availability.Number >= this.availability.Number)
+            {
+                this.availability = availability;
+            }
         }
 
         return Task.CompletedTask;

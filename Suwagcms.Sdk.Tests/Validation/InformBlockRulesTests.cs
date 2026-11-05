@@ -87,8 +87,11 @@ public sealed class InformBlockRulesTests
 
         Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
         Assert.Equal("steps.only.inform.facts[0]", mistake.Path);
-        Assert.Equal("'inform' of step 'only' in 'p' names fact 'customer.cty', which this bot does not have.", mistake.Message);
-        Assert.Equal("Facts: customer.city, order.floors, order.kind, system.flag.", mistake.Fix);
+        Assert.Equal("'inform' of step 'only' in 'p' names fact 'customer.cty', which this procedure does not see.", mistake.Message);
+        Assert.Equal(
+            "Facts it sees: customer.city, order.floors, order.kind, system.flag. Local facts of other procedures are not visible.",
+            mistake.Fix
+        );
     }
 
     [Theory]
@@ -206,5 +209,36 @@ public sealed class InformBlockRulesTests
             ],
             references.Select(reference => (reference.Path, reference.To.Kind, reference.To.Id, reference.Use))
         );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-inform-block-10")]
+    public void An_inform_passes_on_a_local_fact_by_its_short_name_and_a_local_fact_of_another_procedure_is_refused()
+    {
+        var mine = Informing(facts: ["visitDate"]) with
+        {
+            LocalFacts = new Dictionary<string, LocalFact>
+            {
+                ["visitDate"] = new()
+                {
+                    Type = FactTypes.Text,
+                    Description = "When to visit",
+                    MaxLength = 20,
+                },
+            },
+        };
+        var other = Informing(facts: ["visitDate"]) with { Id = "other" };
+
+        var mistakes = DefinitionValidator.Validate(
+            Bot(mine) with
+            {
+                Procedures = [Samples.Procedure(Procedure.ConversationId), mine, other],
+            },
+            ValidationStage.Save
+        );
+
+        var missing = Assert.Single(mistakes);
+        Assert.Equal(MistakeCodes.ReferenceMissing, missing.Code);
+        Assert.Equal("other", missing.Resource.Id);
     }
 }

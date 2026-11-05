@@ -69,3 +69,9 @@ export function mistakesOf(procedure: ProcedureSummary): number {
 export function revisionOfProcedure(procedure: ProcedureDetail): number {
     return Number(procedure.revision);
 }
+
+export type ActionView = components["schemas"]["ActionView"];
+
+export function fetchActions(bot: string, signal: AbortSignal): Promise<ActionView[]> {
+    return request<ActionView[]>(`/bots/${encodeURIComponent(bot)}/actions`, { signal });
+}

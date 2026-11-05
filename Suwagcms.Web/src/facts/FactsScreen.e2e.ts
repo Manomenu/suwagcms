@@ -153,3 +153,59 @@ test("AC-delete-guard-12: a fact a procedure uses is refused for delete in the A
     await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation$`));
     expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(200);
 });
+
+test("AC-edit-guard-11: a refused edit shows the mistake beside its field with a working link to the step, keeps what was typed, and AC-edit-guard-1: the fact stays", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const fact = await request.put(`/api/bots/${bot}/facts/order.kind?ifRevision=0`, {
+        data: { type: "enum", description: "What is valued", values: ["house", "flat"] },
+    });
+    expect(fact.status()).toBe(200);
+    const saved = await request.put(`/api/bots/${bot}/procedures/orderValuation?ifRevision=0`, {
+        data: {
+            description: "Orders a valuation.",
+            firstStep: "ask",
+            steps: {
+                ask: { say: "Hi", next: [{ when: { "order.kind": { oneOf: ["flat"] } }, to: "end" }, { to: "end" }] },
+                end: { say: "Bye" },
+            },
+        },
+    });
+    expect(saved.status()).toBe(200);
+
+    await page.goto(`/bots/${bot}/facts`);
+    await page.getByRole("row").filter({ hasText: "order.kind" }).getByRole("button", { name: "Edit" }).click();
+    const values = page.getByLabel("Values (separated by commas)");
+    await values.fill("house, land");
+    await page.getByRole("button", { name: "Save" }).click();
+
+    const field = page.locator('[data-field="values"]');
+    await expect(field).toContainText("Value 'flat' of 'order.kind' is used, so it cannot be removed.");
+    await expect(values).toHaveValue("house, land");
+    const after = (await (await request.get(`/api/bots/${bot}/facts/order.kind`)).json()) as { values: string[]; revision: number };
+    expect(after).toMatchObject({ values: ["house", "flat"], revision: 1 });
+
+    const usedBy = page.getByRole("list", { name: "Used by" });
+    await expect(usedBy).toContainText("step ask (when)");
+    await usedBy.getByRole("link", { name: "orderValuation" }).click();
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation$`));
+});
+
+test("AC-resource-rename-5: Change id on a fact renames it, with dots, and opens it at its new name", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addCity(request, bot);
+    await page.goto(`/bots/${bot}/facts`);
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+
+    await page.getByRole("button", { name: "Change id" }).click();
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("client.town");
+    await expect(dialog).toContainText("This rewrites nothing else.");
+    await dialog.getByRole("button", { name: "Change id" }).click();
+
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('[data-field="name"] input')).toHaveValue("client.town");
+    expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(404);
+});

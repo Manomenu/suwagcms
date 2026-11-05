@@ -381,8 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>It edits the same procedure an agent saves through the CLI, and anything it does the CLI can do too. Where the nodes sit on the screen is not part of the procedure and never reaches a bot.</p>
   </div>
   <div class="stats">
-    <div><b>20</b><span>criteria</span></div>
-    <div><b>3</b><span>criteria after other features</span></div>
+    <div><b>22</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -511,19 +510,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-procedure-creator-15</code> <code>suwagcms procedures show --open</code> and <code>suwagcms procedures add --open</code> open that procedure in the creator.</li>
     <li><code>AC-procedure-creator-16</code> When the live check cannot reach the server, the list says so instead of looking empty.</li>
     <li><code>AC-procedure-creator-17</code> Leaving the creator with unsaved changes asks before discarding them.</li>
-    <li><code>AC-procedure-creator-18</code> A <code>start</code> step has its form in the creator: a list of this bot's procedures that leaves out <code>conversation</code> and the procedure itself, and the chosen target is saved.</li>
-    <li><code>AC-procedure-creator-19</code> An <code>inform</code> step has its form in the creator: its instruction, the articles and the facts to pass on, kept in the order ticked, and what is saved reads back.</li>
+    <li><code>AC-procedure-creator-18</code> A panel of the procedure adds, edits and removes its local facts with the same fields as a global fact; a step's forms offer them by their short name, and the save stores them in the procedure.</li>
+    <li><code>AC-procedure-creator-19</code> The creator offers only the blocks the bot declares.</li>
     <li><code>AC-procedure-creator-20</code> A context has its form in the creator, on <code>whenStalled</code> and on an <code>inform</code>: the articles to read and the search queries, and what is saved reads back.</li>
-  </ul>
-</section>
-
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>bot-declaration</code>:</b> the creator offers only the blocks the bot declares.</li>
-    <li><b>after <code>local-facts</code>:</b> a panel edits the procedure's local facts.</li>
-    <li><b>after <code>action-block</code>:</b> each new block or field has its form in the creator.</li>
+    <li><code>AC-procedure-creator-21</code> A <code>start</code> step has its form in the creator: a list of this bot's procedures that leaves out <code>conversation</code> and the procedure itself, and the chosen target is saved.</li>
+    <li><code>AC-procedure-creator-22</code> An <code>inform</code> step has its form in the creator: its instruction, the articles and the facts to pass on, kept in the order ticked, and what is saved reads back.</li>
   </ul>
 </section>
 

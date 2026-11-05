@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The CMS checks that everything named exists in this bot, and an article or fact named this way becomes a reference that protects its target. Saying it, and checking it was said, belong to the bot.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>10</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -489,13 +488,7 @@ whatHappensNext:
     <li><code>AC-inform-block-7</code> An <code>inform</code> beside another block in one step is refused, a save with a field the block does not have is refused naming the field, and the mistakes that list the blocks now name <code>inform</code>.</li>
     <li><code>AC-inform-block-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
     <li><code>AC-inform-block-9</code> The plugin's main skill gives the form of the block and how it differs from <code>say</code>.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>local-facts</code>:</b> <code>inform</code> can pass on a local fact of its procedure by short name, and a local fact of another procedure is refused with <code>reference.missing</code>.</li>
+    <li><code>AC-inform-block-10</code> An <code>inform</code> can pass on a local fact of its procedure by short name, and a local fact of another procedure is refused with <code>reference.missing</code>.</li>
   </ul>
 </section>
 <section data-role="risks">

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { Fact, ProcedureDetail } from "./api";
 import {
+    FAILURE,
+    factsThatFit,
     addRule,
     addStep,
     canRemoveRule,
@@ -11,12 +13,15 @@ import {
     deleteStep,
     disconnect,
     edgesOf,
+    factsSeen,
     fromDetail,
     markFirst,
+    removeLocalFact,
     removeRule,
     renameStep,
     setBlock,
     startable,
+    setLocalFact,
     stepOrder,
     toSave,
     valuesOffered,
@@ -64,7 +69,7 @@ const fact = (name: string, type: string, writableBy = "set", values: string[] |
 });
 
 function empty(): Draft {
-    return { description: "d", firstStep: null, whenStalled: null, steps: {} };
+    return { description: "d", firstStep: null, whenStalled: null, steps: {}, localFacts: {} };
 }
 
 describe("the draft", () => {
@@ -125,7 +130,7 @@ describe("the draft", () => {
         expect(edgesOf(draft).map((edge) => `${edge.id}->${edge.target}`)).toEqual(["collect:rule-0->collect", "collect:rule-1->say"]);
     });
 
-    it("AC-procedure-creator-18: a start step keeps its target, and conversation and the procedure itself are not offered", () => {
+    it("AC-procedure-creator-21: a start step keeps its target, and conversation and the procedure itself are not offered", () => {
         let draft = addStep(empty(), "start").draft;
         expect(toSave(draft).steps).toEqual({ start: { start: "" } });
         draft = setBlock(draft, "start", { start: "documentsList" });
@@ -135,7 +140,7 @@ describe("the draft", () => {
         expect(startable(["conversation", "documentsList", "orderValuation"], "orderValuation")).toEqual(["documentsList"]);
     });
 
-    it("AC-procedure-creator-19: an inform keeps its instruction and lists in order, an untouched one goes back as stored, and a stored name stays listed", () => {
+    it("AC-procedure-creator-22: an inform keeps its instruction and lists in order, an untouched one goes back as stored, and a stored name stays listed", () => {
         let draft = addStep(empty(), "inform").draft;
         expect(toSave(draft).steps).toEqual({ inform: { inform: { instruction: "" } } });
         draft = setBlock(draft, "inform", { inform: { instruction: "Tell it.", articles: ["zebra", "alpha"], facts: ["order.kind"] } });
@@ -239,5 +244,63 @@ describe("the draft", () => {
         expect(renamed.steps["confirm"]?.next).toBe("question");
         expect(Object.keys(renamed.steps)).toContain("question");
         expect(renameStep(draft, "ask", "mark")).toBe(draft);
+    });
+});
+
+describe("local facts", () => {
+    const bare: Draft = { description: "D", firstStep: null, whenStalled: null, steps: {}, localFacts: {} };
+
+    it("AC-procedure-creator-18: a local fact joins the facts its steps see, and a procedure without any sends no field", () => {
+        const with1 = setLocalFact(bare, "visitDate", { type: "text", description: "When", maxLength: 10 });
+
+        expect(factsSeen(with1, []).map((fact) => fact.name)).toEqual(["visitDate"]);
+        expect(factsSeen(with1, [])[0]).toMatchObject({ type: "text", writableBy: "set", maxLength: 10 });
+        expect(toSave(with1).localFacts).toEqual({ visitDate: { type: "text", description: "When", maxLength: 10 } });
+        expect(toSave(removeLocalFact(with1, "visitDate"))).not.toHaveProperty("localFacts");
+    });
+});
+
+describe("an action step", () => {
+    const fact = (name: string, over: Partial<Fact>): Fact => ({
+        name,
+        type: "text",
+        description: "",
+        writableBy: "set",
+        values: null,
+        min: null,
+        max: null,
+        maxLength: 10,
+        revision: 1,
+        usedBy: [],
+        ...over,
+    });
+
+    it("AC-action-block-16: a parameter row offers only the facts whose every value fits it, and a result row the facts that take all it gives", () => {
+        const short = fact("short", { maxLength: 10 });
+        const long = fact("long", { maxLength: 500 });
+        const number = fact("number", { type: "int", min: 1, max: 5, maxLength: null });
+        const field = { type: "text", maxLength: 200, values: null, min: null, max: null };
+
+        expect(factsThatFit("with", field, [short, long, number]).map((found) => found.name)).toEqual(["short"]);
+        expect(factsThatFit("results", field, [short, long, number]).map((found) => found.name)).toEqual(["long"]);
+    });
+
+    it("AC-action-block-16: a failure edge is drawn to a step, reads back, and goes when that step is renamed or deleted", () => {
+        const start: Draft = {
+            description: "",
+            firstStep: "check",
+            whenStalled: null,
+            localFacts: {},
+            steps: { check: { action: "send" }, failed: { say: "Sorry" } },
+        };
+
+        const joined = connect(start, "check", FAILURE, "failed");
+        expect(joined.steps["check"]?.onFailure).toBe("failed");
+        expect(edgesOf(joined)).toContainEqual({ id: "check:failure", source: "check", handle: "failure", target: "failed" });
+        expect(stepOrder(joined)).toEqual(["check", "failed"]);
+        expect(toSave(joined).steps?.["check"]).toMatchObject({ action: "send", onFailure: "failed" });
+        expect(renameStep(joined, "failed", "sorry").steps["check"]?.onFailure).toBe("sorry");
+        expect(deleteStep(joined, "failed").steps["check"]?.onFailure).toBeUndefined();
+        expect(disconnect(joined, "check", FAILURE).steps["check"]?.onFailure).toBeUndefined();
     });
 });

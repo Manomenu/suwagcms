@@ -12,11 +12,12 @@ const RULE_ROW = 24;
 const PADDING = 12;
 
 function blockLines(step: Step): number {
-    return [step.listen, step.collect, step.say, step.assign, step.start, step.inform].filter((block) => block !== undefined).length;
+    return [step.listen, step.collect, step.say, step.assign, step.start, step.inform, step.action].filter((block) => block !== undefined)
+        .length;
 }
 
 function ruleRows(step: Step): number {
-    return Array.isArray(step.next) ? step.next.length : 0;
+    return (Array.isArray(step.next) ? step.next.length : 0) + (step.action === undefined ? 0 : 1);
 }
 
 /** The size a step is drawn at: the node and the layout must agree, or the arranged nodes overlap. */

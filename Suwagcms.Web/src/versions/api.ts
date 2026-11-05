@@ -5,6 +5,9 @@ import type { components } from "../api/openapi";
 export type VersionSummary = components["schemas"]["VersionSummary"];
 export type VersionDetail = components["schemas"]["VersionDetail"];
 export type VersionCreated = components["schemas"]["VersionCreated"];
+export type VersionComparison = components["schemas"]["VersionComparison"];
+export type ResourceDifference = components["schemas"]["ResourceDifference"];
+export type FieldDifference = components["schemas"]["FieldDifference"];
 
 function versionsPath(bot: string): string {
     return `/bots/${encodeURIComponent(bot)}/versions`;
@@ -18,6 +21,10 @@ export function fetchVersion(bot: string, number: number): Promise<VersionDetail
     return request<VersionDetail>(`${versionsPath(bot)}/${number}`);
 }
 
+export function fetchComparison(bot: string, from: number, to: number): Promise<VersionComparison> {
+    return request<VersionComparison>(`${versionsPath(bot)}/${from}/diff/${to}`);
+}
+
 export function createVersion(bot: string): Promise<VersionCreated> {
     return request<VersionCreated>(versionsPath(bot), { method: "POST" });
 }
@@ -29,6 +36,7 @@ export function numberOf(version: VersionSummary): number {
 
 export type BotStatus = components["schemas"]["BotStatus"];
 export type PushResult = components["schemas"]["PushResult"];
+export type PushPlan = components["schemas"]["PushPlan"];
 
 export function fetchStatus(bot: string, signal: AbortSignal): Promise<BotStatus> {
     return request<BotStatus>(`${versionsPath(bot)}/status`, { signal });
@@ -36,4 +44,8 @@ export function fetchStatus(bot: string, signal: AbortSignal): Promise<BotStatus
 
 export function pushVersion(bot: string, number: number): Promise<PushResult> {
     return request<PushResult>(`${versionsPath(bot)}/${number}/push`, { method: "POST" });
+}
+
+export function fetchPushPlan(bot: string, number: number): Promise<PushPlan> {
+    return request<PushPlan>(`${versionsPath(bot)}/${number}/push-plan`);
 }

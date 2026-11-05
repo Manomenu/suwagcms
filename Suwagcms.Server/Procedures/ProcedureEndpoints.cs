@@ -97,8 +97,20 @@ internal static class ProcedureEndpoints
         return result is EditResult.Saved ? TypedResults.NoContent() : EditProblems.For(result, bot, "The procedure was not deleted.");
     }
 
+    // Why: the format requires the base procedure under this id, so a change of id is refused for good.
+    public static Mistake IdRequired(ResourceRef target) =>
+        new(
+            ConversationRequired,
+            ValidationStage.Save,
+            target,
+            "id",
+            $"'{Procedure.ConversationId}' is the base of every conversation, and the format requires it under this id, so its id cannot change.",
+            $"Change what '{Procedure.ConversationId}' does with `procedures edit`, not its id.",
+            []
+        );
+
     // Why: a version needs the base procedure, so the delete is refused for good; replace its steps with an edit instead.
-    private static Mistake Required(ResourceRef target) =>
+    public static Mistake Required(ResourceRef target) =>
         new(
             ConversationRequired,
             ValidationStage.Save,

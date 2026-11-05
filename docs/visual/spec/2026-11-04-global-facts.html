@@ -403,7 +403,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Refusing an edit that breaks a procedure (type change, removing an enum value, narrowing a range): <code>edit-guard</code>.</li>
       <li>Blocking the delete of a fact a procedure uses: <code>delete-guard</code>, see its deferred criteria.</li>
-      <li>Renaming a fact: <code>resource-rename</code>. The name is fixed once the fact exists.</li>
+      <li>Renaming a fact: <code>resource-rename</code>. An edit never changes its name.</li>
       <li>Local facts: <code>local-facts</code>, along with name clashes between global and local facts.</li>
       <li>Availability: facts have none (README).</li>
     </ul></div>
@@ -527,7 +527,7 @@ flowchart LR
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout warn"><p>Until <code>edit-guard</code> exists, an edit can change a fact a procedure already uses, such as its type. Saved procedures would then fail the next save check, which is loud rather than silent, but the refusal comes on the wrong edit. This window is known and accepted by the build order.</p></div>
+  <div class="callout assumption"><p>An edit of a fact a procedure uses is judged by <code>edit-guard</code>, which refuses it at that edit when it would break the procedure.</p></div>
 </section>
 
 <!-- CONTENT END -->

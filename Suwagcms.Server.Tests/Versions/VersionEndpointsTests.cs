@@ -226,7 +226,10 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
             [
                 "GET /api/bots/{bot}/versions",
                 "GET /api/bots/{bot}/versions/status",
+                "GET /api/bots/{bot}/versions/{from:int}/diff/{to:int}",
                 "GET /api/bots/{bot}/versions/{number:int}",
+                "GET /api/bots/{bot}/versions/{number:int}/export",
+                "GET /api/bots/{bot}/versions/{number:int}/push-plan",
                 "POST /api/bots/{bot}/versions",
                 "POST /api/bots/{bot}/versions/{number:int}/push",
             ],

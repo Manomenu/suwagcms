@@ -166,7 +166,7 @@ public sealed class InstructionContextTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-delete-guard-16")]
+    [Trait("criterion", "AC-delete-guard-17")]
     public async Task An_article_a_context_names_cannot_be_deleted_and_can_once_the_context_is_gone()
     {
         var scene = await NewBot();

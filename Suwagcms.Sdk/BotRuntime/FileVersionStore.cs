@@ -16,7 +16,7 @@ public sealed class FileVersionStore(string directory) : IVersionStore
         try
         {
             var pointer = await ReadPointerAsync(cancellationToken);
-            return new VersionStoreState(pointer.Current, Held(), pointer.InUse);
+            return new VersionStoreState(pointer.Current, Held(), pointer.InUse, pointer.Availability);
         }
         finally
         {
@@ -60,6 +60,20 @@ public sealed class FileVersionStore(string directory) : IVersionStore
         }
     }
 
+    public async Task WriteCurrentAsync(int number, CancellationToken cancellationToken)
+    {
+        await Gate.WaitAsync(cancellationToken);
+        try
+        {
+            var pointer = await ReadPointerAsync(cancellationToken);
+            await WritePointerAsync(pointer with { Current = number }, cancellationToken);
+        }
+        finally
+        {
+            Gate.Release();
+        }
+    }
+
     public async Task WriteInUseAsync(IReadOnlyList<int> numbers, CancellationToken cancellationToken)
     {
         await Gate.WaitAsync(cancellationToken);
@@ -68,6 +82,25 @@ public sealed class FileVersionStore(string directory) : IVersionStore
             Directory.CreateDirectory(directory);
             var pointer = await ReadPointerAsync(cancellationToken);
             await WritePointerAsync(pointer with { InUse = [.. numbers] }, cancellationToken);
+        }
+        finally
+        {
+            Gate.Release();
+        }
+    }
+
+    public async Task WriteAvailabilityAsync(BotAvailability availability, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(availability);
+        await Gate.WaitAsync(cancellationToken);
+        try
+        {
+            Directory.CreateDirectory(directory);
+            var pointer = await ReadPointerAsync(cancellationToken);
+            if (pointer.Availability is null || availability.Number >= pointer.Availability.Number)
+            {
+                await WritePointerAsync(pointer with { Availability = availability }, cancellationToken);
+            }
         }
         finally
         {
@@ -131,5 +164,5 @@ public sealed class FileVersionStore(string directory) : IVersionStore
         File.Move(temporary, path, overwrite: true);
     }
 
-    private sealed record Pointer(int? Current, int[]? InUse);
+    private sealed record Pointer(int? Current, int[]? InUse, BotAvailability? Availability = null);
 }

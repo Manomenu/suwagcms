@@ -4,7 +4,7 @@ import { Router } from "wouter";
 
 import type { Mistake } from "@/api/client";
 
-import type { BotStatus, PushResult, VersionDetail, VersionSummary } from "./api";
+import type { BotStatus, PushPlan, PushResult, VersionComparison, VersionDetail, VersionSummary } from "./api";
 import { VersionsView } from "./VersionsView";
 
 const versions: VersionSummary[] = [
@@ -15,6 +15,7 @@ const versions: VersionSummary[] = [
         knowledgeBases: 1,
         articles: 12,
         procedures: 2,
+        actions: 0,
         sha256: `3f9a${"0".repeat(56)}c21e`,
     },
     {
@@ -24,6 +25,7 @@ const versions: VersionSummary[] = [
         knowledgeBases: 1,
         articles: 11,
         procedures: 2,
+        actions: 0,
         sha256: `b07d${"0".repeat(56)}1a44`,
     },
 ];
@@ -80,6 +82,8 @@ function view(shown: {
     shown?: VersionDetail | null;
     status?: BotStatus | null;
     pushFailure?: PushResult | null;
+    comparison?: VersionComparison | null;
+    plan?: PushPlan | null;
 }): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/versions">
@@ -92,6 +96,12 @@ function view(shown: {
                 onPush={() => undefined}
                 refused={shown.refused ?? null}
                 shown={shown.shown ?? null}
+                comparison={shown.comparison ?? null}
+                plan={shown.plan ?? null}
+                onPlan={() => undefined}
+                onCancelPlan={() => undefined}
+                onCompare={() => undefined}
+                onCloseComparison={() => undefined}
                 onCreate={() => undefined}
                 onOpen={() => undefined}
                 onClose={() => undefined}
@@ -125,6 +135,7 @@ describe("VersionsView", () => {
             knowledgeBases: 1,
             articles: 12,
             procedures: 2,
+            actions: 0,
             sha256: `3f9a${"0".repeat(56)}c21e`,
         };
         const html = view({ shown: { version: opened, document: '{"formatVersion":1}' } });
@@ -179,5 +190,119 @@ describe("VersionsView", () => {
         expect(html).toContain("the bot refused v14");
         expect(html).toContain("No path reaches step");
         expect(html).toContain("Bot has v12 · Latest v14");
+    });
+
+    it("AC-version-diff-10: each version offers its changes against the one before it, and the first offers neither", () => {
+        const html = view({});
+        expect(html.match(/>Changes</g)).toHaveLength(1);
+        expect(html).toContain("Nothing before it");
+        expect(view({ versions: versions.slice(1) })).not.toContain(">Changes<");
+    });
+
+    it("AC-version-diff-10: a comparison offers a select of other versions, lists the resources by change, and the field's old and new values", () => {
+        const html = view({
+            comparison: {
+                bot: "rzeczoznawca",
+                from: 13,
+                to: 14,
+                added: 1,
+                removed: 1,
+                changed: 2,
+                definition: [],
+                resources: [
+                    {
+                        kind: "GlobalFact",
+                        id: "customer.city",
+                        difference: "Changed",
+                        fields: [{ field: "maxLength", old: "80", new: "120", lines: null }],
+                        parts: [],
+                    },
+                    {
+                        kind: "Article",
+                        id: "cennik",
+                        difference: "Changed",
+                        fields: [
+                            {
+                                field: "content",
+                                old: null,
+                                new: null,
+                                lines: [
+                                    { change: "Removed", text: "Wycena domu: 900 zł" },
+                                    { change: "Added", text: "Wycena domu: 1100 zł" },
+                                ],
+                            },
+                        ],
+                        parts: [],
+                    },
+                    { kind: "Article", id: "rabaty", difference: "Added", fields: [], parts: [] },
+                    { kind: "Article", id: "stary", difference: "Removed", fields: [], parts: [] },
+                ],
+            },
+        });
+        expect(html).toContain("1 added · 1 removed · 2 changed");
+        expect(html).toContain("to v14");
+        expect(html).toContain('<option value="13"');
+        expect(html).not.toContain('<option value="14"');
+        expect(html).toContain("customer.city");
+        expect(html).toContain("maxLength");
+        expect(html).toContain("− Wycena domu: 900 zł");
+        expect(html).toContain("+ Wycena domu: 1100 zł");
+        expect(html).toContain("rabaty");
+        expect(html).toContain("stary");
+    });
+
+    it("AC-version-diff-6: a comparison with no differences says so", () => {
+        const html = view({
+            comparison: { bot: "rzeczoznawca", from: 14, to: 14, added: 0, removed: 0, changed: 0, definition: [], resources: [] },
+        });
+        expect(html).toContain("no differences");
+    });
+
+    it("AC-version-diff-13: the page offers a comparison of what the bot reports with the latest", () => {
+        expect(view({ status: answering })).toContain("Compare v12 with v14");
+        expect(view({ status: { ...answering, has: 14 } })).not.toContain("Compare v");
+        expect(view({ status: { ...answering, has: null } })).not.toContain("Compare v");
+        expect(view({ status: { ...answering, hasUnknownVersion: true } })).not.toContain("Compare v");
+    });
+
+    it("AC-version-rollback-13: offers the other kept versions in a select beside the main button", () => {
+        const kept = [14, 13, 12, 11].map((number) => ({ ...versions[0], number }) as VersionSummary);
+
+        const html = view({ versions: kept, status: answering });
+
+        expect(html).toContain("other version:");
+        expect(html.indexOf(">v13</option>")).toBeLessThan(html.indexOf(">v11</option>"));
+        expect(html).not.toContain(">v14</option>");
+        expect(html).not.toContain(">v12</option>");
+        expect(html).toContain("Push v13");
+    });
+
+    it("AC-version-rollback-13: asks once, saying the bot's current and chosen versions, and AC-version-rollback-18: what goes back", () => {
+        const html = view({
+            status: answering,
+            plan: {
+                version: 11,
+                botHas: 12,
+                way: "MakeCurrent",
+                problem: null,
+                mistakes: [],
+                changes: {
+                    bot: "rzeczoznawca",
+                    from: 12,
+                    to: 11,
+                    added: 0,
+                    removed: 1,
+                    changed: 0,
+                    definition: [],
+                    resources: [{ kind: "Article", id: "cennik", difference: "Removed", fields: [], parts: [] }],
+                },
+            },
+        });
+
+        expect(html).toContain("The bot goes from v12 to v11.");
+        expect(html).toContain("The working state and the latest version stay as they are.");
+        expect(html).toContain("What goes back: 0 added · 1 removed · 0 changed");
+        expect(html).toContain("cennik");
+        expect(html).toContain("Cancel");
     });
 });

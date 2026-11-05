@@ -35,11 +35,13 @@ export function BotsView({
     openId,
     onRegister,
     registerForm,
+    declarationPanel,
 }: {
     bots: Bot[];
     openId: string | null;
     onRegister: () => void;
     registerForm: ReactNode;
+    declarationPanel?: ReactNode;
 }) {
     const open = bots.find((bot) => bot.id === openId);
 
@@ -51,6 +53,7 @@ export function BotsView({
                 <Paper>
                     <p className="text-sm text-muted-foreground">{open.address}</p>
                 </Paper>
+                {declarationPanel}
                 <p className="text-muted-foreground">Choose Facts, Knowledge bases, Articles, Procedures or Versions in the panel.</p>
             </Page>
         );

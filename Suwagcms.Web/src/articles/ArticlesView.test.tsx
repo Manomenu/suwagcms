@@ -77,6 +77,31 @@ function fieldHtml(html: string, field: string): string {
     return html.slice(start, next === -1 ? undefined : next);
 }
 
+describe("the list of articles and availability", () => {
+    it("AC-availability-1: says which article is off, and one never touched is on", () => {
+        const shown = (isOff: (id: string) => boolean) =>
+            renderToStaticMarkup(
+                <Router ssrPath="/bots/rzeczoznawca/articles">
+                    <ArticlesView
+                        bot="rzeczoznawca"
+                        articles={articles}
+                        bases={bases}
+                        isOff={isOff}
+                        filters={{ knowledgeBase: "", language: "", text: "" }}
+                        form={null}
+                        onFilters={() => undefined}
+                        onAdd={() => undefined}
+                        onEdit={() => undefined}
+                        onLeave={() => undefined}
+                    />
+                </Router>,
+            );
+
+        expect(shown(() => true)).toContain(">off<");
+        expect(shown(() => false)).toContain(">on<");
+    });
+});
+
 describe("ArticlesView", () => {
     it("AC-articles-1: an article is listed with its title, id, base and description", () => {
         const html = view(articles);

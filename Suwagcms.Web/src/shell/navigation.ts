@@ -3,7 +3,9 @@ export const TABS = [
     { id: "knowledge-bases", label: "Knowledge bases" },
     { id: "articles", label: "Articles" },
     { id: "procedures", label: "Procedures" },
+    { id: "actions", label: "Actions" },
     { id: "versions", label: "Versions" },
+    { id: "history", label: "History" },
 ] as const;
 
 export type Tab = (typeof TABS)[number]["id"];

@@ -23,6 +23,18 @@ function view(shown: ProcedureList): string {
 }
 
 describe("ProceduresView", () => {
+    it("AC-availability-22: the list says which procedure is off", () => {
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/rzeczoznawca/procedures">
+                <ProceduresView bot="rzeczoznawca" list={list} isOff={(id) => id === "goodbye"} />
+            </Router>,
+        );
+
+        const rows = html.split("<tr>");
+        expect(rows.filter((row) => row.includes("goodbye")).at(-1)).toContain(">off<");
+        expect(rows.filter((row) => row.includes("orderValuation")).at(-1)).toContain(">on<");
+    });
+
     it("AC-procedure-model-14: lists each procedure with its description and how many mistakes stop a version", () => {
         const html = view(list);
 

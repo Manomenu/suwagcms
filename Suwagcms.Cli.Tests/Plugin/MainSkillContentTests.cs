@@ -26,7 +26,14 @@ public sealed class MainSkillContentTests
             "Procedure file",
             ["context: { articles: [id, ...], searchQueries: [text, ...] }", "Name an article when", "Write a query when"]
         ),
+        ("the form of localFacts", "Procedure file", ["localFacts:", "one camelCase word", "fact.local.nameClash"]),
+        (
+            "what --dry-run on an edit answers and who sees a type change",
+            "What would this change break?",
+            ["--dry-run", "what would this change break?", "Only the server sees a type change"]
+        ),
         ("that resources are never edited as local files", "Never edit local files", ["never edited as a local file"]),
+        ("to compare before pushing", "Before a push", ["suwagcms versions status", "suwagcms diff <has> <latest>"]),
     ];
 
     private static string MainSkill() =>
@@ -70,6 +77,21 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-instruction-context-9")]
     public void The_main_skill_gives_the_form_of_context_and_when_to_name_an_article_or_write_a_query() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of context", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-edit-guard-16")]
+    public void The_main_skill_says_what_a_dry_run_on_an_edit_answers_and_that_only_the_server_sees_a_type_change() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("what --dry-run on an edit", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-local-facts-13")]
+    public void The_main_skill_gives_the_form_of_local_facts() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of localFacts", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-version-diff-13")]
+    public void The_main_skill_shows_the_comparison_of_what_the_bot_has_with_the_latest_before_a_push() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("to compare before pushing", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-5")]

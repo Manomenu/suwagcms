@@ -1,0 +1,175 @@
+using Microsoft.AspNetCore.Http.HttpResults;
+using Suwagcms.Contracts;
+using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Validation;
+using Suwagcms.Server.Bots;
+using Suwagcms.Server.Database;
+using Suwagcms.Server.Editing;
+
+namespace Suwagcms.Server.Availability;
+
+internal static class AvailabilityEndpoints
+{
+    public const string KindRefused = "availability.kind";
+    public const string ConversationRefused = "availability.conversation";
+
+    private const string Problem = "application/problem+json";
+    private const string WhatCanBeOff =
+        "Only an article, a procedure or an action can be turned off; facts and knowledge bases have no availability.";
+
+    // Why: the words a person types for a kind; any other word is refused with this list, so the route does not narrow it.
+    private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
+    {
+        ["article"] = ResourceKind.Article,
+        ["procedure"] = ResourceKind.Procedure,
+        ["action"] = ResourceKind.Action,
+    };
+
+    public static void MapAvailability(this IEndpointRouteBuilder routes)
+    {
+        routes.MapGet("/bots/{bot}/availability", Show).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapPost("/bots/{bot}/availability/send", Send).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes
+            .MapPost("/bots/{bot}/availability/{kind}/{id}/off", TurnOff)
+            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
+            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+        routes
+            .MapPost("/bots/{bot}/availability/{kind}/{id}/on", TurnOn)
+            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
+            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+    }
+
+    // Why: asking is the default because only the bot can say what it has; a screen that only lists may skip the wait.
+    private static async Task<Results<Ok<AvailabilityView>, ProblemHttpResult>> Show(
+        string bot,
+        Pool pool,
+        AvailabilitySender sender,
+        CancellationToken cancellationToken,
+        bool ask = true
+    )
+    {
+        if (await BotStore.FindAddressAsync(pool, bot, cancellationToken) is not { } address)
+        {
+            return EditProblems.For(new EditResult.UnknownBot(), bot, "The availability was not shown.");
+        }
+        var resources = await AvailabilityStore.ListAsync(pool, bot, Kinds.Values, cancellationToken);
+        var delivery = ask
+            ? await sender.AskAsync(bot, address, cancellationToken)
+            : new AvailabilityDelivery(
+                AvailabilityDeliveryState.NotAsked,
+                await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken),
+                null,
+                null
+            );
+        return TypedResults.Ok(new AvailabilityView(delivery.Number, resources, delivery));
+    }
+
+    private static async Task<Results<Ok<AvailabilityDelivery>, ProblemHttpResult>> Send(
+        string bot,
+        Pool pool,
+        AvailabilitySender sender,
+        CancellationToken cancellationToken
+    ) =>
+        await BotStore.FindAddressAsync(pool, bot, cancellationToken) is { } address
+            ? TypedResults.Ok(await sender.SendAsync(bot, address, cancellationToken))
+            : EditProblems.For(new EditResult.UnknownBot(), bot, "The availability was not sent.");
+
+    private static Task<Results<Ok<AvailabilityAnswer>, ProblemHttpResult>> TurnOff(
+        string bot,
+        string kind,
+        string id,
+        Pool pool,
+        AvailabilitySender sender,
+        TimeProvider time,
+        CancellationToken cancellationToken,
+        bool dryRun = false
+    ) => TurnAsync(bot, kind, id, off: true, dryRun, pool, sender, time, cancellationToken);
+
+    private static Task<Results<Ok<AvailabilityAnswer>, ProblemHttpResult>> TurnOn(
+        string bot,
+        string kind,
+        string id,
+        Pool pool,
+        AvailabilitySender sender,
+        TimeProvider time,
+        CancellationToken cancellationToken,
+        bool dryRun = false
+    ) => TurnAsync(bot, kind, id, off: false, dryRun, pool, sender, time, cancellationToken);
+
+    private static async Task<Results<Ok<AvailabilityAnswer>, ProblemHttpResult>> TurnAsync(
+        string bot,
+        string kind,
+        string id,
+        bool off,
+        bool dryRun,
+        Pool pool,
+        AvailabilitySender sender,
+        TimeProvider time,
+        CancellationToken cancellationToken
+    )
+    {
+        var title = off ? "The resource was not turned off." : "The resource was not turned on.";
+        if (!Kinds.TryGetValue(kind, out var resourceKind))
+        {
+            return EditProblems.For(new EditResult.Refused([NoAvailability(kind)]), bot, title);
+        }
+        var target = new ResourceRef(resourceKind, id);
+        if (target == new ResourceRef(ResourceKind.Procedure, Procedure.ConversationId))
+        {
+            return EditProblems.For(new EditResult.Refused([Conversation(target)]), bot, title);
+        }
+        var (result, usedBy) = await AvailabilityStore.ChangeAsync(pool, bot, target, off, dryRun, time.GetUtcNow(), cancellationToken);
+        if (result == AvailabilityStore.Outcome.UnknownBot)
+        {
+            return EditProblems.For(new EditResult.UnknownBot(), bot, title);
+        }
+        if (result == AvailabilityStore.Outcome.Missing)
+        {
+            return Missing(target, bot, title);
+        }
+        var address = await BotStore.FindAddressAsync(pool, bot, cancellationToken) ?? "";
+        // Why: the set goes out also when nothing changed, which repairs a missed message; a dry run touches neither the CMS nor the bot.
+        var delivery = dryRun
+            ? new AvailabilityDelivery(
+                AvailabilityDeliveryState.NotAsked,
+                await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken),
+                null,
+                null
+            )
+            : await sender.SendAsync(bot, address, cancellationToken);
+        return TypedResults.Ok(new AvailabilityAnswer(kind, id, off, result == AvailabilityStore.Outcome.Changed, usedBy, delivery));
+    }
+
+    private static Mistake NoAvailability(string kind) =>
+        new(
+            KindRefused,
+            ValidationStage.Save,
+            new ResourceRef(ResourceKind.Definition, kind),
+            "kind",
+            $"'{kind}' cannot be turned on or off.",
+            WhatCanBeOff,
+            []
+        );
+
+    private static Mistake Conversation(ResourceRef target) =>
+        new(
+            ConversationRefused,
+            ValidationStage.Save,
+            target,
+            "id",
+            "The procedure 'conversation' cannot be turned off: every conversation is based on it.",
+            "Turn off the procedures or the articles it uses instead.",
+            []
+        );
+
+    private static ProblemHttpResult Missing(ResourceRef target, string bot, string title)
+    {
+        var missing = EditProblems.Missing(target, bot);
+        return TypedResults.Problem(
+            title: title,
+            detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
+            statusCode: StatusCodes.Status404NotFound,
+            extensions: new Dictionary<string, object?> { ["mistakes"] = new[] { missing with { Fix = $"{missing.Fix} {WhatCanBeOff}" } } }
+        );
+    }
+}

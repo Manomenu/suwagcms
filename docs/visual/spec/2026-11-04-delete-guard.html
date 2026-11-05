@@ -381,8 +381,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>There is no force option: a reference always blocks. In the first cut this protects articles linked from other articles; each later kind of reference joins the same rule.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>17</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 
@@ -489,7 +489,8 @@ Uses:     article warunki (content)</div>
     <li><code>AC-delete-guard-13</code> A procedure another one starts cannot be deleted: the refusal lists each starter and the step that names it.</li>
     <li><code>AC-delete-guard-14</code> A fact named in an <code>inform</code> cannot be deleted: the refusal lists the procedure, the step and the field.</li>
     <li><code>AC-delete-guard-15</code> An article an <code>inform</code> names cannot be deleted: the refusal lists the procedure, the step and the field.</li>
-    <li><code>AC-delete-guard-16</code> An article a context names cannot be deleted: the refusal lists each instruction that names it, on <code>whenStalled</code> and on an <code>inform</code>.</li>
+    <li><code>AC-delete-guard-17</code> An article a context names cannot be deleted: the refusal lists each instruction that names it, on <code>whenStalled</code> and on an <code>inform</code>.</li>
+    <li><code>AC-delete-guard-16</code> An action used in a step cannot be deleted.</li>
   </ul>
 </section>
 
@@ -498,7 +499,6 @@ Uses:     article warunki (content)</div>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>article-procedure-links</code>:</b> a procedure named in an article's guide cannot be deleted.</li>
-    <li><b>after <code>action-block</code>:</b> an action used in a step cannot be deleted.</li>
   </ul>
 </section>
 <!-- CONTENT END -->

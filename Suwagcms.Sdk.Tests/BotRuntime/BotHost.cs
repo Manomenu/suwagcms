@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 
@@ -26,12 +27,17 @@ internal sealed class BotHost : IAsyncDisposable
 
     public IBotDefinitions Definitions => app.Services.GetRequiredService<IBotDefinitions>();
 
-    public static async Task<BotHost> StartAsync(IVersionStore? store, string botId = "rzeczoznawca", TimeSpan? pollInterval = null)
+    public static async Task<BotHost> StartAsync(
+        IVersionStore? store,
+        string botId = "rzeczoznawca",
+        TimeSpan? pollInterval = null,
+        BotCapabilities? declares = null
+    )
     {
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
-        builder.Services.AddSuwagcmsBot(botId, store, pollInterval ?? TimeSpan.FromHours(1));
+        builder.Services.AddSuwagcmsBot(botId, store, pollInterval ?? TimeSpan.FromHours(1), declares);
         var app = builder.Build();
         app.MapSuwagcmsBot();
         await app.StartAsync();
@@ -51,6 +57,20 @@ internal sealed class BotHost : IAsyncDisposable
 
     public Task<(HttpStatusCode Status, JsonNode Body)> PutAsync(int number, JsonObject document) =>
         PutAsync(number, document.ToJsonString());
+
+    public async Task<(HttpStatusCode Status, JsonNode Body)> MakeCurrentAsync(int number, string digest)
+    {
+        using var content = new StringContent(
+            new JsonObject { ["number"] = number, ["digest"] = digest }.ToJsonString(),
+            System.Text.Encoding.UTF8,
+            "application/json"
+        );
+        using var response = await Client.PutAsync(new Uri("/suwagcms/current", UriKind.Relative), content);
+        return (
+            response.StatusCode,
+            JsonNode.Parse(await response.Content.ReadAsStringAsync()) ?? throw new InvalidOperationException("empty answer")
+        );
+    }
 
     public async Task<BotState> StateAsync() =>
         await Client.GetFromJsonAsync<BotState>(new Uri("/suwagcms/state", UriKind.Relative), Web)

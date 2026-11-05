@@ -14,25 +14,30 @@ import {
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation } from "wouter";
 
+import { renamer } from "@/api/rename";
+import { useAvailability } from "@/api/availability";
+import { useResourceHistory } from "@/api/history";
 import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
+import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
 
-import { fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
+import { type ActionView, fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
 import {
     addStep,
-    BLOCKS,
     connect,
     deleteStep,
     disconnect,
     edgesOf,
+    factsSeen,
     stepOrder,
     toSave,
     type BlockName,
     type Draft,
     type LinkableArticle,
 } from "./draft";
+import type { OfferedBlocks } from "./offeredBlocks";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
 import { MistakeList } from "./MistakeList";
 import { targetOf, stepsWithMistakes } from "./mistakes";
@@ -106,7 +111,9 @@ function CreatorBody({
     facts,
     procedures,
     articles,
+    actions,
     stored,
+    offered,
 }: {
     bot: string;
     id: string;
@@ -114,6 +121,8 @@ function CreatorBody({
     facts: Fact[];
     procedures: string[];
     articles: LinkableArticle[];
+    actions: ActionView[];
+    offered: OfferedBlocks;
     stored: Positions;
 }) {
     const [state, dispatch] = useReducer(reduce, initial, loaded);
@@ -123,12 +132,16 @@ function CreatorBody({
     const [reveal, setReveal] = useState<{ name: string; times: number } | null>(null);
     const [saving, setSaving] = useState(false);
     const [layoutFailure, setLayoutFailure] = useState<string | null>(null);
+    const [changingId, setChangingId] = useState(false);
     const [, navigate] = useLocation();
     const flow = useReactFlow();
     const { draft } = state;
     const check = useLiveCheck(bot, id, state.revision, draft);
     const usage = useUsage(bot, "procedures", id, state.revision);
+    const history = useResourceHistory(bot, "procedures", id, state.revision);
+    const availability = useAvailability(bot);
     const dirty = isDirty(state);
+    const changer = useMemo(() => renamer(bot, "procedures", id, state.revision), [bot, id, state.revision]);
     const drawn = useMemo(() => placed(draft, positions), [draft, positions]);
     // Why: a step is placed automatically once, and then stays, so drawing an edge never shuffles a graph the author is looking at.
     const fresh = Object.keys(drawn).filter((name) => !(name in positions));
@@ -175,6 +188,8 @@ function CreatorBody({
             width: size.width,
             height: size.height,
             selected: name === selected,
+            // Why: nodes are rebuilt on every edit, and a node without its size is measured again, its edges gone until that ends; the size is known, so an edge never waits on it.
+            measured: size,
             data: { name, step, first: draft.firstStep === name, flagged: flagged.has(name) },
         };
     });
@@ -241,16 +256,41 @@ function CreatorBody({
                 >
                     Arrange
                 </Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    disabled={dirty}
+                    title={dirty ? "Save your changes first." : undefined}
+                    onClick={() => {
+                        setChangingId(true);
+                    }}
+                >
+                    Change id
+                </Button>
                 <Button type="button" onClick={save} disabled={saving || !dirty}>
                     Save
                 </Button>
             </header>
+            {changingId && (
+                <ChangeIdDialog
+                    noun="procedure"
+                    id={id}
+                    preview={changer.preview}
+                    apply={changer.apply}
+                    onChanged={(newId) => {
+                        navigate(`/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(newId)}`, { replace: true });
+                    }}
+                    onCancel={() => {
+                        setChangingId(false);
+                    }}
+                />
+            )}
             <Notices state={state} onReload={reload} />
             <div className="flex min-h-0 flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">
                     <aside className="flex items-center gap-2 border-b border-border px-3 py-2" aria-label="Blocks">
                         <h2 className="text-base font-semibold">Blocks</h2>
-                        {BLOCKS.map((block) => (
+                        {offered.blocks.map((block) => (
                             <Button
                                 key={block}
                                 type="button"
@@ -263,6 +303,7 @@ function CreatorBody({
                                 {block}
                             </Button>
                         ))}
+                        {offered.note !== null && <p className="text-sm text-muted-foreground">{offered.note}</p>}
                     </aside>
                     <div className="min-h-0 flex-1" aria-label="Graph">
                         <ReactFlow
@@ -317,9 +358,10 @@ function CreatorBody({
                             id={id}
                             name={selected}
                             draft={draft}
-                            facts={facts}
+                            facts={factsSeen(draft, facts)}
                             procedures={procedures}
                             articles={articles}
+                            actions={actions}
                             edit={edit}
                             onRenamed={setSelected}
                             onDeleted={() => {
@@ -328,7 +370,16 @@ function CreatorBody({
                             onLeave={leave}
                         />
                     ) : (
-                        <ProcedurePanel bot={bot} id={id} draft={draft} articles={articles} usage={usage} edit={edit} />
+                        <ProcedurePanel
+                            bot={bot}
+                            id={id}
+                            draft={draft}
+                            articles={articles}
+                            usage={usage}
+                            history={history}
+                            availability={availability}
+                            edit={edit}
+                        />
                     )}
                     <MistakeList
                         check={check}
@@ -360,7 +411,9 @@ export function Creator(props: {
     facts: Fact[];
     procedures: string[];
     articles: LinkableArticle[];
+    actions: ActionView[];
     stored: Positions;
+    offered: OfferedBlocks;
 }) {
     return (
         <ReactFlowProvider>

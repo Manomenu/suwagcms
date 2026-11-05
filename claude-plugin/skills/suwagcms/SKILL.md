@@ -47,10 +47,17 @@ Exit code `1` means the server refused the change and lists every mistake at onc
 (with `--json`, in `mistakes`). Fix all of them, then try once more. Do not work around a refusal and do not copy the server's
 rules into your own: the refusal already says what is wrong and how to fix it.
 
+## What would this change break?
+
+`--dry-run` on an edit answers "what would this change break?" with the same refusal or answer as the real edit, and changes
+nothing. An edit of a fact that would leave a step invalid is refused at that edit, naming the fact and every step that relies on it,
+with no force option: `fact.enum.valueInUse` (a removed value a `when` or `assign` uses), `fact.range.inUse` (a narrowed `min`, `max` or `maxLength` that a value or bound falls outside), `fact.writableBy.inUse` (`assign` on a fact a `collect` names) and `fact.type.inUse` (any change of type while a procedure uses the fact, even if each use would still fit). Only the server sees a type change, because it compares with the stored fact: the validator alone, offline, cannot. A global fact cannot be named `<procedureId>.<anything>` (`fact.name.procedurePrefix`).
+
 ## Never edit local files
 
 A resource of the CMS (a fact, an article, a procedure) is never edited as a local file, and no file in the repository is its
-copy. Change it only with the commands below, so the server's rules apply.
+copy. Change it only with the commands below, so the server's rules apply. The files `suwagcms export` writes are for reading:
+changing them changes nothing.
 
 ## Show a page
 
@@ -77,6 +84,7 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms server <url>` - save the server address that later commands use.
 - `suwagcms bots list` - list the registered bots, marking the one in use with `*`; `--open` opens the list in the web app.
 - `suwagcms bots add <id> --name <name> --address <url>` - register a bot; it never contacts the address, so a bot can be registered before it runs.
+- `suwagcms bots declaration [--stored]` - ask the bot what it supports (the format version it wants, the blocks it can run, the actions in its code), store a good answer with its time and show it, with the procedures using a block it no longer declares. Exit code `1` when the bot cannot be reached or its answer is refused: the last good answer is shown with its time and the reason. `--stored` shows the last answer without asking. `--open` opens the bot's profile.
 - `suwagcms use [<id>]` - store the bot later commands work on, or say which bot is in use.
 - `suwagcms facts list` - list the global facts of the bot; `--open` opens the Facts screen in the web app.
 - `suwagcms facts show <name>` - show one fact with its revision and the procedures that use it.
@@ -85,31 +93,94 @@ In the `content` or `llmGuide` of an article, a link to another article of the b
 - `suwagcms facts delete <name> [--if-revision n]` - delete a fact; refused with `reference.missing` while a procedure uses it, with every place that does listed in `related`.
 - `suwagcms kb list` - list the knowledge bases of the bot (the groups its articles are in); prints nothing when there are none; `--open` opens the Knowledge bases screen in the web app.
 - `suwagcms kb show <id>` - show one knowledge base with its language and revision.
-- `suwagcms kb add <id> --title <text> [--language pl|en]` - add a knowledge base. The id is camelCase and never changes; the title is unique within the bot, ignoring case and surrounding spaces. The language is that of every article in the base: `en` unless `--language pl` says otherwise, and any other value is refused.
-- `suwagcms kb edit <id> [--title <text>] [--language pl|en] [--if-revision n]` - change the title or the language of a knowledge base: only the options given change (so `en` never overwrites `pl`, unless `--language en` is given); its id stays. Changing the language changes it for every article in the base.
+- `suwagcms kb add <id> --title <text> [--language pl|en]` - add a knowledge base. The id is camelCase and changes only with `suwagcms rename`; the title is unique within the bot, ignoring case and surrounding spaces. The language is that of every article in the base: `en` unless `--language pl` says otherwise, and any other value is refused.
+- `suwagcms kb edit <id> [--title <text>] [--language pl|en] [--if-revision n]` - change the title or the language of a knowledge base: only the options given change (so `en` never overwrites `pl`, unless `--language en` is given); its id stays (`suwagcms rename kb` changes it). Changing the language changes it for every article in the base.
 - `suwagcms kb delete <id> [--if-revision n]` - delete a knowledge base; refused while articles are in it, with the articles listed.
 - `suwagcms articles list [--kb <id>] [--language pl|en] [--text <text>]` - list the articles of the bot, filtered, with the language of each (the language of its knowledge base); `--text` matches the title, id and description, ignoring case, never the content; `--open` opens the Articles screen in the web app.
 - `suwagcms articles show <id>` - show one article in full with its revision; `--json` gives `content` and `llmGuide` exactly as stored.
-- `suwagcms articles add <id> --kb <id> --title <text> --content <text>|--content-file <file> --guide <text>|--guide-file <file> --description <text>` - add an article. All options are required. An article has no language of its own: it is in the language of its knowledge base. `content` is what is true, in Markdown, and the customer reads it through the model; `llmGuide` is how the model should talk about it, in Markdown; `description` is plain text for the bot's search ("what does it answer"), never shown to the customer. A file may be `-` for stdin (one of the two). Texts are stored exactly as written. The id is camelCase, never changes and is unique across all the bases of the bot.
+- `suwagcms articles add <id> --kb <id> --title <text> --content <text>|--content-file <file> --guide <text>|--guide-file <file> --description <text>` - add an article. All options are required. An article has no language of its own: it is in the language of its knowledge base. `content` is what is true, in Markdown, and the customer reads it through the model; `llmGuide` is how the model should talk about it, in Markdown; `description` is plain text for the bot's search ("what does it answer"), never shown to the customer. A file may be `-` for stdin (one of the two). Texts are stored exactly as written. The id is camelCase, changes only with `suwagcms rename`, and is unique across all the bases of the bot.
 - `suwagcms articles edit <id> [options of add] [--if-revision n]` - change an article: only the options given change; `--kb` moves it to another base, and the article then has that base's language. Without `--if-revision` the edit applies to the revision it just read and a change made meanwhile is refused with the current revision.
 - `suwagcms articles delete <id> [--if-revision n]` - delete an article; refused with `reference.missing` while the `content` or `llmGuide` of another article links to it, with every such place listed in `related`; there is no force option, so remove the links first.
 
 - `suwagcms procedures list` - list the procedures of the bot with what still stops each from becoming a version, and what stops the bot as a whole (no `conversation`); `--open` opens the Procedures screen in the web app.
 - `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`; `--open` opens it in the web creator instead.
-- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused. `--open` opens the saved procedure in the web creator, laid out automatically when no one has placed its nodes.
+- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results` and `onFailure` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused. `--open` opens the saved procedure in the web creator, laid out automatically when no one has placed its nodes.
 - `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
 - `suwagcms procedures layout <id> [--set <step>=<x>,<y>]... [--clear]` - show where the web creator draws each step, set some positions, or forget them all so the creator arranges the graph itself. Positions are no part of the procedure: no revision changes and no version holds them.
 - `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
-- `suwagcms usage <kind> <id>` - with `<kind>` fact, article or procedure: show what uses a resource ("Used by") and what it uses ("Uses"), each with the field that holds the reference; `--json` gives both as data. Ask it before a delete; it changes nothing.
+- `suwagcms actions list` - list the actions of the bot, HTTP and code in one list, with the implementation of each and whether the bot also declares an HTTP action's id or no longer declares a code action in use; `--open` opens the Actions screen in the web app.
+- `suwagcms actions show <id>` - show one action as YAML (or JSON with `--json`) with its revision and the procedures that use it; both are accepted back by `actions edit --file`.
+- `suwagcms actions add --file <file>` - add an action from a YAML or JSON file that holds the whole of it (see Action file below). A secret is written as a reference, `{secret:NAME}`, never as its value. The CMS never calls the action's URL: the bot does. `implementation: code` is refused with `action.code.readOnly`: a code action comes from the bot's declaration.
+- `suwagcms actions edit <id> --file <file> [--if-revision n]` - replace an action with the whole of a file. A code action is read-only: change it in the bot's code and deploy (refused with `action.code.readOnly`).
+- `suwagcms actions delete <id> [--if-revision n]` - delete an action that no procedure uses. A code action is read-only too: the CMS removes its copy once the bot stops declaring it and no step uses it.
+- `suwagcms actions test <id> [--param name=value ...] [--yes]` - try a saved action through the bot, also one no version holds yet, and see the results or the failure with its reason. A test run really calls the service: every method but `GET`, and every code action, needs `--yes`; without it the command prints what would be called, sends nothing and exits `1`. `--json` gives `outcome` (`success`, `failure`, or `unreachable` or `notOffered`, where the action has not been judged), `results`, `reason`, `status` and `elapsedMs`. It exits `0` only on success.
+- `suwagcms usage <kind> <id>` - with `<kind>` fact, article, procedure or action: show what uses a resource ("Used by") and what it uses ("Uses"), each with the field that holds the reference; `--json` gives both as data. Ask it before a delete; it changes nothing.
+- `suwagcms rename <kind> <id> <newId> [--if-revision n] [--dry-run]` - with `<kind>` fact, kb, article, procedure or action: change a resource's id and rewrite every reference to it, all or nothing: a link's target in `content` and `llmGuide` (its label and all other text stay byte for byte), an article's `knowledgeBase`, a fact's name in each `collect`, `assign` and `when`. Each rewritten resource gets a new revision, so a save based on an older one is refused; versions already created keep the old id, and plain text naming the resource is not changed. `conversation` cannot change its id. `--dry-run` lists each referrer and field; `--json` gives them as data; `--open` opens the resource at its new address.
 - `suwagcms versions list` - list the versions of the bot, newest first, with date, counts of resources and digest; `--open` opens the Versions screen in the web app.
 - `suwagcms versions create [--dry-run]` - validate the bot's whole working state and freeze it as the next numbered version, which never changes. Refused (exit code `1`) with every mistake while anything is unfinished, and when nothing has changed since the latest version. It never contacts the bot; `suwagcms push` sends it. `--dry-run` answers the same, creates nothing and uses no number.
 - `suwagcms versions show <number>` - show one version with its document exactly as stored; `--json` gives it with its digest.
 - `suwagcms versions status` - ask the bot which version it has, as the bot answers and never as the CMS last sent it: the latest version, the versions conversations still use, and the recent pushes with their reasons. An unreachable bot shows its last reported version and when; an address that answers as another bot names it.
-- `suwagcms push` - push the latest version to the bot, which then reports the version it holds (`--json` gives the result, the reason and that version). It asks for no confirmation: validation by the bot and rollback are the safeguards, so push when the work calls for it. Exit code `0` when the bot holds the version, also when it already had it (nothing is sent); `1` with the reason when the version does not exist, the bot cannot be reached or does not answer within 30 seconds, or the bot refuses it with every mistake. A repeated push is safe. Only the latest version can be pushed.
+- `suwagcms apply <file> [--dry-run]` - apply a YAML or JSON file of changes all or nothing: every mistake comes back at once, each with its change's position in `change`, and the order inside the file does not matter. Start with `--dry-run`; the `suwagcms-batch` skill has the file's form and the steps. Exit code `0` also for an empty list, `2` for an unreadable file, naming the line.
+- `suwagcms availability list` - list every article, procedure and action with whether it is on or off, and say whether the bot has the setting, from the bot's own answer. A resource never touched is on; `--json` gives them as data.
+- `suwagcms availability off <kind> <id> [--yes] [--dry-run]` - with `<kind>` article, procedure or action: turn a resource off; a live setting that takes effect at once, without a version or a push, also in conversations on older versions. It prints what uses the resource first: a resource in use needs `--yes`, and without it nothing changes and the exit code is `1`. References stay valid. If the bot does not confirm, the change stays saved, the exit code is `1` and the reason says what to do. `--dry-run` prints the list and what would change, and changes nothing. `conversation` cannot be turned off; facts and knowledge bases have no availability.
+- `suwagcms availability on <kind> <id> [--dry-run]` - turn a resource on again, at once and with no question; the same delivery and exit code as `off`.
+- `suwagcms availability send` - send everything that is off to the bot again, after it was not delivered; the CMS never retries by itself. Exit code `1` when the bot does not confirm. With several instances of a bot, the others pick up a change at their next poll.
+- `suwagcms history [--limit n] [--before id]` - list every change to the bot, newest first, one page at a time (50 unless `--limit` says otherwise): when, what and the changed fields with their old and new values, also creating and pushing a version. `--before` takes the id the last page says to go on from; `--json` gives the entries; `--open` opens the bot's History page. It says what and when, never who, and no command can change it.
+- `suwagcms history <kind> <id> [--limit n] [--before id]` - with `<kind>` fact, kb, article, procedure or version: the same for one resource, also after it is deleted, with what it held last; `--open` opens the page of its history. A resource with no entries says no change has been recorded since history started.
+- `suwagcms push [--version n] [--dry-run]` - push the latest version to the bot, which then reports the version it holds (`--json` gives the result, the reason and that version). A version the bot already holds is made current without being sent again. It asks for no confirmation: validation by the bot and rollback are the safeguards, so push when the work calls for it. Exit code `0` when the bot holds the version as current, also when it already had it (nothing is sent); `1` with the reason when the version does not exist (naming the nearest kept numbers), the bot cannot be reached or does not answer within 30 seconds, the bot refuses it with every mistake, or it names another version. A repeated push is safe.
+- `suwagcms push --version <n>` - this is the rollback: push a kept version other than the latest. It changes only the bot: the working state and the latest version stay as they are, resources deleted since come back to customers but stay deleted in the CMS, and conversations in progress finish on their version; `suwagcms push` goes forward again. `--dry-run` says whether the version would be sent, made current or needs nothing, lists what it changes, and leaves the bot as it is. A bot holding the version on an SDK without the route fails saying to upgrade it.
+- `suwagcms diff <from> <to>` - say what going from one version to another changes: each resource added, removed or changed, and in a changed one its fields with old and new values, `content` and `llmGuide` as lines removed and added, and a procedure's steps and local facts. It reads two frozen versions only, never the working state or the bot. Exit code `0` also when differences are found; `1` for a number the bot does not have. `--json` gives the same in a fixed order; `--open` opens the comparison in the web app.
+- `suwagcms export [<number>] --out <folder>` - write a version (the latest when no number is given) to a new or empty folder of YAML files for reading and searching with ordinary tools: one file for the version itself and one per fact, knowledge base, article and procedure, in a folder per kind. Changes to those files do nothing: no command takes them back. A folder with anything in it, or a number the bot does not have, is refused with exit code `1`; no `--out` exits `2`. `--json` gives the folder, the version and the count of files per kind; `--open` opens the version in the web app.
+- `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
 
-`facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
+`actions add`, `actions edit`, `actions delete`, `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
+
+## Before a push
+
+Show what a push will change first: `suwagcms versions status` gives the version the bot has and the latest, and
+`suwagcms diff <has> <latest>` compares them. Say what it changes for customers, then push.
+
+## Action step
+
+A procedure's step runs an action with the `action` block: `with` maps each parameter to the fact that gives its value, `results` maps a result to the fact it writes (one left out is ignored), `onFailure` names the step to go to when the action fails, and `next` says where to go on success. On a failure no fact is written.
+
+```yaml
+checkAddress:
+  action: checkServiceability
+  with: { address: customer.address }
+  results: { serviceable: isServiceable }
+  onFailure: tellItFailed
+  next:
+    - when: { isServiceable: { oneOf: [yes] } }
+      to: offerPlan
+    - to: sayNotServiceable
+```
+
+Types match strictly, judged on what the source can hold: an enum's values all among the target's, an int's range within the target's, a text's `maxLength` at most the target's, different types never (`action.mapping.tooWide`, `action.mapping.typeMismatch`). A result may write a fact with `writableBy: assign`. An unknown action or fact, or a parameter or result the action does not have, is `reference.missing`; two results into one fact is `action.mapping.resultTwice`. These refuse a save. A step with no `onFailure` or an unmapped parameter is saved and stops a version (`step.action.noOnFailure`, `step.action.unmappedParameter`). The same mapping mistakes on a code action only stop a version (`action.code.mapping`), since the bot's code can change without asking.
+
+## Action file
+
+An action is a contract and a call: the file holds one whole action in YAML or JSON. It never names a fact: a procedure's step maps its parameters and results.
+
+```yaml
+id: checkServiceability
+description: Checks whether we serve an address.
+parameters:
+  address: { type: text, maxLength: 200, description: "Street, number and city." }
+results:
+  serviceable: { type: enum, values: [yes, no], description: Whether we serve it. }
+implementation:
+  http:
+    method: POST                       # GET, POST, PUT, PATCH or DELETE
+    url: https://crm.internal/check    # absolute; each {name} in it is a parameter
+    timeoutSeconds: 20                 # 1 to 60, 10 when left out
+    headers:
+      Authorization: Bearer {secret:CRM_TOKEN}
+```
+
+A parameter or a result is typed like a fact (`enum` with `values`, `int` with `min` and `max`, `text` with `maxLength`), and each needs a description. A secret is a name resolved in the bot's environment: `{secret:CRM_TOKEN}` reads `SUWAGCMS_SECRET_CRM_TOKEN` there. It goes in a header only. A literal value in a header named like a credential (`Authorization`, `Cookie`, or holding `key`, `token`, `secret`, `password` or `auth`) or in a query parameter so named is refused with `action.secret.literal`; that net has holes, so never put a secret anywhere else either. `GET` and `DELETE` send the parameters not in the URL as a query string, the others as one JSON object; a result is the member of that name at the top level of the JSON answer.
 
 ## Procedure file
 
@@ -150,6 +221,9 @@ steps:
   (`reference.missing`) and the article is protected. Write a query when you want what the articles say on a subject without knowing
   which says it: the CMS stores it as text and never runs it, the bot searches. A blank query (`context.query.blank`) and a query in a
   bot with no articles (`context.query.noArticles`) are saved and listed as unfinished.
+- `localFacts` (optional) maps a name to a fact that lives inside this procedure: `localFacts: { visitDate: { type: text, description: When to visit, maxLength: 20 } }`.
+  The name is one camelCase word with no dots; the type, its constraints (`values` / `min` and `max` / `maxLength`), `description` and `writableBy` are those of a global fact. Steps of the
+  procedure name it by that short name, and no other procedure sees it; `facts list` does not list it. A local fact with the name of a global fact is refused with `fact.local.nameClash`, from whichever side was saved second, and removing one that a step still uses is refused with `reference.missing`, listing the steps.
 - Two stages: a mistake that makes the procedure unsound is refused (a step or fact that does not exist, an unwritable collect, a value the
   fact cannot take, a missing description); what only makes it unfinished (no `firstStep`, a step with no block, an unreachable step, rules
   without a default, a missing `whenStalled`, no `conversation`) is saved and listed after each save, so build a procedure step by step.

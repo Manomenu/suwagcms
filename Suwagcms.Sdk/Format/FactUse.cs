@@ -6,4 +6,6 @@ public enum FactUse
     Assign,
     Condition,
     Inform,
+    Parameter,
+    Result,
 }

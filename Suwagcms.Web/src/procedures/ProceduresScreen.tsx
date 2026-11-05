@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 
+import { useAvailability } from "@/api/availability";
 import { Alert } from "@/design/alert";
+import { AvailabilityNotice } from "@/design/availabilityPanel";
 
 import { fetchProcedures, type ProcedureList } from "./api";
 import { ProceduresView } from "./ProceduresView";
@@ -9,6 +11,7 @@ import { ProceduresView } from "./ProceduresView";
 export function ProceduresScreen({ bot }: { bot: string }) {
     const [list, setList] = useState<ProcedureList | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
+    const availability = useAvailability(bot);
 
     useEffect(() => {
         // StrictMode runs effects twice in development: abort the first request, ignore its result.
@@ -27,5 +30,12 @@ export function ProceduresScreen({ bot }: { bot: string }) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
     if (list === null) return <p className="text-muted-foreground">Loading procedures…</p>;
-    return <ProceduresView bot={bot} list={list} />;
+    return (
+        <ProceduresView
+            bot={bot}
+            list={list}
+            isOff={(id) => availability.isOff("procedure", id)}
+            notice={<AvailabilityNotice delivery={availability.delivery} failure={availability.failure} onSend={availability.send} />}
+        />
+    );
 }

@@ -2,8 +2,8 @@
 // in the shape the server accepts, and the server's dry run says what is wrong with it.
 import type { Fact, ProcedureDetail, SaveProcedure } from "./api";
 
-export type BlockName = "listen" | "collect" | "say" | "assign" | "start" | "inform";
-export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "start", "inform"];
+export type BlockName = "listen" | "collect" | "say" | "assign" | "start" | "inform" | "action";
+export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "start", "inform", "action"];
 
 export interface Condition {
     oneOf?: string[];
@@ -42,15 +42,26 @@ export interface Step {
     /** The id of the procedure this step starts. */
     start?: string;
     inform?: Inform;
+    /** The id of the action this step runs; "" until one is chosen. */
+    action?: string;
+    /** Parameter name to the fact that gives its value. */
+    with?: Record<string, string>;
+    /** Result name to the fact it writes. */
+    results?: Record<string, string>;
+    /** The step to go to when the action fails. */
+    onFailure?: string;
     /** A step's name, or rules whose last one is the default. A target of "" is a rule not yet connected. */
     next?: string | Rule[];
 }
+
+export type LocalFact = NonNullable<SaveProcedure["localFacts"]>[string];
 
 export interface Draft {
     description: string;
     firstStep: string | null;
     whenStalled: Instruction | null;
     steps: Record<string, Step>;
+    localFacts: Record<string, LocalFact>;
 }
 
 type Wire = ProcedureDetail["steps"][string];
@@ -106,6 +117,10 @@ function stepOf(wire: Wire): Step {
     if (wire.assign) step.assign = { ...wire.assign };
     if (wire.start != null) step.start = wire.start;
     if (wire.inform) step.inform = informOf(wire.inform);
+    if (wire.action != null) step.action = wire.action;
+    if (wire.with) step.with = { ...wire.with };
+    if (wire.results) step.results = { ...wire.results };
+    if (wire.onFailure != null) step.onFailure = wire.onFailure;
     const next = wire.next;
     if (typeof next === "string") step.next = next;
     else if (Array.isArray(next)) step.next = next.map(ruleOf);
@@ -118,6 +133,7 @@ export function fromDetail(detail: ProcedureDetail): Draft {
         firstStep: detail.firstStep,
         whenStalled: detail.whenStalled ? instructionOf(detail.whenStalled) : null,
         steps: Object.fromEntries(Object.entries(detail.steps).map(([name, wire]) => [name, stepOf(wire)])),
+        localFacts: detail.localFacts ?? {},
     };
 }
 
@@ -137,10 +153,15 @@ export function toSave(draft: Draft): SaveProcedure {
                     ...(step.assign ? { assign: step.assign } : {}),
                     ...(step.start === undefined ? {} : { start: step.start }),
                     ...(step.inform ? { inform: step.inform } : {}),
+                    ...(step.action === undefined ? {} : { action: step.action }),
+                    ...(step.with ? { with: step.with } : {}),
+                    ...(step.results ? { results: step.results } : {}),
+                    ...(step.onFailure === undefined ? {} : { onFailure: step.onFailure }),
                     ...(step.next === undefined ? {} : { next: step.next }),
                 },
             ]),
         ),
+        ...(Object.keys(draft.localFacts).length === 0 ? {} : { localFacts: draft.localFacts }),
     };
 }
 
@@ -160,7 +181,8 @@ export function stepOrder(draft: Draft): string[] {
         const name = queue.shift();
         if (name === undefined || seen.has(name) || !(name in draft.steps)) continue;
         seen.add(name);
-        queue.push(...targetsOf(draft.steps[name] ?? {}));
+        const step = draft.steps[name] ?? {};
+        queue.push(...targetsOf(step), ...(step.onFailure === undefined ? [] : [step.onFailure]));
     }
     const rest = Object.keys(draft.steps)
         .filter((name) => !seen.has(name))
@@ -168,10 +190,12 @@ export function stepOrder(draft: Draft): string[] {
     return [...seen, ...rest];
 }
 
+export const FAILURE = "failure";
+
 export interface Edge {
     id: string;
     source: string;
-    /** `next` for a fixed next, `rule-<n>` for the rule at that position. */
+    /** `next` for a fixed next, `rule-<n>` for the rule at that position, `failure` for an action's onFailure. */
     handle: string;
     target: string;
 }
@@ -183,11 +207,15 @@ export function handlesOf(step: Step): string[] {
 export function edgesOf(draft: Draft): Edge[] {
     return stepOrder(draft).flatMap((source) => {
         const step = draft.steps[source] ?? {};
-        return targetsOf(step).flatMap((target, index) => {
-            if (!(target in draft.steps)) return [];
-            const handle = handlesOf(step)[index] ?? "next";
-            return [{ id: `${source}:${handle}`, source, handle, target }];
-        });
+        const failure = step.onFailure !== undefined && step.onFailure in draft.steps ? step.onFailure : null;
+        return [
+            ...targetsOf(step).flatMap((target, index) => {
+                if (!(target in draft.steps)) return [];
+                const handle = handlesOf(step)[index] ?? "next";
+                return [{ id: `${source}:${handle}`, source, handle, target }];
+            }),
+            ...(failure === null ? [] : [{ id: `${source}:${FAILURE}`, source, handle: FAILURE, target: failure }]),
+        ];
     });
 }
 
@@ -205,6 +233,7 @@ function ruleIndex(handle: string): number | null {
 export function connect(draft: Draft, source: string, handle: string, target: string): Draft {
     const index = ruleIndex(handle);
     return withStep(draft, source, (step) => {
+        if (handle === FAILURE) return { ...step, onFailure: target };
         if (index !== null && Array.isArray(step.next)) {
             return { ...step, next: step.next.map((rule, at) => (at === index ? { ...rule, to: target } : rule)) };
         }
@@ -216,6 +245,10 @@ export function connect(draft: Draft, source: string, handle: string, target: st
 export function disconnect(draft: Draft, source: string, handle: string): Draft {
     const index = ruleIndex(handle);
     return withStep(draft, source, (step) => {
+        if (handle === FAILURE) {
+            const { onFailure: _, ...rest } = step;
+            return rest;
+        }
         if (index !== null && Array.isArray(step.next)) {
             return { ...step, next: step.next.map((rule, at) => (at === index ? { ...rule, to: "" } : rule)) };
         }
@@ -240,6 +273,7 @@ export function addStep(draft: Draft, block: BlockName): { draft: Draft; name: s
         assign: { assign: {} },
         start: { start: "" },
         inform: { inform: { instruction: "" } },
+        action: { action: "" },
     };
     return { draft: { ...draft, steps: { ...draft.steps, [name]: empty[block] } }, name };
 }
@@ -256,6 +290,7 @@ export function renameStep(draft: Draft, from: string, to: string): Draft {
                 again(name),
                 {
                     ...step,
+                    ...(step.onFailure === undefined ? {} : { onFailure: again(step.onFailure) }),
                     ...(step.next === undefined
                         ? {}
                         : {
@@ -275,7 +310,9 @@ export function deleteStep(draft: Draft, name: string): Draft {
     const rest = Object.fromEntries(
         Object.entries(draft.steps)
             .filter(([other]) => other !== name)
-            .map(([other, step]) => {
+            .map(([other, full]) => {
+                const { onFailure, ...others } = full;
+                const step: Step = onFailure === undefined || onFailure === name ? others : full;
                 if (typeof step.next === "string" && step.next === name) {
                     const { next: _, ...without } = step;
                     return [other, without];
@@ -346,6 +383,33 @@ export function kindOf(condition: Condition): ConditionKind {
     return condition.range ? "range" : condition.known !== undefined ? "known" : "oneOf";
 }
 
+/** What a step of this procedure sees: the bot's facts and the procedure's own, which only it can name. */
+export function factsSeen(draft: Draft, facts: Fact[]): Fact[] {
+    const local = Object.entries(draft.localFacts).map(([name, fact]) => ({
+        name,
+        type: fact.type ?? "",
+        description: fact.description ?? "",
+        writableBy: fact.writableBy ?? "set",
+        values: fact.values ?? null,
+        min: fact.min ?? null,
+        max: fact.max ?? null,
+        maxLength: fact.maxLength ?? null,
+        revision: 0,
+        usedBy: [],
+    }));
+    return [...facts, ...local];
+}
+
+/** Adds a local fact, or replaces it; the server's dry run says what is wrong with it. */
+export function setLocalFact(draft: Draft, name: string, fact: LocalFact): Draft {
+    return { ...draft, localFacts: { ...draft.localFacts, [name]: fact } };
+}
+
+/** Removes a local fact; steps that still use it are for the server's dry run to list. */
+export function removeLocalFact(draft: Draft, name: string): Draft {
+    return { ...draft, localFacts: Object.fromEntries(Object.entries(draft.localFacts).filter(([other]) => other !== name)) };
+}
+
 /** The facts a collect may use: a fact only a procedure assigns is not asked of the customer. */
 export function collectable(facts: Fact[]): Fact[] {
     return facts.filter((fact) => fact.writableBy !== "assign");
@@ -380,4 +444,21 @@ export function withStored(offered: string[], stored: string[]): string[] {
 
 export function valuesOffered(fact: Pick<Fact, "type" | "values"> | undefined): string[] | null {
     return fact?.type === "enum" ? (fact.values ?? []) : null;
+}
+
+type ContractField = {
+    [Key in "values" | "min" | "max" | "maxLength"]?: Fact[Key] | undefined;
+} & { type?: string | undefined };
+
+function holds(target: ContractField, source: ContractField): boolean {
+    if (source.type !== target.type) return false;
+    if (source.type === "enum") return (source.values ?? []).every((value) => (target.values ?? []).includes(value));
+    if (source.type === "int") return Number(source.min) >= Number(target.min) && Number(source.max) <= Number(target.max);
+    if (source.type === "text") return Number(source.maxLength) <= Number(target.maxLength);
+    return true;
+}
+
+/** The facts a row of an action step offers: every value the source can hold must fit the target, so a parameter takes from a fact and a result writes to one. */
+export function factsThatFit(kind: "with" | "results", field: ContractField, facts: Fact[]): Fact[] {
+    return facts.filter((fact) => (kind === "with" ? holds(field, fact) : holds(fact, field)));
 }

@@ -437,7 +437,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>Behaviour</h2>
   <table>
     <tr><th>Field</th><th>Rule</th><th>Who reads it</th></tr>
-    <tr><td><code>id</code></td><td>required; camelCase; unique across all the bot's articles, not only its base; fixed once created</td><td>references, commands</td></tr>
+    <tr><td><code>id</code></td><td>required; camelCase; unique across all the bot's articles, not only its base; changed only by <code>resource-rename</code></td><td>references, commands</td></tr>
     <tr><td><code>knowledgeBase</code></td><td>required; a base of this bot; changing it moves the article, which then has the language of the new base</td><td>authors</td></tr>
     <tr><td><code>title</code></td><td>required, not blank</td><td>authors, the model</td></tr>
     <tr><td><code>content</code></td><td>required, not blank; Markdown</td><td>the customer, through the model</td></tr>

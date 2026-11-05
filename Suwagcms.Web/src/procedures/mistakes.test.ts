@@ -17,7 +17,13 @@ const mistake = (stage: "Save" | "Version", path: string, message = "m"): Mistak
     related: [],
 });
 
-const draft: Draft = { description: "d", firstStep: "ask", whenStalled: null, steps: { ask: { say: "hi" }, goodbye: { say: "bye" } } };
+const draft: Draft = {
+    description: "d",
+    firstStep: "ask",
+    whenStalled: null,
+    steps: { ask: { say: "hi" }, goodbye: { say: "bye" } },
+    localFacts: {},
+};
 
 function detail(revision: number, notReady: Mistake[] = [], say = "hi"): ProcedureDetail {
     return {

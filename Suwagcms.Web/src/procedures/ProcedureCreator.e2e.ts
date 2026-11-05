@@ -1,5 +1,7 @@
 // A person draws a procedure in the browser: the graph, the forms, the live list of mistakes, and the save.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
 
 function freshId(): string {
     return `pc-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -268,7 +270,7 @@ test("AC-procedure-creator-17: leaving the creator with unsaved changes asks fir
     await expect(page.getByRole("heading", { name: /Procedures of/ })).toBeVisible();
 });
 
-test("AC-procedure-creator-18: a start step is built with its form, which leaves out conversation, and reads back from the server", async ({
+test("AC-procedure-creator-21: a start step is built with its form, which leaves out conversation, and reads back from the server", async ({
     page,
     request,
 }) => {
@@ -302,7 +304,7 @@ test("AC-procedure-creator-18: a start step is built with its form, which leaves
     await expect(page.getByLabel("Start this procedure")).toHaveValue("documentsList");
 });
 
-test("AC-procedure-creator-19: an inform step is built with its form and reads back from the server with its lists", async ({
+test("AC-procedure-creator-22: an inform step is built with its form and reads back from the server with its lists", async ({
     page,
     request,
 }) => {
@@ -383,4 +385,178 @@ test("AC-procedure-creator-20: a context is edited on whenStalled and on an info
         expect(stored.whenStalled.context).toEqual({ articles: ["officeContact"], searchQueries: ["how long a valuation takes"] });
         expect(stored.steps["tell"]?.inform?.context).toEqual({ searchQueries: ["opening hours"] });
     }).toPass();
+});
+
+test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers it, the save stores it, and the panel removes it again", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", { description: "D", firstStep: "ask", steps: { ask: { collect: [] } } }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    const panel = page.getByRole("region", { name: "Local facts" });
+    await panel.getByRole("button", { name: "Add a local fact" }).click();
+    await panel.getByLabel("Name").fill("visitDate");
+    await panel.getByLabel("Maximum length").fill("20");
+    await panel.getByLabel("Fact description").fill("When to visit");
+    await panel.getByRole("button", { name: "Keep" }).click();
+    await expect(panel).toContainText("text, up to 20 · set");
+
+    await node(page, "ask").click();
+    await page.getByRole("checkbox", { name: "visitDate" }).check();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("unsaved changes")).toBeHidden();
+
+    const saved = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+        localFacts: Record<string, { maxLength: number; description: string }>;
+        steps: Record<string, { collect?: string[] }>;
+    };
+    expect(saved.localFacts["visitDate"]).toMatchObject({ maxLength: 20, description: "When to visit" });
+    expect(saved.steps["ask"]?.collect).toEqual(["visitDate"]);
+    const listed = (await (await request.get(`/api/bots/${bot}/facts`)).json()) as { name: string }[];
+    expect(listed.map((fact) => fact.name)).not.toContain("visitDate");
+
+    await page.getByRole("checkbox", { name: "visitDate" }).uncheck();
+    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+    await panel.getByRole("button", { name: "Edit visitDate" }).click();
+    await panel.getByLabel("Maximum length").fill("30");
+    await panel.getByRole("button", { name: "Keep" }).click();
+    await expect(panel).toContainText("text, up to 30");
+    await panel.getByRole("button", { name: "Remove visitDate" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("unsaved changes")).toBeHidden();
+    const after = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { localFacts: unknown };
+    expect(after.localFacts ?? {}).toEqual({});
+});
+
+test("AC-resource-rename-21: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    const positions = { ask: { x: 11, y: 22 }, mark: { x: 33, y: 44 }, confirm: { x: 55, y: 66 }, goodbye: { x: 77, y: 88 } };
+    expect((await request.put(`/api/bots/${bot}/procedures/orderValuation/layout`, { data: { positions } })).status()).toBe(200);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    await expect(page.locator("[data-step]")).toHaveCount(4);
+
+    await page.getByRole("button", { name: "Change id" }).click();
+    const dialog = page.getByRole("dialog", { name: "Change id" });
+    await dialog.getByLabel("New id").fill("valuation");
+    await expect(dialog).toContainText("This rewrites nothing else.");
+    await dialog.getByRole("button", { name: "Change id" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/valuation$`));
+    await expect(page.getByRole("heading", { name: /Creator: valuation/ })).toBeVisible();
+    const layout = (await (await request.get(`/api/bots/${bot}/procedures/valuation/layout`)).json()) as { positions: unknown };
+    expect(layout.positions).toEqual(positions);
+});
+
+test("AC-procedure-creator-19: the creator offers only the blocks the bot last declared, and every block when it has declared none", async ({
+    page,
+    request,
+}) => {
+    const id = freshId();
+    const server = createServer((_, response) => {
+        response
+            .writeHead(200, { "content-type": "application/json" })
+            .end(JSON.stringify({ bot: id, formatVersion: 1, blocks: ["listen", "say"] }));
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    try {
+        const address = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+        expect((await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address } })).status()).toBe(201);
+        await agentSaves(request, id, "conversation", CONVERSATION, 0);
+        const blocks = page.getByRole("complementary", { name: "Blocks" });
+
+        await page.goto(`/bots/${id}/procedures/conversation`);
+        await expect(blocks.getByRole("button", { name: "collect" })).toBeVisible();
+        await expect(blocks.getByText("nothing is being checked")).toBeVisible();
+
+        expect((await request.get(`/api/bots/${id}/declaration`)).status()).toBe(200);
+        await page.goto(`/bots/${id}/procedures/conversation`);
+        await expect(blocks.getByRole("button", { name: "say" })).toBeVisible();
+        await expect(blocks.getByRole("button", { name: "collect" })).toHaveCount(0);
+        await expect(blocks.getByText("nothing is being checked")).toHaveCount(0);
+    } finally {
+        server.close();
+    }
+});
+
+test("AC-action-block-16: an action step's form offers the bot's actions, then a row per parameter and result with only the facts that fit, and a failure edge; the mistakes show in the live list", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await request.put(`/api/bots/${bot}/actions/checkKind?ifRevision=0`, {
+        data: {
+            description: "Checks",
+            parameters: { place: { type: "text", maxLength: 100, description: "Where" } },
+            results: { kind: { type: "enum", values: ["house", "flat"], description: "What" } },
+            implementation: { http: { method: "POST", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+        },
+    });
+    await agentSaves(
+        request,
+        bot,
+        "withAction",
+        { description: "Runs an action", firstStep: "run", steps: { run: { action: "" }, failed: { say: "Sorry" } } },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/withAction`);
+    await page.locator('[data-step="run"]').click();
+
+    await page.getByLabel("Action", { exact: true }).selectOption("checkKind");
+
+    const parameter = page.getByLabel("Parameters: place");
+    await expect(parameter.getByRole("option")).toHaveText(["(choose a fact)", "customer.city", "system.flag"]);
+    const result = page.getByLabel("Results: kind");
+    await expect(result.getByRole("option")).toHaveText(["(ignored)", "order.kind"]);
+    await expect(page.getByText("Step 'run' has no onFailure.")).toBeVisible();
+    await expect(page.getByText("Step 'run' does not map parameter 'place'.")).toBeVisible();
+
+    await parameter.selectOption("customer.city");
+    await result.selectOption("order.kind");
+    await page.getByLabel("On failure, go to").selectOption("failed");
+
+    await expect(page.getByText("Step 'run' has no onFailure.")).toHaveCount(0);
+    await expect(page.locator(".react-flow__edge")).toHaveCount(1);
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect
+        .poll(
+            async () =>
+                ((await (await request.get(`/api/bots/${bot}/procedures/withAction`)).json()) as { steps: { run: unknown } }).steps.run,
+        )
+        .toMatchObject({ action: "checkKind", with: { place: "customer.city" }, results: { kind: "order.kind" }, onFailure: "failed" });
+});
+
+test("AC-action-block-17: the Uses panel of a procedure lists the action and each fact a step maps, with the field holding each", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await request.put(`/api/bots/${bot}/actions/checkKind?ifRevision=0`, {
+        data: {
+            description: "Checks",
+            parameters: { place: { type: "text", maxLength: 100, description: "Where" } },
+            results: null,
+            implementation: { http: { method: "POST", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+        },
+    });
+    await agentSaves(
+        request,
+        bot,
+        "withAction",
+        {
+            description: "Runs",
+            firstStep: "run",
+            steps: { run: { action: "checkKind", with: { place: "customer.city" }, onFailure: "failed" }, failed: { say: "S" } },
+        },
+        0,
+    );
+
+    await page.goto(`/bots/${bot}/procedures/withAction`);
+
+    const uses = page.getByRole("region", { name: "Uses" });
+    await expect(uses).toContainText("checkKind");
+    await expect(uses).toContainText("steps.run.action");
+    await expect(uses).toContainText("steps.run.with.place");
 });

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Database;
+using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Bots;
 
@@ -14,7 +15,19 @@ internal static class BotEndpoints
             .MapPost("/bots", Register)
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")
             .Produces<Refusal>(StatusCodes.Status409Conflict, "application/problem+json");
+        routes.MapGet("/bots/{bot}/declaration", Declaration).Produces<Refusal>(StatusCodes.Status404NotFound, "application/problem+json");
     }
+
+    // Why: asking is the default because the answer is the bot's own; the creator reads the stored one, since opening a form must not wait on a bot.
+    private static async Task<Results<Ok<DeclarationStatus>, ProblemHttpResult>> Declaration(
+        string bot,
+        DeclarationAsker asker,
+        CancellationToken cancellationToken,
+        bool ask = true
+    ) =>
+        await (ask ? asker.AskAsync(bot, cancellationToken) : asker.ReadStoredAsync(bot, cancellationToken)) is { } status
+            ? TypedResults.Ok(status)
+            : EditProblems.For(new EditResult.UnknownBot(), bot, "The bot's declaration was not read.");
 
     private static async Task<Ok<List<Bot>>> List(Pool pool, CancellationToken cancellationToken) =>
         TypedResults.Ok(await BotStore.ListAsync(pool, cancellationToken));
