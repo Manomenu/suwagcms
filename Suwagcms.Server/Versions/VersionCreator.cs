@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
@@ -47,6 +48,20 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
         if (!dryRun)
         {
             await VersionStore.InsertAsync(connection, transaction, bot, number, document, sha256, now, cancellationToken);
+            await HistoryStore.WriteAsync(
+                connection,
+                transaction,
+                bot,
+                new HistoryStore.Recorded(
+                    HistoryStore.VersionKind,
+                    number.ToString(CultureInfo.InvariantCulture),
+                    "created",
+                    null,
+                    [new FieldChange("sha256", null, JsonSerializer.SerializeToElement(sha256))]
+                ),
+                now,
+                cancellationToken
+            );
             await transaction.CommitAsync(cancellationToken);
         }
         else

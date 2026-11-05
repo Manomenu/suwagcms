@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { useResourceHistory } from "@/api/history";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
+import { HistoryPanel } from "@/design/historyPanel";
 import { UsagePanel } from "@/design/usagePanel";
 
 import { deleteFact, fetchFact, fetchFacts, revisionOf, type Fact } from "./api";
@@ -23,6 +25,12 @@ export function FactsScreen({ bot }: { bot: string }) {
     const [params] = useSearchParams();
     const openParam = params.get("open");
     const usage = useUsage(bot, "facts", open?.kind === "edit" ? open.fact.name : null);
+    const history = useResourceHistory(
+        bot,
+        "facts",
+        open?.kind === "edit" ? open.fact.name : null,
+        open?.kind === "edit" ? revisionOf(open.fact) : 0,
+    );
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -124,6 +132,7 @@ export function FactsScreen({ bot }: { bot: string }) {
                             }}
                         />
                     )}
+                    {open?.kind === "edit" && <HistoryPanel {...history} />}
                 </>
             }
         />

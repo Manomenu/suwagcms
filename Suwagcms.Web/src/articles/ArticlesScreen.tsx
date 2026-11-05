@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { useResourceHistory } from "@/api/history";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
+import { HistoryPanel } from "@/design/historyPanel";
 import { UsagePanel } from "@/design/usagePanel";
 
 import {
@@ -37,6 +39,12 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     const openParam = params.get("open");
     useLeaveGuard(dirty, DISCARD_QUESTION);
     const usage = useUsage(bot, "articles", open?.kind === "edit" ? open.article.id : null);
+    const history = useResourceHistory(
+        bot,
+        "articles",
+        open?.kind === "edit" ? open.article.id : null,
+        open?.kind === "edit" ? revisionOf(open.article) : 0,
+    );
 
     const fail = useCallback((signal: AbortSignal) => {
         return (error: unknown) => {
@@ -195,6 +203,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
                             onOpenArticle={openLinked}
                         />
                     )}
+                    {open?.kind === "edit" && <HistoryPanel {...history} />}
                 </>
             }
         />

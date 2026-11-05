@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>History of changes</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 35 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>articles</code></span>
@@ -380,9 +380,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>README lets agents change a bot by themselves, and history is part of what makes that safe. The record cannot be edited. It does not yet say who made a change: that waits for <code>cms-identity</code>, listed below as a criterion for later.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>criteria</span></div>
-    <div><b>8</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>13</b><span>criteria</span></div>
+    <div><b>5</b><span>criteria after other features</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -467,6 +467,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li>The entry is part of the save, so a change can never exist unrecorded.</li>
     <li>History is not built from versions, because several changes fall between two versions, and many never reach one.</li>
     <li>History starts without saying who made a change (owner's decision): what and when are useful now, and nothing here assumes how identity will work.</li>
+    <li>History is kept for good: it is what README promises and the simplest; a limit can come when a real need shows up.</li>
+    <li>An edit's entry keeps the changed fields only, old and new: it answers what changed, and an unchanged field costs nothing.</li>
+    <li>A save with no real change adds no entry but still moves the revision, as it always has, so an entry's revision can skip a number.</li>
+    <li>The entries of a batch share an id only when one save changed more than one resource; a single entry has nothing to be told apart from.</li>
+    <li>A resource's history opened with <code>--open</code> is the bot's History page narrowed to that resource, the one page that also exists for a deleted resource; the panel beside a resource's form shows the same entries.</li>
+    <li>A version is a kind of its own in history, filed under its number: created with its digest, pushed with its result.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -481,6 +487,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-change-history-7</code> An entry of one bot is not listed for another, also when two resources share an <code>id</code>.</li>
     <li><code>AC-change-history-8</code> A resource without entries says no change has been recorded since the date history started.</li>
     <li><code>AC-change-history-9</code> <code>suwagcms history --json</code> returns the same entries, and <code>--open</code> opens the matching panel; each <code>suwagcms history</code> form has its line in the plugin's main skill.</li>
+    <li><code>AC-change-history-10</code> History covers facts and procedures, as it does articles and knowledge bases.</li>
+    <li><code>AC-change-history-11</code> A push is recorded, with the version and the result.</li>
+    <li><code>AC-change-history-12</code> Creating a version is recorded.</li>
+    <li><code>AC-change-history-13</code> Each resource a file of changes changes gets its own entry, and the entries of one file can be told apart as one batch.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
@@ -488,37 +498,17 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
     <li><b>after <code>cms-identity</code>:</b> each entry says who made the change, a person or an agent, and entries made earlier say this is not known.</li>
-    <li><b>after <code>global-facts</code>, <code>procedure-model</code>, <code>http-actions</code>:</b> history covers facts, procedures and actions, with secrets only as the references they hold.</li>
-    <li><b>after <code>version-push</code>:</b> history also records a push, with the version and the result.</li>
+    <li><b>after <code>http-actions</code>:</b> history covers actions, with secrets only as the references they hold.</li>
     <li><b>after <code>version-rollback</code>:</b> a push of an older version is recorded with the version it left and the version it chose.</li>
-    <li><b>after <code>version-create</code>:</b> creating a version is recorded.</li>
-    <li><b>after <code>batch-apply</code>:</b> each resource a file changes gets its own entry, and the entries of one file can be told apart as one batch.</li>
-    <li><b>after <code>resource-rename</code>:</b> a resource's history follows it across a change of <code>id</code>, and is found under either.</li>
+    <li><b>after <code>resource-rename</code>:</b> a resource's history follows it across a change of id, and is found under either.</li>
     <li><b>after <code>availability</code>:</b> turning a resource on or off is recorded, as a change outside versions.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p><b>Deleted text stays in history.</b> Personal data pasted into an article is kept even after a delete, and no route removes it. If a legal request ever demands removal, it will be a task of its own against the database; see Open questions.</p></div>
+  <div class="callout risk"><p><b>Deleted text stays in history.</b> Personal data pasted into an article is kept even after a delete, and no route removes it. If a legal request ever demands removal, it will be a task of its own against the database.</p></div>
   <div class="callout warn"><p><b>Without who, history cannot say whose change it was.</b> Entries made before <code>cms-identity</code> stay without an author for good. Anyone who can reach the CMS can make a change, so an entry proves what happened, not who did it.</p></div>
   <div class="callout warn"><p>History grows with each save and holds old and new values of long articles. Nobody has measured it; reads are paged so that the page stays quick.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>How long is history kept?</legend>
-      <p class="why">README promises a full history, while storage and personal data argue for an end. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="forever"><span><b>For good</b><small>what README says; the simplest; a limit can come when a real need shows up</small></span></label>
-      <label><input type="radio" value="limit"><span><b>A set period, then removed</b><small>less data, but the question “when did this change?” has an expiry date</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>What does an edit's entry keep?</legend>
-      <p class="why">Keeping whole copies makes reading any past state easy, at the cost of storing long articles on every small edit. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="changed"><span><b>Only changed fields, old and new</b><small>answers what changed; an unchanged field costs nothing</small></span></label>
-      <label><input type="radio" value="whole"><span><b>A whole copy of the resource</b><small>every past state is one read away, but much larger, and no question here asks for it</small></span></label>
-    </fieldset>
-  </form>
 </section>
 <!-- CONTENT END -->
 </main>

@@ -28,10 +28,10 @@ internal static class ChangeList
 
     private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
     {
-        ["fact"] = ResourceKind.GlobalFact,
-        ["knowledgeBase"] = ResourceKind.KnowledgeBase,
-        ["article"] = ResourceKind.Article,
-        ["procedure"] = ResourceKind.Procedure,
+        [ResourceKinds.Word(ResourceKind.GlobalFact)] = ResourceKind.GlobalFact,
+        [ResourceKinds.Word(ResourceKind.KnowledgeBase)] = ResourceKind.KnowledgeBase,
+        [ResourceKinds.Word(ResourceKind.Article)] = ResourceKind.Article,
+        [ResourceKinds.Word(ResourceKind.Procedure)] = ResourceKind.Procedure,
     };
 
     public static async Task<(List<ChangeItem> Items, List<ChangeMistake> Mistakes)> ReadAsync(

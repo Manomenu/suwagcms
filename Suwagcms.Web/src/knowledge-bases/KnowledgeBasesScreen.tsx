@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError } from "@/api/client";
+import { useResourceHistory } from "@/api/history";
 import { Alert } from "@/design/alert";
+import { HistoryPanel } from "@/design/historyPanel";
 
 import { deleteKnowledgeBase, fetchKnowledgeBases, revisionOf, type KnowledgeBase } from "./api";
 import { emptyForm } from "./knowledgeBaseForm";
@@ -16,6 +18,12 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
     const [failure, setFailure] = useState<string | null>(null);
     const [open, setOpen] = useState<Open>(null);
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
+    const history = useResourceHistory(
+        bot,
+        "knowledge-bases",
+        open?.kind === "edit" ? open.base.id : null,
+        open?.kind === "edit" ? revisionOf(open.base) : 0,
+    );
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -98,6 +106,7 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
                             }}
                         />
                     )}
+                    {open?.kind === "edit" && <HistoryPanel {...history} />}
                 </>
             }
         />

@@ -86,6 +86,10 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         else
         {
+            foreach (var entry in ChangeEntries.Of(touched, before, after))
+            {
+                await HistoryStore.WriteAsync(connection, transaction, bot, entry, now, cancellationToken);
+            }
             await transaction.CommitAsync(cancellationToken);
         }
         return new EditResult.Saved(revisions, !dryRun, found);
