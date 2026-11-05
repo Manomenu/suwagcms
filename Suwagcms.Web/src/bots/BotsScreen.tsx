@@ -55,6 +55,9 @@ export function BotsScreen({ openId }: { openId: string | null }) {
                         onRegistered={(bot) => {
                             navigate(`~${profilePath(bot.id)}`);
                         }}
+                        onCancel={() => {
+                            setRegistering(false);
+                        }}
                     />
                 ) : null
             }

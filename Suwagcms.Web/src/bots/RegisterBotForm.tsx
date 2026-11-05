@@ -9,7 +9,7 @@ import { Label } from "@/design/label";
 import { registerBot, type Bot } from "./api";
 
 /** The form that registers a bot; a refusal shows every mistake with its fix, and nothing is registered. */
-export function RegisterBotForm({ onRegistered }: { onRegistered: (bot: Bot) => void }) {
+export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot: Bot) => void; onCancel: () => void }) {
     const [id, setId] = useState("");
     const [name, setName] = useState("");
     const [address, setAddress] = useState("");
@@ -75,9 +75,12 @@ export function RegisterBotForm({ onRegistered }: { onRegistered: (bot: Bot) => 
                     )}
                 </Alert>
             )}
-            <Button type="submit" className="self-start">
-                Register
-            </Button>
+            <div className="flex gap-2">
+                <Button type="submit">Register</Button>
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancel
+                </Button>
+            </div>
         </form>
     );
 }
