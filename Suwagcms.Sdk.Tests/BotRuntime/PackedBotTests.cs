@@ -11,9 +11,18 @@ public sealed class PackedBotTests
 {
     private const string Program = """
         using Suwagcms.Sdk.BotRuntime;
+        using Suwagcms.Sdk.Format;
 
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddSuwagcmsBot("packed-bot");
+        builder.Services.AddSuwagcmsBot(
+            "packed-bot",
+            declares: new BotCapabilities
+            {
+                FormatVersion = BotDefinition.CurrentFormatVersion,
+                Blocks = ["listen", "say"],
+                CodeActions = [new CodeAction { Id = "lookupPolicy", Description = "Finds a policy" }],
+            }
+        );
         var app = builder.Build();
         app.MapSuwagcmsBot();
         app.Run();
@@ -34,7 +43,8 @@ public sealed class PackedBotTests
 
     [Fact]
     [Trait("criterion", "AC-bot-runtime-sdk-1")]
-    public async Task A_bot_built_on_the_packed_package_takes_a_version_without_a_restart_and_reports_it()
+    [Trait("criterion", "AC-bot-declaration-1")]
+    public async Task A_bot_built_on_the_packed_package_takes_a_version_without_a_restart_reports_it_and_answers_what_it_declares()
     {
         // Why: packing and publishing cost about 10 s, over the quick gate's budget; CI always runs this, a machine when the SDK changes.
         var passed = RepositoryFiles.Path($".artifacts/packed-bot-{InputsHash()}");
@@ -60,6 +70,7 @@ public sealed class PackedBotTests
 
         await RunAsync(
             RepositoryFiles.Root,
+            null,
             "pack",
             RepositoryFiles.Path("Suwagcms.Sdk/Suwagcms.Sdk.csproj"),
             "-o",
@@ -68,7 +79,8 @@ public sealed class PackedBotTests
             "-v",
             "q"
         );
-        await RunAsync(bot, "publish", "-o", published, "--nologo", "-v", "q", "-nodeReuse:false");
+        // Why: every local pack has the same version, so the machine's package cache would hand back an older pack of the SDK.
+        await RunAsync(bot, Path.Combine(scratch.Path, "cache"), "publish", "-o", published, "--nologo", "-v", "q", "-nodeReuse:false");
 
         using var process =
             Process.Start(
@@ -85,6 +97,14 @@ public sealed class PackedBotTests
             var address = await ListeningAddressAsync(process);
             using var client = new HttpClient { BaseAddress = new Uri(address) };
             Assert.Null((await StateAsync(client))["current"]);
+            var declared =
+                JsonNode.Parse(
+                    await client.GetStringAsync(new Uri("/suwagcms/declaration", UriKind.Relative), TestContext.Current.CancellationToken)
+                ) ?? throw new InvalidOperationException("empty declaration");
+            Assert.Equal("packed-bot", declared.Member("bot").Text());
+            Assert.Equal(1, declared.Member("formatVersion").GetValue<int>());
+            Assert.Equal("""["listen","say"]""", declared.Member("blocks").ToJsonString());
+            Assert.Equal("lookupPolicy", declared.Member("codeActions").AsArray()[0]?.Member("id").Text());
 
             var document = Documents.Make(7, "packed", bot: "packed-bot");
             using var content = new StringContent(document.ToJsonString(), Encoding.UTF8, "application/json");
@@ -149,17 +169,19 @@ public sealed class PackedBotTests
         );
     }
 
-    private static async Task RunAsync(string directory, params string[] arguments)
+    private static async Task RunAsync(string directory, string? packageCache, params string[] arguments)
     {
-        using var process =
-            Process.Start(
-                new ProcessStartInfo("dotnet", arguments)
-                {
-                    WorkingDirectory = directory,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                }
-            ) ?? throw new InvalidOperationException("dotnet did not start.");
+        var start = new ProcessStartInfo("dotnet", arguments)
+        {
+            WorkingDirectory = directory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        if (packageCache is not null)
+        {
+            start.Environment["NUGET_PACKAGES"] = packageCache;
+        }
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("dotnet did not start.");
         var output = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
         var error = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
         await process.WaitForExitAsync(TestContext.Current.CancellationToken);

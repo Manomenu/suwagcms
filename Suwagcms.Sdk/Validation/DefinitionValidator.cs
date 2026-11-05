@@ -28,6 +28,33 @@ public static class DefinitionValidator
 
     public static IReadOnlyList<Mistake> ValidateJson(string json, ValidationStage stage) => ValidateJson(json, stage, Rules);
 
+    // Why: what a bot cannot run is checked only at Version: the working state may be unfinished, and the bot may change without anyone editing it.
+    public static IReadOnlyList<Mistake> Validate(BotDefinition definition, ValidationStage stage, BotDeclaration? declaration)
+    {
+        var mistakes = Validate(definition, stage);
+        return stage == ValidationStage.Version
+            ? [.. mistakes, .. DeclarationValidator.CheckDefinition(definition, declaration)]
+            : mistakes;
+    }
+
+    public static IReadOnlyList<Mistake> ValidateJson(string json, ValidationStage stage, BotDeclaration? declaration)
+    {
+        var mistakes = ValidateJson(json, stage);
+        // Why: a document that cannot be read as this format has no steps or format version to hold against the bot.
+        if (
+            stage != ValidationStage.Version
+            || mistakes.Any(mistake => mistake.Code is MistakeCodes.FormatInvalid or MistakeCodes.FormatVersion)
+        )
+        {
+            return mistakes;
+        }
+
+        var definition =
+            JsonSerializer.Deserialize<BotDefinition>(json, DefinitionFormat.Options)
+            ?? throw new InvalidOperationException("A document the validator read is not a definition.");
+        return [.. mistakes, .. DeclarationValidator.CheckDefinition(definition, declaration)];
+    }
+
     internal static IReadOnlyList<Mistake> ValidateJson(string? json, ValidationStage stage, IReadOnlyList<Rule> rules)
     {
         JsonDocument document;

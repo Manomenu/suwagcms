@@ -8,6 +8,7 @@ using Suwagcms.Cli.Output;
 using Suwagcms.Cli.Procedures;
 using Suwagcms.Cli.Status;
 using Suwagcms.Cli.Usage;
+using Suwagcms.Cli.Validation;
 using Suwagcms.Cli.Versions;
 
 namespace Suwagcms.Cli;
@@ -38,6 +39,7 @@ internal static class CliApp
             VersionsCommand.Create(options, environment),
             UsageCommand.Create(options, environment),
             PushCommand.Create(options, environment),
+            ValidateCommand.Create(options, environment),
         };
         options.AddTo(root);
         return root;

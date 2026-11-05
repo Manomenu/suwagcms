@@ -2,13 +2,14 @@ using System.Globalization;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Validation;
+using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
 // Why: a push reads what it needs, lets go of the database, calls the bot, and only then records; so no lock or transaction ever waits on a bot.
-internal sealed class VersionPusher(Pool pool, BotLine line, TimeProvider time)
+internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker asker, TimeProvider time)
 {
     public const string NotLatest = "push.notLatest";
 
@@ -30,8 +31,9 @@ internal sealed class VersionPusher(Pool pool, BotLine line, TimeProvider time)
             return (null, new Rejected(StatusCodes.Status422UnprocessableEntity, TooOld(bot, number, latest)));
         }
 
-        var reply = await line.PutVersionAsync(registered.Address, number, version.Document, cancellationToken);
-        var (result, reported) = Judge(bot, registered, number, reply);
+        var (result, reported) = await CannotRunAsync(bot, number, version, cancellationToken) is { } refused
+            ? (refused, false)
+            : Judge(bot, registered, number, await line.PutVersionAsync(registered.Address, number, version.Document, cancellationToken));
 
         // Why: the record must survive a caller that gives up while the bot was answering, since the bot may have taken the version.
         await PushStore.RecordAsync(pool, bot, number, result.Outcome, Recorded(result), time.GetUtcNow(), CancellationToken.None);
@@ -40,6 +42,24 @@ internal sealed class VersionPusher(Pool pool, BotLine line, TimeProvider time)
             await PushStore.ReportAsync(pool, bot, result.BotHas, time.GetUtcNow(), CancellationToken.None);
         }
         return (result, null);
+    }
+
+    // Why: a push is judged by what the bot declares at this moment; a bot that gives no good answer is left to its own validation, which the push reaches next.
+    private async Task<PushResult?> CannotRunAsync(string bot, int number, VersionDetail version, CancellationToken cancellationToken)
+    {
+        if (await asker.AskForPushAsync(bot, cancellationToken) is not { Ask: DeclarationAsk.Answered, Declaration: { } declaration })
+        {
+            return null;
+        }
+        var mistakes = DefinitionValidator.ValidateJson(version.Document, ValidationStage.Version, declaration);
+        return mistakes.Count == 0
+            ? null
+            : Failed(
+                number,
+                null,
+                string.Create(CultureInfo.InvariantCulture, $"v{number} asks for what the bot does not declare now, so nothing was sent."),
+                mistakes
+            );
     }
 
     private static (PushResult Result, bool Reported) Judge(string bot, PushStore.Registered registered, int number, BotLine.Reply reply)

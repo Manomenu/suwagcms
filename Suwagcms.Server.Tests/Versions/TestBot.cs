@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Server.Tests.Versions;
 
@@ -15,8 +16,12 @@ internal sealed class TestBot : IAsyncDisposable
     private Func<Task>? stop;
     private IServiceProvider? services;
 
-    private TestBot(string id, IVersionStore store, int port)
+    private readonly BotCapabilities? declares;
+    private int requests;
+
+    private TestBot(string id, IVersionStore store, int port, BotCapabilities? declares)
     {
+        this.declares = declares;
         Id = id;
         Store = store;
         Port = port;
@@ -33,12 +38,18 @@ internal sealed class TestBot : IAsyncDisposable
     // Why: lets a test hold, slow or change the push that reaches the bot, which the bot's own routes cannot do.
     public Func<HttpContext, Task>? OnPush { get; set; }
 
+    // Why: lets a test answer the declaration route as a bot outside the SDK could: wrongly, slowly, or not at all.
+    public Func<HttpContext, Task>? OnDeclaration { get; set; }
+
+    // Why: a test proves that an operation contacts no bot by counting what reached it.
+    public int Requests => Volatile.Read(ref requests);
+
     public IBotDefinitions Definitions =>
         (services ?? throw new InvalidOperationException("the test bot is stopped")).GetRequiredService<IBotDefinitions>();
 
-    public static async Task<TestBot> StartAsync(string id, IVersionStore? store = null, int? port = null)
+    public static async Task<TestBot> StartAsync(string id, IVersionStore? store = null, int? port = null, BotCapabilities? declares = null)
     {
-        var bot = new TestBot(id, store ?? new InMemoryVersionStore(), port ?? FreePort());
+        var bot = new TestBot(id, store ?? new InMemoryVersionStore(), port ?? FreePort(), declares);
         await bot.StartAsync();
         return bot;
     }
@@ -48,11 +59,17 @@ internal sealed class TestBot : IAsyncDisposable
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls(Address);
         builder.Logging.ClearProviders();
-        builder.Services.AddSuwagcmsBot(Id, Store, TimeSpan.FromHours(1));
+        builder.Services.AddSuwagcmsBot(Id, Store, TimeSpan.FromHours(1), declares);
         var started = builder.Build();
         started.Use(
             async (context, next) =>
             {
+                Interlocked.Increment(ref requests);
+                if (context.Request.Path == "/suwagcms/declaration" && OnDeclaration is { } answer)
+                {
+                    await answer(context);
+                    return;
+                }
                 if (HttpMethods.IsPut(context.Request.Method) && OnPush is { } hook)
                 {
                     await hook(context);

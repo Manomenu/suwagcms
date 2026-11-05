@@ -11,6 +11,7 @@ using Suwagcms.Server.KnowledgeBases;
 using Suwagcms.Server.ProcedureLayouts;
 using Suwagcms.Server.Procedures;
 using Suwagcms.Server.Usage;
+using Suwagcms.Server.Validation;
 using Suwagcms.Server.Versions;
 
 namespace Suwagcms.Server.Api;
@@ -34,6 +35,7 @@ internal static class ServerApp
         builder.Services.AddSingleton<VersionCreator>();
         builder.Services.AddOptions<PushOptions>().BindConfiguration("Push");
         builder.Services.AddHttpClient<BotLine>(client => client.Timeout = Timeout.InfiniteTimeSpan);
+        builder.Services.AddTransient<DeclarationAsker>();
         builder.Services.AddTransient<VersionPusher>();
         builder.Services.AddTransient<BotStatusReader>();
         builder.Services.AddOpenApi();
@@ -45,6 +47,7 @@ internal static class ServerApp
         var api = app.MapGroup("/api");
         api.MapHealth();
         api.MapBots();
+        api.MapValidation();
         api.MapArticles();
         api.MapFacts();
         api.MapKnowledgeBases();

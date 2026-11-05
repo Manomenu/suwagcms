@@ -34,7 +34,8 @@ internal static class ResourceKinds
             ResourceKind.KnowledgeBase => "knowledge base",
             ResourceKind.Article => "article",
             ResourceKind.Procedure => "procedure",
-            ResourceKind.Definition or ResourceKind.Action => throw new InvalidOperationException(
+            ResourceKind.Definition => "definition",
+            ResourceKind.Action => throw new InvalidOperationException(
                 $"{kind} resources are not stored yet: add the kind to ResourceKinds."
             ),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),

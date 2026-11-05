@@ -93,6 +93,92 @@
         }
       }
     },
+    "/api/bots/{bot}/declaration": {
+      "get": {
+        "tags": [
+          "BotEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ask",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeclarationStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/validate": {
+      "post": {
+        "tags": [
+          "ValidationEndpoints"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateDefinition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationAnswer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/articles": {
       "get": {
         "tags": [
@@ -1649,6 +1735,38 @@
         },
         "description": "A registered bot: the id that sits in addresses and commands, the name people see, and where the CMS reaches it."
       },
+      "BotDeclaration": {
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "declaresNothing": {
+            "type": "boolean"
+          },
+          "formatVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "blocks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "codeActions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeAction"
+            }
+          }
+        }
+      },
       "BotReach": {
         "enum": [
           "Answered",
@@ -1764,6 +1882,167 @@
         },
         "description": "What the bot itself reports (never what the CMS tried to send), and what the CMS knows beside it.\n`Has`, `Held` and `InUse` are the bot's answer and are empty unless `Reach` is `Answered`;\n`LastKnown` is the number it reported the last time it answered, at `LastKnownAt`."
       },
+      "CodeAction": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeActionField"
+            }
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CodeActionField"
+            }
+          }
+        }
+      },
+      "CodeActionField": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "values": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "min": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "max": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxLength": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "DeclarationAsk": {
+        "enum": [
+          "Answered",
+          "NotAsked",
+          "Unreachable",
+          "Invalid"
+        ],
+        "description": "What this look at a bot's declaration came to: the bot gave a good answer, was not asked (the stored one was read), could not be reached, or gave an answer that was refused."
+      },
+      "DeclarationStatus": {
+        "required": [
+          "bot",
+          "address",
+          "ask",
+          "stored",
+          "declaration",
+          "answeredAt",
+          "reason",
+          "mistakes",
+          "formatFix",
+          "cannotRun"
+        ],
+        "type": "object",
+        "properties": {
+          "bot": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "ask": {
+            "$ref": "#/components/schemas/DeclarationAsk"
+          },
+          "stored": {
+            "$ref": "#/components/schemas/DeclarationStored"
+          },
+          "declaration": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BotDeclaration"
+              }
+            ]
+          },
+          "answeredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          },
+          "formatFix": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "cannotRun": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists the steps of the working state using a block the declaration leaves out."
+      },
+      "DeclarationStored": {
+        "enum": [
+          "NeverAnswered",
+          "DeclaresNothing",
+          "Declared"
+        ],
+        "description": "What the CMS holds of a bot's declaration: no good answer yet, the answer that the bot declares nothing, or a declaration."
+      },
       "Fact": {
         "required": [
           "name",
@@ -1855,6 +2134,7 @@
           }
         }
       },
+      "JsonElement": { },
       "KnowledgeBaseView": {
         "required": [
           "id",
@@ -2538,6 +2818,44 @@
         },
         "description": "What refers to a resource and what it refers to, each with the field that holds the reference: the lists a refused delete is made of."
       },
+      "ValidateDefinition": {
+        "required": [
+          "definition"
+        ],
+        "type": "object",
+        "properties": {
+          "definition": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "stage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ValidationStage"
+              }
+            ]
+          },
+          "declaration": { }
+        },
+        "description": "What the validate endpoint takes: a definition, the stage to check it at (Version when left out) and optionally what a bot declares. The two documents stay raw so that their mistakes are the validator's own."
+      },
+      "ValidationAnswer": {
+        "required": [
+          "mistakes"
+        ],
+        "type": "object",
+        "properties": {
+          "mistakes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Mistake"
+            }
+          }
+        },
+        "description": "What the validator says about a definition: every mistake, each with its fix; none means it passes."
+      },
       "ValidationStage": {
         "enum": [
           "Save",
@@ -2646,6 +2964,9 @@
     },
     {
       "name": "BotEndpoints"
+    },
+    {
+      "name": "ValidationEndpoints"
     },
     {
       "name": "ArticleEndpoints"

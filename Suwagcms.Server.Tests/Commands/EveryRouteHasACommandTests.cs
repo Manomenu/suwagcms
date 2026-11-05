@@ -27,6 +27,8 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["GET /api/health"] = Coverage.Cli("status"),
         ["GET /api/bots"] = Coverage.Cli("bots list"),
         ["POST /api/bots"] = Coverage.Cli("bots add"),
+        ["GET /api/bots/{bot}/declaration"] = Coverage.Cli("bots declaration"),
+        ["POST /api/validate"] = Coverage.Cli("validate"),
         ["GET /api/bots/{bot}/facts"] = Coverage.Cli("facts list"),
         ["GET /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts show"),
         ["PUT /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts add"),

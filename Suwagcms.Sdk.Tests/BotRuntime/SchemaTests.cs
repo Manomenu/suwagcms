@@ -13,6 +13,7 @@ public sealed class SchemaTests
 
     [Fact]
     [Trait("criterion", "AC-bot-runtime-sdk-16")]
+    [Trait("criterion", "AC-bot-declaration-3")]
     public async Task The_committed_schema_of_the_state_answer_and_the_refusal_equals_the_one_generated()
     {
         var path = RepositoryFiles.Path("Suwagcms.Sdk/bot-runtime.schema.json");
@@ -27,7 +28,7 @@ public sealed class SchemaTests
         var committed = (await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken)).ReplaceLineEndings("\n");
         Assert.True(
             committed == generated,
-            "bot-runtime.schema.json no longer matches the state answer, the refusal or the version envelope. Regenerate it with: just sdk-schema (scripts/.internal/sdk-schema.sh), and commit the result."
+            "bot-runtime.schema.json no longer matches the state answer, the refusal, the version envelope or the declaration. Regenerate it with: just sdk-schema (scripts/.internal/sdk-schema.sh), and commit the result."
         );
     }
 
@@ -42,12 +43,25 @@ public sealed class SchemaTests
         Assert.Contains("\"digest\"", schema.Member("versionEnvelope").ToJsonString(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-3")]
+    public void The_schema_describes_the_declaration_with_its_blocks_and_its_code_actions()
+    {
+        var declaration = Generate().Member("declaration").ToJsonString();
+
+        foreach (var member in new[] { "bot", "declaresNothing", "formatVersion", "blocks", "codeActions", "parameters", "results" })
+        {
+            Assert.Contains($"\"{member}\"", declaration, StringComparison.Ordinal);
+        }
+    }
+
     private static JsonObject Generate() =>
         new()
         {
             ["state"] = Schema(typeof(BotState)),
             ["refusal"] = Schema(typeof(BotRefusal)),
             ["versionEnvelope"] = Schema(typeof(VersionEnvelope)),
+            ["declaration"] = Schema(typeof(BotDeclaration)),
         };
 
     private static JsonNode Schema(Type type)

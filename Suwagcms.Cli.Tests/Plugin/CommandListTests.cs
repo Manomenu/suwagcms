@@ -64,6 +64,16 @@ public sealed class CommandListTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-bot-declaration-16")]
+    public void The_main_skill_has_a_line_for_bots_declaration_and_validate()
+    {
+        var listed = CommandList.Listed(MainSkill());
+
+        Assert.Contains("bots declaration", listed);
+        Assert.Contains("validate", listed);
+    }
+
+    [Fact]
     public void The_main_skill_lists_at_least_the_commands_the_cli_has_today()
     {
         Assert.Contains("status", CommandList.Listed(MainSkill()));

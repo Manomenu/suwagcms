@@ -1,4 +1,5 @@
 using Suwagcms.Contracts;
+using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Versions;
