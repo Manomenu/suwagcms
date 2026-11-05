@@ -2,6 +2,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/design/button";
+import { Field } from "@/design/field";
 
 import "./articleEditor.css";
 import { extensionsOf } from "./articleEditor";
@@ -12,23 +13,21 @@ import { openPicker, type LinkTarget } from "./articleLink";
  * that was opened and not touched is never rewritten.
  */
 export function LinkedTextEditor({
-    id,
     label,
     value,
     targets,
     selfId,
-    invalid,
-    describedBy,
+    hint,
+    errors,
     onChange,
     onOpen,
 }: {
-    id: string;
     label: string;
+    hint: string;
+    errors: string[];
     value: string;
     targets: LinkTarget[];
     selfId: string;
-    invalid: boolean;
-    describedBy: string | undefined;
     onChange: (markdown: string) => void;
     onOpen: (id: string) => void;
 }) {
@@ -46,6 +45,7 @@ export function LinkedTextEditor({
             },
         }),
     );
+    const invalid = errors.length > 0;
     const editor = useEditor({
         extensions,
         content: value,
@@ -53,13 +53,13 @@ export function LinkedTextEditor({
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                id,
+                id: `article-${label}`,
                 role: "textbox",
                 "aria-multiline": "true",
                 "aria-label": label,
                 ...(invalid ? { "aria-invalid": "true" } : {}),
-                ...(describedBy === undefined ? {} : { "aria-describedby": describedBy }),
-                class: "article-editor min-h-48 w-full rounded-md border border-input bg-secondary p-3 text-sm text-foreground outline-none focus-visible:border-primary aria-invalid:border-destructive",
+                ...(invalid ? { "aria-describedby": `article-${label}-mistakes` } : {}),
+                class: "article-editor h-48 w-full overflow-y-auto rounded-md border border-input bg-secondary p-3 text-sm text-foreground outline-none focus-visible:border-primary aria-invalid:border-destructive",
             },
         },
         onUpdate: ({ editor: changed }) => {
@@ -68,20 +68,32 @@ export function LinkedTextEditor({
     });
 
     return (
-        <div data-markdown-editor={label} data-invalid={invalid} className="flex flex-col gap-1">
-            <div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        if (editor) openPicker(editor);
-                    }}
-                >
-                    Insert link
-                </Button>
-            </div>
-            <EditorContent editor={editor} />
+        <div data-markdown-editor={label}>
+            <Field
+                prefix="article"
+                name={label}
+                label={label}
+                hint={hint}
+                errors={errors}
+                action={
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            if (editor) openPicker(editor);
+                        }}
+                    >
+                        Insert link
+                    </Button>
+                }
+            >
+                {() => (
+                    <div data-invalid={invalid}>
+                        <EditorContent editor={editor} />
+                    </div>
+                )}
+            </Field>
         </div>
     );
 }

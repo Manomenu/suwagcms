@@ -575,3 +575,27 @@ test("AC-delete-guard-4: after the last link is removed in the web the article c
     await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
     expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
 });
+
+test("the controls of one row of the article form share their top and height", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("button", { name: "New article" }).click();
+    await expect(page.getByLabel(/^description/)).toBeVisible();
+
+    const boxOf = async (selector: string) => {
+        const box = await page.locator(selector).boundingBox();
+        if (box === null) throw new Error(`${selector} has no box`);
+        return { top: Math.round(box.y), height: Math.round(box.height) };
+    };
+    const texts = [
+        await boxOf('[data-field="content"] [role="textbox"]'),
+        await boxOf('[data-field="llmGuide"] [role="textbox"]'),
+        await boxOf('[data-field="description"] textarea'),
+    ];
+    expect(texts[1]).toEqual(texts[0]);
+    expect(texts[2]).toEqual(texts[0]);
+
+    const row = [await boxOf("#article-id"), await boxOf("#article-title"), await boxOf("#article-knowledgeBase")];
+    expect(row[1]).toEqual(row[0]);
+    expect(row[2]).toEqual(row[0]);
+});

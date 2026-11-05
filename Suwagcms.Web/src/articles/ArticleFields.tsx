@@ -31,13 +31,12 @@ export function ArticleFields({
         mistakes.filter((mistake) => fieldOf(mistake, form.id) === field).map((mistake) => `${mistake.message} ${mistake.fix}`);
     const textEditor = (field: "content" | "llmGuide") => (
         <LinkedTextEditor
-            id={`article-${field}`}
             label={field}
+            hint={HINTS[field]}
+            errors={errorsOf(field)}
             value={form[field]}
             targets={targets}
             selfId={form.id}
-            invalid={errorsOf(field).length > 0}
-            describedBy={errorsOf(field).length > 0 ? `article-${field}-mistakes` : undefined}
             onOpen={onOpenArticle}
             onChange={(markdown) => {
                 onChange({ [field]: markdown });
@@ -113,13 +112,16 @@ export function ArticleFields({
                 </Field>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
-                <Field prefix="article" name="content" label="content" hint={HINTS.content} errors={errorsOf("content")}>
-                    {() => textEditor("content")}
-                </Field>
-                <Field prefix="article" name="llmGuide" label="llmGuide" hint={HINTS.llmGuide} errors={errorsOf("llmGuide")}>
-                    {() => textEditor("llmGuide")}
-                </Field>
-                <Field prefix="article" name="description" label="description" hint={HINTS.description} errors={errorsOf("description")}>
+                {textEditor("content")}
+                {textEditor("llmGuide")}
+                <Field
+                    prefix="article"
+                    name="description"
+                    label="description"
+                    hint={HINTS.description}
+                    action={null}
+                    errors={errorsOf("description")}
+                >
                     {(props) => (
                         <Textarea
                             {...props}

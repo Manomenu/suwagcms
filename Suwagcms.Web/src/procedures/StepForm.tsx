@@ -124,7 +124,7 @@ function AssignForm({
                         <Button
                             type="button"
                             variant="ghost"
-                            size="xs"
+                            size="icon"
                             aria-label={`Stop assigning ${name}`}
                             onClick={() => {
                                 onChange(Object.fromEntries(entries.filter(([other]) => other !== name)));
