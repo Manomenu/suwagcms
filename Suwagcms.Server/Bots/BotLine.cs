@@ -57,6 +57,18 @@ internal sealed class BotLine(HttpClient http, IOptions<PushOptions> options, Ti
             cancellationToken
         );
 
+    // Why: a person waits on the page for this, and the bot only writes it to its store, so it needs no more than reading the state does.
+    public async Task<Reply> PutAvailabilityAsync(string address, BotAvailability availability, CancellationToken cancellationToken) =>
+        await SendAsync(
+            address,
+            new HttpRequestMessage(HttpMethod.Put, Route(address, "availability"))
+            {
+                Content = new StringContent(JsonSerializer.Serialize(availability, Json), Encoding.UTF8, "application/json"),
+            },
+            options.Value.StateTimeoutSeconds,
+            cancellationToken
+        );
+
     public static BotState? StateIn(Reply.Answer answer) => Parse<BotState>(answer.Body);
 
     public static BotRefusal? RefusalIn(Reply.Answer answer) => Parse<BotRefusal>(answer.Body);

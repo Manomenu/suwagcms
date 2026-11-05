@@ -380,8 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The CMS builds no index and knows nothing of models or embeddings. This is SDK behaviour only: there is no web, CLI or plugin action, because no person or agent in the CMS does anything here.</p>
   </div>
   <div class="stats">
-    <div><b>12</b><span>criteria</span></div>
-    <div><b>1</b><span>criteria after other features</span></div>
+    <div><b>13</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -471,13 +470,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-article-search-feed-10</code> With the CMS unreachable, the feed still gives the articles of every held version.</li>
     <li><code>AC-article-search-feed-11</code> The SDK gives each article's language, which is its knowledge base's.</li>
     <li><code>AC-article-search-feed-12</code> Making a held version current also tells the bot's code the number.</li>
-  </ul>
-</section>
-<section data-role="deferred-acceptance">
-  <h2>Criteria after other features</h2>
-  <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
-  <ul>
-    <li><b>after <code>availability</code>:</b> the SDK says which articles are off, and tells the bot's code when that changes, so a search can drop an article at once, without a push.</li>
+    <li><code>AC-article-search-feed-13</code> The feed marks each article that is off, and the SDK tells the bot's code when what is off changes, so a search can drop an article at once, without a push.</li>
   </ul>
 </section>
 <section data-role="risks">

@@ -60,6 +60,10 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["POST /api/bots/{bot}/changes"] = Coverage.Cli("apply"),
         ["GET /api/bots/{bot}/history"] = Coverage.Cli("history"),
         ["GET /api/bots/{bot}/{kind}/{id}/history"] = Coverage.Cli("history"),
+        ["GET /api/bots/{bot}/availability"] = Coverage.Cli("availability list"),
+        ["POST /api/bots/{bot}/availability/send"] = Coverage.Cli("availability send"),
+        ["POST /api/bots/{bot}/availability/{kind}/{id}/off"] = Coverage.Cli("availability off"),
+        ["POST /api/bots/{bot}/availability/{kind}/{id}/on"] = Coverage.Cli("availability on"),
     };
 
     public void Dispose() => app.Dispose();

@@ -28,6 +28,53 @@
           "string",
           "null"
         ]
+      },
+      "availability": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer"
+          },
+          "off": {
+            "type": "array",
+            "items": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "Definition",
+                    "GlobalFact",
+                    "KnowledgeBase",
+                    "Article",
+                    "Action",
+                    "Procedure"
+                  ]
+                },
+                "id": {
+                  "type": "string"
+                },
+                "upToVersion": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "default": null
+                }
+              },
+              "required": [
+                "kind",
+                "id"
+              ]
+            }
+          }
+        },
+        "required": [
+          "number",
+          "off"
+        ]
       }
     },
     "required": [
@@ -156,6 +203,53 @@
       "status",
       "detail",
       "mistakes"
+    ]
+  },
+  "availability": {
+    "type": "object",
+    "properties": {
+      "number": {
+        "type": "integer"
+      },
+      "off": {
+        "type": "array",
+        "items": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "Definition",
+                "GlobalFact",
+                "KnowledgeBase",
+                "Article",
+                "Action",
+                "Procedure"
+              ]
+            },
+            "id": {
+              "type": "string"
+            },
+            "upToVersion": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "default": null
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ]
+        }
+      }
+    },
+    "required": [
+      "number",
+      "off"
     ]
   },
   "versionEnvelope": {

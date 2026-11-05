@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 
+import { useAvailability } from "@/api/availability";
 import { ApiError } from "@/api/client";
 import { renamer } from "@/api/rename";
 import { useResourceHistory } from "@/api/history";
 import { usageHref, useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
+import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
@@ -43,6 +45,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     const openParam = params.get("open");
     useLeaveGuard(dirty, DISCARD_QUESTION);
     const usage = useUsage(bot, "articles", open?.kind === "edit" ? open.article.id : null);
+    const availability = useAvailability(bot);
     const openId = open?.kind === "edit" ? open.article.id : "";
     const openRevision = open?.kind === "edit" ? revisionOf(open.article) : 0;
     const changer = useMemo(() => renamer(bot, "articles", openId, openRevision), [bot, openId, openRevision]);
@@ -160,6 +163,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
             bot={bot}
             articles={articles}
             bases={bases}
+            isOff={(id) => availability.isOff("article", id)}
             filters={filters}
             onFilters={setFilters}
             onAdd={() => {
@@ -173,7 +177,19 @@ export function ArticlesScreen({ bot }: { bot: string }) {
             }}
             form={
                 <>
+                    <AvailabilityNotice delivery={availability.delivery} failure={availability.failure} onSend={availability.send} />
                     {deleteFailure !== null && <Alert variant="destructive">{deleteFailure}</Alert>}
+                    {open?.kind === "edit" && (
+                        <AvailabilityPanel
+                            id={open.article.id}
+                            off={availability.isOff("article", open.article.id)}
+                            delivery={availability.delivery}
+                            usedBy={usage.usage?.usedBy ?? null}
+                            onTurn={(off) => {
+                                availability.turn("article", open.article.id, off);
+                            }}
+                        />
+                    )}
                     {open?.kind === "edit" && (
                         <div className="flex items-center gap-3">
                             <Button

@@ -15,6 +15,7 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
     private readonly ConcurrentDictionary<int, BotDefinition> loaded = new();
     private readonly Lock publishing = new();
     private readonly List<Func<int, CancellationToken, Task>> listeners = [];
+    private readonly List<Func<int, CancellationToken, Task>> availabilityListeners = [];
     private readonly CancellationTokenSource stopping = new();
     private View view = new(new VersionStoreState(null, [], null), null);
 
@@ -41,7 +42,11 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
             .. definition
                 .Articles.OrderBy(article => article.Id, StringComparer.Ordinal)
                 // Why: a version is held only after validation, which refuses an article whose base it does not have.
-                .Select(article => new FeedArticle(article, languages[article.KnowledgeBase])),
+                .Select(article => new FeedArticle(
+                    article,
+                    languages[article.KnowledgeBase],
+                    IsOff(number, ResourceKind.Article, article.Id)
+                )),
         ];
     }
 
@@ -53,10 +58,30 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
             listeners.Add(listener);
             if (view.State.Current is { } number)
             {
-                Tell(listener, number);
+                Tell(listener, number, ListenerFailed);
             }
         }
     }
+
+    public void OnAvailabilityChanged(Func<int, CancellationToken, Task> listener)
+    {
+        ArgumentNullException.ThrowIfNull(listener);
+        lock (publishing)
+        {
+            availabilityListeners.Add(listener);
+            if (view.State.Availability is { } availability)
+            {
+                Tell(listener, availability.Number, AvailabilityListenerFailed);
+            }
+        }
+    }
+
+    public bool IsOff(int version, ResourceKind kind, string id) =>
+        Volatile
+            .Read(ref view)
+            .State.Availability?.Off.Any(item =>
+                item.Kind == kind && item.Id == id && (item.UpToVersion is not { } upTo || version <= upTo)
+            ) == true;
 
     public async Task ReportInUseAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken = default)
     {
@@ -208,6 +233,41 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
         return Answer(current);
     }
 
+    public async Task<(BotState? Accepted, BotRefusal? Refused)> TakeAvailabilityAsync(string json, CancellationToken cancellationToken)
+    {
+        var (message, mistakes) = AvailabilityIntake.Read(json);
+        if (message is null)
+        {
+            return (null, Refusal(422, "The availability was refused.", $"{mistakes.Count} mistake(s) in the message.", mistakes));
+        }
+
+        await writes.WaitAsync(cancellationToken);
+        try
+        {
+            try
+            {
+                await store.WriteAvailabilityAsync(message, cancellationToken);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                return (null, Refusal(503, "The store failed.", $"The availability was not stored: {exception.Message}", []));
+            }
+
+            var current = await RefreshAsync(cancellationToken);
+            if (current.Error is not null && message.Number >= (current.State.Availability?.Number ?? 0))
+            {
+                // Why: the write succeeded, so this instance and its answer already go by it even though the store cannot be read back.
+                current = Publish(current with { State = current.State with { Availability = message } });
+            }
+
+            return (Answer(current), null);
+        }
+        finally
+        {
+            writes.Release();
+        }
+    }
+
     // Why: keeping too much is safe, removing too much is not: nothing goes before the bot has reported once.
     private async Task SweepAsync(VersionStoreState state, CancellationToken cancellationToken)
     {
@@ -242,13 +302,20 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
     {
         lock (publishing)
         {
-            var before = view.State.Current;
+            var before = view.State;
             Volatile.Write(ref view, next);
-            if (next.State.Current is { } number && number != before)
+            if (next.State.Current is { } number && number != before.Current)
             {
                 foreach (var listener in listeners)
                 {
-                    Tell(listener, number);
+                    Tell(listener, number, ListenerFailed);
+                }
+            }
+            if (next.State.Availability is { } availability && availability.Number != before.Availability?.Number)
+            {
+                foreach (var listener in availabilityListeners)
+                {
+                    Tell(listener, availability.Number, AvailabilityListenerFailed);
                 }
             }
         }
@@ -257,7 +324,7 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
     }
 
     // Why: on its own task, so a slow or failing listener never holds up a route's answer or the next change; listeners may overlap and go by the number.
-    private void Tell(Func<int, CancellationToken, Task> listener, int number)
+    private void Tell(Func<int, CancellationToken, Task> listener, int number, Action<ILogger, int, Exception> failed)
     {
         var token = stopping.Token;
         _ = Task.Run(
@@ -269,7 +336,7 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
                 }
                 catch (Exception exception) when (!token.IsCancellationRequested)
                 {
-                    ListenerFailed(logger, number, exception);
+                    failed(logger, number, exception);
                 }
             },
             CancellationToken.None
@@ -279,6 +346,9 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
     [LoggerMessage(Level = LogLevel.Error, Message = "The bot's code failed while handling the news that version {Number} is current")]
     private static partial void ListenerFailed(ILogger logger, int number, Exception exception);
 
+    [LoggerMessage(Level = LogLevel.Error, Message = "The bot's code failed while handling the news of availability message {Number}")]
+    private static partial void AvailabilityListenerFailed(ILogger logger, int number, Exception exception);
+
     private BotState Answer(View from) =>
         new()
         {
@@ -287,6 +357,7 @@ internal sealed partial class VersionRuntime(string botId, IVersionStore store, 
             Held = from.State.Held,
             InUse = from.State.InUse ?? [],
             StoreError = from.Error,
+            Availability = from.State.Availability ?? BotAvailability.Nothing,
         };
 
     private static BotDefinition Parse(string json) =>

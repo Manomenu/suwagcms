@@ -380,8 +380,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p><b>The one thing to know:</b> a bot may still hold the chosen version, for a conversation in progress. Sending it again would succeed and change nothing, as <code>bot-runtime-sdk</code> requires. So a request of its own makes a held version current. A rollback counts as done only when the bot's own answer names the chosen version.</p>
   </div>
   <div class="stats">
-    <div><b>19</b><span>criteria</span></div>
-    <div><b>2</b><span>criteria after other features</span></div>
+    <div><b>20</b><span>criteria</span></div>
+    <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -537,13 +537,13 @@ flowchart TD
     <li><code>AC-version-rollback-17</code> A version using a block the bot no longer runs is refused, naming the block, and the bot keeps what it had.</li>
     <li><code>AC-version-rollback-18</code> Before a rollback, the page shows what will go back, and <code>--dry-run</code> lists the same changes.</li>
     <li><code>AC-version-rollback-19</code> A rollback is recorded with the version it left and the version it chose.</li>
+    <li><code>AC-version-rollback-20</code> A rollback also delivers the current availability set before it changes what the bot runs, and availability of a resource the chosen version does not hold has no effect.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>availability</code>:</b> a rollback also sends the current availability, and availability of a resource the chosen version does not hold has no effect.</li>
     <li><b>after <code>cms-identity</code>:</b> the new request needs the bot's key, like the other routes.</li>
   </ul>
 </section>

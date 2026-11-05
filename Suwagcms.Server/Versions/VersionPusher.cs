@@ -2,6 +2,7 @@ using System.Globalization;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.Validation;
+using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
@@ -9,7 +10,7 @@ using Suwagcms.Server.Editing;
 namespace Suwagcms.Server.Versions;
 
 // Why: a push reads what it needs, lets go of the database, calls the bot, and only then records; so no lock or transaction ever waits on a bot.
-internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker asker, TimeProvider time)
+internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker asker, AvailabilitySender availability, TimeProvider time)
 {
     internal sealed record Rejected(int Status, Mistake Mistake);
 
@@ -31,8 +32,7 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
         {
             { Refused: { } refused } => (refused, false),
             { Way: PushWay.Nothing } => (new PushResult(PushOutcome.Succeeded, number, number, null, []), true),
-            { Way: PushWay.MakeCurrent } => await MakeCurrentAsync(bot, number, target, cancellationToken),
-            _ => await SendAsync(bot, number, target, cancellationToken),
+            _ => await DeliverAsync(bot, number, target, route.Way, cancellationToken),
         };
 
         // Why: the record must survive a caller that gives up while the bot was answering, since the bot may have taken the version.
@@ -125,6 +125,24 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
         return new Route(way, state?.Current, await CannotRunAsync(bot, number, target.Version, cancellationToken));
     }
 
+    // Why: a dry run chooses too, and only a real push may change what the bot has; a push that needs nothing changes nothing, so it sends nothing either.
+    private async Task<(PushResult Result, bool Reported)> DeliverAsync(
+        string bot,
+        int number,
+        Target target,
+        PushWay way,
+        CancellationToken cancellationToken
+    )
+    {
+        if (await AvailabilityMissedAsync(bot, target.Registered.Address, number, cancellationToken) is { } missed)
+        {
+            return (missed, false);
+        }
+        return way == PushWay.MakeCurrent
+            ? await MakeCurrentAsync(bot, number, target, cancellationToken)
+            : await SendAsync(bot, number, target, cancellationToken);
+    }
+
     private async Task<(PushResult Result, bool Reported)> SendAsync(
         string bot,
         int number,
@@ -182,6 +200,21 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
     ) =>
         left is { } from && from != number && await VersionStore.FindAsync(pool, bot, from, cancellationToken) is { } before
             ? VersionComparer.Compare(bot, from, number, before.Document, version.Document)
+            : null;
+
+    // Why: the whole set goes first, which repairs a missed change, and a new version never runs without it.
+    private async Task<PushResult?> AvailabilityMissedAsync(string bot, string address, int number, CancellationToken cancellationToken) =>
+        await availability.SendBeforePushAsync(bot, address, cancellationToken)
+            is { State: not AvailabilityDeliveryState.Confirmed } delivery
+            ? Failed(
+                number,
+                null,
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"what is turned off did not reach the bot, so v{number} was not sent: {delivery.Reason}"
+                ),
+                []
+            )
             : null;
 
     // Why: a push is judged by what the bot declares at this moment; a bot that gives no good answer is left to its own validation, which the push reaches next.

@@ -4,7 +4,7 @@ namespace Suwagcms.Sdk.BotRuntime;
 
 public sealed record FeedArticle
 {
-    public FeedArticle(Article article, string language)
+    public FeedArticle(Article article, string language, bool isOff)
     {
         ArgumentNullException.ThrowIfNull(article);
         Id = article.Id;
@@ -14,6 +14,7 @@ public sealed record FeedArticle
         Description = article.Description;
         Content = article.Content;
         LlmGuide = article.LlmGuide;
+        IsOff = isOff;
     }
 
     public string Id { get; }
@@ -29,4 +30,6 @@ public sealed record FeedArticle
     public string Content { get; }
 
     public string LlmGuide { get; }
+
+    public bool IsOff { get; }
 }

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-availability.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-availability.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -362,7 +362,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <span class="doc-kind">Spec</span>
   <h1>Availability</h1>
   <div class="doc-meta">
-    <span><b>Status:</b> <span class="status draft">draft</span></span>
+    <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
     <span><b>Feature:</b> 32 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>articles</code>, <code>delete-guard</code>, <code>bot-runtime-sdk</code></span>
@@ -376,13 +376,13 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>Anyone can turn an article off, and later a procedure or an action, from the web, the CLI or the plugin. The list of what uses it is shown first, and being in use never stops it. Turning off changes whether a resource can be found, never whether it exists, so no reference breaks.</p>
-    <p>Availability is a live setting outside versions. The CMS sends it to the bot at once, with no push, and it applies to every conversation, also those on an older version. If the bot cannot be reached, the page says the change is saved and not delivered, because “off” is often an emergency and nobody should believe it too early.</p>
+    <p>Anyone can turn an article or a procedure off, from the web, the CLI or the plugin. The list of what uses it is shown first, and being in use never stops it. Turning off changes whether a resource can be found, never whether it exists, so no reference breaks.</p>
+    <p>Availability is a live setting outside versions. The CMS sends it to one instance of the bot at once, with no push, the others pick it up at their next poll, and it applies to every conversation, also those on an older version. If the bot cannot be reached, the page says the change is saved and not delivered, because “off” is often an emergency and nobody should believe it too early.</p>
   </div>
   <div class="stats">
-    <div><b>21</b><span>criteria</span></div>
-    <div><b>9</b><span>criteria after other features</span></div>
-    <div><b>2</b><span>open questions</span></div>
+    <div><b>25</b><span>criteria</span></div>
+    <div><b>5</b><span>criteria after other features</span></div>
+    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -396,7 +396,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Goals</h4><ul>
       <li>Turn a resource off and on, from any door, with one action.</li>
       <li>See what uses it before it goes off, without being stopped by it.</li>
-      <li>The change reaches the bot at once, on every version, on every instance.</li>
+      <li>The change reaches the bot at once, on every version; other instances of the bot pick it up at their next poll.</li>
       <li>An honest answer about whether the bot has it, as with versions: what the bot reports, not what the CMS tried.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
@@ -430,8 +430,8 @@ Turned off. Bot rzeczoznawca confirmed.
 0</div>
   <h3>3. The bot is down</h3>
   <div class="term"><span class="dim">$</span> suwagcms availability off article cennik --yes
-Turned off in the CMS, not delivered: cannot reach http://rzeczoznawca.internal:8080.
-The bot still has the previous setting. Check that it is running, then: suwagcms availability send
+Turned off in the CMS, not delivered: cannot reach http://rzeczoznawca.internal:8080. Check that the bot is running, then send again.
+The bot still has the previous setting. Send it with: suwagcms availability send
 <span class="dim">$</span> echo $?
 1</div>
   <h3>4. Two instances behind a load balancer</h3>
@@ -478,6 +478,8 @@ sequenceDiagram
     <tr><td>a bot on an SDK without this route</td><td>not delivered, saying to update its SDK</td></tr>
     <tr><td>a resource the bot's version does not hold</td><td>the bot keeps the setting and it does nothing until a version holds that resource</td></tr>
     <tr><td>creating a version with something off</td><td>unaffected: a referrer stays valid, and a version says nothing about availability</td></tr>
+    <tr><td>nothing has ever been turned off for a bot</td><td>there is nothing it could lack, so the bot is not asked and a bot that is down shows no warning here</td></tr>
+    <tr><td>a resource that is off changes its <code>id</code></td><td>it stays off; its number goes up and the page says the bot does not have it yet, until the next send or push</td></tr>
     <tr><td>a resource is deleted</td><td>its setting goes with it; the same id created again starts on</td></tr>
     <tr><td>a change while the bot is slow</td><td>no save of the bot waits for it</td></tr>
     <tr><td>a change and a delete of the resource at the same moment</td><td>one after the other; whichever goes second sees what the first left</td></tr>
@@ -510,10 +512,10 @@ sequenceDiagram
   <p>This adds to the public contract between the CMS and any bot. The shapes are published with the bot runtime's JSON schema.</p>
   <table>
     <tr><th>Route</th><th>Does</th><th>Answers</th></tr>
-    <tr><td><code>PUT /suwagcms/availability</code></td><td>takes the number and everything that is off, as kind and id; a number lower than the one held changes nothing; safe to repeat</td><td>the state</td></tr>
+    <tr><td><code>PUT /suwagcms/availability</code></td><td>takes the number and everything that is off, as kind and id, and for a former id of a renamed resource <code>upToVersion</code>, the last version it counts in; a number lower than the one held changes nothing; safe to repeat</td><td>the state</td></tr>
     <tr><td><code>GET /suwagcms/state</code></td><td>gains what is off and its number, from the store, so every instance gives the same answer</td><td>as today, plus these</td></tr>
   </table>
-  <p>A store a bot supplies keeps this setting alongside the versions.</p>
+  <p>A store a bot supplies keeps this setting alongside the versions, and itself keeps the higher number, since the instances sharing it have no lock in common. The bot's code asks <code>IBotDefinitions.IsOff(version, kind, id)</code>.</p>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
@@ -524,6 +526,12 @@ sequenceDiagram
     <li>Availability is not an edit of the resource and is not part of the working state, so it does not create a reason for a new version, while it shares the same per-bot ordering as saves.</li>
     <li><code>conversation</code> cannot be turned off, because the format requires it as the base of every conversation, in the same spirit as the rule that it cannot be deleted.</li>
     <li>The bot's routes have no key until <code>cms-identity</code> (owner's decision), and this request carries none.</li>
+    <li>The CMS does not retry an undelivered change by itself: a person or an agent sends again, and each later change or push repairs it. That is the same as a push, needs no background work in the CMS, and a sick bot stays visible.</li>
+    <li>What is off is chosen from the working state, so a resource deleted from it cannot be turned off for conversations on an older version that still hold it: its setting goes with it, and it is on again for those conversations after the next send. An emergency switch stays undeleted and off until no version in use holds it.</li>
+    <li>The setting is kept under the resource's stable uuid, as a row only while it is off, so a rename cannot lose it and no row means on.</li>
+    <li>A change of <code>id</code> is remembered with the latest version at that moment, whether the resource is off or not. A message names a resource that is off under its current <code>id</code> on every version, and under each former <code>id</code> only up to that version, because a new resource may take the old <code>id</code> afterwards.</li>
+    <li>Deleting or renaming a resource that is off changes the set, so its number goes up and the page says the bot does not have it yet; a save itself never calls a bot.</li>
+    <li>If a push cannot deliver the set, it fails and sends no version, because a new version must never run without it. A bot that was never told anything is sent nothing before a push.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -550,47 +558,31 @@ sequenceDiagram
     <li><code>AC-availability-19</code> A deleted resource's setting is gone: created again with the same id, it is on.</li>
     <li><code>AC-availability-20</code> The published schema of the new route and of the state is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
     <li><code>AC-availability-21</code> Each <code>suwagcms availability</code> command has its line in the plugin's main skill, which says it takes effect at once and that a resource in use needs <code>--yes</code>.</li>
+    <li><code>AC-availability-22</code> A procedure can be turned off, and the procedures list shows its state; the SDK says the model cannot start it, even from an article's guide, while its definition stays available to a conversation already in it.</li>
+    <li><code>AC-availability-23</code> Turning off <code>conversation</code> is refused with the reason.</li>
+    <li><code>AC-availability-24</code> Every push sends the whole set before the version, so a missed change is repaired and a new version never runs without it.</li>
+    <li><code>AC-availability-25</code> A renamed resource keeps its setting, and turning it off also reaches conversations on an older version that holds it under its old <code>id</code>.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
   <h2>Criteria after other features</h2>
   <p>Criteria of this feature that can only be checked once another feature exists. They have no id yet: when that feature is built, its task moves the item into the acceptance criteria above, where it gets the next free id and its guardrail.</p>
   <ul>
-    <li><b>after <code>procedure-model</code>:</b> a procedure can be turned off, and the procedures list shows its state; the SDK says the model cannot start it, even from an article's guide, while its definition stays available to a conversation already in it.</li>
-    <li><b>after <code>procedure-model</code>:</b> turning off <code>conversation</code> is refused with the reason.</li>
     <li><b>after <code>inform-block</code>, <code>instruction-context</code>:</b> the SDK gives an article a procedure names explicitly even while it is off.</li>
     <li><b>after <code>http-actions</code>:</b> an action can be turned off, and the Actions screen shows its state.</li>
     <li><b>after <code>code-actions</code>:</b> a code action can be turned off the same way, though the rest of it is read-only.</li>
     <li><b>after <code>action-block</code>:</b> the SDK answers, for a step running a turned-off action, that it takes its <code>onFailure</code> step, on any version.</li>
-    <li><b>after <code>version-push</code>:</b> every push sends the whole set before the version, so a missed change is repaired and a new version never runs without it.</li>
-    <li><b>after <code>resource-rename</code>:</b> a renamed resource keeps its setting, and turning it off also reaches conversations on an older version that holds it under its old id.</li>
     <li><b>after <code>cms-identity</code>:</b> the request carries the bot's key, and a wrong key shows as not delivered, saying how to fix it.</li>
   </ul>
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p><b>“At once” has a limit.</b> Delivery is immediate to one instance; the others take up to one poll, 5 seconds by default. In that window one instance may still run a turned-off action.</p></div>
-  <div class="callout risk"><p><b>A failed delivery leaves the bot as it was during an emergency.</b> The page makes this loud rather than fixing it. See the open question on retrying.</p></div>
+  <div class="callout risk"><p><b>A failed delivery leaves the bot as it was during an emergency.</b> The page makes this loud rather than fixing it.</p></div>
+  <div class="callout risk"><p><b>A new resource can take the id of a renamed one.</b> A former <code>id</code> counts only up to the last version that can hold it, but a new resource that takes an old <code>id</code> and is turned off also counts for the older versions that hold the renamed resource under that <code>id</code>.</p></div>
   <div class="callout risk"><p><b>The route has no key.</b> Until <code>cms-identity</code>, anyone who can reach a bot can switch its actions off, or back on. Only a trusted network may reach it.</p></div>
   <div class="callout warn"><p><b>A bot's own store is now holding a setting as well.</b> A store a bot supplies has to keep it, which changes what such a store must do. <code>Suwagcms.Sdk</code> is not yet published, so no outside store is affected; after publishing it would be a breaking change.</p></div>
   <div class="callout assumption"><p>The feature map lists only <code>articles</code> as needed first, but the list of what uses a resource comes from <code>delete-guard</code>, and it belongs to the first cut, so it will exist by then.</p></div>
-</section>
-<section data-role="questions">
-  <h2>Open questions <span class="tag warn">temporary</span></h2>
-  <form class="questions">
-    <fieldset data-id="q1">
-      <legend>Should the CMS retry an undelivered change by itself?</legend>
-      <p class="why">Off is often an emergency, and a person may walk away after seeing “not delivered”. README says it takes effect at once and does not say what happens to a bot that is down. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="manual"><span><b>No: a person or an agent sends again, and each later change or push repairs it</b><small>the same as a push; no background work in the CMS, and a sick bot stays visible</small></span></label>
-      <label><input type="radio" value="retry"><span><b>Yes: the CMS keeps trying until the bot confirms</b><small>closes the gap by itself, at the cost of a background worker that the CMS does not otherwise have</small></span></label>
-    </fieldset>
-    <fieldset data-id="q2">
-      <legend>Can a resource deleted from the working state be turned off, for conversations on an older version that still hold it?</legend>
-      <p class="why">A resource with no referrers can be deleted, while conversations on an older version still run it, and a rollback can bring it back. Off is the only thing that reaches those conversations. This spec assumes the recommended answer.</p>
-      <label data-recommended><input type="radio" value="no"><span><b>No: what is off is chosen from the working state, and this risk stays written down</b><small>simplest; a deleted resource is on again for those conversations after the next send, so an emergency switch stays undeleted and off until no version in use holds it</small></span></label>
-      <label><input type="radio" value="yes"><span><b>Yes: any id found in a version the bot still holds can be turned off</b><small>closes the gap, but it needs a way to name a resource that no longer exists, in every door</small></span></label>
-    </fieldset>
-  </form>
 </section>
 
 <!-- CONTENT END -->

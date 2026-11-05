@@ -15,6 +15,7 @@ public sealed class SchemaTests
     [Trait("criterion", "AC-bot-runtime-sdk-16")]
     [Trait("criterion", "AC-bot-declaration-3")]
     [Trait("criterion", "AC-version-rollback-15")]
+    [Trait("criterion", "AC-availability-20")]
     public async Task The_committed_schema_of_the_state_answer_and_the_refusal_equals_the_one_generated()
     {
         var path = RepositoryFiles.Path("Suwagcms.Sdk/bot-runtime.schema.json");
@@ -66,11 +67,26 @@ public sealed class SchemaTests
         }
     }
 
+    [Fact]
+    [Trait("criterion", "AC-availability-20")]
+    public void The_schema_describes_the_availability_message_and_the_state_reports_it()
+    {
+        var schema = Generate();
+        var message = schema.Member("availability").ToJsonString();
+
+        foreach (var member in new[] { "number", "off", "kind", "id", "upToVersion" })
+        {
+            Assert.Contains($"\"{member}\"", message, StringComparison.Ordinal);
+        }
+        Assert.Contains("\"availability\"", schema.Member("state").ToJsonString(), StringComparison.Ordinal);
+    }
+
     private static JsonObject Generate() =>
         new()
         {
             ["state"] = Schema(typeof(BotState)),
             ["refusal"] = Schema(typeof(BotRefusal)),
+            ["availability"] = Schema(typeof(BotAvailability)),
             ["versionEnvelope"] = Schema(typeof(VersionEnvelope)),
             ["currentChoice"] = Schema(typeof(CurrentChoice)),
             ["declaration"] = Schema(typeof(BotDeclaration)),

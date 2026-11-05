@@ -23,6 +23,9 @@ internal sealed class FlakyStore(IVersionStore inner) : IVersionStore
     public Task WriteInUseAsync(IReadOnlyList<int> numbers, CancellationToken cancellationToken) =>
         FailWrites ? throw new IOException("the store is down (write)") : inner.WriteInUseAsync(numbers, cancellationToken);
 
+    public Task WriteAvailabilityAsync(BotAvailability availability, CancellationToken cancellationToken) =>
+        FailWrites ? throw new IOException("the store is down (write)") : inner.WriteAvailabilityAsync(availability, cancellationToken);
+
     public Task RemoveVersionAsync(int number, CancellationToken cancellationToken) =>
         FailWrites ? throw new IOException("the store is down (write)") : inner.RemoveVersionAsync(number, cancellationToken);
 }

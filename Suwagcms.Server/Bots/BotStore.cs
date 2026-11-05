@@ -16,6 +16,14 @@ internal static class BotStore
         return [.. rows];
     }
 
+    public static async Task<string?> FindAddressAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    {
+        await using var connection = await pool.OpenAsync(cancellationToken);
+        return await connection.QuerySingleOrDefaultAsync<string>(
+            new CommandDefinition("SELECT address FROM bot WHERE id = @bot", new { bot }, cancellationToken: cancellationToken)
+        );
+    }
+
     // Why: the primary key decides between two registrations of one id at the same moment; false means the id was taken.
     public static async Task<bool> AddAsync(Pool pool, Bot bot, CancellationToken cancellationToken)
     {
