@@ -101,6 +101,16 @@ mutate:
 sdk-schema:
     @./scripts/.internal/sdk-schema.sh
 
+# Release Suwagcms.Sdk as <version>: runs the sdk workflow on master, which pushes to nuget.org (docs/release.md)
+[group('dev')]
+sdk-publish version:
+    @./scripts/.internal/sdk-publish.sh {{ version }}
+
+# The fallback: pack and push from this machine with a key from .env, for a first release the workflow cannot make (docs/release.md)
+[group('dev')]
+sdk-publish-local version:
+    @./scripts/.internal/sdk-publish-local.sh {{ version }}
+
 # Pack the dotnet new template as a NuGet package into .artifacts/nupkg
 [group('dev')]
 pack-template:

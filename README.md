@@ -266,7 +266,7 @@ flowchart TD
 The validator takes a bot's whole definition and what the bot declared, and returns every mistake with its fix. It
 needs no database or network. The format of a version is the public contract between the CMS and any bot.
 
-The SDK is to be published on nuget.org as `Suwagcms.Sdk`, so any bot can use it. Not for now: until then a bot imports it by a local path, a temporary arrangement.
+The SDK is a public package on nuget.org, `Suwagcms.Sdk`, so any bot can use it; the owner releases it with one command ([docs/release.md](docs/release.md)).
 
 ## Stack
 
@@ -376,7 +376,7 @@ Who owns what between the CMS and a bot, field by field, is settled in one place
 | What happens to a conversation when a push changes its procedure? | It finishes on the version it started on                                |
 | What is the CMS built with?                                       | The `solid-dotnet-app-tpl` template                                      |
 | Where does validation live?                                       | In one library in the SDK, used by the CMS, bots and agents              |
-| Where is the SDK published?                                       | On nuget.org in the end; not for now, and a bot imports it by a local path as a temporary arrangement |
+| Where is the SDK published?                                       | On nuget.org, as a public package the owner releases with one command |
 | Who builds the search index?                                      | The bot, from data the SDK gives it, or an external search system        |
 | Does the CMS know who is asking?                                  | Not at first: it stays in a trusted network until `cms-identity`         |
 | How are bots and knowledge bases organised?                       | One CMS with several bot profiles; references only within one bot        |
