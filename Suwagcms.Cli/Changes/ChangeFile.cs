@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Suwagcms.Cli.Procedures;
+using Suwagcms.Cli.Yaml;
 using YamlDotNet.Core;
 
 namespace Suwagcms.Cli.Changes;
@@ -30,7 +30,7 @@ internal static class ChangeFile
         JsonNode? node;
         try
         {
-            node = text.TrimStart().StartsWith('{') ? JsonNode.Parse(text) : ProcedureFile.FromYaml(text, TopNumbers);
+            node = FormatYaml.Parse(text, TopNumbers);
         }
         catch (YamlException exception)
         {

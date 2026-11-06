@@ -154,6 +154,28 @@ public sealed class ValidateCommandTests : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-15")]
+    public async Task A_field_named_like_a_number_inside_a_steps_mapping_stays_the_text_it_spells()
+    {
+        var path = File(
+            "definition.yaml",
+            """
+            formatVersion: 1
+            procedures:
+              - id: conversation
+                steps:
+                  go:
+                    action: lookup
+                    with: { min: 5 }
+            """
+        );
+
+        await TestCli.Run(["validate", "--file", path, .. Common], Answering(""));
+
+        Assert.Equal("5", sent[0]["definition"]?["procedures"]?[0]?["steps"]?["go"]?["with"]?["min"]?.GetValue<string>());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-15")]
     public async Task Mistakes_are_listed_with_exit_1_and_json_returns_them()
     {
         var path = File("definition.json", """{"formatVersion":1}""");
