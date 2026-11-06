@@ -22,6 +22,31 @@ export default defineConfig(
             "@typescript-eslint/no-confusing-void-expression": ["error", { ignoreArrowShorthand: true }],
             // Reason: `const { a: _, ...rest } = obj` drops a key on purpose.
             "@typescript-eslint/no-unused-vars": ["error", { ignoreRestSiblings: true }],
+            // Reason: a screen's state in browser storage is lost to a shared link and goes stale after a change of data.
+            "no-restricted-globals": [
+                "error",
+                {
+                    name: "localStorage",
+                    message: "Keep what a screen shows in the URL, so a link and a refresh give the same screen; never in browser storage.",
+                },
+                {
+                    name: "sessionStorage",
+                    message: "Keep what a screen shows in the URL, so a link and a refresh give the same screen; never in browser storage.",
+                },
+            ],
+            "no-restricted-properties": [
+                "error",
+                {
+                    object: "window",
+                    property: "localStorage",
+                    message: "Keep what a screen shows in the URL, so a link and a refresh give the same screen; never in browser storage.",
+                },
+                {
+                    object: "window",
+                    property: "sessionStorage",
+                    message: "Keep what a screen shows in the URL, so a link and a refresh give the same screen; never in browser storage.",
+                },
+            ],
         },
     },
     // Import contracts: every folder of src/ is a feature, and features are independent by default: a feature
