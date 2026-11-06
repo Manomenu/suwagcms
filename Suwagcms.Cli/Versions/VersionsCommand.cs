@@ -4,7 +4,9 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
+using Suwagcms.Cli.History;
 using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.History;
 using Suwagcms.Contracts.Versions;
 
 namespace Suwagcms.Cli.Versions;
@@ -16,11 +18,12 @@ internal static class VersionsCommand
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
-        new("versions", "List the versions of a bot, create one from its working state, or show one.")
+        new("versions", "List the versions of a bot, create one from its working state, show one, or show what happened before it.")
         {
             CreateList(options, environment),
             CreateCreate(options, environment),
             CreateShow(options, environment),
+            CreateWindow(options, environment),
             CreateStatus(options, environment),
         };
 
@@ -123,6 +126,57 @@ internal static class VersionsCommand
                 }
                 var status = answer.Body?.Deserialize<BotStatus>(Web) ?? throw new InvalidOperationException("the server sent no status");
                 return await target.Run.Report.DoneAsync(status, VersionText.Status(status));
+            }
+        );
+        return command;
+    }
+
+    private static Command CreateWindow(GlobalOptions options, CliEnvironment environment)
+    {
+        var number = new Argument<int>("number") { Description = "The version's number, like 14." };
+        var limit = new Option<int?>("--limit") { Description = "How many entries a page holds, 50 unless said otherwise." };
+        var before = new Option<long?>("--before") { Description = "Go on from this entry: the id the last page says." };
+        var command = new Command(
+            "window",
+            "Show what happened from the previous version's creation through this version's, newest first (or --open the version's page)."
+        )
+        {
+            number,
+            limit,
+            before,
+        };
+        EditOptions.RefuseOpenWithJson(command, options);
+        command.Validators.Add(result =>
+        {
+            if (result.GetValue(limit) is < 1)
+            {
+                result.AddError("--limit must be 1 or more.");
+            }
+        });
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
+            {
+                var version = parsed.GetValue(number).ToString(CultureInfo.InvariantCulture);
+                if (parsed.GetValue(options.Open))
+                {
+                    return await target.OpenAsync(target.PageOf($"{Collection}/{version}"), parsed);
+                }
+                var answer = await ServerCall.GetAsync(
+                    environment,
+                    target.Address,
+                    target.ItemPath(Collection, version)
+                        + "/window"
+                        + HistoryCommand.Query(parsed.GetValue(limit), parsed.GetValue(before)),
+                    cancellationToken
+                );
+                if (answer.ExitCode != ExitCodes.Done)
+                {
+                    return await target.FailedAsync(answer, cancellationToken);
+                }
+                var page = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no window");
+                return await target.Run.Report.DoneAsync(page, HistoryText.Window(page));
             }
         );
         return command;

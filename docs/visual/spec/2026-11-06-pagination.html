@@ -382,7 +382,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>History asks the server for numbered pages with a total, so it obeys every rule of every other list.</p>
   </div>
   <div class="stats">
-    <div><b>9</b><span>places that page</span></div>
+    <div><b>10</b><span>places that page</span></div>
     <div><b>12</b><span>criteria</span></div>
   </div>
 </section>
@@ -498,14 +498,14 @@ flowchart TD
     <thead><tr><th>Screen</th><th>Divided by</th><th>Why</th></tr></thead>
     <tbody>
       <tr><td>Facts, knowledge bases, articles, procedures, actions</td><td>the browser</td><td>The server already answers with the whole list, and the same data feeds forms, pickers and availability.</td></tr>
-      <tr><td>Versions</td><td>the browser</td><td>The whole list is needed anyway: "other version" and the comparison's choice offer every version, and a row's Changes compares with the version before it, which may sit on the next page. Rows carry counts only, so the answer is small.</td></tr>
-      <tr><td>History of a bot, History of a resource, the panel of an edit screen</td><td>the server</td><td>History is kept for good and each entry holds old and new values, so it can be long and heavy.</td></tr>
+      <tr><td>Versions</td><td>the browser</td><td>The whole list is needed anyway: "other version" offers every version. Rows carry counts only, so the answer is small.</td></tr>
+      <tr><td>History of a bot, History of a resource, the panel of an edit screen, the panel of a version's page</td><td>the server</td><td>History is kept for good and each entry holds old and new values, so it can be long and heavy.</td></tr>
     </tbody>
   </table>
 
   <h3>History</h3>
-  <p>History's rows are paged by the same module and the same <code>PAGINATION_PAGE_SIZE</code> as every other list, on the History page of a bot, the History page of a resource (<code>?kind=…&amp;id=…</code>) and the History panel of an edit screen. The address is <code>?page=2</code> and the label "Page 2 of 7", so every rule of the other lists holds with no exception. A new change moves everything down a row, so a reader can see one entry twice and a link to page 2 shows other entries tomorrow; that is acceptable, since few people edit at once. Only the panel's address differs, because an edit address already carries something else:</p>
-  <div class="callout decision"><p>The History panel uses the same controls and keeps its place in the address under its own name, <code>historyPage</code>, because the edit address already carries the <code>page</code> and filters of the list it came from, which is how coming back finds the list as it was left. <code>historyPage</code> is dropped on leaving the edit screen, so it never reaches the list or another resource. Moving in the panel does not touch the form: typed text stays and nothing asks about unsaved changes.</p></div>
+  <p>History's rows are paged by the same module and the same <code>PAGINATION_PAGE_SIZE</code> as every other list, on the History page of a bot, the History page of a resource (<code>?kind=…&amp;id=…</code>), the History panel of an edit screen and the one of a version's page. The shared list of <code>change-history</code> takes its <code>Paging</code> from whoever embeds it, and a comparison, which is read whole, has none. The address is <code>?page=2</code> and the label "Page 2 of 7", so every rule of the other lists holds with no exception. A new change moves everything down a row, so a reader can see one entry twice and a link to page 2 shows other entries tomorrow; that is acceptable, since few people edit at once. Only a panel's address differs, because the address around it already carries something else:</p>
+  <div class="callout decision"><p>The History panel uses the same controls and keeps its place in the address under its own name, <code>historyPage</code>, because the address of an edit screen or a version's page already carries the <code>page</code> and filters of the list it came from, which is how coming back finds the list as it was left. <code>historyPage</code> is dropped on leaving the edit screen or the version's page, so it never reaches the list or another resource. Moving in the panel does not touch the form: typed text stays and nothing asks about unsaved changes.</p></div>
 
   <h3>Edge cases</h3>
   <table>
@@ -518,8 +518,6 @@ flowchart TD
       <tr><td>A new resource sorts onto another page</td><td>The reader stays on their page; the list does not jump after the new row.</td></tr>
       <tr><td>Last page shorter than the others</td><td>The controls sit directly under its rows, higher than on a full page. Keeping a fixed height would leave a gap and rows vary in height anyway.</td></tr>
       <tr><td>A new version is created on page 2 of Versions</td><td>The screen goes to page 1, because the new version is the first row and is what the person came for.</td></tr>
-      <tr><td>The last row of a page of Versions</td><td>Changes still compares with the version before it, on the next page; only the very first version says "Nothing before it".</td></tr>
-      <tr><td>A version opened or compared under the list</td><td>Stays open when the page changes; it is not a row of the list.</td></tr>
       <tr><td>A resource with no history yet</td><td>"No change has been recorded since…", as today, and no controls.</td></tr>
       <tr><td>A save or a rename while the panel is on a later page</td><td>The panel shows the newest page: that is where the new entry is.</td></tr>
       <tr><td>A later page of History fails to load</td><td>The failure replaces the rows, as a failed History does today; a reload asks again.</td></tr>
@@ -582,6 +580,7 @@ flowchart TD
       <tr><td><code>PAGINATION_PAGE_SIZE</code></td><td>new setting of the server</td><td>Rows on a page: 1 to 500, 20 when unset.</td></tr>
       <tr><td><code>GET /api/settings</code></td><td>new, read-only</td><td>Answers <code>{ "pageSize": 20 }</code>. The CLI has no pages, so the route is listed in the guard that ties routes to commands as having none, with that reason.</td></tr>
       <tr><td>History routes</td><td>additive</td><td><code>page</code> beside <code>limit</code> asks for a numbered page and adds <code>total</code> to the answer, which only then holds it. <code>limit</code>, <code>before</code>, <code>next</code> and the default of 50 stay for the CLI, whose output does not change; the web app asks with the page size.</td></tr>
+      <tr><td><code>GET /api/bots/{bot}/versions/{number}/window</code></td><td>new in <code>change-history</code></td><td>The same: <code>page</code> asks for a numbered page and adds <code>total</code>, so a version's panel obeys every rule here.</td></tr>
       <tr><td><code>?page</code>, <code>?historyPage</code></td><td>new in web addresses</td><td>Where a person is, as a link or a reload reads it.</td></tr>
     </tbody>
   </table>
@@ -610,7 +609,7 @@ flowchart TD
     <li><code>AC-pagination-7</code> Changing an article filter on page 2 shows page 1 of the result, with the other filters still in the address. <span class="tag note">browser test</span></li>
     <li><code>AC-pagination-8</code> When the rows fit on one page the controls are neither visible nor reachable, and the empty space they leave under the rows is as tall as the controls on a list of two pages. <span class="tag note">browser test</span></li>
     <li><code>AC-pagination-9</code> Facts, knowledge bases, articles, procedures, actions, Versions and History all draw their controls with the one shared module, and no other source draws Previous or Next or says "Older changes". <span class="tag note">web test, reads the source</span></li>
-    <li><code>AC-pagination-10</code> On Versions, the last row of a page still offers Changes against the version before it and "other version" offers versions of every page; creating a version shows page 1. <span class="tag note">web test, browser test</span></li>
+    <li><code>AC-pagination-10</code> On Versions, "other version" offers versions of every page; creating a version shows page 1. <span class="tag note">web test, browser test</span></li>
     <li><code>AC-pagination-11</code> With 12 entries and a size of 5, the History page of a bot and that of a resource show the 5 newest, Next shows the next 5, newest first with no entry missing or repeated, a reload stays there, and there is no load-more. <span class="tag note">server test, browser test</span></li>
     <li><code>AC-pagination-12</code> The History panel of an edit screen pages with the same controls and size under <code>historyPage</code>: the list's <code>page</code> in the address is untouched, typed text in the form stays with no question asked, and leaving for the list drops <code>historyPage</code>. <span class="tag note">browser test</span></li>
   </ul>

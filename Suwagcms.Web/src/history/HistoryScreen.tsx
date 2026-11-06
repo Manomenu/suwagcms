@@ -2,7 +2,7 @@ import { useSearchParams } from "wouter";
 
 import { historyHref, isHistoryCollection, useBotHistory, useResourceHistory, type HistoryCollection } from "@/api/history";
 import { Anchor } from "@/design/anchor";
-import { HistoryList } from "@/design/historyPanel";
+import { ChangeList } from "@/design/changeList";
 import { Page, Paper } from "@/design/page";
 
 function BotHistory({ bot }: { bot: string }) {
@@ -10,7 +10,7 @@ function BotHistory({ bot }: { bot: string }) {
     return (
         <Page title={`History of ${bot}`}>
             <Paper>
-                <HistoryList {...history} hrefOf={(line) => historyHref(bot, line)} />
+                <ChangeList {...history} hrefOf={(line) => historyHref(bot, line)} />
             </Paper>
         </Page>
     );
@@ -21,7 +21,7 @@ function ResourceHistory({ bot, collection, id }: { bot: string; collection: His
     return (
         <Page title={`History of ${id}`} actions={<Anchor href={`~/bots/${encodeURIComponent(bot)}/history`}>All changes</Anchor>}>
             <Paper>
-                <HistoryList {...history} />
+                <ChangeList {...history} />
             </Paper>
         </Page>
     );

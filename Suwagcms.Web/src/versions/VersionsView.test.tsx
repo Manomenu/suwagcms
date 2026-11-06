@@ -5,7 +5,7 @@ import { Router } from "wouter";
 import { PageSizeContext } from "@/api/pagination";
 import type { Mistake } from "@/api/client";
 
-import type { BotStatus, PushPlan, PushResult, VersionComparison, VersionDetail, VersionSummary } from "./api";
+import type { BotStatus, PushPlan, PushResult, VersionSummary } from "./api";
 import { VersionsView } from "./VersionsView";
 
 const versions: VersionSummary[] = [
@@ -81,10 +81,8 @@ function view(shown: {
     search?: string;
     versions?: VersionSummary[];
     refused?: Mistake[] | null;
-    shown?: VersionDetail | null;
     status?: BotStatus | null;
     pushFailure?: PushResult | null;
-    comparison?: VersionComparison | null;
     plan?: PushPlan | null;
 }): string {
     return renderToStaticMarkup(
@@ -98,16 +96,12 @@ function view(shown: {
                     pushing={false}
                     onPush={() => undefined}
                     refused={shown.refused ?? null}
-                    shown={shown.shown ?? null}
-                    comparison={shown.comparison ?? null}
                     plan={shown.plan ?? null}
                     onPlan={() => undefined}
                     onCancelPlan={() => undefined}
                     onCompare={() => undefined}
-                    onCloseComparison={() => undefined}
                     onCreate={() => undefined}
                     onOpen={() => undefined}
-                    onClose={() => undefined}
                 />
             </PageSizeContext>
         </Router>,
@@ -129,24 +123,6 @@ describe("VersionsView", () => {
 
     it("AC-version-create-13: says what to do when there are no versions", () => {
         expect(view({ versions: [] })).toContain("No versions yet. Create one");
-    });
-
-    it("AC-version-create-13: shows an opened version with its digest and its document as stored", () => {
-        const opened: VersionSummary = {
-            number: 14,
-            createdAt: "2026-11-04T21:40:00+00:00",
-            facts: 3,
-            knowledgeBases: 1,
-            articles: 12,
-            procedures: 2,
-            actions: 0,
-            sha256: `3f9a${"0".repeat(56)}c21e`,
-        };
-        const html = view({ shown: { version: opened, document: '{"formatVersion":2}' } });
-
-        expect(html).toContain("Version 14");
-        expect(html).toContain("sha256 3f9a");
-        expect(html).toContain("formatVersion");
     });
 
     it("AC-version-create-2: lists every mistake of a refused creation with a link to the resource's screen", () => {
@@ -196,87 +172,22 @@ describe("VersionsView", () => {
         expect(html).toContain("Bot has v12 · Latest v14");
     });
 
-    it("AC-version-diff-10: each version offers its changes against the one before it, and the first offers neither", () => {
+    it("AC-version-diff-10: Versions has no comparison on a row", () => {
         const html = view({});
-        expect(html.match(/>Changes</g)).toHaveLength(1);
-        expect(html).toContain("Nothing before it");
-        expect(view({ versions: versions.slice(1) })).not.toContain(">Changes<");
+        expect(html).not.toContain(">Changes<");
+        expect(html).not.toContain("Nothing before it");
+        expect(html.match(/>Open</g)).toHaveLength(2);
     });
 
-    it("AC-version-diff-10: a comparison offers a select of other versions, lists the resources by change, and the field's old and new values", () => {
-        const html = view({
-            comparison: {
-                bot: "rzeczoznawca",
-                from: 13,
-                to: 14,
-                added: 1,
-                removed: 1,
-                changed: 2,
-                definition: [],
-                resources: [
-                    {
-                        kind: "GlobalFact",
-                        id: "customer.city",
-                        difference: "Changed",
-                        fields: [{ field: "maxLength", old: "80", new: "120", lines: null }],
-                        parts: [],
-                    },
-                    {
-                        kind: "Article",
-                        id: "cennik",
-                        difference: "Changed",
-                        fields: [
-                            {
-                                field: "content",
-                                old: null,
-                                new: null,
-                                lines: [
-                                    { change: "Removed", text: "Wycena domu: 900 zł" },
-                                    { change: "Added", text: "Wycena domu: 1100 zł" },
-                                ],
-                            },
-                        ],
-                        parts: [],
-                    },
-                    { kind: "Article", id: "rabaty", difference: "Added", fields: [], parts: [] },
-                    { kind: "Article", id: "stary", difference: "Removed", fields: [], parts: [] },
-                ],
-            },
-        });
-        expect(html).toContain("1 added · 1 removed · 2 changed");
-        expect(html).toContain("to v14");
-        expect(html).toContain('<option value="13"');
-        expect(html).not.toContain('<option value="14"');
-        expect(html).toContain("customer.city");
-        expect(html).toContain("maxLength");
-        expect(html).toContain("− Wycena domu: 900 zł");
-        expect(html).toContain("+ Wycena domu: 1100 zł");
-        expect(html).toContain("rabaty");
-        expect(html).toContain("stary");
-    });
-
-    it("AC-pagination-10: the last row of a page still compares with the version before it, and other version offers every page", () => {
+    it("AC-pagination-10: other version offers versions of every page", () => {
         const kept = Array.from({ length: 25 }, (_, index) => ({ ...versions[0], number: 25 - index }) as VersionSummary);
 
         const first = view({ versions: kept, status: { ...answering, has: 25, latest: 25, held: [] } });
-        const firstRows = first.split("<tr>");
-        expect(firstRows.filter((row) => row.includes(" · 2026"))).toHaveLength(20);
-        expect(firstRows.find((row) => row.includes("v6 · 2026"))).toContain(">Changes<");
+        expect(first.split("<tr>").filter((row) => row.includes(" · 2026"))).toHaveLength(20);
         expect(first).toContain(">v1</option>");
         expect(first).toContain("Page 1 of 2");
 
-        const last = view({ search: "?page=2", versions: kept });
-        const lastRows = last.split("<tr>");
-        expect(lastRows.find((row) => row.includes("v2 · 2026"))).toContain(">Changes<");
-        expect(lastRows.find((row) => row.includes("v1 · 2026"))).toContain("Nothing before it");
-        expect(last).toContain("Page 2 of 2");
-    });
-
-    it("AC-version-diff-6: a comparison with no differences says so", () => {
-        const html = view({
-            comparison: { bot: "rzeczoznawca", from: 14, to: 14, added: 0, removed: 0, changed: 0, definition: [], resources: [] },
-        });
-        expect(html).toContain("no differences");
+        expect(view({ search: "?page=2", versions: kept })).toContain("Page 2 of 2");
     });
 
     it("AC-version-diff-13: the page offers a comparison of what the bot reports with the latest", () => {

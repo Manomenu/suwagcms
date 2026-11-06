@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import type { Mistake } from "@/api/client";
+import { HistoryPanel } from "@/design/historyPanel";
 
 import { HINTS, type PersonaForm } from "./personaForm";
 import { PersonaView } from "./PersonaView";
@@ -33,6 +34,19 @@ function html(overrides: Partial<Parameters<typeof PersonaView>[0]> = {}): strin
 }
 
 describe("PersonaView", () => {
+    it("AC-change-history-20: Persona has exactly one History heading, from the wrapper", () => {
+        const history = (
+            <HistoryPanel
+                entries={[]}
+                since="2026-11-04T08:00:00+00:00"
+                failure={null}
+                paging={{ page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined }}
+            />
+        );
+
+        expect(html({ history }).match(/<h\d[^>]*>History<\/h\d>/g)).toHaveLength(1);
+    });
+
     it("AC-bot-persona-1: shows the personality and the three parts of the scope as plain text boxes, with Save as the only control", () => {
         const page = html();
 
