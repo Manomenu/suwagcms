@@ -1,16 +1,8 @@
 // A person works on the knowledge bases of one bot in the browser; the bot is in the address, and a refusal keeps what was typed.
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `kb-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
-    return id;
-}
+const { newBot } = testBots("kb");
 
 async function addBase(request: APIRequestContext, bot: string, id: string, title: string): Promise<void> {
     const response = await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, { data: { title } });

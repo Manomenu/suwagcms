@@ -1,14 +1,11 @@
 // A person works on the articles of one bot in the browser; the bot is in the address, and a refusal or a stale edit keeps what was typed.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `art-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
+const { newBot: newEmptyBot } = testBots("art");
 
 async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
+    const id = await newEmptyBot(request);
     for (const [base, title] of [
         ["offer", "Offer"],
         ["forValuers", "For valuers"],

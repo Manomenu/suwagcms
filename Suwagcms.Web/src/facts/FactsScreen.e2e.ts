@@ -1,16 +1,8 @@
 // A person works on the facts of one bot in the browser; the bot is in the address, and a refusal keeps what was typed.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `facts-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
-    return id;
-}
+const { newBot } = testBots("facts");
 
 async function addCity(request: APIRequestContext, bot: string, description = "The city the customer lives in"): Promise<void> {
     const response = await request.put(`/api/bots/${bot}/facts/customer.city?ifRevision=0`, {

@@ -2,15 +2,12 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `pc-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
+const { freshId, newBot: newEmptyBot } = testBots("pc");
 
 async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
+    const id = await newEmptyBot(request);
     for (const [name, data] of [
         ["customer.city", { type: "text", description: "The city", maxLength: 80 }],
         ["order.kind", { type: "enum", description: "What is valued", values: ["house", "flat"], writableBy: "correct" }],

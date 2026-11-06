@@ -2,17 +2,9 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `versions-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
-    return id;
-}
+const { freshId, newBot } = testBots("versions");
 
 async function addConversation(request: APIRequestContext, bot: string): Promise<void> {
     const response = await request.put(`/api/bots/${bot}/procedures/conversation?ifRevision=0`, {

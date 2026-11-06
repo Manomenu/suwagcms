@@ -3,17 +3,9 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `actions-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
-    return id;
-}
+const { freshId, newBot } = testBots("actions");
 
 /** A bot on a real port that declares one code action, as the SDK would say it. */
 async function declaringBot(id: string): Promise<{ address: string; close: () => void }> {

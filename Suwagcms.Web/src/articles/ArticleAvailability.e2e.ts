@@ -2,10 +2,9 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `avail-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
+const { freshId } = testBots("avail");
 
 /** Answers the state and availability routes the way the SDK does, holding the last set it was told. */
 async function startBot(id: string): Promise<{ server: Server; address: string }> {

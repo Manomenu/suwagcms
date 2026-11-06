@@ -1,16 +1,8 @@
 // A person reads what changed: the bot's page lists every change newest first, and a deleted resource's history stays readable.
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `hist-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
-    return id;
-}
+const { newBot } = testBots("hist");
 
 test("AC-change-history-6: the bot's History page lists every change newest first, and AC-change-history-4: a deleted resource's history stays readable", async ({
     page,

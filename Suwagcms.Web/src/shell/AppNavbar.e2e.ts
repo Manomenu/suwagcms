@@ -1,5 +1,6 @@
 // Why: the panel is how a person reaches every screen, so the bot-first rule is proven in a real browser.
 import { expect, test } from "@playwright/test";
+import { freshId } from "../../e2e/bots";
 
 const TABS = [
     ["Facts", "facts"],
@@ -9,10 +10,6 @@ const TABS = [
     ["Versions", "versions"],
     ["History", "history"],
 ] as const;
-
-function freshId(prefix: string): string {
-    return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
 
 test("AC-web-shell-1, AC-web-shell-2, AC-web-shell-3: the panel lists the bots with no tabs until one is opened, then follows each tab", async ({
     page,
