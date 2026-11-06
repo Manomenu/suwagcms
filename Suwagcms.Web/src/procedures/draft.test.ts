@@ -115,6 +115,17 @@ describe("the draft", () => {
         });
     });
 
+    it("AC-procedure-creator-27: an If added below the last step reaches the middle of the list, with its step, by the arrows", () => {
+        const a = addStep(empty(), null, "say");
+        const b = addStep(a.draft, null, "say");
+        const c = addStep(b.draft, null, "say");
+
+        const moved = moveStep(addIf(c.draft, c.name), c.name, "up");
+
+        expect(moved.list.rows.map((row) => row.name)).toEqual([a.name, c.name, b.name]);
+        expect(moved.list.rows[1]?.branches).toHaveLength(2);
+    });
+
     it("AC-procedure-creator-29: opening and changing nothing leaves nothing to save", () => {
         const state = loaded(detail);
         expect(isDirty(state)).toBe(false);

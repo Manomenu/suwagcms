@@ -235,6 +235,183 @@ test("AC-procedure-creator-45: on a long procedure Save stays in view and works 
     expect((await stored<{ description: string }>(request, bot, "longOne")).description).toBe("Changed");
 });
 
+test("AC-procedure-creator-45: a long action's Save stays in view and works while the page scrolls, as on a procedure", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const parameters = Object.fromEntries(
+        Array.from({ length: 30 }, (_, index) => [`p${index}`, { type: "text", maxLength: 100, description: "Where" }]),
+    );
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/actions/longOne?ifRevision=0`, {
+                data: {
+                    description: "Checks",
+                    parameters,
+                    results: null,
+                    implementation: { http: { method: "POST", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+                },
+            })
+        ).status(),
+    ).toBe(200);
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await page.goto(`/bots/${bot}/actions/longOne/edit`);
+    const description = page.getByLabel("Description", { exact: true }).first();
+    await description.fill("Changed");
+
+    const save = page.getByRole("button", { name: "Save", exact: true });
+    await page.evaluate(() => {
+        window.scrollTo(0, 900);
+    });
+    await expect(description).not.toBeInViewport();
+    await expect(save).toBeInViewport({ ratio: 1 });
+    await save.click();
+
+    await expect
+        .poll(async () => ((await (await request.get(`/api/bots/${bot}/actions/longOne`)).json()) as { description: string }).description)
+        .toBe("Changed");
+});
+
+test("AC-procedure-creator-44: a branch with no step before End reads the validator's own fix beside it, and it goes when a row follows the If", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "D",
+            firstStep: "ask",
+            steps: {
+                ask: { say: "A", next: [{ when: { "order.kind": { oneOf: ["house"] } }, to: "yes" }, { to: "no" }] },
+                yes: { say: "Y" },
+                no: { say: "N" },
+            },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    const otherwise = page.locator('[data-branch="Else"]');
+
+    await page.getByRole("button", { name: "Delete step no" }).click();
+    const note = otherwise.locator('[data-mistake="step.missing"]');
+    await expect(note).toContainText("Add a step to this branch, or a Next: row.");
+    await expect(note).toContainText("Refuses a save");
+
+    await addStep(page, "say");
+    await expect(note).toHaveCount(0);
+
+    await addStep(page, "end", "Add step to Else of ask");
+    await expect(otherwise.locator('[data-row="end"]')).toBeVisible();
+    await expect(note).toContainText("Add a step to this branch, or a Next: row.");
+});
+
+test("AC-procedure-creator-8: a fresh If takes its condition on its row, with no step open, from a global or a local fact, and saves; Remove this If asks first and takes the whole If", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "D",
+            firstStep: "ask",
+            steps: { ask: { say: "A" } },
+            localFacts: { visitDate: { type: "text", description: "When", maxLength: 20 } },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    await addStep(page, "if");
+    const first = page.locator('[data-branch="If"]');
+    await first.getByRole("button", { name: "+ Choose a fact" }).click();
+    await first.getByLabel("Fact", { exact: true }).selectOption("order.kind");
+    await first.getByRole("checkbox", { name: "house" }).check();
+    await page.getByRole("button", { name: "+ Else if" }).click();
+    const second = page.locator('[data-branch="Else if"]');
+    await second.getByRole("button", { name: "+ Choose a fact" }).click();
+    await second.getByLabel("Fact", { exact: true }).selectOption("visitDate");
+    await second.getByLabel("Condition", { exact: true }).selectOption("known");
+    for (const branch of ["If", "Else if", "Else"]) {
+        await addStep(page, "say", `Add step to ${branch} of ask`);
+        await page.getByLabel("Say", { exact: true }).fill(`In ${branch}`);
+    }
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect
+        .poll(async () => {
+            const saved = await stored<{ steps: { ask: { next?: { when?: unknown }[] } } }>(request, bot, "orderValuation");
+            return saved.steps.ask.next?.map((rule) => rule.when ?? null);
+        })
+        .toMatchObject([{ "order.kind": { oneOf: ["house"] } }, { visitDate: { known: true } }, null]);
+
+    await expect(page.getByRole("button", { name: "Remove this If", exact: true })).toHaveCount(1);
+    await page.getByRole("button", { name: "Remove this If", exact: true }).click();
+    await page.getByRole("button", { name: "Keep", exact: true }).click();
+    await expect(page.locator("[data-branch]")).toHaveCount(3);
+    await page.getByRole("button", { name: "Remove this If", exact: true }).click();
+    await page.getByRole("button", { name: "Remove them" }).click();
+    await expect(page.locator("[data-branch]")).toHaveCount(0);
+});
+
+test("AC-procedure-creator-8: + and adds a second condition to a branch, and the save stores both", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    const branch = page.locator('[data-branch="If"]');
+    await branch.getByRole("button", { name: "+ and" }).click();
+    await branch.getByLabel("Condition", { exact: true }).nth(1).selectOption("known");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect
+        .poll(async () => {
+            const saved = await stored<{ steps: { ask: { next: { when?: unknown }[] } } }>(request, bot, "orderValuation");
+            return saved.steps.ask.next[0]?.when;
+        })
+        .toMatchObject({ "order.kind": { oneOf: ["house"] }, "customer.city": { known: true } });
+});
+
+test("AC-procedure-creator-30: a stored step no path reaches shows under Not connected with its mistake, and moving it gives it the next of its place; with no firstStep every step is there", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        { description: "D", firstStep: "a", steps: { a: { say: "A" }, lost: { say: "Lost" } } },
+        0,
+    );
+    await agentSaves(request, bot, "noStart", { description: "D", firstStep: null, steps: { a: { say: "A" }, b: { say: "B" } } }, 0);
+
+    await page.goto(`/bots/${bot}/procedures/noStart`);
+    const section = page.getByRole("region", { name: "Not connected" });
+    await expect(section.locator('[data-row="not-connected"]')).toHaveCount(2);
+
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    await expect(section.locator('[data-row="not-connected"]')).toHaveCount(1);
+    await expect(section).toContainText("Lost");
+    await expect(section.locator('[data-mistake="step.unreachable"]')).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
+
+    await section.getByRole("button", { name: "Move into the list" }).click();
+    await expect(section).toHaveCount(0);
+    await expect(row(page, "lost")).toBeVisible();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect
+        .poll(async () => (await stored<{ steps: unknown }>(request, bot, "orderValuation")).steps)
+        .toMatchObject({ a: { say: "A", next: "lost" }, lost: { say: "Lost" } });
+});
+
 test("AC-procedure-creator-4: a mistake beside its step says what it stops and its fix, the count goes to it, and AC-procedure-creator-3: it goes when undone by hand", async ({
     page,
     request,
@@ -500,6 +677,55 @@ test("AC-procedure-creator-20: knowledge is edited on whenStalled and on an info
     }).toPass();
 });
 
+test("AC-procedure-creator-37: changing the base of an entry clears its articles and keeps its queries", async ({ page, request }) => {
+    const bot = await newBot(request);
+    for (const base of ["offer", "reports"]) {
+        expect((await request.put(`/api/bots/${bot}/knowledge-bases/${base}?ifRevision=0`, { data: { title: base } })).status()).toBe(200);
+    }
+    for (const [id, knowledgeBase] of [
+        ["officeContact", "offer"],
+        ["reportContents", "reports"],
+    ] as const) {
+        expect(
+            (
+                await request.put(`/api/bots/${bot}/articles/${id}?ifRevision=0`, {
+                    data: { knowledgeBase, title: id, content: "c", llmGuide: "g", description: "d" },
+                })
+            ).status(),
+        ).toBe(200);
+    }
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            ...AGENT_WROTE,
+            whenStalled: {
+                instruction: "Say you could not finish.",
+                knowledge: [{ knowledgeBase: "offer", articles: ["officeContact"], searchQueries: ["opening hours"] }],
+            },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    const entry = page.locator('[data-place="knowledge:whenStalled:0"]');
+    await expect(entry.getByRole("checkbox", { name: /officeContact/ })).toBeChecked();
+
+    await entry.getByLabel("Knowledge base of entry 1").selectOption("reports");
+
+    await expect(entry.getByRole("checkbox")).toHaveCount(1);
+    await expect(entry.getByRole("checkbox", { name: /reportContents/ })).not.toBeChecked();
+    await expect(entry.getByLabel("Search query 1", { exact: true })).toHaveValue("opening hours");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect
+        .poll(async () => {
+            const saved = await stored<{ whenStalled: { knowledge: { articles?: string[] | null }[] } }>(request, bot, "orderValuation");
+            const first = saved.whenStalled.knowledge[0];
+            return { ...first, articles: first?.articles ?? [] };
+        })
+        .toEqual({ knowledgeBase: "reports", articles: [], searchQueries: ["opening hours"] });
+});
+
 test("AC-procedure-creator-18: the form adds a local fact, a step's form offers it, the save stores it, and the form removes it again", async ({
     page,
     request,
@@ -584,6 +810,52 @@ test("AC-procedure-creator-19: the page offers only the blocks the bot last decl
         await expect(blocks.getByRole("option", { name: "Say" })).toHaveCount(1);
         await expect(blocks.getByRole("option", { name: "Ask" })).toHaveCount(0);
         await expect(page.getByText("nothing is being checked")).toHaveCount(0);
+    } finally {
+        server.close();
+    }
+});
+
+test("AC-procedure-creator-38: Knowledge shows on When stalled and on a Tell while the bot answers nothing, hides when it declares without knowledge, and shows when it declares knowledge", async ({
+    page,
+    request,
+}) => {
+    const id = freshId();
+    let declared: object = { bot: id, formatVersion: 2, blocks: ["listen", "say", "inform"] };
+    const server = createServer((_, response) => {
+        response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(declared));
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    try {
+        const address = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+        expect((await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address } })).status()).toBe(201);
+        await agentSaves(request, id, "conversation", CONVERSATION, 0);
+        await agentSaves(
+            request,
+            id,
+            "orderValuation",
+            {
+                description: "D",
+                firstStep: "tell",
+                steps: { tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." } } } },
+                whenStalled: { instruction: "Say you could not finish." },
+            },
+            0,
+        );
+        const sectionsAre = async (count: number) => {
+            await page.goto(`/bots/${id}/procedures/orderValuation`);
+            await open(page, "tell");
+            await expect(page.locator('section[aria-label="Step tell"], [data-place="field:whenStalled"]')).toHaveCount(2);
+            await expect(page.getByRole("group", { name: "Knowledge", exact: true })).toHaveCount(count);
+        };
+
+        await sectionsAre(2);
+
+        expect((await request.get(`/api/bots/${id}/declaration`)).status()).toBe(200);
+        await sectionsAre(0);
+
+        declared = { ...declared, knowledge: true };
+        expect((await request.get(`/api/bots/${id}/declaration`)).status()).toBe(200);
+        await sectionsAre(2);
     } finally {
         server.close();
     }

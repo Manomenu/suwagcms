@@ -135,7 +135,11 @@ public sealed class LocalFactEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
-        Assert.Contains("step ask (collect), step confirm (when)", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Contains(
+            "step ask (collect), step confirm (condition)",
+            mistake.GetProperty("message").GetString(),
+            StringComparison.Ordinal
+        );
 
         var cleaned = await api.Put(
             "orderValuation",

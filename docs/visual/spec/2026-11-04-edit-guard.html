@@ -411,7 +411,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="term"><span class="dim">$</span> suwagcms facts edit order.kind --values house,land
 Refused, 1 mistake:
   fact.enum.valueInUse  Value 'flat' of 'order.kind' is used, so it cannot be removed. Used by:
-    procedure orderValuation, step ask (when)        http://cms.internal/bots/rzeczoznawca/procedures/orderValuation
+    procedure orderValuation, step ask (condition)        http://cms.internal/bots/rzeczoznawca/procedures/orderValuation
     procedure leadIntake, step tagOrder (assign)     http://cms.internal/bots/rzeczoznawca/procedures/leadIntake
   Change these steps first, or keep the value.
 <span class="dim">$</span> echo $?
@@ -465,7 +465,7 @@ Refused, 1 mistake:
     <div class="wf-bar"><b>order.kind</b><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
     <div class="wf-body">
       <div class="wf-card"><b>values</b> <span class="wf-input">house, land</span>
-        <p class="wf-new">Value <code>flat</code> is used, so it cannot be removed. Used by: <a href="#">orderValuation · ask</a> (when), <a href="#">leadIntake · tagOrder</a> (assign). Change these steps first, or keep the value.</p>
+        <p class="wf-new">Value <code>flat</code> is used, so it cannot be removed. Used by: <a href="#">orderValuation · ask</a> (condition), <a href="#">leadIntake · tagOrder</a> (assign). Change these steps first, or keep the value.</p>
       </div>
     </div>
   </div>

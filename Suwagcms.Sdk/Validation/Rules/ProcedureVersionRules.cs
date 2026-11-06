@@ -151,8 +151,8 @@ internal static class ProcedureVersionRules
                     procedure,
                     MistakeCodes.NextDefaultMissing,
                     $"steps.{step.Key}.next",
-                    $"The rules of step '{step.Key}' have no default rule.",
-                    "Add a last rule with only 'to: <step>', taken when no other rule holds."
+                    $"The If of step '{step.Key}' has no Else.",
+                    "Add an Else: a last branch with only 'to: <step>', taken when no condition holds."
                 )
             );
 
@@ -169,9 +169,9 @@ internal static class ProcedureVersionRules
                         string.Create(CultureInfo.InvariantCulture, $"steps.{step.Key}.next[{item.index}]"),
                         string.Create(
                             CultureInfo.InvariantCulture,
-                            $"Rule {item.index + 1} of step '{step.Key}' has no 'when' but is not the last one, so the rules after it never apply."
+                            $"Step '{step.Key}' has an {(item.index == 0 ? "If" : "Else if")} with no condition, so the branches after it never apply."
                         ),
-                        "Move it to the end or give it a 'when'."
+                        "Choose a fact for it, or move it to the end as the Else."
                     )
                 )
         );

@@ -109,13 +109,15 @@ internal static class ProcedureShapeRules
             {
                 if (!procedure.Steps.ContainsKey(target))
                 {
-                    yield return Missing(
-                        procedure,
-                        $"steps.{name}.{path}",
-                        string.IsNullOrWhiteSpace(target)
-                            ? $"A rule of step '{name}' has no 'to', it"
-                            : $"'{path.Split('.')[^1]}: {target}' of step '{name}'"
-                    );
+                    yield return string.IsNullOrWhiteSpace(target)
+                        ? Make(
+                            procedure,
+                            MistakeCodes.StepMissing,
+                            $"steps.{name}.{path}",
+                            $"A branch of step '{name}' goes to no step.",
+                            "Add a step to this branch, or a Next: row."
+                        )
+                        : Missing(procedure, $"steps.{name}.{path}", $"'{path.Split('.')[^1]}: {target}' of step '{name}'");
                 }
             }
         }

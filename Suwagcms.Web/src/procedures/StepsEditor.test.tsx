@@ -112,6 +112,7 @@ describe("the form of a procedure", () => {
         expect(shown).toContain("hours");
     });
 
+    // Why: the words are the validator's and are proved against the real server in the browser test; here only the place counts.
     it("AC-procedure-creator-44: End with a mistake shows it beside its branch", () => {
         const html = form({
             check: {
@@ -122,14 +123,120 @@ describe("the form of a procedure", () => {
                         stage: "Save",
                         resource: { kind: "Procedure", id: "quoteRequest" },
                         path: "steps.ask.next[0].to",
-                        message: "A rule of step 'ask' has no 'to'.",
-                        fix: "Add a step to this branch, or a Next: row.",
+                        message: "the message",
+                        fix: "the fix",
                         related: [],
                     },
                 ],
             },
         });
-        expect(html.indexOf("Add a step to this branch")).toBeGreaterThan(html.indexOf('data-branch="If"'));
+        expect(html.indexOf("the fix")).toBeGreaterThan(html.indexOf('data-branch="If"'));
         expect(html).toContain("Refuses a save");
+    });
+
+    it("AC-procedure-creator-16: when the server cannot be reached the form says so instead of looking free of mistakes", () => {
+        const message = "The server could not be reached, so the mistakes below may be out of date.";
+        const html = form({ check: { state: "unreachable", message } });
+        expect(html).toContain(message);
+        expect(html).toContain('role="alert"');
+        expect(html).not.toContain("No mistakes");
+    });
+
+    describe("AC-procedure-creator-8: the conditions of an If", () => {
+        const FRESH = {
+            ...detail,
+            localFacts: { visitDate: { type: "text", description: "d", maxLength: 20 } },
+            steps: {
+                ask: { say: "A", next: [{ when: {}, to: "yes" }, { when: { "order.kind": { known: true } }, to: "maybe" }, { to: "no" }] },
+                yes: { say: "Y" },
+                maybe: { say: "M" },
+                no: { say: "N" },
+            },
+        } as unknown as ProcedureDetail;
+        const GLOBAL = {
+            name: "order.kind",
+            type: "text",
+            description: "d",
+            writableBy: "set",
+            values: null,
+            min: null,
+            max: null,
+            maxLength: 9,
+            pattern: null,
+            revision: 1,
+            usedBy: [],
+        };
+
+        const closed = () => form({ draft: fromDetail(FRESH), allFacts: [GLOBAL], selected: null });
+
+        it("shows the editor on an If and an Else if with no step open, and no read-only text in its place", () => {
+            const html = closed();
+            expect(html).toContain("+ Choose a fact");
+            expect(html).toContain('aria-label="Condition"');
+            expect(html).not.toContain("no condition yet");
+        });
+
+        it("offers a global and a local fact", () => {
+            const select = /<select[^>]*aria-label="Fact"[^>]*>(.*?)<\/select>/.exec(closed())?.[1] ?? "";
+            expect(select).toContain(">order.kind<");
+            expect(select).toContain(">visitDate<");
+        });
+
+        it("has one Remove this If, on the If row, and an Else if keeps its own", () => {
+            const html = closed();
+            expect(html.split("Remove this If")).toHaveLength(2);
+            expect(html.indexOf("Remove this If")).toBeLessThan(html.indexOf('data-branch="Else if"'));
+            expect(html.split("Remove this Else if")).toHaveLength(2);
+            expect(html).toContain("+ Else if");
+        });
+    });
+
+    describe("AC-procedure-creator-27: what a list's Add step offers", () => {
+        const THEN_MORE = {
+            ...detail,
+            firstStep: "ask",
+            steps: {
+                ask: { say: "A", next: [{ when: { "property.type": { oneOf: ["land"] } }, to: "yes" }, { to: "no" }] },
+                yes: { say: "Y", next: "after" },
+                no: { say: "N", next: "after" },
+                after: { say: "Z" },
+            },
+        } as unknown as ProcedureDetail;
+        const STRAIGHT = {
+            ...detail,
+            steps: { ask: { say: "A", next: "tell" }, tell: { say: "T" } },
+        } as unknown as ProcedureDetail;
+        const EMPTY = { ...detail, firstStep: null, steps: {} } as unknown as ProcedureDetail;
+
+        const menu = (of: ProcedureDetail, label: string) => {
+            const html = form({ draft: fromDetail(of), offered: ["say"] });
+            const select = new RegExp(`<select[^>]*aria-label="${label}"[^>]*>(.*?)</select>`).exec(html)?.[1] ?? "";
+            return [...select.matchAll(/<option[^>]*>([^<]*)<\/option>/g)].map((option) => option[1]);
+        };
+
+        it("an If below a step, and Next: at the end of the main list, but never End there", () => {
+            expect(menu(STRAIGHT, "Add step")).toEqual(["+ Add step", "Say", "If", "Next:"]);
+        });
+
+        it("no If with no step above it, and no Next: with no step to name", () => {
+            expect(menu(EMPTY, "Add step")).toEqual(["+ Add step", "Say"]);
+        });
+
+        it("no second If on a step that has one", () => {
+            expect(menu(detail, "Add step")).toEqual(["+ Add step", "Say", "Next:"]);
+        });
+
+        it("End in a branch with a row after it, and not in one with nothing after it", () => {
+            expect(menu(THEN_MORE, "Add step to If of ask")).toEqual(["+ Add step", "Say", "If", "Next:", "End"]);
+            expect(menu(detail, "Add step to If of ask")).toEqual(["+ Add step", "Say", "If", "Next:"]);
+        });
+
+        it("neither Next: nor End in a list that already ends", () => {
+            expect(menu(detail, "Add step to Else of ask")).toEqual(["+ Add step", "Say", "If"]);
+        });
+
+        it("the menu is the only way to add an If", () => {
+            expect(form({ draft: fromDetail(STRAIGHT) })).not.toContain("Add an If below");
+        });
     });
 });

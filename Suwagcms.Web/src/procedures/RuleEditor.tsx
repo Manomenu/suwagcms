@@ -211,21 +211,3 @@ export function ConditionsEditor({
         </div>
     );
 }
-
-/** Reads a branch's conditions as a line of text, for a row that is not open. */
-export function conditionsText(when: Record<string, Condition>): string {
-    const entries = Object.entries(when);
-    if (entries.length === 0) return "no condition yet";
-    return entries
-        .map(([fact, condition]) => {
-            if (condition.range) {
-                const { min, max } = condition.range;
-                if (min !== undefined && max !== undefined) return `${fact} is between ${min} and ${max}`;
-                if (min !== undefined) return `${fact} is at least ${min}`;
-                return max === undefined ? `${fact} has a range not set` : `${fact} is at most ${max}`;
-            }
-            if (condition.known !== undefined) return `${fact} is ${condition.known ? "known" : "not known yet"}`;
-            return `${fact} is one of ${(condition.oneOf ?? []).join(", ")}`;
-        })
-        .join(" and ");
-}

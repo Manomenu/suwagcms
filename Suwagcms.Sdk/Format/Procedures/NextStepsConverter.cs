@@ -15,7 +15,7 @@ internal sealed class NextStepsConverter : JsonConverter<NextSteps>
         {
             return new NextSteps { Rules = JsonSerializer.Deserialize<List<Transition>>(ref reader, options) ?? [] };
         }
-        throw new JsonException("next is a step's id, or a list of rules { when, to }.");
+        throw new JsonException("next is a step's id, or a list of branches { when, to }.");
     }
 
     public override void Write(Utf8JsonWriter writer, NextSteps value, JsonSerializerOptions options)

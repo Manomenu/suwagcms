@@ -37,6 +37,17 @@ public sealed class ValidateJsonTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-procedure-creator-46")]
+    public void The_old_format_is_refused_with_one_version_mistake_whose_fix_says_what_to_do()
+    {
+        var mistake = Assert.Single(DefinitionValidator.ValidateJson("{\"formatVersion\":1,\"facts\":[]}", ValidationStage.Version));
+
+        Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
+        Assert.Contains("set formatVersion to 2", mistake.Fix, StringComparison.Ordinal);
+        Assert.Contains("create a new version from the working state", mistake.Fix, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-sdk-validator-10")]
     public void An_unknown_field_is_ignored_and_the_known_fields_are_still_checked()
     {
