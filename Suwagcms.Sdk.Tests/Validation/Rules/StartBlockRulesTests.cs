@@ -151,7 +151,7 @@ public sealed class StartBlockRulesTests
     public void The_validator_on_its_own_reports_each_mistake_with_the_same_code_from_json()
     {
         const string json = """
-            {"formatVersion":1,"procedures":[
+            {"formatVersion":2,"procedures":[
               {"id":"conversation","description":"d","firstStep":"a","steps":{"a":{"say":"Hi"}}},
               {"id":"p","description":"d","firstStep":"a","steps":{
                 "a":{"start":"ghost","next":"b"},

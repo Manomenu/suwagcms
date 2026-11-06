@@ -20,7 +20,7 @@ function Readiness({ count }: { count: number }) {
     );
 }
 
-/** The list of a bot's procedures, each with its description and how many mistakes still stop a version. Each opens in the creator. */
+/** The list of a bot's procedures, each with its description and how many mistakes still stop a version. Each opens in the editor. */
 export function ProceduresView({
     bot,
     list,

@@ -9,7 +9,7 @@ public sealed class KnowledgeBaseRulesTests
     private static readonly KnowledgeBase Offer = new() { Id = "offer", Title = "Our offer" };
 
     private static IReadOnlyList<Mistake> Check(params KnowledgeBase[] bases) =>
-        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 1, KnowledgeBases = bases }, ValidationStage.Save);
+        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 2, KnowledgeBases = bases }, ValidationStage.Save);
 
     [Fact]
     [Trait("criterion", "AC-knowledge-bases-4")]
@@ -74,7 +74,7 @@ public sealed class KnowledgeBaseRulesTests
     [Trait("criterion", "AC-knowledge-base-language-1")]
     public void A_base_without_a_language_has_en_and_a_json_base_without_one_reads_as_en_and_is_accepted()
     {
-        const string json = """{"formatVersion":1,"knowledgeBases":[{"id":"faq","title":"Questions"}]}""";
+        const string json = """{"formatVersion":2,"knowledgeBases":[{"id":"faq","title":"Questions"}]}""";
 
         Assert.Equal("en", Offer.Language);
         Assert.Equal("en", new KnowledgeBase { Id = "faq" }.Language);
@@ -110,7 +110,7 @@ public sealed class KnowledgeBaseRulesTests
     [Trait("criterion", "AC-knowledge-base-language-4")]
     public void The_message_names_the_language_given_and_a_json_definition_with_another_language_fails_offline()
     {
-        const string json = """{"formatVersion":1,"knowledgeBases":[{"id":"oferta","title":"Oferta","language":"de"}]}""";
+        const string json = """{"formatVersion":2,"knowledgeBases":[{"id":"oferta","title":"Oferta","language":"de"}]}""";
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
 

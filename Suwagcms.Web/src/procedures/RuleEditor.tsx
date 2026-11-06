@@ -1,71 +1,11 @@
 import { Button } from "@/design/button";
-import { InfoTip } from "@/design/infoTip";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
 import type { Fact } from "./api";
-import { PROCEDURE_HINTS } from "./hints";
-import {
-    canRemoveRule,
-    conditionKinds,
-    freshCondition,
-    kindOf,
-    removeRule,
-    setConditions,
-    setRuleTarget,
-    valuesOffered,
-    type Condition,
-    type ConditionKind,
-    type Draft,
-    type Rule,
-} from "./draft";
+import { conditionKinds, freshCondition, kindOf, valuesOffered, type Condition, type ConditionKind } from "./draft";
 
 const KIND_LABEL: Record<ConditionKind, string> = { oneOf: "is one of", range: "is between", known: "is known" };
-
-interface Context {
-    draft: Draft;
-    step: string;
-    facts: Fact[];
-    edit: (change: (draft: Draft) => Draft) => void;
-}
-
-function TargetSelect({
-    label,
-    hint,
-    value,
-    draft,
-    onChange,
-}: {
-    label: string;
-    hint: string;
-    value: string;
-    draft: Draft;
-    onChange: (to: string) => void;
-}) {
-    return (
-        <div className="flex items-center gap-1">
-            <label className="flex min-w-0 flex-1 items-center gap-2 text-sm">
-                <span className="shrink-0">{label}</span>
-                <Select
-                    aria-label={label}
-                    className="flex-1"
-                    value={value in draft.steps ? value : ""}
-                    onChange={(event) => {
-                        onChange(event.target.value);
-                    }}
-                >
-                    <option value="">(not connected)</option>
-                    {Object.keys(draft.steps).map((name) => (
-                        <option key={name} value={name}>
-                            {name}
-                        </option>
-                    ))}
-                </Select>
-            </label>
-            <InfoTip about={label} help={hint} />
-        </div>
-    );
-}
 
 function ConditionValue({
     fact,
@@ -218,32 +158,20 @@ function ConditionRow({
     );
 }
 
-function RuleCard({ rule, index, context }: { rule: Rule; index: number; context: Context }) {
-    const { draft, step, facts, edit } = context;
-    const stepValue = draft.steps[step];
-    const isDefault = rule.when === undefined;
-    const conditions = Object.entries(rule.when ?? {});
-    const setWhen = (when: Record<string, Condition>) => {
-        edit((current) => setConditions(current, step, index, when));
-    };
-    const unused = facts.filter((fact) => !(fact.name in (rule.when ?? {})));
+/** The conditions of one branch, all of which must hold: a fact and what it is compared with, never free text a model judges. */
+export function ConditionsEditor({
+    when,
+    facts,
+    onChange,
+}: {
+    when: Record<string, Condition>;
+    facts: Fact[];
+    onChange: (when: Record<string, Condition>) => void;
+}) {
+    const conditions = Object.entries(when);
+    const unused = facts.filter((fact) => !(fact.name in when));
     return (
-        <li className="flex flex-col gap-2 rounded-lg border border-border p-2" data-rule={isDefault ? "default" : index}>
-            <div className="flex items-center justify-between text-sm font-medium">
-                {isDefault ? "Otherwise (default)" : `Rule ${index + 1}: when`}
-                {stepValue !== undefined && canRemoveRule(stepValue, index) && (
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        onClick={() => {
-                            edit((current) => removeRule(current, step, index));
-                        }}
-                    >
-                        Remove rule
-                    </Button>
-                )}
-            </div>
+        <div className="flex flex-col gap-2">
             {conditions.map(([fact, condition]) => (
                 <ConditionRow
                     key={fact}
@@ -251,13 +179,13 @@ function RuleCard({ rule, index, context }: { rule: Rule; index: number; context
                     condition={condition}
                     facts={facts}
                     onChange={(changed) => {
-                        setWhen({ ...rule.when, [fact]: changed });
+                        onChange({ ...when, [fact]: changed });
                     }}
                     onRemove={() => {
-                        setWhen(Object.fromEntries(conditions.filter(([other]) => other !== fact)));
+                        onChange(Object.fromEntries(conditions.filter(([other]) => other !== fact)));
                     }}
                     onFact={(name) => {
-                        setWhen(
+                        onChange(
                             Object.fromEntries(
                                 conditions.map(([other, value]) => (other === fact ? [name, freshCondition("oneOf")] : [other, value])),
                             ),
@@ -265,41 +193,39 @@ function RuleCard({ rule, index, context }: { rule: Rule; index: number; context
                     }}
                 />
             ))}
-            {!isDefault && unused[0] !== undefined && (
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    onClick={() => {
-                        setWhen({ ...rule.when, [unused[0]?.name ?? ""]: freshCondition("oneOf") });
-                    }}
-                >
-                    Add a condition
-                </Button>
+            {unused[0] !== undefined && (
+                <div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="xs"
+                        onClick={() => {
+                            onChange({ ...when, [unused[0]?.name ?? ""]: freshCondition("oneOf") });
+                        }}
+                    >
+                        {conditions.length === 0 ? "+ Choose a fact" : "+ and"}
+                    </Button>
+                </div>
             )}
-            {!isDefault && facts.length === 0 && <p className="text-xs text-muted-foreground">This bot has no facts to compare.</p>}
-            <TargetSelect
-                label={isDefault ? "Otherwise go to" : "Go to"}
-                hint={isDefault ? PROCEDURE_HINTS.otherwiseGoTo : PROCEDURE_HINTS.ruleGoTo}
-                value={rule.to}
-                draft={draft}
-                onChange={(to) => {
-                    edit((current) => setRuleTarget(current, step, index, to));
-                }}
-            />
-        </li>
+            {facts.length === 0 && <p className="text-xs text-muted-foreground">This bot has no facts to compare.</p>}
+        </div>
     );
 }
 
-/** The rules of a step, the default rule last. */
-export function RuleEditor({ rules, context }: { rules: Rule[]; context: Context }) {
-    return (
-        <ul className="flex flex-col gap-2" aria-label="Rules">
-            {rules.map((rule, index) => (
-                <RuleCard key={`${index}`} rule={rule} index={index} context={context} />
-            ))}
-        </ul>
-    );
+/** Reads a branch's conditions as a line of text, for a row that is not open. */
+export function conditionsText(when: Record<string, Condition>): string {
+    const entries = Object.entries(when);
+    if (entries.length === 0) return "no condition yet";
+    return entries
+        .map(([fact, condition]) => {
+            if (condition.range) {
+                const { min, max } = condition.range;
+                if (min !== undefined && max !== undefined) return `${fact} is between ${min} and ${max}`;
+                if (min !== undefined) return `${fact} is at least ${min}`;
+                return max === undefined ? `${fact} has a range not set` : `${fact} is at most ${max}`;
+            }
+            if (condition.known !== undefined) return `${fact} is ${condition.known ? "known" : "not known yet"}`;
+            return `${fact} is one of ${(condition.oneOf ?? []).join(", ")}`;
+        })
+        .join(" and ");
 }
-
-export { TargetSelect };

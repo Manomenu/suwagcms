@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Procedure creator</title>
+<title>Procedure editor</title>
 <!--
   suwagent visual document. Copy this file, then replace only TITLE and the
   content between CONTENT START and CONTENT END. Leave the <style> and <script>
@@ -83,6 +83,11 @@ main { min-width: 0; }
 /* sections */
 main > section { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 4px 26px 18px; margin-bottom: 22px; box-shadow: var(--shadow); position: relative; }
 main > section > h2:first-child { margin-top: 18px; padding-right: 110px; }
+/* the band that opens one part of a review-spec page: a new spec, a changed spec, a removed spec */
+main > section.part { border-left: 6px solid var(--accent); margin-top: 38px; }
+main > section.part[data-part="new"] { border-left-color: var(--ok); background: var(--ok-soft); }
+main > section.part[data-part="changed"] { border-left-color: var(--warn); background: var(--warn-soft); }
+main > section.part[data-part="removed"] { border-left-color: var(--bad); background: var(--bad-soft); }
 @media (max-width: 600px) { main > section, .doc-head { padding-left: 16px; padding-right: 16px; } }
 
 .tldr { font-size: 1.04rem; border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 14px 18px; border-radius: 0 var(--radius) var(--radius) 0; margin: 16px 0 6px; }
@@ -358,14 +363,16 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <nav class="toc" aria-label="Contents"></nav>
 <main>
 <!-- CONTENT START -->
+
 <header class="doc-head">
   <span class="doc-kind">Spec</span>
-  <h1>Procedure creator</h1>
+  <h1>Procedure editor</h1>
   <div class="doc-meta">
     <span><b>Status:</b> <span class="status approved">approved</span></span>
-    <span><b>Date:</b> 2026-11-04</span>
-    <span><b>Feature:</b> 15 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>procedure-model</code></span>
+    <span><b>Date:</b> 2026-11-06</span>
+    <span><b>Branch:</b> <code>feature/procedure-editor</code></span>
+    <span><b>Feature:</b> 15 and 20 of the suwagcms feature map</span>
+    <span><b>Needs before it:</b> <code>procedure-model</code>, <code>articles</code>, <code>bot-declaration</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
@@ -377,151 +384,573 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>The web gets a visual creator: a procedure drawn as a graph of steps, where an author adds blocks, fills in their forms and connects them, while a live list shows every mistake without saving. Clicking a mistake selects its step.</p>
-    <p>It edits the same procedure an agent saves through the CLI, and anything it does the CLI can do too. Where the nodes sit on the screen is not part of the procedure and never reaches a bot.</p>
+    <p>A procedure is edited on a page read top to bottom, like a document, instead of on a canvas of nodes. The page is the shared edit screen every other resource has. Steps are a numbered list; an If holds indented lists of its own. The stored format stays a graph, built on save, so the bot does not change for this part.</p>
+    <p>An instruction's <code>context</code> becomes <code>knowledge</code>: a list of entries, one per knowledge base. That breaks the published format, so it needs format 2 and a new SDK release. It is incompatible, with no migration and no reader of the old key, and the bot moves in the same change.</p>
+    <p>A list alone cannot show a loop or a jump, so a <b>Next:</b> row names any step, and an <b>End</b> row closes a branch. Every graph the format allows can therefore be shown, and the SDK gains no rule on a graph's shape.</p>
   </div>
   <div class="stats">
-    <div><b>22</b><span>criteria</span></div>
+    <div><b>44</b><span>criteria: 28 carried over, 16 new</span></div>
+    <div><b>4 of 4</b><span>shipped procedures read as lists</span></div>
+    <div><b>0</b><span>graphs refused for their shape</span></div>
+  </div>
+  <div class="wire after"><span class="wf-label">The page: quoteRequest, as shipped</span>
+    <div class="wf-body">
+      <div class="wf-row"><span class="wf-muted">← Back to procedures</span></div>
+      <div class="wf-bar"><b>Procedure quoteRequest</b><span class="wf-grow"></span><span class="wf-btn">Change id</span></div>
+      <div class="wf-card wf-row"><span class="wf-grow"><b>Used by</b> <span class="wf-muted">nothing</span> · <b>Uses</b> <span class="wf-muted">8 facts</span></span></div>
+      <div class="wf-card"><b>Description</b><p><span class="wf-input">The customer wants to know what a valuation would cost, before ordering…</span></p>
+        <p><b>Local facts</b> <span class="wf-muted">none</span> <span class="wf-btn">+ Add local fact</span></p>
+        <p><b>When stalled</b> <span class="wf-input">Say that the appraiser cannot prepare a quote without these details…</span></p>
+        <p><b>When interrupted</b> <span class="wf-input">discard ▾</span></p>
+      </div>
+      <div class="wf-card"><b>Steps</b>
+        <div class="wf-row"><span class="wf-muted">1.</span><b>askProperty</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.type</code> <code>valuation.purpose</code> <code>property.area</code></span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.type</code> is one of <code>land</code></span></div>
+        <div style="margin-left:26px"><div class="wf-row"><span class="wf-muted">no steps: goes on to 2. askContact</span><span class="wf-grow"></span><span class="wf-btn">+ Add step</span></div></div>
+        <div class="wf-row"><span class="tag">Else</span></div>
+        <div style="margin-left:26px">
+          <div class="wf-row"><span class="wf-muted">1.</span><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
+          <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.age</code> is at least <code>50</code></span></div>
+          <div style="margin-left:26px">
+            <div class="wf-row"><span class="wf-muted">1.</span><b>askRenovation</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.lastRenovationYear</code></span></div>
+            <div class="wf-row"><span class="wf-muted">2.</span><b>tellConditionReview</b><span class="tag ok">Tell</span><span class="wf-grow">Tell the customer how the age of the building affects this task. <span class="wf-muted">1 point</span></span></div>
+            <div class="wf-row"><span class="wf-btn">+ Add step</span></div>
+          </div>
+          <div class="wf-row"><span class="wf-btn">+ Else if</span></div>
+          <div class="wf-row"><span class="tag">Else</span><span class="wf-muted">no steps: goes on to 2. askContact</span><span class="wf-grow"></span><span class="wf-btn">+ Add step</span></div>
+          <div class="wf-row"><span class="wf-btn">+ Add step</span></div>
+        </div>
+        <div class="wf-row"><span class="wf-muted">2.</span><b>askContact</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.firstName</code> <code>customer.lastName</code> <code>customer.email</code></span></div>
+        <div class="wf-row"><span class="wf-muted">3.</span><b>whatHappensNext</b><span class="tag ok">Tell</span><span class="wf-grow">Thank the customer and tell them what happens next with their quote. <span class="wf-muted">2 points</span></span></div>
+        <div class="wf-row"><span class="wf-btn">+ Add step</span></div>
+      </div>
+      <div class="wf-row"><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
+      <div class="wf-row"><span class="wf-btn">Delete</span></div>
+      <div class="wf-card wf-row"><b>History</b><span class="wf-muted">3 changes</span></div>
+    </div>
   </div>
 </section>
 
 <section data-role="problem">
   <h2>Problem</h2>
-  <p>After <code>procedure-model</code>, a procedure can be saved only as a file, and only an agent or a developer will do that. README promises that people build procedures from blocks visually, and a procedure is a graph, which a file hides: a branch that goes nowhere is obvious in a picture and hard to spot in YAML. ElevenAgents shows the value of a graph of nodes; here the transitions stay deterministic rules on facts, written out in the form.</p>
+  <p>Today's creator draws <code>quoteRequest</code> as six nodes on a canvas. To read what the procedure does, an author follows edges across the screen, clicks a node to see its form in a side panel, and looks for mistakes in a separate list. The picture needs its own table, routes, a CLI command and an Arrange button just to remember where a node sits, none of which means anything to a bot. The screen is also the one edit screen that does not share the frame of the others, so Delete and History sit elsewhere on it.</p>
+  <p>An instruction's <code>context</code> holds <code>articles</code> from any base and <code>searchQueries</code> with no target. A bot has several knowledge bases, and a query cannot say which one it is for. The first bot carries <code>context</code> and never reads it.</p>
 </section>
 
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
   <div class="cols">
     <div><h4>Goals</h4><ul>
-      <li>Build a whole procedure with the mouse, from an empty graph to one ready for a version.</li>
-      <li>See every mistake while working, at the step it belongs to.</li>
-      <li>Open a procedure an agent wrote and see it laid out sensibly.</li>
-      <li>Keep the format's rules visible in how the forms work.</li>
+      <li>Read a procedure from top to bottom and know what it does.</li>
+      <li>The same frame as every other resource: Delete and History in their usual place.</li>
+      <li>Every graph the format allows opens as one list, and saving unchanged changes nothing.</li>
+      <li>See each mistake beside the step it concerns.</li>
+      <li>A query names the base it searches, and a bot says whether it reads knowledge.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>New validation rules: the creator shows what the validator says.</li>
-      <li>Running or simulating a procedure: bots run them.</li>
-      <li>Undo history, comments on steps, several people editing at once.</li>
-      <li>Creating a fact from inside the creator: facts have their own screen, which it links to.</li>
-      <li>A layout for a phone: the creator is for a desktop screen.</li>
+      <li>A bot reading <code>knowledge</code>: the later feature <code>knowledge-answers</code>. Here it is stored, checked and delivered.</li>
+      <li>Changing the stored graph: <code>firstStep</code> and <code>next</code> stay.</li>
+      <li>Conditions a model judges: an If chooses a fact and a condition, deterministically.</li>
+      <li>The canvas kept as a second view.</li>
+      <li>Any migration or reader of <code>context</code>: it is removed outright.</li>
+      <li>Undo history, comments on steps, several people editing at once, a phone layout.</li>
+      <li>Creating a global fact from the page: facts have their own screen.</li>
     </ul></div>
   </div>
 </section>
 
 <section data-role="scenarios">
   <h2>Scenarios</h2>
-  <h3>1. Marta builds a procedure</h3>
+  <h3>1. Marta adds a step to quoteRequest</h3>
   <ol class="steps">
-    <li><p>She creates <code>orderValuation</code> with a description and gets an empty graph. The list shows <span class="wf-muted">“no firstStep”</span>.</p></li>
-    <li><p>She adds a <code>collect</code> step, picks <code>customer.city</code> and <code>order.kind</code> from the bot's facts, and marks it as the first step. The list now says the procedure needs <code>whenStalled</code>; she fills in the instruction and that mistake goes away.</p></li>
-    <li><p>She adds two <code>say</code> steps and a rule: when <code>order.kind</code> is <code>house</code>, go to <code>confirm</code>. The form already holds a default rule at the end, which she points at <code>goodbye</code>.</p></li>
-    <li><p>The list is empty. She saves.</p></li>
+    <li><p>She opens <code>quoteRequest</code> and sees the page above. She never sees a <code>next</code>.</p></li>
+    <li><p>Under <code>askContact</code> she clicks <b>+ Add step</b> and picks <b>Say</b>. The new row is named <code>say</code>, and she edits the name on the row to <code>thanks</code>. She moves it above <code>whatHappensNext</code>.</p></li>
+    <li><p>She saves. <code>suwagcms procedures show quoteRequest</code> prints <code>askContact → thanks → whatHappensNext</code>. All other steps keep their names and targets, so <code>inform:quoteRequest.whatHappensNext.quoteTime</code> still names the same point in a trace.</p></li>
   </ol>
-  <h3>2. An unreachable step</h3>
+  <h3>2. She adds an If</h3>
   <ol class="steps">
-    <li><p>She removes the edge into <code>goodbye</code>. Without saving, the list shows <span class="wf-muted">“No path from firstStep reaches step 'goodbye'.”</span> She clicks it and <code>goodbye</code> is selected and in view.</p></li>
+    <li><p>Below an Ask row she clicks <b>+ Add step</b> and picks <b>If</b>. She chooses <code>property.type</code>, then <code>oneOf</code>, then <code>land</code> from the fact's values. An empty Else comes with it.</p></li>
+    <li><p>The Else has no steps and nothing follows the If, so beside the Else she reads: <span class="wf-muted">A rule of step 'askProperty' has no 'to'. Add a step to this branch, or a Next: row.</span> She adds a row below the If and the mistake goes, without saving.</p></li>
   </ol>
-  <h3>3. A procedure an agent wrote</h3>
+  <h3>3. An agent saves a jump</h3>
   <ol class="steps">
-    <li><p>An agent runs <code>suwagcms procedures add --file orderValuation.yaml --open</code>. The creator opens with the graph laid out automatically, since no one has placed its nodes. Marta moves one node; the procedure's revision does not change.</p></li>
+    <li><p>An agent saves a graph where <code>askAge</code>'s branch skips straight to <code>whatHappensNext</code>. The save is accepted, because the format allows it.</p></li>
+    <li><p>Marta opens it. In that branch she reads a row <b>Next: whatHappensNext</b>. She renames <code>whatHappensNext</code>, and the row follows. She deletes the step, and the row stays with a mistake beside it.</p></li>
   </ol>
-  <h3>4. Someone else saved first</h3>
+  <h3>4. A bot that reads knowledge</h3>
   <ol class="steps">
-    <li><p>While Marta edits, an agent saves the same procedure. Her save is refused: the procedure changed since she opened it. Her work stays on the screen, with a way to reload.</p></li>
+    <li><p>Its declaration says <code>knowledge: true</code>. On a Tell row Marta opens <b>Knowledge</b>, picks the base <code>reports</code>, and sees only that base's articles. She ticks <code>reportContents</code> and writes a query. The base is no longer offered for a second entry.</p></li>
+    <li><p>On the first bot, which does not declare it, no such section exists on the page.</p></li>
   </ol>
 </section>
 
 <section data-role="behaviour">
   <h2>Behaviour</h2>
-  <h3>What the author does</h3>
+
+  <h3>The frame is the shared edit screen</h3>
+  <p>The page goes through the same screen as facts, knowledge bases, articles and actions. Steps and the procedure's settings are its form.</p>
   <table>
-    <tr><th>Action</th><th>Result</th></tr>
-    <tr><td>adds a step</td><td>picks a block from those the format has; the step gets a unique name, which the author can change</td></tr>
-    <tr><td>selects a step</td><td>its form opens: facts picked from the bot's list, values from the fact's values, text for <code>say</code></td></tr>
-    <tr><td>connects two steps</td><td>a fixed <code>next</code>, or, when a form holds rules, a new rule's target</td></tr>
-    <tr><td>edits rules</td><td>conditions fit the fact's type: <code>range</code> is offered only for an <code>int</code>, and <code>oneOf</code> offers an enum's values; a default rule is always last and cannot be removed once there are rules</td></tr>
-    <tr><td>marks the first step</td><td>sets <code>firstStep</code>; one step at a time carries the mark</td></tr>
-    <tr><td>deletes a step</td><td>its edges and rule targets pointing at it go too, and the list shows what that leaves unfinished</td></tr>
-    <tr><td>edits <code>description</code> or <code>whenStalled</code></td><td>in the panel of the procedure, with a tooltip saying what each field is for</td></tr>
+    <tr><th>Part, in order</th><th>On this page</th></tr>
+    <tr><td>A way back</td><td><b>← Back to procedures</b>; it asks first when there are unsaved changes</td></tr>
+    <tr><td>Heading</td><td><b>Procedure quoteRequest</b> and <b>Change id</b>, which waits for unsaved changes to be saved</td></tr>
+    <tr><td>Notices and panel</td><td>availability, and the notice with Reload after a stale save, in the frame's own places, as on articles and actions</td></tr>
+    <tr><td>Used by and Uses</td><td>as on every kind</td></tr>
+    <tr><td>Form</td><td>Description, Local facts, When stalled, When interrupted, Steps, Save</td></tr>
+    <tr><td>Delete</td><td>after the form, as on every kind</td></tr>
+    <tr><td>History</td><td>last, as on every kind</td></tr>
   </table>
-  <p><code>collect</code> offers only facts a <code>collect</code> may use: those with <code>writableBy</code> <code>set</code> or <code>correct</code>. An edge returning to an earlier step is drawn like any other: loops between steps are fine.</p>
-  <h3>The live list of mistakes</h3>
-  <p>After any change, without saving, the creator asks the server what the current drawing would produce, as a dry run. The list shows mistakes of both stages, marks which ones would refuse a save and which would only stop a version, and each has its fix. Clicking one selects and shows its step or panel. The creator holds no copy of the rules.</p>
-  <h3>Saving</h3>
+  <p><code>conversation</code> is the frame's existing "not editable" case: no Change id and no Delete, because the format requires it under this id. It also has no availability panel and no When interrupted, as today. Adding a procedure stays a short form (id and description) in the same frame, and lands on this page.</p>
+  <div class="callout note" data-label="Where it cannot follow"><p>Nowhere in the frame. Three things differ inside the form, and they are this form's own. <b>Save</b> is at the end of the form as on every kind, so it moves out of the header it has today and a long procedure scrolls to reach it. <b>Mistakes</b> are checked live and shown beside their place, where other kinds show them on save. <b>The selected step</b> is in the address. The whole-screen mode of the shell goes, because the page scrolls like any other.</p></div>
+
+  <h3>The form</h3>
+  <table>
+    <tr><th>Field</th><th>Rule</th></tr>
+    <tr><td><b>Description</b></td><td><code>description</code>, which works as the trigger: the model reads it to decide whether to start the procedure</td></tr>
+    <tr><td><b>Local facts</b></td><td>add, edit and remove, with the fields of a global fact; steps offer them by short name</td></tr>
+    <tr><td><b>When stalled</b></td><td><code>whenStalled</code>: its instruction, and its Knowledge section when the bot declares it</td></tr>
+    <tr><td><b>When interrupted</b></td><td><code>whenInterrupted</code>: <code>keep</code> or <code>discard</code>; a value nobody chose is not written</td></tr>
+    <tr><td><b>Steps</b></td><td>the numbered list; each list, including each branch, ends in <b>+ Add step</b></td></tr>
+  </table>
+
+  <h3>A row for every block</h3>
+  <p>A row is the step's name, editable on the row, its tag and its text. Clicking a row opens its form in place. <b>+ Add step</b> offers the blocks the bot declares, exactly as today; with nothing declared it offers all of them and says nothing is being checked.</p>
+  <table>
+    <tr><th>Tag</th><th>Format</th><th>Row shows</th><th>Form holds</th></tr>
+    <tr><td><span class="tag">Listen</span></td><td><code>listen</code></td><td>Wait for the next message</td><td>nothing</td></tr>
+    <tr><td><span class="tag accent">Ask</span></td><td><code>collect</code></td><td>its facts: a list, since the writer words the question</td><td>facts a <code>collect</code> may use: <code>writableBy</code> <code>set</code> or <code>correct</code></td></tr>
+    <tr><td><span class="tag note">Say</span></td><td><code>say</code></td><td>its fixed text</td><td>the text</td></tr>
+    <tr><td><span class="tag">Set</span></td><td><code>assign</code></td><td><code>fact = value</code> pairs</td><td>facts, values from each fact's type</td></tr>
+    <tr><td><span class="tag ok">Tell</span></td><td><code>inform</code></td><td>its instruction, and how many points</td><td>the instruction; named points, in the order written; Knowledge</td></tr>
+    <tr><td><span class="tag accent">Start</span></td><td><code>start</code></td><td>the procedure it starts</td><td>this bot's procedures, without <code>conversation</code> and itself. Only when declared</td></tr>
+    <tr><td><span class="tag note">Action</span></td><td><code>action</code></td><td>the action, then <b>On failure</b> and <b>On success</b> as branches</td><td>the bot's actions, a row per parameter and result offering only the facts that fit. Only when declared</td></tr>
+  </table>
+  <p>A step's <code>next</code> is implicit: it is whatever comes next on the page.</p>
+
+  <h3>An If is the rules of the step above it</h3>
+  <p>The format has no If step: rules are the <code>next</code> of a step. So an If always hangs on the step directly above it, and that decides where one can stand.</p>
+  <div class="cols">
+    <div><h4>Stored</h4>
+      <script type="text/x-code" data-file="in a procedure" data-lang="yaml">
+askAge:
+  collect: [property.age]
+  next:
+    - when: { property.age: { range: { min: 50 } } }
+      to: askRenovation
+    - to: askContact
+      </script>
+    </div>
+    <div><h4>Shown</h4>
+      <div class="wire"><div class="wf-body">
+        <div class="wf-row"><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.age</code> is at least <code>50</code></span></div>
+        <div style="margin-left:26px"><div class="wf-row"><b>askRenovation</b><span class="tag accent">Ask</span></div></div>
+        <div class="wf-row"><span class="tag">Else</span><span class="wf-muted">goes on to askContact</span></div>
+      </div></div>
+    </div>
+  </div>
+  <ul>
+    <li><b>An If needs a step directly above it.</b> It is not offered as the first row of a list, or right after another If. A step moves with the If below it, and deleting a step with an If below it is refused with that reason, and nothing changes.</li>
+    <li><b>A branch's conditions</b> are a fact and a condition (<code>oneOf</code>, <code>range</code>, <code>known</code>), fitted to the fact's type. <b>+ and</b> adds another, and all must hold, as <code>when</code> does today. There is never free text.</li>
+    <li><b>Several rules may go to one step:</b> conditions in one rule combine with AND only, so two rules on different facts are how the format writes OR. Both branches show no steps and go on to that step, or one holds the step and the other a Next: row.</li>
+    <li><b>Else</b> comes with a new If and cannot be removed. <b>+ Else if</b> adds a branch before it. The rules' order is the branches' order.</li>
+  </ul>
+
+  <h3>How the list becomes the graph</h3>
+  <table>
+    <tr><th>On the page</th><th>Stored</th></tr>
+    <tr><td>The first row of the top list</td><td><code>firstStep</code>; an empty list has none</td></tr>
+    <tr><td>A row with a row below it</td><td><code>next</code>: that row</td></tr>
+    <tr><td>The last row of a branch</td><td><code>next</code>: the first row after the If, looking outward through the lists around it</td></tr>
+    <tr><td>The last row of the top list</td><td>no <code>next</code>: the procedure ends</td></tr>
+    <tr><td>A row with an If below it</td><td><code>next</code>: one rule per branch in order, with <code>when</code> as chosen; Else has no <code>when</code></td></tr>
+    <tr><td>A branch with rows</td><td><code>to</code>: its first row</td></tr>
+    <tr><td>A branch with no rows</td><td><code>to</code>: the first row after the If. With no such row, a mistake beside the branch</td></tr>
+    <tr><td><b>End</b></td><td>the step above it has no <code>next</code>; nothing is added to the format. At the very end of the main list it is implicit and not shown. A rule needs a target, so End with no step before it in a branch is a mistake beside it</td></tr>
+    <tr><td><b>Next: <i>step</i></b></td><td>the <code>next</code> or <code>to</code> at that place names the step</td></tr>
+    <tr><td><b>On failure</b> of an action</td><td><code>onFailure</code>, built the way a branch is; <b>On success</b> is the step's <code>next</code></td></tr>
+    <tr><td><b>Not connected</b> rows</td><td>as stored, untouched</td></tr>
+  </table>
+
+  <h3>How the graph becomes the list</h3>
+  <p>When a procedure opens, one canonical list is rebuilt from the graph, so a graph always looks the same. The order of <code>steps</code> in a file never matters.</p>
+  <ol class="steps">
+    <li><p>Start at <code>firstStep</code>. A step becomes a row of the current list the first time it is reached.</p></li>
+    <li><p>A fixed <code>next</code> to a step not placed yet gives the row below. A <code>next</code> to where the list goes on anyway gives nothing. Any other <code>next</code>, forward or back, gives a <b>Next:</b> row, which ends that list. <b>A step whose <code>next</code> is not the following row shows that row.</b></p></li>
+    <li><p>No <code>next</code> gives an <b>End</b> row when a row would otherwise follow, and nothing when none would.</p></li>
+    <li><p>Rules give an If, in the order stored, and an action's <code>onFailure</code> gives its two branches. The block's <b>continuation</b> is the first step, in reading order, that two or more branches lead to without going back. With none, the block ends its list.</p></li>
+    <li><p>Each branch is the list from its <code>to</code> up to the continuation, and is empty when <code>to</code> is the continuation. The outer list goes on at the continuation.</p></li>
+    <li><p>Steps no path reaches, or all steps when there is no <code>firstStep</code>, go under <b>Not connected</b> by name, with their mistakes.</p></li>
+  </ol>
+  <p><b>Round trip.</b> For every graph the format allows, rebuilding the list and building the graph gives the same <code>firstStep</code>, the same <code>next</code> and rules in the same order, and the same <code>onFailure</code>, with one normal form: a list of rules holding only a default is written as a fixed <code>next</code>, which means the same. Open and Save with no edit sends nothing, because an unchanged page is not dirty, so the revision stays.</p>
+
+  <h3>Every graph can be shown</h3>
+  <p>The SDK gains no rule on a graph's shape. The existing loop rules stay, and so do the rules on steps that do not exist and on steps no path reaches.</p>
+  <div class="callout ok" data-label="Evidence"><p>A throwaway version of these steps, in neither repository, ran on 2026-11-06 over <code>suwchatbot/suwagcms/seed/changes.yaml</code>, <code>ProcedureSamples.All</code> and 4000 random graphs. Each list built back into the same graph.</p></div>
+  <table>
+    <tr><th>Procedure</th><th>Reads as</th></tr>
+    <tr><td><code>conversation</code> <span class="tag">shipped</span></td><td><code>1. wait</code> Listen, then <b>Next: wait</b></td></tr>
+    <tr><td><code>inspectionVisit</code> <span class="tag">shipped</span></td><td>two rows</td></tr>
+    <tr><td><code>quoteRequest</code> <span class="tag">shipped</span></td><td>the page above; the land branch is empty and goes on to <code>askContact</code>, the continuation of both Ifs</td></tr>
+    <tr><td><code>valuationReport</code> <span class="tag">shipped</span></td><td>both branches end and nothing follows the If, so no End is shown</td></tr>
+    <tr><td><code>ProcedureSamples.All</code></td><td>two rules to <code>mark</code>: both branches go on to it; Else holds <code>goodbye</code> and End; then <code>mark</code>, <code>confirm</code> and <b>Next: wait</b></td></tr>
+    <tr><td>Three branches, one ending</td><td>first branch ends in End; the second holds a step; Else is empty; then the step they meet at</td></tr>
+  </table>
+  <div class="tabs">
+    <div data-tab="conversation">
+      <div class="wire after"><div class="wf-body">
+        <div class="wf-row"><span class="wf-muted">1.</span><b>wait</b><span class="tag">Listen</span><span class="wf-grow">Wait for the next message</span></div>
+        <div class="wf-row"><span class="tag">Next:</span><b>wait</b></div>
+      </div></div>
+    </div>
+    <div data-tab="inspectionVisit">
+      <div class="wire after"><div class="wf-body">
+        <div class="wf-row"><span class="wf-muted">1.</span><b>askDetails</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.firstName</code> <code>customer.lastName</code> <code>customer.email</code> <code>property.address</code> <code>inspection.preferredTime</code></span></div>
+        <div class="wf-row"><span class="wf-muted">2.</span><b>whatHappensNext</b><span class="tag ok">Tell</span><span class="wf-grow">Thank the customer and tell them what happens next with the visit. <span class="wf-muted">2 points</span></span></div>
+      </div></div>
+    </div>
+    <div data-tab="valuationReport">
+      <div class="wire after"><div class="wf-body">
+        <div class="wf-row"><span class="wf-muted">1.</span><b>askDetails</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.firstName</code> <code>customer.lastName</code> <code>property.landRegisterNumber</code></span></div>
+        <div class="wf-row"><span class="wf-muted">2.</span><b>askDelivery</b><span class="tag accent">Ask</span><span class="wf-grow"><code>reportDelivery</code></span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>reportDelivery</code> is one of <code>phone</code></span></div>
+        <div style="margin-left:26px">
+          <div class="wf-row"><span class="wf-muted">1.</span><b>askPhone</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.phone</code></span></div>
+          <div class="wf-row"><span class="wf-muted">2.</span><b>tellPhoneDelivery</b><span class="tag ok">Tell</span><span class="wf-grow">Thank the customer… <span class="wf-muted">2 points</span></span></div>
+        </div>
+        <div class="wf-row"><span class="tag">Else</span></div>
+        <div style="margin-left:26px">
+          <div class="wf-row"><span class="wf-muted">1.</span><b>askEmail</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.email</code></span></div>
+          <div class="wf-row"><span class="wf-muted">2.</span><b>tellEmailDelivery</b><span class="tag ok">Tell</span><span class="wf-grow">Thank the customer… <span class="wf-muted">2 points</span></span></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <h3>Next: and End</h3>
+  <p><b>+ Add step</b> also offers <b>Next:</b>, at the end of any list, with every named step of the procedure, forward or back, itself included. It ends that list. Inside a branch it also offers <b>End</b> when a row would otherwise follow. Rows after an If stay possible whatever its branches do: a branch ending in Next: or End simply does not go on to them.</p>
+  <p>A <b>Next:</b> target follows a rename. A target that no longer exists is a mistake beside the row, stating the fix, and refuses a save until it is fixed.</p>
+
+  <h3>Step names</h3>
+  <p>The bot, the points <code>inform:&lt;procedure&gt;.&lt;step&gt;.&lt;point&gt;</code> and traces all rely on a step's name, so a name never depends on where its row stands.</p>
+  <ul>
+    <li>Every row shows its name, right after its number, and it is edited there: <b>Next:</b> and the points name it.</li>
+    <li>A new row gets a unique name from its block, as today (<code>say</code>, <code>say2</code>). The author can change it: every place that points at it follows, Next: rows included, and a taken name changes nothing. The form says that traces then use the new name.</li>
+    <li>Moving, reordering, or editing what a row holds never changes a name. A deleted row's name is free again.</li>
+  </ul>
+
+  <h3>Mistakes beside their place</h3>
+  <p>After any change, without saving, the page asks the server what the current list would produce, as a dry run. It holds no copy of the rules. Each mistake shows beside its place, says whether it refuses a save or stops a version, and gives its fix. A count at the top of the form lists them, and clicking one shows and selects its place.</p>
+  <table>
+    <tr><th>A mistake's path</th><th>Shows beside</th></tr>
+    <tr><td><code>steps.&lt;name&gt;…</code></td><td>that row; with <code>next[n]</code>, that branch</td></tr>
+    <tr><td><code>whenStalled…</code>, <code>whenInterrupted</code>, <code>description</code>, <code>localFacts…</code></td><td>that field</td></tr>
+    <tr><td><code>…knowledge[n]…</code></td><td>that entry</td></tr>
+    <tr><td>anything else, such as a bot with no <code>conversation</code></td><td>the top of the form, so nothing is lost</td></tr>
+  </table>
+
+  <h3>Edge cases</h3>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
-    <tr><td>Save with only <code>Version</code> mistakes</td><td>saved; the list stays as it was</td></tr>
-    <tr><td>Save with a <code>Save</code> mistake</td><td>refused; nothing is lost from the screen</td></tr>
-    <tr><td>Save based on an old revision</td><td>refused; the drawing stays on the screen with a way to reload</td></tr>
-    <tr><td>leaving with unsaved changes</td><td>the web asks first</td></tr>
-    <tr><td>the server cannot be reached during the live check</td><td>the list says it could not check, instead of looking empty</td></tr>
-    <tr><td>a bot with no facts</td><td>a <code>collect</code> or <code>assign</code> form says there are none, with a link to the Facts screen</td></tr>
+    <tr><td>A new procedure, no steps</td><td>Steps shows <b>+ Add step</b>; the count says there is no <code>firstStep</code></td></tr>
+    <tr><td>A stored step no path reaches</td><td>a row under <b>Not connected</b> with <code>step.unreachable</code>; moving it into a list gives it the <code>next</code> of its place, and Delete removes it. From the page a step cannot become unreachable</td></tr>
+    <tr><td>Stored rules with no default</td><td>the If has no Else, shows <code>next.default.missing</code> and offers <b>+ Else</b></td></tr>
+    <tr><td>A default rule not last</td><td>shown in stored order with <code>next.default.notLast</code></td></tr>
+    <tr><td>A stored step with no block</td><td>a row with no tag, a block picker and <code>step.block.missing</code></td></tr>
+    <tr><td>An action with no <code>onFailure</code></td><td><b>On failure</b> shows the mistake, <b>Go on below</b> and <b>+ Add step</b>; nothing is written until one is chosen</td></tr>
+    <tr><td>Deleting an If with rows in it</td><td>asks first, naming how many steps go</td></tr>
+    <tr><td>Deleting a step a Next: row names</td><td>the row stays, with its mistake, until it is pointed elsewhere or removed</td></tr>
+    <tr><td>A Next: row after an If, or a guard written with End</td><td>saved as written; reopened in the canonical list, which means the same: one Next: per branch, or the rest inside the branch that reaches it</td></tr>
+    <tr><td>An End whose following rows were deleted</td><td>nothing changes in the graph, and reopened it is implicit</td></tr>
+    <tr><td>A bot with no facts</td><td>an Ask or Set form says there are none, with a link to the Facts screen</td></tr>
+    <tr><td>Save with only <code>Version</code> mistakes</td><td>saved</td></tr>
+    <tr><td>Save with a <code>Save</code> mistake</td><td>refused; nothing is lost from the page</td></tr>
+    <tr><td>Save based on an old revision</td><td>refused; the page stays, with Reload in the frame's notice</td></tr>
+    <tr><td>The server cannot be reached during the live check</td><td>the form says so instead of looking free of mistakes</td></tr>
   </table>
-  <h3>Layout</h3>
-  <p>Node positions belong to the creator. They are stored apart from the procedure, are not in any version, and moving a node changes no revision. A procedure with no stored positions, or with new steps that have none, is arranged automatically, and a button arranges the whole graph again. <code>suwagcms procedures layout</code> reads and sets positions, so the CLI loses nothing the web can do.</p>
 </section>
 
 <section data-role="ui">
-  <h2>Screen</h2>
-  <div class="wire after"><span class="wf-label">Creator: orderValuation</span>
-    <div class="wf-bar"><b>orderValuation</b><span class="wf-grow"></span><span class="wf-btn">Arrange</span><span class="wf-btn primary">Save</span></div>
-    <div class="wf-body wf-row" style="align-items:flex-start">
-      <div class="wf-card" style="min-width:100px"><b>Blocks</b><p>listen</p><p>collect</p><p>say</p><p>assign</p></div>
-      <div class="wf-card wf-grow"><b>Graph</b>
-        <p><span class="tag accent">▶ ask · collect</span> → <span class="tag">confirm · say</span></p>
-        <p><span class="tag warn">goodbye · say ⚠</span></p>
+  <h2>Screens</h2>
+  <p>The first picture on this page is the whole screen. These are its other states.</p>
+
+  <h3>An If open for editing</h3>
+  <div class="wire after"><span class="wf-label">Clicking the If under askAge</span>
+    <div class="wf-body">
+      <div class="wf-row"><span class="wf-muted">1.</span><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
+      <div class="wf-card">
+        <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.age ▾</span><span class="wf-input">range ▾</span><span class="wf-muted">from</span><span class="wf-input">50</span><span class="wf-muted">to</span><span class="wf-input">any</span></div>
+        <div class="wf-row"><span class="wf-btn">+ and</span></div>
       </div>
-      <div class="wf-card" style="min-width:200px"><b>Step: ask</b><p>collect: <span class="wf-input">customer.city, order.kind</span></p><p>When <code>order.kind</code> one of <code>house</code> → confirm</p><p class="wf-muted">Otherwise (default) → goodbye</p></div>
+      <div style="margin-left:26px">
+        <div class="wf-row"><span class="wf-muted">1.</span><b>askRenovation</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.lastRenovationYear</code></span></div>
+        <div class="wf-row"><span class="wf-muted">2.</span><b>tellConditionReview</b><span class="tag ok">Tell</span><span class="wf-grow">Tell the customer how the age of the building affects this task.</span></div>
+        <div class="wf-row"><span class="wf-btn">+ Add step</span></div>
+      </div>
+      <div class="wf-row"><span class="wf-btn">+ Else if</span></div>
+      <div class="wf-row"><span class="tag">Else</span><span class="wf-muted">no steps: goes on to askContact</span><span class="wf-grow"></span><span class="wf-btn">+ Add step</span></div>
     </div>
-    <div class="wf-body"><div class="wf-card"><b>Mistakes (1)</b><p><span class="tag warn">before a version</span> No path from firstStep reaches step 'goodbye'. Connect it or delete it.</p></div></div>
   </div>
+
+  <h3>A mistake beside a step</h3>
+  <div class="wire after"><span class="wf-label">Mistakes in valuationReport, before saving</span>
+    <div class="wf-body">
+      <div class="wf-card wf-row"><b>2 mistakes</b><span class="wf-muted">1 refuses a save, 1 stops a version. Click one to go to it.</span></div>
+      <div class="wf-row"><span class="wf-muted">2.</span><b>askDelivery</b><span class="tag accent">Ask</span><span class="wf-grow wf-muted">no facts yet</span></div>
+      <div class="wf-card" style="margin-left:26px"><span class="tag warn">Stops a version</span> In step 'askDelivery', collect lists no facts. <span class="wf-muted">List at least one fact.</span></div>
+      <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>reportDelivery</code> is one of <code>phone</code></span></div>
+      <div style="margin-left:26px">
+        <div class="wf-row"><span class="wf-muted">1.</span><b>askPhone</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.phone</code></span></div>
+      </div>
+      <div class="wf-row"><span class="tag">Else</span><span class="wf-grow wf-muted">no steps</span><span class="wf-btn">+ Add step</span></div>
+      <div class="wf-card" style="margin-left:26px"><span class="tag bad">Refuses a save</span> A rule of step 'askDelivery' has no 'to'. <span class="wf-muted">Add a step to this branch, or a Next: row.</span></div>
+    </div>
+  </div>
+
+  <h3>The Knowledge section open</h3>
+  <div class="wire-pair">
+    <div class="wire after"><span class="wf-label">A bot that declares knowledge</span>
+      <div class="wf-body">
+        <div class="wf-row"><b>tellContents</b><span class="tag ok">Tell</span><span class="wf-grow"><b>Instruction</b></span></div>
+        <div class="wf-input">Tell the customer what the report contains.</div>
+        <div><b>Points</b></div>
+        <div class="wf-row"><span class="wf-input">turnaround</span><span class="wf-input wf-grow">The report is ready within 7 working days…</span></div>
+        <div class="wf-card wf-new"><b>Knowledge</b>
+          <div class="wf-row"><span class="wf-muted">Base</span><span class="wf-input">reports ▾</span><span class="wf-grow"></span><span class="wf-btn">Remove</span></div>
+          <p>☑ <code>reportContents</code> What a report contains<br>☐ <code>deliveryTimes</code> When a report is ready</p>
+          <div class="wf-row"><span class="wf-muted">Query</span><span class="wf-input wf-grow">what a valuation report contains</span></div>
+          <div class="wf-row"><span class="wf-btn">+ Add query</span></div>
+        </div>
+        <div class="wf-row"><span class="wf-btn">+ Add knowledge</span><span class="wf-muted">offers officeInfo; reports is taken</span></div>
+      </div>
+    </div>
+    <div class="wire"><span class="wf-label">The first bot: not declared</span>
+      <div class="wf-body">
+        <div class="wf-row"><b>whatHappensNext</b><span class="tag ok">Tell</span><span class="wf-grow"><b>Instruction</b></span></div>
+        <div class="wf-input">Thank the customer and tell them what happens next.</div>
+        <div><b>Points</b></div>
+        <div class="wf-row"><span class="wf-input">quoteTime</span><span class="wf-input wf-grow">The appraiser sends the quote within 2 working days.</span></div>
+        <div class="wf-row"><span class="wf-input">quoteDelivery</span><span class="wf-input wf-grow">The quote is sent by e-mail.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>End, Next: and Not connected</h3>
+  <div class="wire-pair">
+    <div class="wire after"><span class="wf-label">A branch that ends, a branch with a jump</span>
+      <div class="wf-body">
+        <div class="wf-row"><span class="wf-muted">1.</span><b>ask</b><span class="tag accent">Ask</span><code>property.type</code></div>
+        <div class="wf-row"><span class="tag">If</span><code>property.type</code> is one of <code>another</code></div>
+        <div style="margin-left:26px">
+          <div class="wf-row"><span class="wf-muted">1.</span><b>sorry</b><span class="tag note">Say</span>Sorry, we do not value this.</div>
+          <div class="wf-row"><span class="tag">End</span></div>
+        </div>
+        <div class="wf-row"><span class="tag">Else if</span><code>property.type</code> is one of <code>land</code></div>
+        <div style="margin-left:26px"><div class="wf-row"><span class="tag">Next:</span><b>contact</b></div></div>
+        <div class="wf-row"><span class="tag">Else</span><span class="wf-muted">no steps: goes on to 2. details</span></div>
+        <div class="wf-row"><span class="wf-muted">2.</span><b>details</b><span class="tag accent">Ask</span><code>property.area</code></div>
+        <div class="wf-row"><span class="wf-muted">3.</span><b>contact</b><span class="tag accent">Ask</span><code>customer.email</code></div>
+      </div>
+    </div>
+    <div class="wire after"><span class="wf-label">A step saved by an agent, nothing leads to it</span>
+      <div class="wf-body">
+        <div class="wf-row"><span class="wf-btn">+ Add step</span></div>
+        <div><b>Not connected</b></div>
+        <div class="wf-row"><b>goodbye</b><span class="tag note">Say</span><span class="wf-grow">Sorry, we only value houses.</span><span class="wf-btn">Move into the list</span></div>
+        <div class="wf-card"><span class="tag warn">Stops a version</span> No path from firstStep reaches step 'goodbye'. <span class="wf-muted">Connect it or delete it.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section data-role="data">
+  <h2>Format: knowledge</h2>
+  <p>On every instruction, <code>inform</code> and <code>whenStalled</code> alike, <code>knowledge</code> replaces <code>context</code>. The rest of the procedure's format is unchanged.</p>
+  <script type="text/x-code" data-file="in a procedure" data-lang="yaml" data-notes='[{"lines":"5","label":"Target","note":"a query now says which base it searches"},{"lines":"6","label":"Articles","note":"each must be in this entry&#39;s base"}]'>
+tellContents:
+  inform:
+    instruction: Tell the customer what the report contains.
+    knowledge:
+      - knowledgeBase: reports
+        articles: [reportContents]
+        searchQueries: ["what a valuation report contains"]
+    points:
+      turnaround: The report is ready within 7 working days of the inspection.
+  </script>
+  <table>
+    <tr><th>Field</th><th>Holds</th><th>Is a reference</th></tr>
+    <tr><td><code>knowledgeBase</code></td><td>a base of this bot</td><td>yes: it blocks deleting the base and follows a change of its id</td></tr>
+    <tr><td><code>articles</code></td><td>ids of articles in that base</td><td>yes: as today</td></tr>
+    <tr><td><code>searchQueries</code></td><td>plain text the bot searches that base with</td><td>no: the CMS stores it and never runs it</td></tr>
+  </table>
+  <h3>What is checked when</h3>
+  <table>
+    <tr><th>Mistake</th><th>Stage</th><th>Code and fix</th></tr>
+    <tr><td>a base this bot does not have</td><td>Save</td><td><code>reference.missing</code>, listing the bot's bases</td></tr>
+    <tr><td>an entry with no <code>knowledgeBase</code></td><td>Save</td><td><code>knowledge.base.missing</code>. Fix: name the base</td></tr>
+    <tr><td>an article this bot does not have</td><td>Save</td><td><code>reference.missing</code>, as today</td></tr>
+    <tr><td>an article outside the entry's base</td><td>Save</td><td><code>knowledge.article.otherBase</code>. Fix: move it to an entry for its base, or pick one from this base</td></tr>
+    <tr><td>one base twice on an instruction</td><td>Save</td><td><code>knowledge.base.repeated</code>. Fix: merge the entries into one</td></tr>
+    <tr><td>an article id that is not camelCase; <code>knowledge</code> on something that is not an instruction</td><td>Save</td><td>as today</td></tr>
+    <tr><td>an entry with no articles and no queries</td><td>Version</td><td><code>knowledge.entry.empty</code>. Fix: add one, or remove the entry</td></tr>
+    <tr><td>a blank query</td><td>Version</td><td><code>knowledge.query.blank</code></td></tr>
+    <tr><td>a query on a base with no articles</td><td>Version</td><td><code>knowledge.query.noArticles</code>; it is now judged per base</td></tr>
+    <tr><td><code>knowledge</code> in a version of a bot that does not declare it</td><td>Version</td><td><code>declaration.knowledge</code>, naming the instruction, the same way as an undeclared block such as <code>action</code></td></tr>
+  </table>
+  <p>The rule on an article's base judges the result of a save, so moving an article to another base is refused while an entry names it under the old one. An article's own rule is unchanged. Both stages hold in the validator offline. A save with several bad names lists each at once.</p>
+  <table>
+    <tr><th>Situation</th><th>Result</th></tr>
+    <tr><td>no <code>knowledge</code>, or an empty list</td><td>accepted, the same as none</td></tr>
+    <tr><td>an entry with only articles, or only queries</td><td>accepted</td></tr>
+    <tr><td>one article or query written twice in an entry</td><td>accepted and read back as written</td></tr>
+    <tr><td>saving a query with the bot down</td><td>accepted: the CMS calls nothing to store a query</td></tr>
+  </table>
+  <h3>The form</h3>
+  <ul>
+    <li><b>+ Add knowledge</b> offers the bases this instruction does not use yet. Picking one shows only its articles, by title, and its queries.</li>
+    <li>Changing an entry's base clears its articles and keeps its queries, in front of the author.</li>
+    <li>A bot with no bases: the section says so, with a link to the Knowledge screen.</li>
+    <li>A stored article stays listed and ticked even when the form would not offer it, and its mistake shows beside it.</li>
+  </ul>
+  <h3>Hidden unless declared</h3>
+  <p>The declaration gains an optional field: <code>knowledge: true</code>. Left out, it means the bot does not read knowledge.</p>
+  <table>
+    <tr><th>The bot's declaration</th><th>Knowledge section</th></tr>
+    <tr><td><code>knowledge: true</code></td><td>shown on Tell rows and on When stalled</td></tr>
+    <tr><td>answers, without it</td><td>hidden, as an undeclared block is not offered</td></tr>
+    <tr><td>answers nothing, or a format the CMS does not read</td><td>shown, under the same note as the blocks: nothing is being checked</td></tr>
+    <tr><td>hidden, and the instruction holds entries from a file or an older declaration</td><td>shown with those entries, their mistake, and <b>Remove</b>, so nothing stored is hidden or lost by a save</td></tr>
+  </table>
+</section>
+
+<section data-role="contract">
+  <h2>Contract <span class="tag note">optional</span></h2>
+  <p>The contract is <code>suwagcms-bot</code>, with the schemas <code>definition-format.schema.json</code> and <code>bot-runtime.schema.json</code>. Its compatibility rule says a renamed field is a new format version, so this is one. What a procedure definition can hold lives in two repositories, so both change. There are no customers, and the owner accepts the removal below.</p>
+  <table>
+    <tr><th>What</th><th>Rule</th></tr>
+    <tr><td><b>Format version</b></td><td><code>2</code>. A reader refuses any other with <code>format.version</code>, as today</td></tr>
+    <tr><td><b>SDK</b></td><td>The new format comes with a new SDK release, which the owner makes from <code>master</code> with <code>just sdk-publish</code>. <code>0.1.0</code> stays on nuget.org, since a release cannot be deleted, and it reads format 1 only</td></tr>
+    <tr><td><b>Resources already holding <code>context</code></b></td><td>Nothing converts them. The key is unknown to the new reader, so it is ignored: no rule checks it, no article is protected by it, a version does not carry it, and the next save of that procedure removes it. The words are gone</td></tr>
+    <tr><td><b>Frozen versions holding it</b></td><td>A version is never changed, so a format-1 version keeps its bytes and digest and can still be listed and compared. It can no longer be pushed or rolled back to: that is refused with <code>format.version</code>. Create a new version from the working state instead</td></tr>
+    <tr><td><b>Versions a bot holds</b></td><td>A held version is not validated at a restart, so conversations pinned to an older one finish on it, with its <code>context</code> skipped as an unknown member. Making one current again is refused</td></tr>
+    <tr><td><b>Files and batches</b></td><td>A file or batch with <code>context</code> is refused as any unknown key is</td></tr>
+    <tr><td><b>Suwchatbot</b></td><td>It moves to format 2 in the same change, in its own repository: its mapping no longer reads <code>context</code>, and it does not declare <code>knowledge</code>, so a version it takes holds none. Its seed needs no change. Reading knowledge arrives with <code>knowledge-answers</code></td></tr>
+  </table>
+</section>
+
+<section data-role="obsolete">
+  <h2>What this makes obsolete</h2>
+  <p>All of it is deleted in the same change, as AGENTS.md requires. Nothing but these uses the table or the routes. The two libraries are used only by the first three web files.</p>
+  <ul class="files">
+    <li class="dir">Suwagcms.Web</li>
+    <li data-change="deleted"><span class="path">src/procedures/StepNode.tsx</span><span class="why">a node on the canvas</span></li>
+    <li data-change="deleted"><span class="path">src/procedures/layout.ts, layout.test.ts</span><span class="why">where nodes sit</span></li>
+    <li data-change="deleted"><span class="path">src/procedures/Creator.tsx, CreatorScreen.tsx</span><span class="why">the canvas screen and its own frame; the shared edit screen replaces both</span></li>
+    <li data-change="deleted"><span class="path">src/procedures/ProcedurePanel.tsx</span><span class="why">its fields move into the form; its Delete, Used by, Uses and History come from the frame</span></li>
+    <li data-change="deleted"><span class="path">src/procedures/ContextForm.tsx</span><span class="why">the Knowledge section replaces it</span></li>
+    <li data-change="deleted"><span class="path">src/procedures/MistakeList.tsx</span><span class="why">mistakes sit beside their place, with a count</span></li>
+    <li data-change="deleted"><span class="path">@xyflow/react, @dagrejs/dagre</span><span class="why">dependencies of the canvas</span></li>
+    <li data-change="modified"><span class="path">src/procedures/draft.ts, api.ts</span><span class="why">edges, Arrange and layout calls go</span></li>
+    <li data-change="modified"><span class="path">src/shell</span><span class="why">the whole-screen mode only the canvas used</span></li>
+    <li data-change="modified"><span class="path">src/design/screenRules.test.ts</span><span class="why">procedures join the shared edit screen, and <code>DeleteAction</code> has one user</span></li>
+    <li class="dir">Server and CLI</li>
+    <li data-change="deleted"><span class="path">Suwagcms.Server/ProcedureLayouts/</span><span class="why">the routes; openapi.json loses them</span></li>
+    <li data-change="deleted"><span class="path">Suwagcms.Contracts/Procedures/ProcedureLayout.cs</span><span class="why">their body</span></li>
+    <li data-change="deleted"><span class="path">Suwagcms.Cli/Procedures/ProcedureLayoutCommand.cs, ProcedureLayoutDocument.cs</span><span class="why"><code>suwagcms procedures layout</code></span></li>
+    <li data-change="added"><span class="path">a new migration</span><span class="why">drops <code>procedure_layout</code>; the old one stays, as migrations are history. A data migration: a person reads the diff</span></li>
+    <li data-change="modified"><span class="path">Suwagcms.Gate/layers.json, the plugin's SKILL.md, README.md</span><span class="why">the layer, the command, the words on the visual creator</span></li>
+    <li class="dir">SDK</li>
+    <li data-change="deleted"><span class="path">InstructionContext.cs</span><span class="why">replaced by the knowledge entry; the reference walker, renames and rules follow, and the hint on a step-level <code>context</code> goes</span></li>
+  </ul>
 </section>
 
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
-    <li>An explicit Save, not saving as you go: a half-drawn graph with a dangling edge would be refused every few seconds, and the revision would churn under other editors.</li>
-    <li>The live list asks the server through a dry run instead of running rules in the browser, so it can never disagree with the save.</li>
-    <li>Positions stay out of the procedure: moving a node is not a change to the bot's behaviour, and two identical procedures must produce identical versions.</li>
-    <li>Save is a button, not autosave: the question of the draft was answered with its recommended option, an accepted assumption of the owner. The live list gives the feedback, a half-drawn state stays private, and revisions mean something.</li>
-    <li>Positions live in their own table, <code>procedure_layout</code>, one row per procedure that goes with it when it is deleted. They have their own routes and are never read by the editor, so no revision, version or stored definition holds them.</li>
-    <li>The steps come back from the server in the order its database keeps them, not the author's. The creator derives a stable order from the graph (from the first step along the edges, then the rest by name) and the format does not change.</li>
+    <li>One page holds the editor and the knowledge format, because the owner reads them as one piece of work. By ownership they could be two specs, and if they ever part, each criterion goes with its text under its id.</li>
+    <li>This is the procedure-creator spec edited in place, because it is the same feature with a new shape. Its file name and the prefix of its ids stay, since an id is never renumbered. The word in every text becomes editor.</li>
+    <li><b>Next:</b> replaces a row limited to going back, in the format's own word: every graph can then be shown, so the editor has no second way to view a procedure and the SDK has no rule on shape.</li>
+    <li><b>End</b> is editor-only: the format already writes an end as a step with no <code>next</code>, so no node is added.</li>
+    <li>Two rules may go to one step: conditions in one rule combine with AND only, so this is the format's only OR across facts, and refusing it would leave no way to write one.</li>
+    <li><code>context</code> is removed outright: no customers, and a conversion would have to guess a base for each query. A version holding <code>knowledge</code> for a bot that does not declare it is refused at <code>Version</code>, as an undeclared block is.</li>
+    <li>The tags use the writer's words, Ask and Tell, and the format keeps <code>collect</code> and <code>inform</code>: a row's form names both.</li>
+    <li>A declaration field rather than a block: <code>knowledge</code> is a part of an instruction, and it has no row to leave out. It replaces the earlier decision to declare nothing until a second bot showed the need, because the section must hide.</li>
+    <li>With nothing declared the section shows, as blocks do, because nothing is being checked either way.</li>
+    <li>Left out, because no real need shows yet: a Save that stays in view on a long page, a query form that tries the query, and a criterion that the layout routes are gone, since deleted tests and <code>EveryRouteHasACommand</code> already leave nothing to guard.</li>
   </ul>
 </section>
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
+  <p>More than the usual 12, for one reason: this page joins two living specs. 28 are carried over with their ids, and 16 are new. Each new one names the lightest check that can fail for it; a browser test is used only where a browser is what is checked.</p>
+  <h3>The page</h3>
   <ul class="checks">
-    <li><code>AC-procedure-creator-1</code> Using only the mouse and the forms, an author builds a procedure with <code>listen</code>, <code>collect</code>, <code>say</code> and <code>assign</code> and rules, and saves it; renaming a step renames every place that points at it, and a taken name changes nothing.</li>
-    <li><code>AC-procedure-creator-2</code> A procedure saved through the CLI opens in the creator with every step, block and rule as stored, laid out with no overlapping nodes.</li>
-    <li><code>AC-procedure-creator-3</code> After a change and without saving, the list of mistakes shows what the validator reports for the drawing, and the mistake goes when the change is undone by hand.</li>
-    <li><code>AC-procedure-creator-4</code> Each mistake in the list says whether it refuses a save or only stops a version, gives its fix, and clicking it selects its step or panel.</li>
-    <li><code>AC-procedure-creator-5</code> Removing the only edge into a step shows that step as unreachable in the list.</li>
-    <li><code>AC-procedure-creator-6</code> A save with only <code>Version</code> mistakes succeeds; a save with a <code>Save</code> mistake is refused and the drawing stays as it was.</li>
-    <li><code>AC-procedure-creator-7</code> A save based on an old revision is refused, the drawing stays on the screen, and the author can reload.</li>
-    <li><code>AC-procedure-creator-8</code> In the rule editor, <code>range</code> is offered only for an <code>int</code> fact and <code>oneOf</code> offers an enum's values; a default rule is always last and cannot be removed.</li>
-    <li><code>AC-procedure-creator-9</code> A <code>collect</code> form does not offer a fact with <code>writableBy: assign</code>.</li>
-    <li><code>AC-procedure-creator-10</code> Deleting a step removes the edges and rule targets pointing at it, and the saved procedure has none left.</li>
-    <li><code>AC-procedure-creator-11</code> An edge from a step back to an earlier one can be drawn and saved.</li>
-    <li><code>AC-procedure-creator-12</code> Moving a node changes neither the procedure's revision nor its stored definition, and after a reload the node is where it was left.</li>
-    <li><code>AC-procedure-creator-13</code> The arrange button lays out the whole graph, and a step with no stored position is placed automatically.</li>
-    <li><code>AC-procedure-creator-14</code> <code>suwagcms procedures layout</code> reads and sets node positions.</li>
-    <li><code>AC-procedure-creator-15</code> <code>suwagcms procedures show --open</code> and <code>suwagcms procedures add --open</code> open that procedure in the creator.</li>
-    <li><code>AC-procedure-creator-16</code> When the live check cannot reach the server, the list says so instead of looking empty.</li>
-    <li><code>AC-procedure-creator-17</code> Leaving the creator with unsaved changes asks before discarding them.</li>
-    <li><code>AC-procedure-creator-18</code> A panel of the procedure adds, edits and removes its local facts with the same fields as a global fact; a step's forms offer them by their short name, and the save stores them in the procedure.</li>
-    <li><code>AC-procedure-creator-19</code> The creator offers only the blocks the bot declares.</li>
-    <li><code>AC-procedure-creator-20</code> A context has its form in the creator, on <code>whenStalled</code> and on an <code>inform</code>: the articles to read and the search queries, and what is saved reads back.</li>
-    <li><code>AC-procedure-creator-21</code> A <code>start</code> step has its form in the creator: a list of this bot's procedures that leaves out <code>conversation</code> and the procedure itself, and the chosen target is saved.</li>
-    <li><code>AC-procedure-creator-22</code> An <code>inform</code> step has its form in the creator: its instruction, its named points, added, renamed and removed in place and kept in the order written, and its context, and what is saved reads back.</li>
+    <li><code>AC-procedure-creator-23</code> The edit page of a procedure is the shared edit screen: in this order a way back, the heading with the id and Change id, Used by and Uses, the form, Delete and History, with no heading, Delete or History of a procedure's own. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-24</code> The form shows, top to bottom: Description, Local facts, When stalled, When interrupted, Steps as a numbered list, Save; every list and branch ends in <b>+ Add step</b>. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-25</code> Each block has its row as the table of rows says, with the step's name, editable on the row, its tag and its text, and <code>next</code> is shown nowhere except as a Next: row. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-1</code> Using only the page's forms, an author builds a procedure with <code>listen</code>, <code>collect</code>, <code>say</code>, <code>assign</code> and an If with an Else if and an Else, and saves it; renaming a step renames every place that points at it, and a taken name changes nothing.</li>
+    <li><code>AC-procedure-creator-8</code> In an If, <code>range</code> is offered only for an <code>int</code> fact and <code>oneOf</code> offers an enum's values; <b>+ and</b> adds a condition; an Else is always last and cannot be removed.</li>
+    <li><code>AC-procedure-creator-9</code> An Ask row does not offer a fact with <code>writableBy: assign</code>.</li>
+    <li><code>AC-procedure-creator-15</code> <code>suwagcms procedures show --open</code> and <code>suwagcms procedures add --open</code> open that procedure on this page.</li>
+    <li><code>AC-procedure-creator-18</code> The form adds, edits and removes a procedure's local facts with the same fields as a global fact; a step's forms offer them by their short name, and the save stores them in the procedure.</li>
+    <li><code>AC-procedure-creator-19</code> The page offers only the blocks the bot declares.</li>
+    <li><code>AC-procedure-creator-21</code> A <code>start</code> step has its form on its row: a list of this bot's procedures that leaves out <code>conversation</code> and the procedure itself, and the chosen target is saved.</li>
+    <li><code>AC-procedure-creator-22</code> An <code>inform</code> step has its form on its row: its instruction, its named points, added, renamed and removed in place and kept in the order written, and its knowledge, and what is saved reads back.</li>
+  </ul>
+  <h3>The list and the graph</h3>
+  <ul class="checks">
+    <li><code>AC-procedure-creator-26</code> Saving a list writes <code>firstStep</code>, <code>next</code> and rules as the table says: a row's <code>next</code> is the row below, a branch's last row goes to the first row after the If, an empty branch's <code>to</code> is that row, the rules keep the branches' order, and End leaves the step above it with no <code>next</code>. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-27</code> An If is offered only directly below a step, Next: and End only at the end of a list, End only in a branch with a row after it; a step moves with the If below it, and deleting a step with an If below it is refused with the reason and changes nothing. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-28</code> A new row gets a unique name from its block, and moving a row within a list or between lists changes the saved graph as its new place says and never changes a step's name. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-2</code> A procedure saved through the CLI opens with every step, block and rule as stored, and <code>conversation</code>, <code>inspectionVisit</code>, <code>quoteRequest</code> and <code>valuationReport</code> open row for row as this page shows them.</li>
+    <li><code>AC-procedure-creator-10</code> Deleting a row removes its step, the rows around it join up, an If with rows asks first, a Next: row naming the step stays with a mistake beside it that refuses a save, and the saved procedure names the step nowhere.</li>
+    <li><code>AC-procedure-creator-11</code> A Next: row at the end of any list names any step, forward or back, and what is saved is the <code>next</code> or <code>to</code> naming that step; a step whose <code>next</code> is not the following row shows that row.</li>
+    <li><code>AC-procedure-creator-29</code> For any generated graph the format allows, jumps, loops and several rules to one step included, rebuilding the list and building the graph gives the same <code>firstStep</code>, <code>next</code>, rule order and <code>onFailure</code>, with a lone default written as a fixed <code>next</code>; opening and saving with no edit sends nothing, so the revision stays. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-30</code> A stored step no path reaches, and every step when there is no <code>firstStep</code>, shows under Not connected with its mistake, keeps what is stored until moved into a list, and moving it gives it the <code>next</code> of its place. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-44</code> End in a branch means its last step has no <code>next</code> and adds nothing to the stored format; a branch with no step before End is a mistake beside it stating the fix; at the very end of the main list End is implicit and not shown. <span class="tag">web test</span></li>
+  </ul>
+  <h3>Mistakes and saving</h3>
+  <ul class="checks">
+    <li><code>AC-procedure-creator-3</code> After a change and without saving, what the validator reports for the page shows beside the row, branch or field it concerns, a mistake with no place on the page shows at the top of the form, and a mistake goes when the change is undone by hand.</li>
+    <li><code>AC-procedure-creator-4</code> Each mistake says whether it refuses a save or only stops a version and gives its fix; a count at the top of the form lists them, and clicking one shows and selects its place.</li>
+    <li><code>AC-procedure-creator-6</code> A save with only <code>Version</code> mistakes succeeds; a save with a <code>Save</code> mistake is refused and the page stays as it was.</li>
+    <li><code>AC-procedure-creator-7</code> A save based on an old revision is refused, the page stays as it was, and the author can reload.</li>
+    <li><code>AC-procedure-creator-16</code> When the live check cannot reach the server, the form says so instead of looking free of mistakes.</li>
+    <li><code>AC-procedure-creator-17</code> Leaving the page with unsaved changes asks before discarding them.</li>
+  </ul>
+  <h3>The knowledge format</h3>
+  <ul class="checks">
+    <li><code>AC-instruction-context-1</code> A <code>whenStalled</code> with an instruction and a <code>knowledge</code> entry holding a base, articles and search queries, saved with <code>suwagcms procedures add --file</code>, reads back as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-instruction-context-2</code> An instruction with no <code>knowledge</code> or with an empty list is accepted, and an entry holding only articles or only queries is accepted.</li>
+    <li><code>AC-instruction-context-3</code> An article or a base this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming where the entry is.</li>
+    <li><code>AC-instruction-context-4</code> An article <code>id</code> that is not camelCase, an entry with no <code>knowledgeBase</code>, a key <code>knowledge</code> does not have, and <code>knowledge</code> on a block with no instruction are each refused with a mistake and a fix.</li>
+    <li><code>AC-instruction-context-5</code> A blank query and an entry with no articles and no queries are saved, and the answer lists them among the <code>Version</code> mistakes; the CLI exits 0, and creating a version reports them.</li>
+    <li><code>AC-instruction-context-6</code> A query on a base with no articles is reported as a <code>Version</code> mistake, and the mistake goes once that base has an article.</li>
+    <li><code>AC-instruction-context-7</code> A save holding a query succeeds with no bot reachable and no outside call made, and the query reads back byte for byte.</li>
+    <li><code>AC-instruction-context-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
+    <li><code>AC-instruction-context-9</code> The plugin's main skill gives the form of <code>knowledge</code> and says when to name an article and when to write a query.</li>
+    <li><code>AC-instruction-context-10</code> The instruction of an <code>inform</code> takes <code>knowledge</code>, under the same rules as on <code>whenStalled</code>.</li>
+    <li><code>AC-procedure-creator-34</code> An article outside its entry's base is refused with <code>knowledge.article.otherBase</code> and the fix, and so is moving an article to another base while an entry names it under the old one. <span class="tag">sdk test</span></li>
+    <li><code>AC-procedure-creator-35</code> One base twice on an instruction is refused with <code>knowledge.base.repeated</code>, whose fix says to merge the entries. <span class="tag">sdk test</span></li>
+    <li><code>AC-procedure-creator-36</code> A base an entry names cannot be deleted, the refusal lists each instruction, Used by and Uses show it, and changing the base's <code>id</code> rewrites each entry. <span class="tag">server test</span></li>
+  </ul>
+  <h3>The knowledge section and the declaration</h3>
+  <ul class="checks">
+    <li><code>AC-procedure-creator-20</code> Knowledge has its form on <code>whenStalled</code> and on an <code>inform</code>: a base, its articles and search queries, and what is saved reads back.</li>
+    <li><code>AC-procedure-creator-37</code> <b>+ Add knowledge</b> offers only bases the instruction does not use, a picked base shows only its articles, and changing the base clears the articles and keeps the queries. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-38</code> The section is hidden when the bot's declaration answers without <code>knowledge: true</code> and shown when it says so or answers nothing; while hidden, an instruction holding entries shows them with their mistake and Remove, and a save keeps what it did not touch. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-39</code> A bot's setup stating <code>knowledge: true</code> answers it in <code>GET /suwagcms/declaration</code>; the CMS stores and shows it on the profile and in <code>suwagcms bots declaration</code>, and a setup that leaves it out answers no such member. <span class="tag">server test</span></li>
+    <li><code>AC-procedure-creator-40</code> Given a declaration without it, the validator returns at the <code>Version</code> stage <code>declaration.knowledge</code> for each instruction holding <code>knowledge</code>, and nothing at <code>Save</code>; with no declaration, it returns nothing. <span class="tag">sdk test</span></li>
   </ul>
 </section>
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout warn"><p>A dry run after each change sends the procedure to the server often. It runs under the bot's lock like any save, so it needs to be brief and spaced out; the plan decides how, and no criterion fixes a timing.</p></div>
+  <div class="callout warn"><p><b>A tangled graph reads as many Next: rows.</b> Nothing refuses it, so a list is only as readable as its graph. The editor always builds what the author arranged, so this comes only from a file.</p></div>
+  <div class="callout warn"><p><b>Dropping <code>procedure_layout</code> is a data migration,</b> on the always-careful list, so a person reads that part of the diff. Node positions are lost, and they mean nothing without the canvas.</p></div>
+  <div class="callout warn"><p>Format 2 stops version creation for a bot still on an older SDK, with <code>declaration.formatVersion</code> naming both, until it moves. The SDK must be released before the bot's package reference can follow it.</p></div>
+  <div class="callout assumption"><p>Save at the end of a long form is acceptable because the frame has no other place for it.</p></div>
 </section>
+
 
 <!-- CONTENT END -->
 </main>

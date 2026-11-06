@@ -25,7 +25,7 @@ internal static class ProcedureSaveCommands
         var dryRun = EditOptions.DryRun();
         var command = new Command(
             "add",
-            "Add a procedure to the bot from a YAML or JSON file that holds the whole of it, and with --open show it in the web creator."
+            "Add a procedure to the bot from a YAML or JSON file that holds the whole of it, and with --open show it in the web editor."
         )
         {
             file,

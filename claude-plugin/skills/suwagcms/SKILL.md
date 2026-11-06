@@ -114,10 +114,9 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 - `suwagcms articles delete <id> [--if-revision n]` - delete an article; refused with `reference.missing` while the `content` or `llmGuide` of another article links to it, with every such place listed in `related`; there is no force option, so remove the links first.
 
 - `suwagcms procedures list` - list the procedures of the bot with what still stops each from becoming a version, and what stops the bot as a whole (no `conversation`); `--open` opens the Procedures screen in the web app.
-- `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`; `--open` opens it in the web creator instead.
-- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results` and `onFailure` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused. `--open` opens the saved procedure in the web creator, laid out automatically when no one has placed its nodes.
+- `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`; `--open` opens it in the web editor instead.
+- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results` and `onFailure` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused. `--open` opens the saved procedure in the web editor, laid out automatically when no one has placed its nodes.
 - `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
-- `suwagcms procedures layout <id> [--set <step>=<x>,<y>]... [--clear]` - show where the web creator draws each step, set some positions, or forget them all so the creator arranges the graph itself. Positions are no part of the procedure: no revision changes and no version holds them.
 - `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
 - `suwagcms actions list` - list the actions of the bot, HTTP and code in one list, with the implementation of each and whether the bot also declares an HTTP action's id or no longer declares a code action in use; `--open` opens the Actions screen in the web app.
 - `suwagcms actions show <id>` - show one action as YAML (or JSON with `--json`) with its revision and the procedures that use it; both are accepted back by `actions edit --file`.
@@ -231,7 +230,7 @@ A parameter or a result is typed like a fact (`enum` with `values`, `int` with `
 
 ## Procedure file
 
-A procedure is a graph of steps; the file holds one whole procedure in YAML or JSON (the same structure). `id` is one camelCase word,
+A procedure is a graph of steps, which the web edits as a list; the file holds one whole procedure in YAML or JSON (the same structure). `id` is one camelCase word,
 `description` is required, step names are camelCase. The procedure called `conversation` is the base of every conversation: a version
 needs it, and a new bot has none, so write it. The smallest one:
 
@@ -254,7 +253,7 @@ steps:
 - `start: <procedure id>` starts another procedure of this bot, and the step's `next` is where this one goes on once that one ends. The
   target must exist (`suwagcms procedures list`); `conversation` cannot be started (`start.target.conversation`), and a loop of starts is
   refused (`reference.loop`). A blank target is saved and listed as unfinished.
-- `inform: { instruction: text, context: { ... }, points: { name: what must be said } }` has the model tell the customer each point. Where
+- `inform: { instruction: text, knowledge: [ ... ], points: { name: what must be said } }` has the model tell the customer each point. Where
   `say` sends a fixed text, inform leaves the words to the model, following the instruction, and the bot checks by name that each point was told.
   A point name is camelCase (`step.inform.pointName`), and the points keep the order written. No points (`step.inform.empty`), a point with no text
   (`step.inform.pointBlank`) or a blank instruction (`instruction.blank`) is saved and listed as unfinished. A point is fixed text and names no fact.
@@ -264,11 +263,12 @@ steps:
   or `known: true|false` (any fact).
 - `whenStalled: { instruction: text }` is required when a step collects.
 - `whenInterrupted: keep|discard` (optional, `keep` when left out) says what happens to this procedure when another one is started on top of it: it waits below, or it is removed with its local facts. Any other value (`procedure.whenInterrupted.invalid`) and the field on `conversation` (`procedure.whenInterrupted.onConversation`) are refused.
-- An instruction (of `whenStalled` or of an `inform`) can carry `context: { articles: [id, ...], searchQueries: [text, ...] }`: what the model
-  should read before following it. Name an article when you know which one holds the fact: it cannot miss, a wrong id is refused
-  (`reference.missing`) and the article is protected. Write a query when you want what the articles say on a subject without knowing
-  which says it: the CMS stores it as text and never runs it, the bot searches. A blank query (`context.query.blank`) and a query in a
-  bot with no articles (`context.query.noArticles`) are saved and listed as unfinished.
+- An instruction (of `whenStalled` or of an `inform`) can carry `knowledge: [{ knowledgeBase: id, articles: [id, ...], searchQueries: [text, ...] }]`: what the model
+  should read before following it, one entry per knowledge base (a second entry for a base is refused, `knowledge.base.repeated`: merge them). A bot must declare that it reads knowledge, or a version holding any is refused
+  (`declaration.knowledge`). Name an article when you know which one holds the fact: it cannot miss, a wrong id is refused
+  (`reference.missing`), an article outside the entry's base is refused (`knowledge.article.otherBase`) and the article is protected. Write a query when you want what the base says on a subject without knowing
+  which article says it: the CMS stores it as text and never runs it, the bot searches. An entry with nothing in it (`knowledge.entry.empty`), a blank query (`knowledge.query.blank`) and a query on a
+  base with no articles (`knowledge.query.noArticles`) are saved and listed as unfinished.
 - `localFacts` (optional) maps a name to a fact that lives inside this procedure: `localFacts: { visitDate: { type: text, description: When to visit, maxLength: 20 } }`.
   The name is one camelCase word with no dots; the type, its constraints (`values` / `min` and `max` / `maxLength` and `pattern`), `description` and `writableBy` are those of a global fact. Steps of the
   procedure name it by that short name, and no other procedure sees it; `facts list` does not list it. A local fact with the name of a global fact is refused with `fact.local.nameClash`, from whichever side was saved second, and removing one that a step still uses is refused with `reference.missing`, listing the steps.

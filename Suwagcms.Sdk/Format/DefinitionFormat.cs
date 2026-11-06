@@ -5,7 +5,7 @@ namespace Suwagcms.Sdk.Format;
 
 internal static class DefinitionFormat
 {
-    public const int Version = 1;
+    public const int Version = 2;
 
     public static JsonSerializerOptions Options { get; } = Create();
 

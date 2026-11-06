@@ -33,12 +33,26 @@ export function consequenceOf(mistake: Mistake): string {
     return mistake.stage === "Save" ? "Refuses a save" : "Stops a version";
 }
 
-/** What clicking a mistake selects: its step, or the panel of the procedure when it belongs to no step. */
-export function targetOf(mistake: Mistake, draft: Draft): string | null {
-    const name = /^steps\.([^.[]+)/.exec(mistake.path)?.[1];
-    return name !== undefined && name in draft.steps ? name : null;
+/** The place on the page a mistake belongs beside. A mistake with no place on the page goes at the top of the form, so nothing is lost. */
+export function placeOf(mistake: Mistake, procedure: string, draft: Draft): string {
+    if (mistake.resource.kind !== "Procedure" || mistake.resource.id !== procedure) return "top";
+    const path = mistake.path;
+    const stalled = /^whenStalled\.knowledge\[(\d+)\]/.exec(path);
+    if (stalled) return `knowledge:whenStalled:${stalled[1]}`;
+    const field = /^(description|whenStalled|whenInterrupted|localFacts)\b/.exec(path)?.[1];
+    if (field !== undefined) return `field:${field}`;
+    const name = /^steps\.([^.[]+)/.exec(path)?.[1];
+    if (name === undefined || !(name in draft.steps)) return "top";
+    const knowledge = new RegExp(`^steps\\.${name}\\.inform\\.knowledge\\[(\\d+)\\]`).exec(path);
+    if (knowledge) return `knowledge:${name}:${knowledge[1]}`;
+    const branch = new RegExp(`^steps\\.${name}\\.next\\[(\\d+)\\]`).exec(path);
+    if (branch) return `branch:${name}:${branch[1]}`;
+    if (path === `steps.${name}.onFailure`) return `failure:${name}`;
+    return `step:${name}`;
 }
 
-export function stepsWithMistakes(mistakes: Mistake[], draft: Draft): Set<string> {
-    return new Set(mistakes.flatMap((mistake) => targetOf(mistake, draft) ?? []));
+/** The step to select for a place, so clicking a mistake opens the row it is about. */
+export function stepOfPlace(place: string): string | null {
+    const match = /^(?:step|branch|failure|knowledge):([^:]+)/.exec(place);
+    return match?.[1] === undefined || match[1] === "whenStalled" ? null : match[1];
 }

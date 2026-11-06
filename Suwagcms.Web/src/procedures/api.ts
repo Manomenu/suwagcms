@@ -7,8 +7,8 @@ export type ProcedureSummary = components["schemas"]["ProcedureSummary"];
 export type ProcedureDetail = components["schemas"]["ProcedureDetail"];
 export type SaveProcedure = components["schemas"]["SaveProcedure"];
 export type Fact = components["schemas"]["Fact"];
-export type ProcedureLayout = components["schemas"]["ProcedureLayout"];
 type ArticleView = components["schemas"]["ArticleView"];
+type KnowledgeBaseView = components["schemas"]["KnowledgeBaseView"];
 
 function proceduresPath(bot: string): string {
     return `/bots/${encodeURIComponent(bot)}/procedures`;
@@ -26,7 +26,7 @@ export function fetchProcedure(bot: string, id: string, signal: AbortSignal): Pr
     return request<ProcedureDetail>(procedurePath(bot, id), { signal });
 }
 
-/** The facts the forms offer. The creator never decides what a fact may be used for beyond the lists it filters here. */
+/** The facts the forms offer. The editor never decides what a fact may be used for beyond the lists it filters here. */
 export function fetchFacts(bot: string, signal: AbortSignal): Promise<Fact[]> {
     return request<Fact[]>(`/bots/${encodeURIComponent(bot)}/facts`, { signal });
 }
@@ -36,12 +36,9 @@ export function fetchArticles(bot: string, signal: AbortSignal): Promise<Article
     return request<ArticleView[]>(`/bots/${encodeURIComponent(bot)}/articles`, { signal });
 }
 
-export function fetchLayout(bot: string, id: string, signal: AbortSignal): Promise<ProcedureLayout> {
-    return request<ProcedureLayout>(`${procedurePath(bot, id)}/layout`, { signal });
-}
-
-export function saveLayout(bot: string, id: string, layout: ProcedureLayout): Promise<ProcedureLayout> {
-    return request<ProcedureLayout>(`${procedurePath(bot, id)}/layout`, { method: "PUT", body: JSON.stringify(layout) });
+/** The bases a Knowledge section offers. */
+export function fetchKnowledgeBases(bot: string, signal: AbortSignal): Promise<KnowledgeBaseView[]> {
+    return request<KnowledgeBaseView[]>(`/bots/${encodeURIComponent(bot)}/knowledge-bases`, { signal });
 }
 
 /** Saves a procedure, or with `dryRun` asks what saving it would answer and changes nothing. `ifRevision` 0 means "add". */

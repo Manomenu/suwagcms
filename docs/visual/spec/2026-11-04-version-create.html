@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Creating and pushing are separate on purpose: unfinished work is not sent by accident, and a version can wait until someone has checked it. The frozen document is the public contract with every bot.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
+    <div><b>15</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -449,7 +449,7 @@ flowchart LR
     <tr><td>a bot's first version</td><td>v1; before it, the list is empty with an offer to create one</td></tr>
   </table>
   <h3>What a version holds</h3>
-  <p>One JSON document: <code>formatVersion</code>, the bot's id, the number, and all facts, knowledge bases, articles and procedures. Resources are in a fixed order and with a fixed form, so an unchanged resource looks the same in two versions, and the document's <code>sha256</code> can always be checked against it. A version does not hold anything outside the definition: node positions stay out.</p>
+  <p>One JSON document: <code>formatVersion</code>, the bot's id, the number, and all facts, knowledge bases, articles and procedures. Resources are in a fixed order and with a fixed form, so an unchanged resource looks the same in two versions, and the document's <code>sha256</code> can always be checked against it. A version does not hold anything outside the definition.</p>
   <p>The document is the same one a bot receives, and it passes the validator on its own, offline, with no other input.</p>
 </section>
 
@@ -484,7 +484,6 @@ flowchart LR
     <li><code>AC-version-create-5</code> Edits to the working state after a version leave that version's document byte-identical, and its stored <code>sha256</code> matches it.</li>
     <li><code>AC-version-create-6</code> No route of the API changes or deletes a version, and a guard fails when one appears.</li>
     <li><code>AC-version-create-7</code> The same working state always produces the same document apart from the number, whatever the order in which resources were saved.</li>
-    <li><code>AC-version-create-8</code> Moving a node in the creator neither changes a version's document nor counts as a change for the next one.</li>
     <li><code>AC-version-create-9</code> Creating a version when the working state equals the latest version is refused with a mistake saying so.</li>
     <li><code>AC-version-create-10</code> Two creations at the same moment produce one version and one refusal, and a save arriving during a creation is either wholly in the version or wholly out of it.</li>
     <li><code>AC-version-create-11</code> Creating a version sends no request to the bot.</li>

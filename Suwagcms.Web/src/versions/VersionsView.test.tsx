@@ -138,7 +138,7 @@ describe("VersionsView", () => {
             actions: 0,
             sha256: `3f9a${"0".repeat(56)}c21e`,
         };
-        const html = view({ shown: { version: opened, document: '{"formatVersion":1}' } });
+        const html = view({ shown: { version: opened, document: '{"formatVersion":2}' } });
 
         expect(html).toContain("Version 14");
         expect(html).toContain("sha256 3f9a");

@@ -11,7 +11,7 @@ facts here, and the CMS refuses any change that would leave the bot inconsistent
 
 - Register several bots in one CMS and switch between their profiles.
 - Create knowledge bases and write articles, each with a guide telling the LLM how to talk about it.
-- Build procedures from blocks in a visual creator.
+- Build procedures from blocks on a page read top to bottom.
 - Define actions the procedures can run.
 - Manage facts, global and local.
 - Browse everything and see what uses what.
@@ -28,7 +28,7 @@ After registration the CMS asks the bot what it supports:
 | Declared              | What the CMS does with it                                       |
 | :-------------------- | :-------------------------------------------------------------- |
 | format version        | validates and builds versions for that format                   |
-| blocks it can run     | offers only those in the creator; refuses any others in a version |
+| blocks it can run     | offers only those in the editor; refuses any others in a version |
 | actions in its code   | shows them as `code` actions, without anyone retyping them       |
 
 ## Resources
@@ -102,7 +102,7 @@ A secret written `{secret:NAME}` is read from the bot's environment variable `SU
 
 ### Procedures
 
-The creator draws a procedure as a graph of steps. Each step holds one block and says where to go next.
+The editor shows a procedure as a numbered list of steps, and the format stores it as a graph, built on save. Each step holds one block and says where to go next.
 
 | Block     | What it does                                      |
 | :-------- | :------------------------------------------------ |
@@ -117,9 +117,9 @@ The creator draws a procedure as a graph of steps. Each step holds one block and
 The SDK defines this fixed set of blocks: a bot declares which of them it runs, and a bot's custom logic is an action.
 
 `whenInterrupted` says what happens to a procedure when another one is started on top of it: `keep`, the default, or `discard`.
-An `inform` holds an `instruction`, an optional `context` (`articles`, `searchQueries`) and `points`, a map from a name to what must be said.
+An `inform` holds an `instruction`, optional `knowledge` (entries of `knowledgeBase`, `articles`, `searchQueries`) and `points`, a map from a name to what must be said.
 
-The creator offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
+The editor offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
 no unreachable steps, and `whenStalled` when the procedure collects.
 
 ```yaml
@@ -138,7 +138,7 @@ checkAddress:
 
 ```mermaid
 flowchart LR
-  P[Procedure] -->|instruction context| A[Article]
+  P[Procedure] -->|instruction knowledge| A[Article]
   A -->|link in content or guide| A
   A -->|link in guide| P
   P -->|start| P
@@ -325,7 +325,7 @@ Behaviour shared by all of them:
 | :-------------- | :--------------------------------------------------------------------------------------- |
 | Bots            | Register a bot, see what it declared, switch the active profile                          |
 | Knowledge bases | Articles with search and filters; editor with content, guide and description side by side |
-| Procedures      | List with availability; visual creator with a live list of mistakes                     |
+| Procedures      | List with availability; editor with each mistake beside its step                     |
 | Actions         | Contract, implementation, which procedures use it, a test run                            |
 | Facts           | Name, type, values, description, `writableBy`, which procedures use it                   |
 | Any resource    | "Used by" and "Uses" panels; delete is disabled with the reason when it is referenced    |

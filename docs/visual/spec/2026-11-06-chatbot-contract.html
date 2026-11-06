@@ -408,7 +408,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <ul>
         <li>Keys on the routes: they arrive with <code>cms-identity</code>.</li>
         <li>Checking a held version again at a restart: see Decisions.</li>
-        <li>A declaration of which features of an instruction a bot uses: see Decisions.</li>
         <li>Publishing the SDK, or any release or version bump of it.</li>
         <li>What a bot does with a fact or a procedure while running: that is its engine's own.</li>
       </ul>
@@ -451,10 +450,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><th>A bot needs</th><th>In a version</th><th>Meaning fixed by this contract</th></tr>
     <tr><td>Procedure</td><td><code>id</code>, <code>description</code>, <code>firstStep</code>, <code>steps</code></td><td><code>conversation</code> is required, cannot be started, and is the base of every conversation</td></tr>
     <tr><td>What an interruption does</td><td><code>whenInterrupted</code>: <code>keep</code> or <code>discard</code></td><td>Left out means <code>keep</code>, and <code>conversation</code> may not have it, as nothing can interrupt it away. What keeping and discarding do is the engine's</td></tr>
-    <tr><td>When a customer gets stuck</td><td><code>whenStalled</code>: <code>instruction</code>, <code>context</code></td><td>Required when a step collects</td></tr>
+    <tr><td>When a customer gets stuck</td><td><code>whenStalled</code>: <code>instruction</code>, <code>knowledge</code></td><td>Required when a step collects</td></tr>
     <tr><td>Local facts</td><td><code>localFacts</code>: a map of name to fact</td><td>One camelCase word, never a global fact's name, gone when the procedure ends</td></tr>
     <tr><td>Blocks</td><td><code>listen: {}</code>, <code>collect</code>, <code>say</code>, <code>assign</code>, <code>inform</code>, <code>start</code>, <code>action</code></td><td>Exactly one per step, and a bot declares which it runs. A step without <code>next</code> ends the procedure</td></tr>
-    <tr><td>Telling the customer</td><td><code>inform</code>: <code>instruction</code>, <code>context</code>, <code>points</code></td><td>A point is named, its name stays as written and the order of points is kept, so a bot can check each one was told</td></tr>
+    <tr><td>Telling the customer</td><td><code>inform</code>: <code>instruction</code>, <code>knowledge</code>, <code>points</code></td><td>A point is named, its name stays as written and the order of points is kept, so a bot can check each one was told</td></tr>
     <tr><td>Branching</td><td><code>next</code>: a step, or a list of <code>{ when, to }</code></td><td>Rules are tried in order and the first that holds is taken; every condition of a <code>when</code> must hold; the last rule has no <code>when</code>. <code>oneOf</code> and <code>range</code> do not hold for an unknown fact, and <code>known: false</code> does; <code>range</code> only on an <code>int</code></td></tr>
     <tr><td>Global facts</td><td><code>name</code>, <code>type</code>, <code>description</code>, <code>writableBy</code></td><td><code>writableBy</code> is <code>assign</code>, <code>set</code> (default) or <code>correct</code></td></tr>
     <tr><td>Constraints</td><td><code>int</code>: <code>min</code>, <code>max</code>. <code>enum</code>: <code>values</code>. <code>text</code>: <code>maxLength</code>, <code>pattern</code></td><td>All required but <code>pattern</code>; length counts characters, not UTF-16 units; <code>other</code> cannot be an enum's value, as a reply writes it for a value outside the list</td></tr>
@@ -546,7 +545,7 @@ sequenceDiagram
   <table>
     <tr><th>Route on the bot</th><th>Purpose</th><th>Answers</th></tr>
     <tr><td><code>GET /suwagcms/state</code></td><td>What it has</td><td><code>bot</code>, <code>current</code>, <code>held</code>, <code>inUse</code>, <code>storeError</code>, <code>availability</code></td></tr>
-    <tr><td><code>GET /suwagcms/declaration</code></td><td>What it runs</td><td><code>bot</code>, <code>formatVersion</code>, <code>blocks</code>, <code>codeActions</code>, <code>persona</code>, or <code>declaresNothing</code></td></tr>
+    <tr><td><code>GET /suwagcms/declaration</code></td><td>What it runs</td><td><code>bot</code>, <code>formatVersion</code>, <code>blocks</code>, <code>codeActions</code>, <code>persona</code>, <code>knowledge</code>, or <code>declaresNothing</code></td></tr>
     <tr><td><code>PUT /suwagcms/versions/{number}</code></td><td>Take a document</td><td>The state, or a refusal</td></tr>
     <tr><td><code>PUT /suwagcms/current</code></td><td>Make a held version current: <code>number</code>, <code>digest</code></td><td>The state, or a refusal</td></tr>
     <tr><td><code>PUT /suwagcms/availability</code></td><td>What is off: <code>number</code>, <code>off</code></td><td>The state, or a refusal</td></tr>
@@ -570,7 +569,7 @@ sequenceDiagram
   <p>The name of the contract is <code>suwagcms-bot</code>. Its generated artifacts are the two JSON schemas the SDK carries, <code>definition-format.schema.json</code> and <code>bot-runtime.schema.json</code>; the CMS's own HTTP API has <code>Suwagcms.Server/openapi.json</code> and is no part of what a bot talks to.</p>
   <h3>Compatibility</h3>
   <ul>
-    <li><b>Format version is a whole number, and both sides must have the same.</b> It stays <code>1</code> here. A reader refuses any other.</li>
+    <li><b>Format version is a whole number, and both sides must have the same.</b> It is <code>2</code>, since <code>context</code> became <code>knowledge</code>; <code>procedure-creator</code> says what happens to format 1. A reader refuses any other.</li>
     <li><b>An optional field whose absence means today's behaviour is added without a new format version.</b> A reader skips what it does not know, and the digest covers it all the same, so an older bot still loads such a version. It then runs without the field's meaning, so whoever needs the field takes the newer SDK first.</li>
     <li><b>Everything else is a new format version:</b> a new block, a renamed field, a field required, or a meaning changed.</li>
     <li><b>A version is never changed.</b> A stored version keeps its bytes and its digest under every later SDK.</li>
@@ -585,7 +584,7 @@ sequenceDiagram
     <li><code>whenInterrupted</code> is an optional text on the procedure, as <code>writableBy</code> is on a fact, so a wrong value reaches the rules and is refused with a fix instead of failing to read. It is left out of a version when an author did not set it, so existing versions stay byte for byte.</li>
     <li>A bot reports a number before it saves the first conversation on it, and the runtime keeps removing what the last report did not name. Keeping a replaced version until the next report would make the mistake impossible in every bot, but it changes what a rollback promises today, so it stays the owner's to choose.</li>
     <li>A held version is not validated again at a restart. It was valid when it arrived, a refusal would leave a running bot with nothing, and the next push is validated in any case.</li>
-    <li>A bot that ignores an instruction's <code>context</code>, as one with no search yet does, still takes a version holding one: the context is carried and unused. A declaration of that was left out until a second bot shows the need.</li>
+    <li>A bot declares whether it reads <code>knowledge</code>, as <code>procedure-creator</code> says, because the editor must hide the section for one that does not. This replaces the decision to carry an instruction's context unused and declare nothing.</li>
     <li>The persona keeps one text per part and a bot splits it by lines, since an author reads and edits plain text, and a list in the format would change every client for no gain.</li>
   </ul>
 </section>
@@ -596,9 +595,9 @@ sequenceDiagram
     <li><code>AC-chatbot-contract-1</code> A procedure holds <code>whenInterrupted</code> as <code>keep</code> or <code>discard</code> and reads it back unchanged; a version delivers it to the bot's SDK; a procedure without it has no such member in a version's JSON and counts as <code>keep</code>.</li>
     <li><code>AC-chatbot-contract-2</code> Any other value of <code>whenInterrupted</code> is refused on save with a mistake listing the allowed values, and nothing is saved.</li>
     <li><code>AC-chatbot-contract-3</code> <code>whenInterrupted</code> on <code>conversation</code> is refused on save with a mistake saying to remove it.</li>
-    <li><code>AC-chatbot-contract-4</code> The first bot's shipped facts, procedures and persona, as a definition, pass the rules at version stage against a declaration of format 1, the blocks <code>listen, collect, say, assign, inform</code> and a complete persona, and read back with their <code>whenInterrupted</code>, local fact, patterns, conditions and points in the order written.</li>
+    <li><code>AC-chatbot-contract-4</code> The first bot's shipped facts, procedures and persona, as a definition, pass the rules at version stage against a declaration of the current format, the blocks <code>listen, collect, say, assign, inform</code> and a complete persona, and read back with their <code>whenInterrupted</code>, local fact, patterns, conditions and points in the order written.</li>
     <li><code>AC-chatbot-contract-5</code> The command line adds, shows and edits a procedure from a file with <code>whenInterrupted</code>, and a batch apply carries it too.</li>
-    <li><code>AC-chatbot-contract-6</code> The web creator shows and sets <code>whenInterrupted</code>, and a save from the web leaves a value it did not touch as it was.</li>
+    <li><code>AC-chatbot-contract-6</code> The web editor shows and sets <code>whenInterrupted</code>, and a save from the web leaves a value it did not touch as it was.</li>
     <li><code>AC-chatbot-contract-7</code> Before its first version a bot has no current number and its state says <code>current: null</code>; the first push makes a version current with no restart.</li>
     <li><code>AC-chatbot-contract-8</code> A bot restarted over the same store has the same current version and the same held versions with no push.</li>
     <li><code>AC-chatbot-contract-9</code> A conversation's number still gives the definition it started on, unchanged, after a newer version is pushed and after a rollback, while new conversations get the current number.</li>

@@ -396,6 +396,9 @@
           "string",
           "null"
         ]
+      },
+      "knowledge": {
+        "type": "boolean"
       }
     }
   },

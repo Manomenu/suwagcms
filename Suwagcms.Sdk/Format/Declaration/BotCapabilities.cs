@@ -11,4 +11,7 @@ public sealed record BotCapabilities
 
     // Why: left out, the bot takes a version with or without a persona; BotDeclaration.PersonaRequired has the CMS refuse one without any text, PersonaComplete one with a part left empty.
     public string? Persona { get; init; }
+
+    // Why: left out, the bot does not read an instruction's knowledge: the editor hides the section, and a version holding any is refused.
+    public bool Knowledge { get; init; }
 }

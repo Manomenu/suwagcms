@@ -277,7 +277,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-version-create-8")]
+    [Trait("criterion", "AC-version-create-3")]
     public async Task A_document_holds_only_the_definition_and_a_save_that_changes_nothing_of_it_counts_as_no_change()
     {
         var api = await FullBot();
@@ -289,7 +289,6 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
             document.EnumerateObject().Select(member => member.Name)
         );
         await api.Procedures.Put("orderValuation", ProcedureApi.Valuation);
-        Assert.True((await api.Procedures.PutLayout("orderValuation", """{"positions":{"ask":{"x":10.5,"y":20}}}""")).IsSuccessStatusCode);
         var refused = await api.Create();
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);

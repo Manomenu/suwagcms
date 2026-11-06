@@ -46,7 +46,7 @@ test("AC-web-shell-8, AC-web-shell-9: an id with dots opens at its address, surv
     await expect(page.getByRole("row").filter({ hasText: "customer.email" })).toBeVisible();
 });
 
-test("AC-web-shell-9: an unknown id says it is not found, with the way back, on a list screen and in the creator", async ({
+test("AC-web-shell-9: an unknown id says it is not found, with the way back, on a list screen and on a procedure", async ({
     page,
     request,
 }) => {
@@ -59,7 +59,7 @@ test("AC-web-shell-9: an unknown id says it is not found, with the way back, on 
 
     await page.goto(`/bots/${bot}/procedures/noSuch/edit`);
     await expect(page.getByRole("alert")).toContainText("no procedure 'noSuch'");
-    await page.getByRole("link", { name: "Back to procedures" }).click();
+    await page.getByRole("button", { name: "Back to procedures" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/procedures`);
 });
 
@@ -74,7 +74,7 @@ test("AC-web-shell-10: the older addresses lead to the edit address", async ({ p
 
     await page.goto(`/bots/${bot}/procedures/refund`);
     await expect(page).toHaveURL(`/bots/${bot}/procedures/refund/edit`);
-    await expect(page.getByRole("heading", { name: "Creator: refund" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Procedure refund" })).toBeVisible();
 });
 
 test("AC-web-shell-11: adding or editing shows only that item, with a way back, on every kind", async ({ page, request }) => {
@@ -187,13 +187,13 @@ test("AC-delete-guard-20: no row offers Delete, Delete asks first, and declining
     expect((await request.get(`/api/bots/${bot}/knowledge-bases/offer`)).status()).toBe(200);
 });
 
-test("AC-delete-guard-21: a procedure is deleted from its creator, and conversation offers no Delete", async ({ page, request }) => {
+test("AC-delete-guard-21: a procedure is deleted from its edit page, and conversation offers no Delete", async ({ page, request }) => {
     const bot = await newBot(request);
     await addProcedure(request, bot, "refund");
     await addProcedure(request, bot, "conversation");
 
     await page.goto(`/bots/${bot}/procedures/conversation/edit`);
-    await expect(page.getByRole("heading", { name: "Creator: conversation" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Procedure conversation" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Delete", exact: true })).toHaveCount(0);
 
     await page.goto(`/bots/${bot}/procedures/refund/edit`);

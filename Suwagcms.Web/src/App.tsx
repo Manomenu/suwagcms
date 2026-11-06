@@ -8,7 +8,7 @@ import { FactsScreen } from "./facts/FactsScreen";
 import { HistoryScreen } from "./history/HistoryScreen";
 import { KnowledgeBasesScreen } from "./knowledge-bases/KnowledgeBasesScreen";
 import { PersonaScreen } from "./persona/PersonaScreen";
-import { CreatorScreen } from "./procedures/CreatorScreen";
+import { ProcedureScreen } from "./procedures/ProcedureScreen";
 import { ProceduresScreen } from "./procedures/ProceduresScreen";
 import { AppShell } from "./shell/AppShell";
 import { VersionsScreen } from "./versions/VersionsScreen";
@@ -41,7 +41,7 @@ export function App() {
                 <Route path="/bots/:id/history">{(params) => <HistoryScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
                 <Route path="/bots/:id/procedures/:procedure/edit">
                     {(params) => (
-                        <CreatorScreen
+                        <ProcedureScreen
                             key={`${params.id}/${params.procedure}`}
                             bot={decodeURIComponent(params.id)}
                             id={decodeURIComponent(params.procedure)}

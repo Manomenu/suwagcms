@@ -111,7 +111,7 @@ public sealed class ActionAvailabilityTests(TestDatabase database) : IDisposable
         const string code = "lookupPolicy";
         var declares = new BotCapabilities
         {
-            FormatVersion = 1,
+            FormatVersion = 2,
             Blocks = Block.Names,
             CodeActions = [new CodeAction { Id = code, Description = "Finds" }],
         };

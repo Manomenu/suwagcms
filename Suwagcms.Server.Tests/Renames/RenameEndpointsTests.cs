@@ -396,23 +396,6 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-resource-rename-21")]
-    public async Task A_procedures_node_positions_stay_after_its_id_changes()
-    {
-        var scene = await NewScene();
-        Assert.Equal(HttpStatusCode.OK, (await scene.Api.Add("orderValuation", """{"description":"D"}""")).StatusCode);
-        var positions = """{"positions":{"ask":{"x":11,"y":22}}}""";
-        Assert.Equal(HttpStatusCode.OK, (await scene.Api.PutLayout("orderValuation", positions)).StatusCode);
-
-        Assert.Equal(HttpStatusCode.OK, (await scene.Rename("procedures", "orderValuation", "valuation")).StatusCode);
-
-        var layout = await (await scene.Api.GetLayout("valuation")).Content.ReadFromJsonAsync<JsonElement>(
-            TestContext.Current.CancellationToken
-        );
-        Assert.Equal(11, layout.GetProperty("positions").GetProperty("ask").GetProperty("x").GetDouble());
-    }
-
-    [Fact]
     [Trait("criterion", "AC-delete-guard-7")]
     public async Task An_article_does_not_list_its_knowledge_base_among_what_it_uses()
     {
@@ -446,15 +429,15 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-resource-rename-26")]
-    public async Task Changing_an_articles_id_rewrites_each_context_and_a_query_holding_those_words_stays_as_it_is()
+    public async Task Changing_an_articles_id_rewrites_each_knowledge_entry_and_a_query_holding_those_words_stays_as_it_is()
     {
         var scene = await NewScene();
         await scene.AddArticle("cennik");
-        var context = """{"articles":["cennik"],"searchQueries":["cennik of the office"]}""";
+        var knowledge = """[{"knowledgeBase":"offer","articles":["cennik"],"searchQueries":["cennik of the office"]}]""";
         var body =
-            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","points":{"prices":"The prices."},"context":CONTEXT}}},"whenStalled":{"instruction":"Say so.","context":CONTEXT}}""".Replace(
-                "CONTEXT",
-                context,
+            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","points":{"prices":"The prices."},"knowledge":KNOWLEDGE}}},"whenStalled":{"instruction":"Say so.","knowledge":KNOWLEDGE}}""".Replace(
+                "KNOWLEDGE",
+                knowledge,
                 StringComparison.Ordinal
             );
         Assert.Equal(HttpStatusCode.OK, (await scene.Api.Add("orderValuation", body)).StatusCode);
@@ -465,8 +448,8 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
         foreach (
             var found in new[]
             {
-                read.GetProperty("whenStalled").GetProperty("context"),
-                read.GetProperty("steps").GetProperty("tell").GetProperty("inform").GetProperty("context"),
+                read.GetProperty("whenStalled").GetProperty("knowledge")[0],
+                read.GetProperty("steps").GetProperty("tell").GetProperty("inform").GetProperty("knowledge")[0],
             }
         )
         {

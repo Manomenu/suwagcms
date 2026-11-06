@@ -315,7 +315,9 @@ public sealed class AvailabilityTests
                         ["inform"] = new JsonObject
                         {
                             ["instruction"] = "Tell where the office is.",
-                            ["context"] = new JsonObject { ["articles"] = new JsonArray("officeContact") },
+                            ["knowledge"] = new JsonArray(
+                                new JsonObject { ["knowledgeBase"] = "faq", ["articles"] = new JsonArray("officeContact") }
+                            ),
                             ["points"] = new JsonObject { ["address"] = "The office is on Main street." },
                         },
                     },
@@ -327,7 +329,10 @@ public sealed class AvailabilityTests
         await SendAsync(bot, Message(1, "officeContact"));
 
         var definition = await bot.Definitions.GetAsync(1, TestContext.Current.CancellationToken);
-        var named = definition.Procedures.Single(procedure => procedure.Id == "orderValuation").Steps["tell"].Inform?.Context?.Articles;
+        var named = definition
+            .Procedures.Single(procedure => procedure.Id == "orderValuation")
+            .Steps["tell"]
+            .Inform?.Knowledge?[0].Articles;
         Assert.Equal(["officeContact"], named);
         Assert.Equal("officeContact", Assert.Single(definition.Articles).Id);
         Assert.True(bot.Definitions.IsOff(1, ResourceKind.Article, "officeContact"));

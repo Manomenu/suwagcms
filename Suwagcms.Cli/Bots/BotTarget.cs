@@ -12,7 +12,7 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
 
     public string ItemPath(string collection, string id) => $"{CollectionPath(collection)}/{Uri.EscapeDataString(id)}";
 
-    // Why: the web app opens a fact, a knowledge base, an article or an action in its list from ?open=<id>, and a procedure in its creator.
+    // Why: the web app opens a fact, a knowledge base, an article or an action in its list from ?open=<id>, and a procedure in its editor.
     private string? LinkTo(string kind, string id) =>
         kind switch
         {

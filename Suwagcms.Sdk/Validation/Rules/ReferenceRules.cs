@@ -47,11 +47,16 @@ internal static class ReferenceRules
         var known = definition
             .Articles.Select(article => new ResourceRef(ResourceKind.Article, article.Id))
             .Concat(definition.Procedures.Select(procedure => new ResourceRef(ResourceKind.Procedure, procedure.Id)))
+            .Concat(definition.KnowledgeBases.Select(knowledgeBase => new ResourceRef(ResourceKind.KnowledgeBase, knowledgeBase.Id)))
             .ToHashSet();
+        var bases = definition.KnowledgeBases.Select(knowledgeBase => knowledgeBase.Id).Order(StringComparer.Ordinal).ToList();
         var procedures = definition.Procedures.Select(procedure => procedure.Id).Order(StringComparer.Ordinal).ToList();
         return ReferenceWalker
             .From(definition)
-            .Where(reference => reference.To.Kind is ResourceKind.Article or ResourceKind.Procedure)
+            .Where(reference =>
+                reference.To.Kind is ResourceKind.Article or ResourceKind.Procedure
+                || (reference.To.Kind == ResourceKind.KnowledgeBase && reference.From.Kind == ResourceKind.Procedure)
+            )
             .Where(reference => !WrongName(reference))
             .Where(reference => !known.Contains(reference.To))
             .DistinctBy(reference => (reference.From, reference.Path, reference.To))
@@ -61,7 +66,13 @@ internal static class ReferenceRules
                 reference.From,
                 reference.Path,
                 Missing(reference),
-                reference.To.Kind == ResourceKind.Article ? "Pick an existing article; 'suwagcms articles list' shows them."
+                reference.To.Kind == ResourceKind.KnowledgeBase
+                        ? (
+                            bases.Count == 0
+                                ? "This bot has no knowledge bases yet: add one first."
+                                : $"Knowledge bases of the bot: {string.Join(", ", bases)}."
+                        )
+                    : reference.To.Kind == ResourceKind.Article ? "Pick an existing article; 'suwagcms articles list' shows them."
                     : reference.From.Kind == ResourceKind.Article ? "Pick an existing procedure; 'suwagcms procedures list' shows them."
                     : $"Procedures: {string.Join(", ", procedures)}.",
                 []
@@ -79,9 +90,9 @@ internal static class ReferenceRules
         var parts = reference.Path.Split('.');
         if (parts[0] == "whenStalled")
         {
-            return $"'context' of whenStalled in '{reference.From.Id}'";
+            return $"'knowledge' of whenStalled in '{reference.From.Id}'";
         }
-        return $"'{(parts.Length > 3 && parts[3] == "context" ? "context" : parts[2])}' of step '{parts[1]}' in '{reference.From.Id}'";
+        return $"'{(parts.Length > 3 && parts[3].StartsWith("knowledge", StringComparison.Ordinal) ? "knowledge" : parts[2])}' of step '{parts[1]}' in '{reference.From.Id}'";
     }
 
     // Why: a link's id is judged by the link's own form, and a collect or a rule names a fact it then finds missing; an id an author writes for a target has to have the right form before it can be looked up, and saying so beats saying it is missing.

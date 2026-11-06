@@ -116,6 +116,7 @@ public static class DeclarationValidator
         [
             .. DeclarationContract.Check(definition, declaration),
             .. MissingPersona(definition, declaration),
+            .. declaration.Knowledge ? [] : KnowledgeRules.Undeclared(definition),
             .. definition
                 .Procedures.OrderBy(procedure => procedure.Id, StringComparer.Ordinal)
                 .SelectMany(procedure =>
