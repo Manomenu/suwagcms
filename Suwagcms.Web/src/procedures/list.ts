@@ -313,6 +313,55 @@ export function moveRow(list: StepList, name: string, direction: "up" | "down"):
     return insert(owner.ref, direction === "up" ? owner.index : owner.index + 1);
 }
 
+function ifNeighbour(list: StepList, name: string, direction: "up" | "down"): StepRow | undefined {
+    const from = ownerOf(list, name);
+    if (from === null) return undefined;
+    const rows = listAt(list, from.ref).rows;
+    return rows[from.index + (direction === "up" ? -1 : 1)];
+}
+
+/** An If hangs on the step above it, so it can only join a neighbour with nothing of its own in that place. */
+export function canMoveIf(list: StepList, name: string, direction: "up" | "down"): boolean {
+    const neighbour = ifNeighbour(list, name, direction);
+    if (neighbour === undefined || neighbour.branches !== undefined) return false;
+    const { success } = neighbour;
+    return success === undefined || (success.rows.length === 0 && (success.last === null || success.last === "end"));
+}
+
+/** Moves an If, with its branches and the steps in them, onto the neighbouring step. The steps of the list keep their order. */
+export function moveIf(list: StepList, name: string, direction: "up" | "down"): StepList {
+    const moving = findRow(list, name);
+    const neighbour = ifNeighbour(list, name, direction);
+    if (moving?.branches === undefined || neighbour === undefined || !canMoveIf(list, name, direction)) return list;
+    const { branches, ...left } = moving;
+    const { success: _, ...joined } = neighbour;
+    return changeRow(
+        changeRow(list, name, () => (left.failure ? { ...left, success: emptyList() } : left)),
+        neighbour.name,
+        () => ({ ...joined, branches }),
+    );
+}
+
+/** Whether a branch can swap with its neighbour: only those with a condition can, since the Else stays last. */
+export function canSwapBranch(row: StepRow, index: number, direction: "up" | "down"): boolean {
+    const other = row.branches?.[index + (direction === "up" ? -1 : 1)];
+    return row.branches?.[index]?.when !== undefined && other?.when !== undefined;
+}
+
+/** Order decides which condition wins, so swapping with the first turns a branch into the If. Each branch keeps its own steps. */
+export function swapBranch(list: StepList, name: string, index: number, direction: "up" | "down"): StepList {
+    return changeRow(list, name, (row) => {
+        const at = index + (direction === "up" ? -1 : 1);
+        const branches = [...(row.branches ?? [])];
+        const one = branches[index];
+        const other = branches[at];
+        if (one === undefined || other === undefined || !canSwapBranch(row, index, direction)) return row;
+        branches[index] = other;
+        branches[at] = one;
+        return { ...row, branches };
+    });
+}
+
 /** Takes a row out; the rows around it join up, since nobody wrote their next. */
 export function withoutRow(list: StepList, name: string): StepList {
     const from = ownerOf(list, name);

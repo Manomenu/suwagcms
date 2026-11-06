@@ -14,7 +14,7 @@ import { factsSeen, withStallText } from "./draft";
 import { KnowledgeForm } from "./KnowledgeForm";
 import { LocalFactsPanel } from "./LocalFactsPanel";
 import { PROCEDURE_HINTS } from "./hints";
-import { consequenceOf, placeOf, stepOfPlace, type Check } from "./mistakes";
+import { conditionOfPlace, consequenceOf, placeOf, stepOfPlace, type Check } from "./mistakes";
 import { StepsEditor, type StepsProps } from "./StepsEditor";
 
 function MistakeNote({ mistake }: { mistake: Mistake }) {
@@ -95,7 +95,7 @@ export function ProcedureForm({
     note: string | null;
     allFacts: StepsProps["facts"];
 }) {
-    const { draft, edit, id, onSelect, showKnowledge, bases, articles } = steps;
+    const { draft, edit, id, onSelect, onConditionOpen, showKnowledge, bases, articles } = steps;
     const placed = useMemo(
         () => (check.state === "done" ? check.mistakes.map((mistake) => ({ mistake, place: placeOf(mistake, id, draft) })) : []),
         [check, id, draft],
@@ -117,7 +117,9 @@ export function ProcedureForm({
                 mistakes={placed}
                 onPick={(place) => {
                     const step = stepOfPlace(place);
+                    const condition = conditionOfPlace(place);
                     if (step !== null) onSelect(step);
+                    else if (condition !== null) onConditionOpen(condition, true);
                     document.querySelector(`[data-place="${CSS.escape(place)}"]`)?.scrollIntoView({ block: "center" });
                 }}
             />

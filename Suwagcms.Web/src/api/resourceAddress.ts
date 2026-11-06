@@ -25,6 +25,7 @@ export function withListSearch(href: string, search: string): string {
     const kept = new URLSearchParams(search);
     kept.delete(HISTORY_PAGE);
     kept.delete("step");
+    kept.delete("if");
     kept.delete("compare");
     const text = kept.toString();
     return text === "" ? href : `${href}?${text}`;

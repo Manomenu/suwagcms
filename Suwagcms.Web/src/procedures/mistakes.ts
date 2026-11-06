@@ -53,6 +53,11 @@ export function placeOf(mistake: Mistake, procedure: string, draft: Draft): stri
 
 /** The step to select for a place, so clicking a mistake opens the row it is about. */
 export function stepOfPlace(place: string): string | null {
-    const match = /^(?:step|branch|failure|knowledge):([^:]+)/.exec(place);
+    const match = /^(?:step|failure|knowledge):([^:]+)/.exec(place);
     return match?.[1] === undefined || match[1] === "whenStalled" ? null : match[1];
+}
+
+/** The If or Else if row to unfold for a place, so clicking a mistake beside a branch opens that row and not its step. */
+export function conditionOfPlace(place: string): string | null {
+    return /^branch:(.+)$/.exec(place)?.[1] ?? null;
 }

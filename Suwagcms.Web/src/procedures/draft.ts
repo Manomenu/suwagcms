@@ -10,7 +10,9 @@ import {
     firstStepOf,
     linksOf,
     listOf,
+    moveIf,
     moveRow as moveRowIn,
+    swapBranch,
     namesIn,
     renamedList,
     withoutRow,
@@ -418,6 +420,14 @@ export function deleteStep(draft: Draft, name: string): Draft {
 
 export function moveStep(draft: Draft, name: string, direction: "up" | "down"): Draft {
     return { ...draft, list: moveRowIn(draft.list, name, direction) };
+}
+
+export function moveIfBlock(draft: Draft, name: string, direction: "up" | "down"): Draft {
+    return { ...draft, list: moveIf(draft.list, name, direction) };
+}
+
+export function moveBranch(draft: Draft, name: string, index: number, direction: "up" | "down"): Draft {
+    return { ...draft, list: swapBranch(draft.list, name, index, direction) };
 }
 
 /** Moves a Not connected step to the end of the main list; its place says where it goes now, so what it stored goes. */

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { fromDetail, type BlockName } from "./draft";
 import type { ProcedureDetail } from "./api";
 import { ProcedureForm } from "./ProcedureForm";
+import { conditionsText } from "./RuleEditor";
 import { BLOCK_LABELS, blockOf, rowText } from "./StepsEditor";
 
 const detail = {
@@ -35,6 +36,8 @@ function form(over: Partial<Parameters<typeof ProcedureForm>[0]> = {}): string {
             articles={[]}
             actions={[]}
             selected={null}
+            openConditions={[]}
+            onConditionOpen={() => undefined}
             check={{ state: "checking" }}
             dirty={false}
             saving={false}
@@ -167,19 +170,50 @@ describe("the form of a procedure", () => {
             usedBy: [],
         };
 
-        const closed = () => form({ draft: fromDetail(FRESH), allFacts: [GLOBAL], selected: null });
+        const closed = (openConditions: string[] = []) =>
+            form({ draft: fromDetail(FRESH), allFacts: [GLOBAL], selected: null, openConditions });
 
-        it("shows the editor on an If and an Else if with no step open, and no read-only text in its place", () => {
+        it("a row with no condition is open with no step selected and cannot fold, so a condition can always be set", () => {
             const html = closed();
             expect(html).toContain("+ Choose a fact");
-            expect(html).toContain('aria-label="Condition"');
-            expect(html).not.toContain("no condition yet");
+            expect(html).toMatch(/<button[^>]*aria-expanded="true"[^>]*aria-label="Open If of ask"[^>]*disabled/);
         });
 
-        it("offers a global and a local fact", () => {
-            const select = /<select[^>]*aria-label="Fact"[^>]*>(.*?)<\/select>/.exec(closed())?.[1] ?? "";
+        it("a row with a condition starts folded and reads as its line of text, like a step's row", () => {
+            const html = closed();
+            expect(html).toMatch(/<button[^>]*aria-expanded="false"[^>]*aria-label="Open Else if 1 of ask"/);
+            expect(html).toContain("order.kind is known");
+            expect(html).not.toContain('aria-label="Condition"');
+        });
+
+        it("each row unfolds on its own, whichever step is selected, and offers a global and a local fact", () => {
+            const html = closed(["ask:1"]);
+            expect(html).toMatch(/<button[^>]*aria-expanded="true"[^>]*aria-label="Open Else if 1 of ask"/);
+            const select = /<select[^>]*aria-label="Fact"[^>]*>(.*?)<\/select>/.exec(html)?.[1] ?? "";
             expect(select).toContain(">order.kind<");
             expect(select).toContain(">visitDate<");
+        });
+
+        it("AC-procedure-creator-48: an If and an Else if have arrows, and an Else has none", () => {
+            const html = closed();
+            expect(html).toContain('aria-label="Move If of ask up"');
+            expect(html).toContain('aria-label="Move Else if 1 of ask up"');
+            expect(html.match(/aria-label="Move [^"]*"/g)?.filter((label) => label.includes(" of "))).toEqual([
+                'aria-label="Move If of ask up"',
+                'aria-label="Move If of ask down"',
+                'aria-label="Move Else if 1 of ask up"',
+                'aria-label="Move Else if 1 of ask down"',
+            ]);
+        });
+
+        it("reads each kind of condition, and all of them joined", () => {
+            expect(
+                conditionsText({
+                    "property.area": { range: { min: 500 } },
+                    "order.kind": { oneOf: ["house", "flat"] },
+                    city: { known: false },
+                }),
+            ).toBe("property.area is at least 500 and order.kind is one of house, flat and city is not known yet");
         });
 
         it("has one Remove this If, on the If row, and an Else if keeps its own", () => {

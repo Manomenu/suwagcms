@@ -2,7 +2,21 @@ import { describe, expect, it } from "vitest";
 
 import type { ProcedureDetail } from "./api";
 import { fromDetail, toSave, type Rule, type Step } from "./draft";
-import { firstStepOf, fallOf, linksOf, listOf, moveRow, type StepList } from "./list";
+import {
+    canMoveIf,
+    canSwapBranch,
+    firstStepOf,
+    fallOf,
+    findRow,
+    linksOf,
+    listOf,
+    moveIf,
+    moveRow,
+    namesIn,
+    swapBranch,
+    type StepList,
+    type StepRow,
+} from "./list";
 
 type Graph = Record<string, Step>;
 
@@ -266,6 +280,85 @@ describe("saving a list", () => {
         expect(lines(moveRow(start, "b", "up"))).toEqual(["1. b", "If", "  1. x", "Else", "2. a", "3. c"]);
         expect(moveRow(start, "a", "up")).toEqual(start);
         expect(moveRow(start, "c", "down")).toEqual(start);
+    });
+});
+
+describe("moving an If", () => {
+    const blockOn = (name: string): StepRow => ({
+        name,
+        branches: [
+            { when: when("f", "1"), list: { rows: [{ name: "x" }], last: null } },
+            { when: when("g", "1"), list: { rows: [{ name: "y" }], last: null } },
+            { list: { rows: [{ name: "z" }], last: null } },
+        ],
+    });
+    const LIST: StepList = { rows: [{ name: "a" }, blockOn("b"), { name: "c" }], last: null };
+
+    it("AC-procedure-creator-48: the block joins the neighbouring step, its steps stay in it, and the list keeps its order", () => {
+        expect(lines(moveIf(LIST, "b", "up"))).toEqual(["1. a", "If", "  1. x", "Else if", "  1. y", "Else", "  1. z", "2. b", "3. c"]);
+        expect(lines(moveIf(LIST, "b", "down"))).toEqual(["1. a", "2. b", "3. c", "If", "  1. x", "Else if", "  1. y", "Else", "  1. z"]);
+    });
+
+    it("AC-procedure-creator-48: moving back restores the list", () => {
+        expect(moveIf(moveIf(LIST, "b", "up"), "a", "down")).toEqual(LIST);
+    });
+
+    it("AC-procedure-creator-48: the rules leave one step and join the other, and what falls through follows the new place", () => {
+        const links = linksOf(moveIf(LIST, "b", "up"));
+        expect(links["a"]?.next).toEqual([{ when: when("f", "1"), to: "x" }, { when: when("g", "1"), to: "y" }, { to: "z" }]);
+        expect(links["b"]).toEqual({ next: "c" });
+        expect(links["x"]).toEqual({ next: "b" });
+    });
+
+    it("AC-procedure-creator-48: it cannot go with no step on that side or onto a step with an If of its own, or one holding what follows it", () => {
+        expect(canMoveIf(LIST, "b", "up")).toBe(true);
+        const first: StepList = { rows: [blockOn("b"), { name: "c" }], last: null };
+        expect(canMoveIf(first, "b", "up")).toBe(false);
+        expect(moveIf(first, "b", "up")).toEqual(first);
+        const last: StepList = { rows: [{ name: "a" }, blockOn("b")], last: null };
+        expect(canMoveIf(last, "b", "down")).toBe(false);
+        const twoIfs: StepList = { rows: [blockOn("a"), blockOn("b")], last: null };
+        expect(canMoveIf(twoIfs, "b", "up")).toBe(false);
+        const holding: StepList = {
+            rows: [{ name: "a", failure: { rows: [], last: null }, success: { rows: [{ name: "s" }], last: null } }, blockOn("b")],
+            last: null,
+        };
+        expect(canMoveIf(holding, "b", "up")).toBe(false);
+    });
+
+    it("AC-procedure-creator-48: an Else if swaps with the If, each keeping its steps, and the Else stays last", () => {
+        const swapped = swapBranch(LIST, "b", 1, "up");
+        expect(lines(swapped)).toEqual(["1. a", "2. b", "If", "  1. y", "Else if", "  1. x", "Else", "  1. z", "3. c"]);
+        expect(findRow(swapped, "b")?.branches?.[0]?.when).toEqual(when("g", "1"));
+        const row = blockOn("b");
+        expect(canSwapBranch(row, 1, "up")).toBe(true);
+        expect(canSwapBranch(row, 1, "down")).toBe(false);
+        expect(canSwapBranch(row, 2, "up")).toBe(false);
+        expect(swapBranch(LIST, "b", 1, "down")).toEqual(LIST);
+    });
+
+    it("AC-procedure-creator-48: for any graph, a move keeps every step, and a save and a reopen build the same graph", () => {
+        let moves = 0;
+        for (let seed = 1; seed <= 2000; seed++) {
+            const { first, steps } = randomGraph(seed);
+            const detail = { description: "D", firstStep: first, steps, revision: 1, notReady: [] } as unknown as ProcedureDetail;
+            const draft = fromDetail(detail);
+            const blocks = namesIn(draft.list).filter((name) => findRow(draft.list, name)?.branches !== undefined);
+            for (const name of blocks) {
+                for (const direction of ["up", "down"] as const) {
+                    if (!canMoveIf(draft.list, name, direction)) continue;
+                    moves++;
+                    const list = moveIf(draft.list, name, direction);
+                    const saved = toSave({ ...draft, list });
+                    expect(Object.keys(saved.steps ?? {}).sort(), `seed ${seed}`).toEqual(Object.keys(steps).sort());
+                    const again = toSave(
+                        fromDetail({ ...detail, firstStep: saved.firstStep, steps: saved.steps } as unknown as ProcedureDetail),
+                    );
+                    expect(again.steps, `seed ${seed}, ${name} ${direction}, reopened`).toEqual(saved.steps);
+                }
+            }
+        }
+        expect(moves).toBeGreaterThan(100);
     });
 });
 

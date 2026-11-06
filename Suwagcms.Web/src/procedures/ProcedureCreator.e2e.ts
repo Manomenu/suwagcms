@@ -360,12 +360,130 @@ test("AC-procedure-creator-8: a fresh If takes its condition on its row, with no
     await expect(page.locator("[data-branch]")).toHaveCount(0);
 });
 
+test("AC-procedure-creator-8: a fresh If is open; with a condition it folds to its text and unfolds to change it, and the save stores the change; a mistake beside it opens it", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        { description: "D", firstStep: "ask", steps: { ask: { say: "A" }, then: { say: "T" } } },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    const toggle = page.getByRole("button", { name: "Open If of ask" });
+    const branch = page.locator('[data-branch="If"]');
+
+    await page.getByRole("button", { name: "Delete step then" }).click();
+    await addStep(page, "if");
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(page).not.toHaveURL(/[?&]step=/);
+    await branch.getByRole("button", { name: "+ Choose a fact" }).click();
+    await branch.getByLabel("Fact", { exact: true }).selectOption("order.kind");
+    await branch.getByRole("checkbox", { name: "house" }).check();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(toggle).toHaveText("order.kind is one of house");
+    await expect(branch.getByLabel("Fact", { exact: true })).toHaveCount(0);
+
+    await toggle.click();
+    await branch.getByRole("checkbox", { name: "flat" }).check();
+    await addStep(page, "say", "Add step to If of ask");
+    await addStep(page, "say", "Add step to Else of ask");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect
+        .poll(async () => {
+            const saved = await stored<{ steps: { ask: { next?: { when?: unknown }[] } } }>(request, bot, "orderValuation");
+            return saved.steps.ask.next?.[0]?.when;
+        })
+        .toMatchObject({ "order.kind": { oneOf: ["house", "flat"] } });
+    await expect(page.getByText("Unsaved changes")).toHaveCount(0);
+
+    await page.reload();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await toggle.click();
+    await page.getByRole("button", { name: "Delete step say", exact: true }).click();
+    await expect(branch.locator('[data-mistake="step.missing"]')).toBeVisible();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await page
+        .getByRole("region", { name: "Mistakes" })
+        .getByRole("button", { name: /goes to no step/ })
+        .click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+});
+
+test("AC-procedure-creator-48: the If moves as one block onto the step above, and an Else if swaps into the If; both stay after a save and a reopen", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const house = { "order.kind": { oneOf: ["house"] } };
+    const flat = { "order.kind": { oneOf: ["flat"] } };
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "D",
+            firstStep: "first",
+            steps: {
+                first: { say: "F", next: "ask" },
+                ask: {
+                    say: "A",
+                    next: [{ when: house, to: "big" }, { when: flat, to: "small" }, { to: "none" }],
+                },
+                big: { say: "B", next: "after" },
+                small: { say: "S", next: "after" },
+                none: { say: "N", next: "after" },
+                after: { say: "Z" },
+            },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    const save = page.getByRole("button", { name: "Save", exact: true });
+    const steps = async () => (await stored<{ steps: Record<string, { next?: unknown }> }>(request, bot, "orderValuation")).steps;
+
+    await expect(page.getByRole("button", { name: "Move If of ask down" })).toBeEnabled();
+    await page.getByRole("button", { name: "Move If of ask up" }).click();
+    await expect(page.getByRole("button", { name: "Move If of first up" })).toBeDisabled();
+    await save.click();
+    await expect(page.getByText("Unsaved changes")).toHaveCount(0);
+    expect(await steps()).toMatchObject({
+        first: {
+            next: [{ when: house, to: "big" }, { when: flat, to: "small" }, { to: "none" }],
+        },
+        ask: { next: "after" },
+        big: { next: "ask" },
+        small: { next: "ask" },
+        none: { next: "ask" },
+    });
+
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Open If of first" })).toHaveText("order.kind is one of house");
+    await expect(page.getByRole("button", { name: "Move Else if 1 of first down" })).toBeDisabled();
+    await page.getByRole("button", { name: "Move Else if 1 of first up" }).click();
+    await expect(page.getByRole("button", { name: "Open If of first" })).toHaveText("order.kind is one of flat");
+    await save.click();
+    await expect(page.getByText("Unsaved changes")).toHaveCount(0);
+    expect((await steps())["first"]?.next).toMatchObject([{ when: flat, to: "small" }, { when: house, to: "big" }, { to: "none" }]);
+
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Open If of first" })).toHaveText("order.kind is one of flat");
+    await expect(page.getByRole("button", { name: "Open Else if 1 of first" })).toHaveText("order.kind is one of house");
+});
+
 test("AC-procedure-creator-8: + and adds a second condition to a branch, and the save stores both", async ({ page, request }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
 
     const branch = page.locator('[data-branch="If"]');
+    await page.getByRole("button", { name: "Open If of ask" }).click();
     await branch.getByRole("button", { name: "+ and" }).click();
     await branch.getByLabel("Condition", { exact: true }).nth(1).selectOption("known");
     await page.getByRole("button", { name: "Save", exact: true }).click();

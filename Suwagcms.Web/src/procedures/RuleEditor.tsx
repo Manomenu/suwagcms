@@ -211,3 +211,20 @@ export function ConditionsEditor({
         </div>
     );
 }
+
+/** Reads a branch's conditions as a line of text, for a row that is folded. */
+export function conditionsText(when: Record<string, Condition>): string {
+    return Object.entries(when)
+        .map(([fact, condition]) => {
+            if (condition.range) {
+                const { min, max } = condition.range;
+                if (min !== undefined && max !== undefined) return `${fact} is between ${min} and ${max}`;
+                if (min !== undefined) return `${fact} is at least ${min}`;
+                return max === undefined ? `${fact} has a range not set` : `${fact} is at most ${max}`;
+            }
+            if (condition.known !== undefined) return `${fact} is ${condition.known ? "known" : "not known yet"}`;
+            const values = condition.oneOf ?? [];
+            return values.length === 0 ? `${fact} has no value chosen yet` : `${fact} is one of ${values.join(", ")}`;
+        })
+        .join(" and ");
+}
