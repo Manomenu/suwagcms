@@ -183,7 +183,7 @@ internal static class KnowledgeBasesCommand
                     environment,
                     target.Address,
                     path + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
-                    new SaveKnowledgeBase(parsed.GetValue(title) ?? current.Title, parsed.GetValue(language) ?? current.Language),
+                    EditOverlay.Over(current, new SaveKnowledgeBase(parsed.GetValue(title), parsed.GetValue(language))),
                     cancellationToken
                 );
                 return await ReportSavedAsync(target, answer, dry, "edit", cancellationToken);

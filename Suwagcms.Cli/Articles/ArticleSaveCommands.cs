@@ -189,12 +189,15 @@ internal static class ArticleSaveCommands
                     return await target.FailedAsync(read, cancellationToken);
                 }
                 var current = read.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
-                var body = new SaveArticle(
-                    parsed.GetValue(fields.KnowledgeBase) ?? current.KnowledgeBase,
-                    parsed.GetValue(fields.Title) ?? current.Title,
-                    content ?? current.Content,
-                    guide ?? current.LlmGuide,
-                    parsed.GetValue(fields.Description) ?? current.Description
+                var body = EditOverlay.Over(
+                    current,
+                    new SaveArticle(
+                        parsed.GetValue(fields.KnowledgeBase),
+                        parsed.GetValue(fields.Title),
+                        content,
+                        guide,
+                        parsed.GetValue(fields.Description)
+                    )
                 );
                 var dry = parsed.GetValue(dryRun);
                 // Why: without --if-revision the edit still guards the fields it just read, so a change made in between is reported, never overwritten.

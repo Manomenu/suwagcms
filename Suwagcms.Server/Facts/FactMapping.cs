@@ -20,22 +20,6 @@ internal static class FactMapping
             Pattern = body.Pattern,
         };
 
-    // Why: constraints belong to a type, so changing the type starts from none and the fields given are the new ones, as the CLI's edit does.
-    public static SaveFact Merged(GlobalFact stored, SaveFact given, bool clearsPattern)
-    {
-        var sameType = given.Type is null || given.Type == stored.Type;
-        return new SaveFact(
-            given.Type ?? stored.Type,
-            given.Description ?? stored.Description,
-            given.WritableBy ?? stored.WritableBy,
-            given.Values ?? (sameType ? stored.Values : null),
-            given.Min ?? (sameType ? stored.Min : null),
-            given.Max ?? (sameType ? stored.Max : null),
-            given.MaxLength ?? (sameType ? stored.MaxLength : null),
-            given.Pattern ?? (sameType && !clearsPattern ? stored.Pattern : null)
-        );
-    }
-
     public static Fact Show(StoredResource stored, IReadOnlyList<StoredResource> all) =>
         Show((GlobalFact)stored.Record, stored.Revision, all);
 

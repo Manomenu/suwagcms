@@ -145,27 +145,20 @@ internal static class FactSaveCommands
                 }
                 var current = read.Body?.Deserialize<Fact>(Web) ?? throw new InvalidOperationException("the server sent no fact");
                 var type = parsed.GetValue(fields.Type);
-                // Why: constraints belong to a type, so changing the type starts from none and the options give the new ones.
-                var kept =
-                    type is null || type == current.Type
-                        ? current
-                        : current with
-                        {
-                            Values = null,
-                            Min = null,
-                            Max = null,
-                            MaxLength = null,
-                            Pattern = null,
-                        };
-                var body = new SaveFact(
-                    type ?? current.Type,
-                    parsed.GetValue(fields.Description) ?? current.Description,
-                    parsed.GetValue(fields.WritableBy) ?? current.WritableBy,
-                    Given(parsed, fields.Values) ?? kept.Values,
-                    parsed.GetValue(fields.Min) ?? kept.Min,
-                    parsed.GetValue(fields.Max) ?? kept.Max,
-                    parsed.GetValue(fields.MaxLength) ?? kept.MaxLength,
-                    PatternGiven(parsed, fields, kept.Pattern)
+                var keptPattern = type is null || type == current.Type ? current.Pattern : null;
+                var body = EditOverlay.OverFact(
+                    current,
+                    new SaveFact(
+                        type,
+                        parsed.GetValue(fields.Description),
+                        parsed.GetValue(fields.WritableBy),
+                        Given(parsed, fields.Values),
+                        parsed.GetValue(fields.Min),
+                        parsed.GetValue(fields.Max),
+                        parsed.GetValue(fields.MaxLength),
+                        PatternGiven(parsed, fields, keptPattern)
+                    ),
+                    parsed.GetValue(fields.NoPattern)
                 );
                 var dry = parsed.GetValue(dryRun);
                 // Why: without --if-revision the edit still guards the fields it just read, so a change made in between is reported, never overwritten.
