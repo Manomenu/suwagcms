@@ -1,8 +1,5 @@
-import { useState } from "react";
-
-import { ApiError } from "@/api/client";
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
+import { useSaveForm } from "@/api/saveForm";
+import { FormFooter } from "@/design/formFooter";
 import { Paper } from "@/design/page";
 
 import { saveFact } from "./api";
@@ -30,64 +27,22 @@ export function FactForm({
     onReload: () => void;
     onCancel: () => void;
 }) {
-    const [form, setForm] = useState(initial);
-    const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const saving = useSaveForm(initial, (form: FactFormState) => saveFact(bot, form.name, bodyOf(form), revision), onSaved);
+    const { form, change, submit, mistakes } = saving;
 
-    function submit(event: React.SyntheticEvent) {
-        event.preventDefault();
-        setRefusal(null);
-        saveFact(bot, form.name, bodyOf(form), revision)
-            .then(onSaved)
-            .catch((error: unknown) => {
-                setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
-            });
-    }
-
-    const mistakes = refusal?.mistakes ?? [];
     const loose = mistakes.filter((mistake) => fieldOf(mistake) === null);
-    const moved = mistakes.some((mistake) => mistake.code === "resource.stale");
     return (
         <Paper>
             <form onSubmit={submit} className="flex max-w-2xl flex-col gap-3">
-                <FactFields
-                    bot={bot}
-                    form={form}
-                    mistakes={mistakes}
-                    nameLocked={editing}
-                    onChange={(change) => {
-                        setForm((before) => ({ ...before, ...change }));
-                    }}
+                <FactFields bot={bot} form={form} mistakes={mistakes} nameLocked={editing} onChange={change} />
+                <FormFooter
+                    saving={saving}
+                    loose={loose}
+                    editing={editing}
+                    reloadLabel="Reload the facts"
+                    onReload={onReload}
+                    onCancel={onCancel}
                 />
-                {refusal !== null && mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
-                {loose.length > 0 && (
-                    <Alert variant="destructive">
-                        <ul className="list-disc pl-4">
-                            {loose.map((mistake) => (
-                                <li key={`${mistake.code}:${mistake.path}`}>
-                                    {mistake.message} {mistake.fix}
-                                </li>
-                            ))}
-                        </ul>
-                    </Alert>
-                )}
-                <div className="flex gap-2">
-                    <Button type="submit">{editing ? "Save" : "Add"}</Button>
-                    {moved && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                                setRefusal(null);
-                                onReload();
-                            }}
-                        >
-                            Reload the facts
-                        </Button>
-                    )}
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
-                    </Button>
-                </div>
             </form>
         </Paper>
     );

@@ -23,7 +23,7 @@ export function KnowledgeBasesView({
     onDelete: (base: KnowledgeBase) => void;
 }) {
     return (
-        <Page title={`Knowledge bases of ${bot}`} actions={<Button onClick={onAdd}>New knowledge base</Button>}>
+        <Page title={`Knowledge bases of ${bot}`} actions={<Button onClick={onAdd}>Add a knowledge base</Button>}>
             {form}
             {bases.length === 0 ? (
                 <p className="text-muted-foreground">

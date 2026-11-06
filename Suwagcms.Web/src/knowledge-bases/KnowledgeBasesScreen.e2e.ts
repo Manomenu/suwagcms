@@ -25,10 +25,10 @@ test("AC-knowledge-bases-1: a bot with no bases offers to create the first one, 
     await page.goto(`/bots/${bot}/knowledge-bases`);
     await expect(page.getByText("No knowledge bases yet.")).toBeVisible();
 
-    await page.getByRole("button", { name: "New knowledge base" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
     await page.getByLabel("Id").fill("oferta");
     await page.getByLabel("Title").fill("Offer");
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
     const row = page.getByRole("row").filter({ hasText: "oferta" });
     await expect(row).toContainText("Offer");
@@ -53,10 +53,10 @@ test("AC-knowledge-bases-4: a title another base has is refused beside the title
     await addBase(request, bot, "oferta", "Our offer");
     await page.goto(`/bots/${bot}/knowledge-bases`);
 
-    await page.getByRole("button", { name: "New knowledge base" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
     await page.getByLabel("Id").fill("second");
     await page.getByLabel("Title").fill("  our OFFER ");
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
     await expect(page.locator('[data-field="title"]')).toContainText("used by knowledge base 'oferta'");
     await expect(page.getByLabel("Id")).toHaveValue("second");
@@ -130,14 +130,14 @@ test("AC-knowledge-base-language-2: a new base starts on en, the language chosen
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("button", { name: "New knowledge base" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
     await expect(page.locator('[data-field="language"] select')).toHaveValue("en");
     await expect(page.locator('[data-field="language"] select').locator("option")).toHaveText(["pl", "en"]);
     await page.getByLabel("Id").fill("oferta");
     await page.getByLabel("Title").fill("Oferta");
 
     await page.locator('[data-field="language"] select').selectOption("pl");
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
     const row = page.getByRole("row").filter({ hasText: "oferta" });
     await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();

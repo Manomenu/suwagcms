@@ -49,7 +49,7 @@ describe("KnowledgeBasesView", () => {
 
         expect(html).toContain("No knowledge bases yet.");
         expect(html).toContain("Create the first one");
-        expect(html).toContain("New knowledge base");
+        expect(html).toContain("Add a knowledge base");
         expect(html).not.toContain(">Edit<");
     });
 });
