@@ -35,7 +35,6 @@ function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase
                 articles={list}
                 bases={knowledgeBases}
                 filters={filters}
-                form={null}
                 onFilters={() => undefined}
                 onAdd={() => undefined}
                 onEdit={() => undefined}
@@ -88,7 +87,6 @@ describe("the list of articles and availability", () => {
                         bases={bases}
                         isOff={isOff}
                         filters={{ knowledgeBase: "", language: "", text: "" }}
-                        form={null}
                         onFilters={() => undefined}
                         onAdd={() => undefined}
                         onEdit={() => undefined}
@@ -138,7 +136,7 @@ describe("ArticleFields", () => {
         const html = fields();
 
         for (const field of ["content", "llmGuide", "description"] as const) {
-            expect(fieldHtml(html, field)).toContain(`title="${HINTS[field].replaceAll("'", "&#x27;")}"`);
+            expect(fieldHtml(html, field)).toContain(`>${HINTS[field].replaceAll("'", "&#x27;")}<`);
         }
         expect(HINTS.content).toMatch(/customer reads it/);
         expect(HINTS.llmGuide).toMatch(/Only the model reads it/);
@@ -265,7 +263,7 @@ describe("the language of an article", () => {
     it("AC-knowledge-base-language-12: the tooltip says the language comes from the knowledge base", () => {
         const html = fieldHtml(fields(), "language");
 
-        expect(html).toContain(`title="${HINTS.language}"`);
+        expect(html).toContain(`>${HINTS.language}<`);
         expect(HINTS.language).toMatch(/language of the knowledge base the article is in/);
         expect(HINTS.language).toMatch(/pick the right articles/);
     });

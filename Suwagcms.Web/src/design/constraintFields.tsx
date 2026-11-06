@@ -1,10 +1,16 @@
 import type { ReactNode } from "react";
 
+import { CONSTRAINT_HINTS, PATTERN_HINTS } from "@/design/factHints";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
 /** Puts one input in its field. Each form has its own, since where a mistake shows differs on purpose: beside the field, or in the procedure's live list. */
-export type FieldWrapper<Name extends string> = (name: Name, label: string, control: (props: object) => ReactNode) => ReactNode;
+export type FieldWrapper<Name extends string> = (
+    name: Name,
+    label: string,
+    hint: string,
+    control: (props: object) => ReactNode,
+) => ReactNode;
 
 export interface ConstraintValues {
     type: string;
@@ -25,7 +31,7 @@ export function ConstraintFields({
     onChange: (change: Partial<ConstraintValues>) => void;
 }) {
     const whole = (name: "min" | "max" | "maxLength", label: string) =>
-        field(name, label, (props) => (
+        field(name, label, CONSTRAINT_HINTS[name], (props) => (
             <Input
                 {...props}
                 inputMode="numeric"
@@ -36,7 +42,7 @@ export function ConstraintFields({
             />
         ));
     if (form.type === "enum")
-        return field("values", "Values (separated by commas)", (props) => (
+        return field("values", "Values (separated by commas)", CONSTRAINT_HINTS.values, (props) => (
             <Input
                 {...props}
                 value={form.values}
@@ -75,7 +81,7 @@ export function PatternFields({
 }) {
     return (
         <>
-            {field("pattern.regex", "Pattern: regular expression", (props) => (
+            {field("pattern.regex", "Pattern: regular expression", PATTERN_HINTS.regex, (props) => (
                 <Input
                     {...props}
                     value={form.patternRegex}
@@ -85,7 +91,7 @@ export function PatternFields({
                     }}
                 />
             ))}
-            {field("pattern.means", "Pattern: what it means", (props) => (
+            {field("pattern.means", "Pattern: what it means", PATTERN_HINTS.means, (props) => (
                 <Input
                     {...props}
                     value={form.patternMeans}
@@ -94,7 +100,7 @@ export function PatternFields({
                     }}
                 />
             ))}
-            {field("pattern.example", "Pattern: example", (props) => (
+            {field("pattern.example", "Pattern: example", PATTERN_HINTS.example, (props) => (
                 <Input
                     {...props}
                     value={form.patternExample}
@@ -103,7 +109,7 @@ export function PatternFields({
                     }}
                 />
             ))}
-            {field("pattern.tellCustomer", "Pattern: tell the customer", (props) => (
+            {field("pattern.tellCustomer", "Pattern: tell the customer", PATTERN_HINTS.tellCustomer, (props) => (
                 <Select
                     {...props}
                     className="w-full"

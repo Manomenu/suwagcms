@@ -60,7 +60,10 @@ test("AC-availability-1: an article turns off and on in the web, its screen and 
         const group = page.getByRole("group", { name: "Availability" });
         await expect(group).toContainText("off");
         await expect(group).toContainText("Bot confirmed");
-        await expect(page.getByRole("row").filter({ hasText: "cennik" }).first()).toContainText("off");
+        await page.getByRole("button", { name: "Back to articles" }).click();
+        const listed = page.getByRole("row").filter({ hasText: "cennik" }).first();
+        await expect(listed).toContainText("off");
+        await listed.getByRole("button", { name: "Edit" }).click();
 
         const state = (await (await fetch(`${address}/suwagcms/state`)).json()) as { availability: { off: { id: string }[] } };
         expect(state.availability.off.map((item) => item.id)).toEqual(["cennik"]);

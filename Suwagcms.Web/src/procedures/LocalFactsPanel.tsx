@@ -4,9 +4,13 @@ import { constraintText, whole } from "@/api/constraints";
 import { NO_PATTERN, patternFormOf, patternOf, type PatternForm } from "@/api/textPattern";
 import { Button } from "@/design/button";
 import { ConstraintFields, PatternFields } from "@/design/constraintFields";
+import { FACT_HINTS } from "@/design/factHints";
+import { Field } from "@/design/field";
+import { InfoTip } from "@/design/infoTip";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
+import { PROCEDURE_HINTS } from "./hints";
 import { removeLocalFact, setLocalFact, type Draft, type LocalFact } from "./draft";
 
 interface Typed extends PatternForm {
@@ -65,25 +69,34 @@ function summaryOf(fact: LocalFact): string {
 }
 
 // Why: a local fact's mistakes show in the procedure's live list, so its fields only need their label.
-const field = (_name: string, label: string, control: (props: object) => ReactNode) => (
-    <label className="flex flex-col gap-1 text-sm">
-        {label}
-        {control({})}
-    </label>
+const field = (name: string, label: string, hint: string, control: (props: object) => ReactNode) => (
+    <Field prefix="local-fact" name={name} label={label} hint={hint} errors={[]}>
+        {control}
+    </Field>
 );
 
-function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
-    return (
-        <label className="flex flex-col gap-1 text-sm">
-            {label}
-            <Input
-                value={value}
-                onChange={(event) => {
-                    onChange(event.target.value);
-                }}
-            />
-        </label>
-    );
+function TextInput({
+    name,
+    label,
+    hint,
+    value,
+    onChange,
+}: {
+    name: string;
+    label: string;
+    hint: string;
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    return field(name, label, hint, (props) => (
+        <Input
+            {...props}
+            value={value}
+            onChange={(event) => {
+                onChange(event.target.value);
+            }}
+        />
+    ));
 }
 
 function LocalFactForm({
@@ -105,16 +118,18 @@ function LocalFactForm({
         <div role="group" aria-label="Local fact" className="flex flex-col gap-2 rounded-md border border-border p-2">
             {!editing && (
                 <TextInput
+                    name="name"
                     label="Name"
+                    hint={PROCEDURE_HINTS.localFactName}
                     value={typed.name}
                     onChange={(name) => {
                         change({ name });
                     }}
                 />
             )}
-            <label className="flex flex-col gap-1 text-sm">
-                Type
+            {field("type", "Type", FACT_HINTS.type, (props) => (
                 <Select
+                    {...props}
                     className="w-full"
                     value={typed.type}
                     onChange={(event) => {
@@ -125,19 +140,21 @@ function LocalFactForm({
                     <option value="enum">enum</option>
                     <option value="int">int</option>
                 </Select>
-            </label>
+            ))}
             <ConstraintFields form={typed} field={field} onChange={change} />
             {typed.type === "text" && <PatternFields form={typed} field={field} onChange={change} />}
             <TextInput
+                name="description"
                 label="Fact description"
+                hint={FACT_HINTS.description}
                 value={typed.description}
                 onChange={(description) => {
                     change({ description });
                 }}
             />
-            <label className="flex flex-col gap-1 text-sm">
-                Writable by
+            {field("writableBy", "Writable by", FACT_HINTS.writableBy, (props) => (
                 <Select
+                    {...props}
                     className="w-full"
                     value={typed.writableBy}
                     onChange={(event) => {
@@ -148,7 +165,7 @@ function LocalFactForm({
                     <option value="set">set</option>
                     <option value="correct">correct</option>
                 </Select>
-            </label>
+            ))}
             <div className="flex gap-2">
                 <Button
                     type="button"
@@ -183,7 +200,10 @@ export function LocalFactsPanel({ draft, edit }: { draft: Draft; edit: (change: 
     return (
         <section aria-label="Local facts" className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
-                <h3 className="text-sm font-semibold">Local facts</h3>
+                <h3 className="flex items-center gap-1 text-sm font-semibold">
+                    Local facts
+                    <InfoTip about="Local facts" help={PROCEDURE_HINTS.localFacts} />
+                </h3>
                 <Button
                     type="button"
                     size="sm"

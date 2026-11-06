@@ -4,11 +4,15 @@ import type { Mistake } from "@/api/client";
 import { usageHref } from "@/api/usage";
 import { Anchor } from "@/design/anchor";
 import { ConstraintFields, PatternFields } from "@/design/constraintFields";
+import { FACT_HINTS } from "@/design/factHints";
 import { Field as DesignField } from "@/design/field";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
 import { fieldOf, referrerPlace, type FactForm, type FieldName } from "./factForm";
+
+const NAME_HINT =
+    "The fact's id: how procedures refer to it. It may have dots, like customer.city. A global fact lives for the whole conversation. To change it later, use Change name.";
 
 /** The steps a refusal names, each a link to its procedure, written under the mistakes of the field. */
 function Referrers({ bot, mistakes }: { bot: string; mistakes: Mistake[] }) {
@@ -33,19 +37,27 @@ function Field({
     bot,
     field,
     label,
+    hint,
     mistakes,
     children,
 }: {
     bot: string;
     field: FieldName;
     label: string;
+    hint: string;
     mistakes: Mistake[];
     children: (props: object) => ReactNode;
 }) {
     const own = mistakes.filter((mistake) => fieldOf(mistake) === field);
     return (
         <div className="flex flex-col gap-2">
-            <DesignField prefix="fact" name={field} label={label} errors={own.map((mistake) => `${mistake.message} ${mistake.fix}`)}>
+            <DesignField
+                prefix="fact"
+                name={field}
+                label={label}
+                hint={hint}
+                errors={own.map((mistake) => `${mistake.message} ${mistake.fix}`)}
+            >
                 {children}
             </DesignField>
             <Referrers bot={bot} mistakes={own} />
@@ -67,14 +79,14 @@ export function FactFields({
     nameLocked: boolean;
     onChange: (change: Partial<FactForm>) => void;
 }) {
-    const field = (name: FieldName, label: string, control: (props: object) => ReactNode) => (
-        <Field bot={bot} field={name} label={label} mistakes={mistakes}>
+    const field = (name: FieldName, label: string, hint: string, control: (props: object) => ReactNode) => (
+        <Field bot={bot} field={name} label={label} hint={hint} mistakes={mistakes}>
             {control}
         </Field>
     );
     return (
         <>
-            <Field bot={bot} field="name" label="Name" mistakes={mistakes}>
+            <Field bot={bot} field="name" label="Name" hint={NAME_HINT} mistakes={mistakes}>
                 {(props) => (
                     <Input
                         {...props}
@@ -87,7 +99,7 @@ export function FactFields({
                     />
                 )}
             </Field>
-            <Field bot={bot} field="type" label="Type" mistakes={mistakes}>
+            <Field bot={bot} field="type" label="Type" hint={FACT_HINTS.type} mistakes={mistakes}>
                 {(props) => (
                     <Select
                         {...props}
@@ -105,7 +117,7 @@ export function FactFields({
             </Field>
             <ConstraintFields form={form} field={field} onChange={onChange} />
             {form.type === "text" && <PatternFields form={form} field={field} onChange={onChange} />}
-            <Field bot={bot} field="description" label="Description" mistakes={mistakes}>
+            <Field bot={bot} field="description" label="Description" hint={FACT_HINTS.description} mistakes={mistakes}>
                 {(props) => (
                     <Input
                         {...props}
@@ -117,7 +129,7 @@ export function FactFields({
                     />
                 )}
             </Field>
-            <Field bot={bot} field="writableBy" label="Writable by" mistakes={mistakes}>
+            <Field bot={bot} field="writableBy" label="Writable by" hint={FACT_HINTS.writableBy} mistakes={mistakes}>
                 {(props) => (
                     <Select
                         {...props}

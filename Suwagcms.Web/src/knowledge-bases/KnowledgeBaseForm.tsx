@@ -48,7 +48,7 @@ export function KnowledgeBaseForm({
     return (
         <Paper>
             <form onSubmit={submit} className="flex max-w-2xl flex-col gap-3">
-                <Field prefix="knowledge-base" name="id" label="Id" errors={errorsOf("id")}>
+                <Field prefix="knowledge-base" name="id" label="Id" hint={HINTS.id} errors={errorsOf("id")}>
                     {(props) => (
                         <Input
                             {...props}
@@ -61,7 +61,7 @@ export function KnowledgeBaseForm({
                         />
                     )}
                 </Field>
-                <Field prefix="knowledge-base" name="title" label="Title" errors={errorsOf("title")}>
+                <Field prefix="knowledge-base" name="title" label="Title" hint={HINTS.title} errors={errorsOf("title")}>
                     {(props) => (
                         <Input
                             {...props}

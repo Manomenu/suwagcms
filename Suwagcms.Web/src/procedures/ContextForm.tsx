@@ -1,7 +1,9 @@
 import { Button } from "@/design/button";
+import { Legend } from "@/design/field";
 import { Input } from "@/design/input";
 
 import { Checklist } from "./Checklist";
+import { PROCEDURE_HINTS } from "./hints";
 import { articleLabel, withStored, type Context, type LinkableArticle } from "./draft";
 
 /** What the model should read before following an instruction: articles named by id, and queries only the bot's search can answer. */
@@ -24,6 +26,7 @@ export function ContextForm({
             {names.length > 0 && (
                 <Checklist
                     legend="Articles to read"
+                    hint={PROCEDURE_HINTS.articles}
                     names={names}
                     picked={context?.articles ?? []}
                     labelOf={(id) => articleLabel(articles, id)}
@@ -32,11 +35,8 @@ export function ContextForm({
                     }}
                 />
             )}
-            <fieldset
-                className="flex flex-col gap-1"
-                title="Plain text the bot searches with. The CMS stores it and never runs it; name an article when you know which one holds the fact."
-            >
-                <legend className="text-sm font-medium">Search queries ⓘ</legend>
+            <fieldset className="flex flex-col gap-1">
+                <Legend hint={PROCEDURE_HINTS.searchQueries}>Search queries</Legend>
                 {queries.map((query, index) => (
                     // Why: a query has no identity but its place in the list, and the list only changes through these controls.
                     <div key={index} className="flex items-center gap-1">

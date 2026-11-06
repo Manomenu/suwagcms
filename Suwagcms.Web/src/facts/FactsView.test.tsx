@@ -54,7 +54,7 @@ const facts: Fact[] = [
 function view(list: Fact[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/facts">
-            <FactsView bot="rzeczoznawca" facts={list} form={null} onAdd={() => undefined} onEdit={() => undefined} />
+            <FactsView bot="rzeczoznawca" facts={list} onAdd={() => undefined} onEdit={() => undefined} />
         </Router>,
     );
 }
@@ -105,6 +105,15 @@ describe("FactFields", () => {
         const next = html.indexOf("data-field=", start + 1);
         return html.slice(start, next === -1 ? undefined : next);
     }
+
+    it("AC-web-shell-12: each field of every type has its help, and writableBy and tellCustomer say what they do", () => {
+        for (const type of ["text", "enum", "int"]) {
+            const html = fields([], type);
+            expect(html.match(/>About /g)?.length).toBe(html.match(/data-field=/g)?.length);
+        }
+        expect(fieldHtml(fields([], "text"), "writableBy")).toContain("Who may write the fact");
+        expect(fieldHtml(fields([], "text"), "pattern.tellCustomer")).toContain("When the customer hears about the form");
+    });
 
     it("AC-global-facts-6: each mistake is shown, with its fix, beside the field its path names and no other", () => {
         const html = fields([

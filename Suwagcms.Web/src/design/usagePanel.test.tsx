@@ -10,11 +10,10 @@ const usedBy: UsageEntry[] = [
 ];
 const uses: UsageEntry[] = [{ kind: "article", id: "warunki", field: "content" }];
 
-function panel(entries: { usedBy: UsageEntry[]; uses: UsageEntry[] }, onDelete?: () => void): string {
-    const props = onDelete === undefined ? {} : { onDelete };
+function panel(entries: { usedBy: UsageEntry[]; uses: UsageEntry[] }): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/articles">
-            <UsagePanel usage={entries} failure={null} hrefOf={(entry) => `/bots/rzeczoznawca/articles?open=${entry.id}`} {...props} />
+            <UsagePanel usage={entries} failure={null} hrefOf={(entry) => `/bots/rzeczoznawca/articles/${entry.id}/edit`} />
         </Router>,
     );
 }
@@ -23,9 +22,9 @@ describe("UsagePanel", () => {
     it("AC-delete-guard-7: every related resource is listed with its field as a link", () => {
         const html = panel({ usedBy, uses });
 
-        expect(html).toContain('href="/bots/rzeczoznawca/articles?open=wycena"');
-        expect(html).toContain('href="/bots/rzeczoznawca/articles?open=rabaty"');
-        expect(html).toContain('href="/bots/rzeczoznawca/articles?open=warunki"');
+        expect(html).toContain('href="/bots/rzeczoznawca/articles/wycena/edit"');
+        expect(html).toContain('href="/bots/rzeczoznawca/articles/rabaty/edit"');
+        expect(html).toContain('href="/bots/rzeczoznawca/articles/warunki/edit"');
         expect(html).toContain("article · content");
         expect(html).toContain("article · llmGuide");
     });
@@ -35,20 +34,5 @@ describe("UsagePanel", () => {
 
         expect(html).toContain("Nothing uses this.");
         expect(html).toContain("This uses nothing.");
-    });
-
-    it("AC-delete-guard-9: Delete is disabled with the reason beside it while something uses the resource", () => {
-        const html = panel({ usedBy, uses }, () => undefined);
-
-        expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Delete<\/button>/);
-        expect(html).toContain("Used in 2 places. Remove those references first.");
-    });
-
-    it("AC-delete-guard-9: Delete works, with no reason shown, when nothing uses the resource", () => {
-        const html = panel({ usedBy: [], uses }, () => undefined);
-
-        expect(html).toContain(">Delete</button>");
-        expect(html).not.toContain('disabled=""');
-        expect(html).not.toContain("Remove those references first");
     });
 });

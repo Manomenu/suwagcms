@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
 
 import type { Mistake } from "@/api/client";
+import { editHref } from "@/api/resourceAddress";
 import { Anchor } from "@/design/anchor";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Badge } from "@/design/badge";
-import { Page, Paper } from "@/design/page";
-import { Table } from "@/design/table";
+import { Paper } from "@/design/page";
+import { ResourceList } from "@/design/resourceList";
 
 import { mistakesOf, type ProcedureList } from "./api";
-import { NewProcedureForm } from "./NewProcedureForm";
 
 function Readiness({ count }: { count: number }) {
     return count === 0 ? (
@@ -20,71 +20,63 @@ function Readiness({ count }: { count: number }) {
     );
 }
 
-/** The Procedures screen: each procedure with its description and how many mistakes still stop a version. Each opens in the creator, and a new one starts there. */
+/** The list of a bot's procedures, each with its description and how many mistakes still stop a version. Each opens in the creator. */
 export function ProceduresView({
     bot,
     list,
     isOff,
     notice,
+    onAdd,
+    onOpen,
 }: {
     bot: string;
     list: ProcedureList;
     isOff?: (id: string) => boolean;
     notice?: ReactNode;
+    onAdd: () => void;
+    onOpen: (id: string) => void;
 }) {
     const botMistakes: Mistake[] = list.botNotReady;
     return (
-        <Page title={`Procedures of ${bot}`}>
-            {notice}
-            {botMistakes.length > 0 && (
-                <Paper className="border-warning">
-                    <ul className="flex flex-col gap-1 text-sm">
-                        {botMistakes.map((mistake) => (
-                            <li key={mistake.code}>
-                                {mistake.message} {mistake.fix}
-                            </li>
-                        ))}
-                    </ul>
-                </Paper>
-            )}
-            <NewProcedureForm bot={bot} />
-            {list.procedures.length === 0 ? (
+        <ResourceList
+            title={`Procedures of ${bot}`}
+            addLabel="Add a procedure"
+            onAdd={onAdd}
+            above={
+                <>
+                    {notice}
+                    {botMistakes.length > 0 && (
+                        <Paper className="border-warning">
+                            <ul className="flex flex-col gap-1 text-sm">
+                                {botMistakes.map((mistake) => (
+                                    <li key={mistake.code}>
+                                        {mistake.message} {mistake.fix}
+                                    </li>
+                                ))}
+                            </ul>
+                        </Paper>
+                    )}
+                </>
+            }
+            rows={list.procedures}
+            idOf={(procedure) => procedure.id}
+            onOpen={(procedure) => {
+                onOpen(procedure.id);
+            }}
+            columns={[
+                {
+                    header: "Procedure",
+                    cell: (procedure) => <Anchor href={`~${editHref(bot, "procedures", procedure.id)}`}>{procedure.id}</Anchor>,
+                },
+                { header: "Description", className: "text-muted-foreground", cell: (procedure) => procedure.description },
+                { header: "Readiness", cell: (procedure) => <Readiness count={mistakesOf(procedure)} /> },
+                { header: "Availability", cell: (procedure) => <AvailabilityBadge off={isOff?.(procedure.id) ?? false} /> },
+            ]}
+            empty={
                 <p className="text-muted-foreground">
-                    No procedures yet. Create one above, or write it in a YAML file and add it with{" "}
-                    <code>suwagcms procedures add --file</code>.
+                    No procedures yet. Add one, or write it in a YAML file and add it with <code>suwagcms procedures add --file</code>.
                 </p>
-            ) : (
-                <Paper>
-                    <Table>
-                        <thead>
-                            <tr>
-                                <th>Procedure</th>
-                                <th>Description</th>
-                                <th>Readiness</th>
-                                <th>Availability</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {list.procedures.map((procedure) => (
-                                <tr key={procedure.id}>
-                                    <td>
-                                        <Anchor href={`~/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(procedure.id)}`}>
-                                            {procedure.id}
-                                        </Anchor>
-                                    </td>
-                                    <td className="text-muted-foreground">{procedure.description}</td>
-                                    <td>
-                                        <Readiness count={mistakesOf(procedure)} />
-                                    </td>
-                                    <td>
-                                        <AvailabilityBadge off={isOff?.(procedure.id) ?? false} />
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </Paper>
-            )}
-        </Page>
+            }
+        />
     );
 }

@@ -17,7 +17,7 @@ const list: ProcedureList = {
 function view(shown: ProcedureList): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/procedures">
-            <ProceduresView bot="rzeczoznawca" list={shown} />
+            <ProceduresView onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
         </Router>,
     );
 }
@@ -26,7 +26,13 @@ describe("ProceduresView", () => {
     it("AC-availability-22: the list says which procedure is off", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/rzeczoznawca/procedures">
-                <ProceduresView bot="rzeczoznawca" list={list} isOff={(id) => id === "goodbye"} />
+                <ProceduresView
+                    onAdd={() => undefined}
+                    onOpen={() => undefined}
+                    bot="rzeczoznawca"
+                    list={list}
+                    isOff={(id) => id === "goodbye"}
+                />
             </Router>,
         );
 

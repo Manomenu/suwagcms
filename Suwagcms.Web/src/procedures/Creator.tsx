@@ -12,19 +12,23 @@ import {
     type NodeChange,
 } from "@xyflow/react";
 import { useEffect, useMemo, useReducer, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearchParams } from "wouter";
 
 import { renamer } from "@/api/rename";
+import { ApiError } from "@/api/client";
+import { editHref, listHref } from "@/api/resourceAddress";
 import { useAvailability } from "@/api/availability";
 import { useResourceHistory } from "@/api/history";
 import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
+import { InfoTip } from "@/design/infoTip";
+import { changeIdHelp } from "@/design/resourceEdit";
 import { mayLeave, useLeaveGuard } from "@/api/leaveGuard";
 import { MistakeItems } from "@/design/mistakeItems";
 
-import { type ActionView, fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
+import { type ActionView, deleteProcedure, fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
 import {
     addStep,
     connect,
@@ -40,6 +44,7 @@ import {
 } from "./draft";
 import type { OfferedBlocks } from "./offeredBlocks";
 import { arrange, nodeSize, placed, type Positions } from "./layout";
+import { PROCEDURE_HINTS } from "./hints";
 import { MistakeList } from "./MistakeList";
 import { targetOf, stepsWithMistakes } from "./mistakes";
 import { ProcedurePanel } from "./ProcedurePanel";
@@ -122,7 +127,13 @@ function CreatorBody({
 }) {
     const [state, dispatch] = useReducer(reduce, initial, loaded);
     const [positions, setPositions] = useState<Positions>(stored);
-    const [selected, setSelected] = useState<string | null>(null);
+    const [params, setParams] = useSearchParams();
+    // Why: the selected step is in the address, so a reload or a sent link opens the same step.
+    const selected = params.get("step");
+    const setSelected = (step: string | null) => {
+        setParams(step === null ? {} : { step }, { replace: true });
+    };
+    const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
     const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
     const [reveal, setReveal] = useState<{ name: string; times: number } | null>(null);
     const [saving, setSaving] = useState(false);
@@ -227,6 +238,21 @@ function CreatorBody({
             });
     };
 
+    const removeProcedure = () => {
+        setDeleteFailure(null);
+        deleteProcedure(bot, id, state.revision)
+            .then(() => {
+                navigate(listHref(bot, "procedures"), { replace: true });
+            })
+            .catch((error: unknown) => {
+                setDeleteFailure(
+                    error instanceof ApiError
+                        ? [error.message, ...error.mistakes.map((mistake) => `${mistake.message} ${mistake.fix}`)].join(" ")
+                        : String(error),
+                );
+            });
+    };
+
     const reload = () => {
         void fetchProcedure(bot, id, new AbortController().signal).then((detail) => {
             dispatch({ type: "loaded", detail });
@@ -237,6 +263,16 @@ function CreatorBody({
     return (
         <div className="flex h-full flex-col">
             <header className="flex items-center gap-3 border-b border-border px-4 py-2">
+                <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto px-0"
+                    onClick={() => {
+                        leave(listHref(bot, "procedures"));
+                    }}
+                >
+                    ← Back to procedures
+                </Button>
                 <h1 className="flex-1 text-xl font-bold">
                     Creator: {id} {dirty && <span className="text-sm font-normal text-warning">unsaved changes</span>}
                 </h1>
@@ -262,6 +298,7 @@ function CreatorBody({
                 >
                     Change id
                 </Button>
+                <InfoTip about="changing the id" help={changeIdHelp("procedure", "id")} />
                 <Button type="button" onClick={save} disabled={saving || !dirty}>
                     Save
                 </Button>
@@ -273,7 +310,7 @@ function CreatorBody({
                     preview={changer.preview}
                     apply={changer.apply}
                     onChanged={(newId) => {
-                        navigate(`/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(newId)}`, { replace: true });
+                        navigate(editHref(bot, "procedures", newId), { replace: true });
                     }}
                     onCancel={() => {
                         setChangingId(false);
@@ -284,7 +321,10 @@ function CreatorBody({
             <div className="flex min-h-0 flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">
                     <aside className="flex items-center gap-2 border-b border-border px-3 py-2" aria-label="Blocks">
-                        <h2 className="text-base font-semibold">Blocks</h2>
+                        <h2 className="flex items-center gap-1 text-base font-semibold">
+                            Blocks
+                            <InfoTip about="Blocks" help={PROCEDURE_HINTS.blocks} />
+                        </h2>
                         {offered.blocks.map((block) => (
                             <Button
                                 key={block}
@@ -373,6 +413,8 @@ function CreatorBody({
                             usage={usage}
                             history={history}
                             availability={availability}
+                            deleteFailure={deleteFailure}
+                            onDelete={removeProcedure}
                             edit={edit}
                         />
                     )}

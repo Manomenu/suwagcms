@@ -392,9 +392,20 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><code>/</code>, <code>/bots</code></td><td>none</td><td>none</td></tr>
     <tr><td><code>/bots/&lt;id&gt;</code></td><td>that bot</td><td>none</td></tr>
     <tr><td><code>/bots/&lt;id&gt;/&lt;tab&gt;</code></td><td>that bot</td><td>that tab</td></tr>
-    <tr><td><code>/bots/&lt;id&gt;/procedures/&lt;procedure&gt;</code></td><td>that bot</td><td>Procedures, and the creator fills the whole content area</td></tr>
+    <tr><td><code>/bots/&lt;id&gt;/procedures/&lt;procedure&gt;/edit</code></td><td>that bot</td><td>Procedures, and the creator fills the whole content area</td></tr>
   </table>
-  <p>The tabs are Facts, Knowledge bases, Articles, Procedures, Actions, Versions and History.</p>
+  <p>The tabs are Facts, Knowledge bases, Articles, Procedures, Actions, Persona, Versions and History.</p>
+  <h3>Resource screens</h3>
+  <p>Facts, knowledge bases, articles, procedures and actions share one list and one way of opening an item. Their own fields and columns stay their own; a procedure's edit screen is its creator.</p>
+  <table>
+    <tr><th>Address</th><th>Screen</th></tr>
+    <tr><td><code>/bots/&lt;id&gt;/&lt;collection&gt;</code></td><td>the list; a row only opens an item</td></tr>
+    <tr><td><code>/bots/&lt;id&gt;/&lt;collection&gt;/new</code></td><td>the form that adds one, and nothing else</td></tr>
+    <tr><td><code>/bots/&lt;id&gt;/&lt;collection&gt;/&lt;item&gt;/edit</code></td><td>that item, and nothing else, with a way back; an unknown one says so</td></tr>
+  </table>
+  <p>The id comes before <code>edit</code> so that the last part of an address never holds a dot that reads as a file name, as <code>customer.email</code> would. <code>?open=&lt;item&gt;</code>, which the CLI prints, and the older <code>/procedures/&lt;procedure&gt;</code> lead to the edit address.</p>
+  <p>What says where a person is lives in the address, never in browser storage: the open item, the article filters, the selected step of the creator.</p>
+  <p>Every field has an "i" in a circle beside its label, whose help says what the field does and when to use it. The persona's first text is the exception in form only: its section heading carries the help.</p>
 </section>
 
 <section data-role="acceptance">
@@ -406,6 +417,16 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-web-shell-4</code> The address alone decides the open bot and the current tab, as the table says; a malformed <code>%</code> in it does not break the page, and links encode the id.</li>
     <li><code>AC-web-shell-5</code> The side of the panel is one setting: on either side, the row and the panel's border follow it.</li>
     <li><code>AC-web-shell-6</code> With no bot chosen, the page asks to choose a bot from the panel or to register one.</li>
+    <li><code>AC-web-shell-7</code> The list, the form that adds and the edit screen have one form of address on every collection, as the table says, built in one place.</li>
+    <li><code>AC-web-shell-8</code> An id with dots, or with characters that must be encoded, opens at its edit address and reads back the same.</li>
+    <li><code>AC-web-shell-9</code> A reload or a sent link of an edit address opens the same item, Back returns to the list, and an unknown id says it is not found and offers the way back.</li>
+    <li><code>AC-web-shell-10</code> <code>?open=&lt;item&gt;</code> and the older <code>/procedures/&lt;procedure&gt;</code> lead to the edit address.</li>
+    <li><code>AC-web-shell-11</code> Adding or editing shows only that item, with a way back to the list, and not the rest of the list.</li>
+    <li><code>AC-web-shell-12</code> A form field cannot be written without its help: the shared field requires it, each form shows an "i" beside each label, and no form writes its own label or legend around that.</li>
+    <li><code>AC-web-shell-13</code> The help opens on hover, on keyboard focus and on a tap, Escape closes it, and its button has an accessible name.</li>
+    <li><code>AC-web-shell-14</code> Every resource's list, with its row and the row's action, and its edit screen are one shared module, with no row markup of its own.</li>
+    <li><code>AC-web-shell-15</code> The article filters and the selected step of the creator are in the address, so a reload keeps them.</li>
+    <li><code>AC-web-shell-16</code> The web app uses neither <code>localStorage</code> nor <code>sessionStorage</code>: what says where a person is goes in the address.</li>
   </ul>
 </section>
 <!-- CONTENT END -->

@@ -2,6 +2,7 @@ import type { AvailabilityState } from "@/api/availability";
 import type { HistoryState } from "@/api/history";
 import { usageHref, type UsageState } from "@/api/usage";
 import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
+import { DeleteAction } from "@/design/deleteAction";
 import { Field } from "@/design/field";
 import { HistoryPanel } from "@/design/historyPanel";
 import { Input } from "@/design/input";
@@ -10,6 +11,7 @@ import { Textarea } from "@/design/textarea";
 import { UsagePanel } from "@/design/usagePanel";
 
 import { ContextForm } from "./ContextForm";
+import { PROCEDURE_HINTS } from "./hints";
 import { withStallText, type Draft, type LinkableArticle } from "./draft";
 import { LocalFactsPanel } from "./LocalFactsPanel";
 
@@ -22,6 +24,8 @@ export function ProcedurePanel({
     usage,
     history,
     availability,
+    deleteFailure,
+    onDelete,
     edit,
 }: {
     bot: string;
@@ -31,6 +35,8 @@ export function ProcedurePanel({
     usage: UsageState;
     history: HistoryState;
     availability: AvailabilityState;
+    deleteFailure: string | null;
+    onDelete: () => void;
     edit: (change: (draft: Draft) => Draft) => void;
 }) {
     // Why: every conversation is based on this procedure, so the server refuses to turn it off and there is no switch to press.
@@ -50,13 +56,7 @@ export function ProcedurePanel({
                     }}
                 />
             )}
-            <Field
-                prefix="procedure"
-                name="description"
-                label="Description"
-                hint="What this procedure is for, in a sentence. A bot's other procedures are chosen by it."
-                errors={[]}
-            >
+            <Field prefix="procedure" name="description" label="Description" hint={PROCEDURE_HINTS.description} errors={[]}>
                 {(props) => (
                     <Input
                         {...props}
@@ -67,13 +67,7 @@ export function ProcedurePanel({
                     />
                 )}
             </Field>
-            <Field
-                prefix="procedure"
-                name="whenStalled"
-                label="When stalled"
-                hint="What the bot does when the conversation gets stuck in this procedure: the instruction it follows."
-                errors={[]}
-            >
+            <Field prefix="procedure" name="whenStalled" label="When stalled" hint={PROCEDURE_HINTS.whenStalled} errors={[]}>
                 {(props) => (
                     <Textarea
                         {...props}
@@ -100,7 +94,7 @@ export function ProcedurePanel({
                     prefix="procedure"
                     name="whenInterrupted"
                     label="When interrupted"
-                    hint="What happens to this procedure when another one is started on top of it: it waits below, or it is removed with its local facts."
+                    hint={PROCEDURE_HINTS.whenInterrupted}
                     errors={[]}
                 >
                     {(props) => (
@@ -121,6 +115,9 @@ export function ProcedurePanel({
             )}
             <LocalFactsPanel draft={draft} edit={edit} />
             <UsagePanel usage={usage.usage} failure={usage.failure} hrefOf={(entry) => usageHref(bot, entry)} />
+            {canBeOff && usage.usage !== null && (
+                <DeleteAction noun="procedure" id={id} usedBy={usage.usage.usedBy.length} failure={deleteFailure} onDelete={onDelete} />
+            )}
             <HistoryPanel {...history} />
             <p className="text-sm text-muted-foreground">Select a step on the graph to edit it.</p>
         </section>

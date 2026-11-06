@@ -17,14 +17,7 @@ const bases: KnowledgeBase[] = [
 function view(list: KnowledgeBase[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/knowledge-bases">
-            <KnowledgeBasesView
-                bot="rzeczoznawca"
-                bases={list}
-                form={null}
-                onAdd={() => undefined}
-                onEdit={() => undefined}
-                onDelete={() => undefined}
-            />
+            <KnowledgeBasesView bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
         </Router>,
     );
 }
@@ -88,9 +81,15 @@ describe("the language of a knowledge base", () => {
     });
 
     it("AC-knowledge-base-language-11: the tooltip of the language select says what the field is for", () => {
-        expect(form()).toContain(`title="${HINTS.language}"`);
+        expect(form()).toContain(`>${HINTS.language}<`);
         expect(HINTS.language).toMatch(/language of every article in this base/);
         expect(HINTS.language).toMatch(/pick the right articles/);
+    });
+
+    it("AC-web-shell-12: each field of the form has its help", () => {
+        const html = form();
+
+        expect(html.match(/>About /g)?.length).toBe(html.match(/data-field=/g)?.length);
     });
 
     it("AC-knowledge-base-language-4: a refused language is shown beside the language select", () => {

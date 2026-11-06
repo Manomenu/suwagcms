@@ -74,6 +74,7 @@ test("AC-procedure-creator-1: an author builds a procedure with the mouse and th
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/procedures`);
+    await page.getByRole("button", { name: "Add a procedure" }).click();
     await page.getByLabel("Id").fill("orderValuation");
     await page.getByLabel("Description").fill("The customer orders a valuation of a property.");
     await page.getByRole("button", { name: "Create procedure" }).click();
@@ -472,7 +473,7 @@ test("AC-resource-rename-2: Change id in the creator lands on the new address, a
     await expect(dialog).toContainText("This rewrites nothing else.");
     await dialog.getByRole("button", { name: "Change id" }).click();
 
-    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/valuation$`));
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/valuation/edit$`));
     await expect(page.getByRole("heading", { name: /Creator: valuation/ })).toBeVisible();
     const layout = (await (await request.get(`/api/bots/${bot}/procedures/valuation/layout`)).json()) as { positions: unknown };
     expect(layout.positions).toEqual(positions);

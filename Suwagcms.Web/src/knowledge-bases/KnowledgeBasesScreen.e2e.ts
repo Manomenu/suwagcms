@@ -1,5 +1,5 @@
 // A person works on the knowledge bases of one bot in the browser; the bot is in the address, and a refusal keeps what was typed.
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 
 const { newBot } = testBots("kb");
@@ -73,29 +73,26 @@ test("AC-knowledge-bases-6: editing a base that changed meanwhile is refused wit
     await expect(page.getByLabel("Title")).toHaveValue("Marta's title");
 });
 
-test("AC-knowledge-bases-3: a base deleted in the web is gone from the list and from the API", async ({ page, request }) => {
+async function deleteOpen(page: Page): Promise<void> {
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    await page
+        .getByRole("alertdialog")
+        .getByRole("button", { name: /^Delete/ })
+        .click();
+}
+
+test("AC-knowledge-bases-3: a base deleted in the web is gone from the list and from the API, and its form is closed, so a Save cannot bring it back", async ({
+    page,
+    request,
+}) => {
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "Offer");
-    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.goto(`/bots/${bot}/knowledge-bases/oferta/edit`);
+    await expect(page.getByLabel("Title")).toHaveValue("Offer");
 
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Delete" }).click();
+    await deleteOpen(page);
 
     await expect(page.getByText("No knowledge bases yet.")).toBeVisible();
-    expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(404);
-});
-
-test("AC-knowledge-bases-3: deleting the base being edited closes its form, so a Save cannot bring it back", async ({ page, request }) => {
-    const bot = await newBot(request);
-    await addBase(request, bot, "oferta", "Offer");
-    await addBase(request, bot, "druga", "Second");
-    await page.goto(`/bots/${bot}/knowledge-bases`);
-
-    const row = page.getByRole("row").filter({ hasText: "oferta" });
-    await row.getByRole("button", { name: "Edit" }).click();
-    await expect(page.getByLabel("Title")).toHaveValue("Offer");
-    await row.getByRole("button", { name: "Delete" }).click();
-
-    await expect(row).toHaveCount(0);
     await expect(page.getByLabel("Title")).toHaveCount(0);
     expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(404);
 });
@@ -107,12 +104,12 @@ test("AC-knowledge-bases-9: a base with articles is not deleted, and the screen 
         data: { knowledgeBase: "oferta", title: "Price list", content: "c", llmGuide: "g", description: "d" },
     });
     expect(article.status()).toBe(200);
-    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.goto(`/bots/${bot}/knowledge-bases/oferta/edit`);
 
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Delete" }).click();
+    await deleteOpen(page);
 
     await expect(page.getByRole("alert")).toContainText("'priceList' is in the knowledge base 'oferta'");
-    await expect(page.getByRole("row").filter({ hasText: "oferta" })).toBeVisible();
+    await expect(page.getByLabel("Title")).toHaveValue("Offer");
     expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(200);
 });
 
@@ -155,7 +152,7 @@ test("AC-resource-rename-4: Change id on a base keeps its articles in it and lea
     await dialog.getByRole("button", { name: "Change id" }).click();
 
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole("row").filter({ hasText: "pricing" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Knowledge base pricing" })).toBeVisible();
     const stored = (await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()) as { knowledgeBase: string };
     expect(stored.knowledgeBase).toBe("pricing");
 });
@@ -180,9 +177,9 @@ test("AC-knowledge-bases-10, AC-resource-rename-28: unsaved changes ask before t
 
     await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
     await page.getByRole("button", { name: "Cancel" }).click();
-    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByRole("button", { name: "Back to knowledge bases" }).click();
     await page.getByRole("link", { name: "Bots" }).click();
-    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases`);
+    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases/oferta/edit`);
     await expect(page.getByLabel("Title")).toHaveValue("Unsaved");
     accept = true;
     await page.getByRole("button", { name: "Cancel" }).click();
@@ -198,5 +195,5 @@ test("AC-knowledge-bases-11: the address --open prints opens the form of that ba
     await page.goto(`/bots/${bot}/knowledge-bases?open=oferta`);
 
     await expect(page.getByLabel("Title")).toHaveValue("Offer");
-    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases`);
+    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases/oferta/edit`);
 });

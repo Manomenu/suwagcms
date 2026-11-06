@@ -158,7 +158,11 @@ test("AC-http-actions-11: an unused action can be deleted in the web and is gone
     });
     await page.goto(`/bots/${bot}/actions?open=check`);
 
-    await page.getByRole("button", { name: "Delete" }).click();
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    await page
+        .getByRole("alertdialog")
+        .getByRole("button", { name: /^Delete/ })
+        .click();
 
     await expect(page.getByText("No actions yet.")).toBeVisible();
     expect((await request.get(`/api/bots/${bot}/actions/check`)).status()).toBe(404);
@@ -363,9 +367,9 @@ test("AC-http-actions-21, AC-resource-rename-28: unsaved changes ask before they
 
     await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
     await page.getByRole("button", { name: "Cancel" }).click();
-    await page.getByRole("button", { name: "Add an action" }).click();
+    await page.getByRole("button", { name: "Back to actions" }).click();
     await page.getByRole("link", { name: "Bots" }).click();
-    await expect(page).toHaveURL(`/bots/${bot}/actions`);
+    await expect(page).toHaveURL(`/bots/${bot}/actions/check/edit`);
     await expect(page.getByLabel("Description", { exact: true }).first()).toHaveValue("Unsaved");
     accept = true;
     await page.getByRole("button", { name: "Cancel" }).click();

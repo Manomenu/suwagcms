@@ -18,7 +18,7 @@ describe("ActionsView", () => {
             <ActionsView
                 bot="rzeczoznawca"
                 actions={[action("check"), action("send")]}
-                form={null}
+
                 isOff={(id) => id === "send"}
                 onAdd={() => undefined}
                 onOpen={() => undefined}

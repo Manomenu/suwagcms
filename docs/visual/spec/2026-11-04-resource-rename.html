@@ -442,7 +442,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <tr><td>global fact</td><td>its <code>name</code>, in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it</td></tr>
     <tr><td>procedure</td><td>its <code>id</code>; <code>conversation</code> cannot change its id</td></tr>
   </table>
-  <p>Each later kind of resource and reference joins this list through “Criteria after other features”. Changing a title is not this operation, and the knowledge-base screen's existing “Rename” stays a change of title, so here the web's action is called “Change id”.</p>
+  <p>Each later kind of resource and reference joins this list through “Criteria after other features”. Changing a title is not this operation, and the knowledge-base screen's existing “Rename” stays a change of title, so here the web's action is called “Change id”, or “Change name” on a fact, whose id is its name.</p>
   <h3>What a rewrite touches</h3>
   <table>
     <tr><th>In a referrer</th><th>After the change</th></tr>
@@ -521,6 +521,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <li><code>AC-resource-rename-26</code> Changing an article's <code>id</code> rewrites each context that names it; a search query holding those words is text and stays as it is.</li>
     <li><code>AC-resource-rename-27</code> Changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
     <li><code>AC-resource-rename-28</code> Change id is disabled while the form has unsaved changes, with the reason beside it, on facts, knowledge bases, articles and actions.</li>
+    <li><code>AC-resource-rename-29</code> The heading of the edit screen shows the id that Change id acts on, beside the button, with help saying what it does; on a fact, whose id is its name, the action, its dialog and its help say “name”.</li>
   </ul>
 </section>
 <section data-role="risks">

@@ -61,6 +61,10 @@ export function saveProcedure(
     });
 }
 
+export function deleteProcedure(bot: string, id: string, ifRevision: number): Promise<undefined> {
+    return request<undefined>(`${procedurePath(bot, id)}?ifRevision=${ifRevision}`, { method: "DELETE" });
+}
+
 /** The generated type allows a string for an int32; the server sends a number. */
 export function mistakesOf(procedure: ProcedureSummary): number {
     return Number(procedure.notReady);

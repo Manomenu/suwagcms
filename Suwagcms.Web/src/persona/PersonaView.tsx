@@ -2,6 +2,7 @@ import type { Mistake } from "@/api/client";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Field } from "@/design/field";
+import { InfoTip } from "@/design/infoTip";
 import { Page, Paper } from "@/design/page";
 import { Textarea } from "@/design/textarea";
 
@@ -104,12 +105,10 @@ export function PersonaView({
 
 function Section({ title, subtitle, hint }: { title: string; subtitle: string; hint: string }) {
     return (
-        <h2 className="flex items-baseline gap-2 text-xl font-bold" title={hint}>
+        <h2 className="flex items-center gap-2 text-xl font-bold">
             {title}
             <span className="text-sm font-normal text-muted-foreground">{subtitle}</span>
-            <span aria-hidden="true" className="cursor-help text-sm font-normal text-muted-foreground">
-                ⓘ
-            </span>
+            <InfoTip about={title} help={hint} />
         </h2>
     );
 }

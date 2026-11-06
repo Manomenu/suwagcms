@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { editHref } from "@/api/resourceAddress";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Field } from "@/design/field";
@@ -9,9 +10,10 @@ import { Input } from "@/design/input";
 import { Paper } from "@/design/page";
 
 import { saveProcedure } from "./api";
+import { PROCEDURE_HINTS } from "./hints";
 
 /** Starts a procedure: an id and a description save an empty one, and the creator opens on it. */
-export function NewProcedureForm({ bot }: { bot: string }) {
+export function NewProcedureForm({ bot, onCancel }: { bot: string; onCancel: () => void }) {
     const [id, setId] = useState("");
     const [description, setDescription] = useState("");
     const [refusal, setRefusal] = useState<ApiError | null>(null);
@@ -25,20 +27,14 @@ export function NewProcedureForm({ bot }: { bot: string }) {
                     event.preventDefault();
                     saveProcedure(bot, id, { description, firstStep: null, steps: {}, whenStalled: null }, 0, false)
                         .then(() => {
-                            navigate(`/bots/${encodeURIComponent(bot)}/procedures/${encodeURIComponent(id)}`);
+                            navigate(editHref(bot, "procedures", id), { replace: true });
                         })
                         .catch((error: unknown) => {
                             setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
                         });
                 }}
             >
-                <Field
-                    prefix="new-procedure"
-                    name="id"
-                    label="Id"
-                    hint="One camelCase word, like orderValuation. It cannot change."
-                    errors={[]}
-                >
+                <Field prefix="new-procedure" name="id" label="Id" hint={PROCEDURE_HINTS.newId} errors={[]}>
                     {(props) => (
                         <Input
                             {...props}
@@ -49,13 +45,7 @@ export function NewProcedureForm({ bot }: { bot: string }) {
                         />
                     )}
                 </Field>
-                <Field
-                    prefix="new-procedure"
-                    name="description"
-                    label="Description"
-                    hint="What the procedure is for, in a sentence."
-                    errors={[]}
-                >
+                <Field prefix="new-procedure" name="description" label="Description" hint={PROCEDURE_HINTS.description} errors={[]}>
                     {(props) => (
                         <Input
                             {...props}
@@ -73,9 +63,12 @@ export function NewProcedureForm({ bot }: { bot: string }) {
                             : refusal.mistakes.map((mistake) => `${mistake.message} ${mistake.fix}`).join(" ")}
                     </Alert>
                 )}
-                <Button type="submit" className="self-start">
-                    Create procedure
-                </Button>
+                <div className="flex gap-2">
+                    <Button type="submit">Create procedure</Button>
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                </div>
             </form>
         </Paper>
     );

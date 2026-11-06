@@ -84,6 +84,7 @@ export function TestRunPanel({ bot, action, unsaved }: { bot: string; action: Ac
                     prefix="test-run"
                     name={`values.${name}`}
                     label={name}
+                    hint={action.parameters?.[name]?.description ?? "A value to try this run with."}
                     errors={mistakes
                         .filter((mistake) => mistake.path === `values.${name}`)
                         .map((mistake) => `${mistake.message} ${mistake.fix}`)}

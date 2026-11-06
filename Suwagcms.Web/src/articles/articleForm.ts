@@ -16,6 +16,9 @@ export interface ArticleForm {
 
 /** Who reads each text and what it is for: the label's tooltip. */
 export const HINTS = {
+    id: "The article's id: how links and procedures refer to it. One camelCase word, like priceList. To change it later, use Change id.",
+    title: "The name people see in lists and on link chips. A link's label holds it, so a new version fills in the current title.",
+    knowledgeBase: "The base this article belongs to. The article takes its language from it.",
     language:
         "The language of the knowledge base the article is in, pl or en: the bot uses it to pick the right articles and to answer in the right way. To change it, move the article to another base or change the language of its base.",
     content: "What is true. The customer reads it, through the model.",
