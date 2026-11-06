@@ -591,3 +591,51 @@ test("AC-action-block-17: the Uses panel of a procedure lists the action and eac
     await expect(uses).toContainText("steps.run.action");
     await expect(uses).toContainText("steps.run.with.place");
 });
+
+test("AC-fact-pattern-11: the local fact form sets a pattern, the list of mistakes names a bad one, the save stores a good one, and clearing it takes it off", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", { description: "D", firstStep: "ask", steps: { ask: { collect: [] } } }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
+    const panel = page.getByRole("region", { name: "Local facts" });
+    await panel.getByRole("button", { name: "Add a local fact" }).click();
+    await panel.getByLabel("Name").fill("visitCode");
+    await panel.getByLabel("Maximum length").fill("20");
+    await panel.getByLabel("Fact description").fill("The code");
+    await panel.getByLabel("Pattern: regular expression").fill("(?=a)b");
+    await panel.getByLabel("Pattern: what it means").fill("two capitals");
+    await panel.getByRole("button", { name: "Keep" }).click();
+    await expect(page.getByText(/The pattern of 'visitCode' cannot be used/).first()).toBeVisible();
+
+    await panel.getByRole("button", { name: "Edit visitCode" }).click();
+    await expect(panel.getByLabel("Pattern: regular expression")).toHaveValue("(?=a)b");
+    await panel.getByLabel("Pattern: regular expression").fill("[A-Z]{2}");
+    await panel.getByLabel("Pattern: example").fill("AB");
+    await panel.getByLabel("Pattern: tell the customer").selectOption("afterRefusal");
+    await panel.getByRole("button", { name: "Keep" }).click();
+    await expect(panel).toContainText("text, up to 20, pattern [A-Z]{2}");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("unsaved changes")).toBeHidden();
+    const read = async () =>
+        (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+            localFacts: Record<string, { pattern?: unknown }>;
+        };
+    expect((await read()).localFacts["visitCode"]?.pattern).toEqual({
+        regex: "[A-Z]{2}",
+        means: "two capitals",
+        example: "AB",
+        tellCustomer: "afterRefusal",
+    });
+
+    await panel.getByRole("button", { name: "Edit visitCode" }).click();
+    await panel.getByLabel("Pattern: regular expression").fill("");
+    await panel.getByLabel("Pattern: what it means").fill("");
+    await panel.getByLabel("Pattern: example").fill("");
+    await panel.getByRole("button", { name: "Keep" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("unsaved changes")).toBeHidden();
+    expect((await read()).localFacts["visitCode"]?.pattern ?? null).toBeNull();
+});

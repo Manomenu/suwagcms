@@ -217,7 +217,13 @@ internal static class ChangeList
                 element,
                 ifRevision,
                 body => FactMapping.ToRecord(id, body),
-                FactMapping.Merged
+                // Why: every other field of an edit left out or null stays, and a pattern has no other way to be taken off in a file of changes.
+                (stored, body) =>
+                    FactMapping.Merged(
+                        stored,
+                        body,
+                        element.TryGetProperty("pattern", out var pattern) && pattern.ValueKind == JsonValueKind.Null
+                    )
             ),
             ResourceKind.KnowledgeBase => Made<SaveKnowledgeBase, KnowledgeBase>(
                 verb,

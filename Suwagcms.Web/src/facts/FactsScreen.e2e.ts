@@ -187,3 +187,48 @@ test("AC-resource-rename-5: Change id on a fact renames it, with dots, and opens
     await expect(page.locator('[data-field="name"] input')).toHaveValue("client.town");
     expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(404);
 });
+
+test("AC-fact-pattern-10: a person sets a pattern on a text fact, sees its mistakes beside the fields, and clears it again", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/facts`);
+    await page.getByRole("button", { name: "Add a fact" }).click();
+    await page.getByLabel("Name").fill("order.code");
+    await page.getByLabel("Maximum length").fill("10");
+    await page.getByLabel("Description").fill("The code");
+    await page.getByLabel("Pattern: regular expression").fill("(?=a)b");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+
+    await expect(page.locator('[data-field="pattern.regex"]')).toContainText("cannot be used");
+    await expect(page.locator('[data-field="pattern.means"]')).toContainText("does not say what it means");
+    await expect(page.getByLabel("Pattern: regular expression")).toHaveValue("(?=a)b");
+
+    await page.getByLabel("Pattern: regular expression").fill("[A-Z]{2}");
+    await page.getByLabel("Pattern: what it means").fill("two capitals");
+    await page.getByLabel("Pattern: example").fill("ab");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await expect(page.locator('[data-field="pattern.example"]')).toContainText("does not match its regex");
+    await expect(page.getByLabel("Pattern: regular expression")).toHaveValue("[A-Z]{2}");
+    await expect(page.getByLabel("Pattern: what it means")).toHaveValue("two capitals");
+    await expect(page.getByLabel("Pattern: example")).toHaveValue("ab");
+
+    await page.getByLabel("Pattern: example").fill("AB");
+    await page.getByLabel("Pattern: tell the customer").selectOption("afterRefusal");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const row = page.getByRole("row").filter({ hasText: "order.code" });
+    await expect(row).toContainText("text, up to 10, pattern [A-Z]{2}");
+    expect(await (await request.get(`/api/bots/${bot}/facts/order.code`)).json()).toMatchObject({
+        pattern: { regex: "[A-Z]{2}", means: "two capitals", example: "AB", tellCustomer: "afterRefusal" },
+    });
+
+    await row.getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByLabel("Pattern: regular expression")).toHaveValue("[A-Z]{2}");
+    await page.getByLabel("Pattern: regular expression").fill("");
+    await page.getByLabel("Pattern: what it means").fill("");
+    await page.getByLabel("Pattern: example").fill("");
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(row).not.toContainText("pattern");
+    expect(await (await request.get(`/api/bots/${bot}/facts/order.code`)).json()).toMatchObject({ pattern: null });
+});

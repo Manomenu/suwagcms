@@ -5,6 +5,8 @@ namespace Suwagcms.Sdk.Validation;
 
 internal static class FactRules
 {
+    private const string ReservedValue = "other";
+
     public static IReadOnlyList<Rule> All { get; } =
     [
         new(
@@ -22,9 +24,19 @@ internal static class FactRules
         For(MistakeCodes.FactEnumTooFewValues, TooFewValues),
         For(MistakeCodes.FactEnumValueBlank, BlankValues),
         For(MistakeCodes.FactEnumValueRepeated, RepeatedValues),
+        For(MistakeCodes.FactEnumValueUnusable, UnusableValues),
+        For(MistakeCodes.FactEnumValueReserved, ReservedValues),
         For(MistakeCodes.FactIntBoundMissing, MissingBounds),
         For(MistakeCodes.FactIntRangeInverted, InvertedRange),
         For(MistakeCodes.FactTextMaxLengthInvalid, MaxLength),
+        For(MistakeCodes.FactPatternRegexMissing, FactPatternRules.RegexMissing),
+        For(MistakeCodes.FactPatternRegexInvalid, FactPatternRules.RegexInvalid),
+        For(MistakeCodes.FactPatternRegexMatchesEmpty, FactPatternRules.RegexMatchesEmpty),
+        For(MistakeCodes.FactPatternMeansMissing, FactPatternRules.MeansMissing),
+        For(MistakeCodes.FactPatternExampleBlank, FactPatternRules.ExampleBlank),
+        For(MistakeCodes.FactPatternExampleMismatch, FactPatternRules.ExampleMismatch),
+        For(MistakeCodes.FactPatternExampleTooLong, FactPatternRules.ExampleTooLong),
+        For(MistakeCodes.FactPatternTellCustomerInvalid, FactPatternRules.TellCustomerInvalid),
         For(MistakeCodes.FactConstraintForeign, ForeignConstraints),
     ];
 
@@ -218,6 +230,40 @@ internal static class FactRules
                         )
                 );
 
+    // Why: a bot writes one value per line of a reply and stores it in a text column, so a line break or a NUL could never be set.
+    private static IEnumerable<Mistake> UnusableValues(GlobalFact fact) =>
+        fact.Type != FactTypes.Enum
+            ? []
+            : (fact.Values ?? [])
+                .Select((value, index) => (value, index))
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.value) && entry.value.AsSpan().IndexOfAny('\n', '\r', '\0') >= 0)
+                .Select(entry =>
+                    Make(
+                        MistakeCodes.FactEnumValueUnusable,
+                        fact,
+                        Value(entry.index),
+                        $"Value {entry.index + 1} of '{fact.Name}' has a line break or a NUL.",
+                        "Write each value as plain text on one line."
+                    )
+                );
+
+    // Why: a reply writes 'other' for a value outside the list, so in every bot it means "none of these" and cannot be a value.
+    private static IEnumerable<Mistake> ReservedValues(GlobalFact fact) =>
+        fact.Type != FactTypes.Enum
+            ? []
+            : (fact.Values ?? [])
+                .Select((value, index) => (value, index))
+                .Where(entry => entry.value == ReservedValue)
+                .Select(entry =>
+                    Make(
+                        MistakeCodes.FactEnumValueReserved,
+                        fact,
+                        Value(entry.index),
+                        $"'{fact.Name}' lists '{ReservedValue}' as a value, which is reserved for a value outside the list.",
+                        $"Remove '{ReservedValue}', or use another word."
+                    )
+                );
+
     private static IEnumerable<Mistake> MissingBounds(GlobalFact fact)
     {
         if (fact.Type != FactTypes.WholeNumber)
@@ -281,6 +327,7 @@ internal static class FactRules
             (fact.Min is not null, "min", FactTypes.WholeNumber),
             (fact.Max is not null, "max", FactTypes.WholeNumber),
             (fact.MaxLength is not null, "maxLength", FactTypes.Text),
+            (fact.Pattern is not null, "pattern", FactTypes.Text),
         };
         foreach (var (present, name, owner) in constraints)
         {
@@ -303,7 +350,7 @@ internal static class FactRules
 
     private static ResourceRef Resource(GlobalFact fact) => new(ResourceKind.GlobalFact, fact.Name);
 
-    private static Mistake Make(
+    internal static Mistake Make(
         string code,
         GlobalFact fact,
         string path,

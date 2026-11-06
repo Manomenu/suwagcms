@@ -5,6 +5,7 @@ using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Contracts;
+using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Cli.Facts;
 
@@ -19,7 +20,12 @@ internal static class FactSaveCommands
         Option<string[]?> Values,
         Option<int?> Min,
         Option<int?> Max,
-        Option<int?> MaxLength
+        Option<int?> MaxLength,
+        Option<string?> PatternRegex,
+        Option<string?> PatternMeans,
+        Option<string?> PatternExample,
+        Option<string?> PatternTellCustomer,
+        Option<bool> NoPattern
     );
 
     // Why: the options are left optional so that a missing one reaches the server, which reports every mistake at once.
@@ -35,7 +41,12 @@ internal static class FactSaveCommands
             },
             new Option<int?>("--min") { Description = "The lowest value of an int." },
             new Option<int?>("--max") { Description = "The highest value of an int." },
-            new Option<int?>("--max-length") { Description = "The most characters of a text, above 0." }
+            new Option<int?>("--max-length") { Description = "The most characters of a text, above 0." },
+            new Option<string?>("--pattern-regex") { Description = "The regular expression a whole value of a text must match." },
+            new Option<string?>("--pattern-means") { Description = "In words, what a value of the pattern looks like." },
+            new Option<string?>("--pattern-example") { Description = "A value the regex accepts; an empty text removes it." },
+            new Option<string?>("--pattern-tell-customer") { Description = "upfront or afterRefusal. Default for a new pattern: upfront." },
+            new Option<bool>("--no-pattern") { Description = "Take the pattern off a text." }
         );
 
     public static Command CreateAdd(GlobalOptions options, CliEnvironment environment)
@@ -66,7 +77,8 @@ internal static class FactSaveCommands
                     Given(parsed, fields.Values),
                     parsed.GetValue(fields.Min),
                     parsed.GetValue(fields.Max),
-                    parsed.GetValue(fields.MaxLength)
+                    parsed.GetValue(fields.MaxLength),
+                    PatternGiven(parsed, fields, null)
                 );
                 var dry = parsed.GetValue(dryRun);
                 var answer = await ServerCall.PutAsync(
@@ -103,10 +115,12 @@ internal static class FactSaveCommands
                 && result.GetValue(fields.Min) is null
                 && result.GetValue(fields.Max) is null
                 && result.GetValue(fields.MaxLength) is null
+                && !PatternOptions(fields).Any(option => result.GetResult(option) is not null)
+                && !result.GetValue(fields.NoPattern)
             )
             {
                 result.AddError(
-                    "Nothing to change: give at least one of --type, --description, --writable-by, --values, --min, --max, --max-length."
+                    "Nothing to change: give at least one of --type, --description, --writable-by, --values, --min, --max, --max-length, --pattern-regex, --pattern-means, --pattern-example, --pattern-tell-customer, --no-pattern."
                 );
             }
         });
@@ -141,6 +155,7 @@ internal static class FactSaveCommands
                             Min = null,
                             Max = null,
                             MaxLength = null,
+                            Pattern = null,
                         };
                 var body = new SaveFact(
                     type ?? current.Type,
@@ -149,7 +164,8 @@ internal static class FactSaveCommands
                     Given(parsed, fields.Values) ?? kept.Values,
                     parsed.GetValue(fields.Min) ?? kept.Min,
                     parsed.GetValue(fields.Max) ?? kept.Max,
-                    parsed.GetValue(fields.MaxLength) ?? kept.MaxLength
+                    parsed.GetValue(fields.MaxLength) ?? kept.MaxLength,
+                    PatternGiven(parsed, fields, kept.Pattern)
                 );
                 var dry = parsed.GetValue(dryRun);
                 // Why: without --if-revision the edit still guards the fields it just read, so a change made in between is reported, never overwritten.
@@ -171,6 +187,30 @@ internal static class FactSaveCommands
     private static string[]? Given(ParseResult parsed, Option<string[]?> values) =>
         parsed.GetResult(values) is null ? null : parsed.GetValue(values);
 
+    private static Option<string?>[] PatternOptions(Fields fields) =>
+        [fields.PatternRegex, fields.PatternMeans, fields.PatternExample, fields.PatternTellCustomer];
+
+    // Why: as with the other fields, what is not given stays, so a person can change the words without retyping the regex.
+    private static TextPattern? PatternGiven(ParseResult parsed, Fields fields, TextPattern? kept)
+    {
+        if (parsed.GetValue(fields.NoPattern))
+        {
+            return null;
+        }
+        if (PatternOptions(fields).All(option => parsed.GetResult(option) is null))
+        {
+            return kept;
+        }
+        var example = parsed.GetValue(fields.PatternExample) ?? kept?.Example;
+        return new TextPattern
+        {
+            Regex = parsed.GetValue(fields.PatternRegex) ?? kept?.Regex ?? "",
+            Means = parsed.GetValue(fields.PatternMeans) ?? kept?.Means ?? "",
+            Example = example?.Length > 0 ? example : null,
+            TellCustomer = parsed.GetValue(fields.PatternTellCustomer) ?? kept?.TellCustomer ?? TellCustomers.Upfront,
+        };
+    }
+
     private static void AddFields(Command command, Fields fields)
     {
         command.Options.Add(fields.Type);
@@ -180,6 +220,18 @@ internal static class FactSaveCommands
         command.Options.Add(fields.Min);
         command.Options.Add(fields.Max);
         command.Options.Add(fields.MaxLength);
+        foreach (var option in PatternOptions(fields))
+        {
+            command.Options.Add(option);
+        }
+        command.Options.Add(fields.NoPattern);
+        command.Validators.Add(result =>
+        {
+            if (result.GetValue(fields.NoPattern) && PatternOptions(fields).Any(option => result.GetResult(option) is not null))
+            {
+                result.AddError("--no-pattern takes the pattern off, so give it without any --pattern- option.");
+            }
+        });
     }
 
     private static async Task<int> ReportSavedAsync(

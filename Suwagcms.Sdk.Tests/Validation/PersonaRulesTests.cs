@@ -52,6 +52,59 @@ public sealed class PersonaRulesTests
         Assert.All(tooLong, mistake => Assert.Contains("20000", mistake.Fix, StringComparison.Ordinal));
     }
 
+    private static readonly PersonaScope WholeScope = new()
+    {
+        InScope = "Valuations",
+        OutOfScope = "Legal advice",
+        WhenOutOfScope = "Decline",
+    };
+
+    private static readonly Persona Whole = new() { Personality = "You help.", Scope = WholeScope };
+
+    [Fact]
+    [Trait("criterion", "AC-bot-persona-15")]
+    public void A_bot_that_declares_a_complete_persona_is_satisfied_by_four_filled_parts_at_version_and_not_checked_at_save()
+    {
+        Assert.Empty(Codes(With(Whole), ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete)));
+        Assert.Empty(Codes(With(null), ValidationStage.Save, Declaring(BotDeclaration.PersonaComplete)));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-persona-15")]
+    public void A_bot_that_declares_a_complete_persona_gets_one_version_mistake_per_part_left_empty_naming_it()
+    {
+        var blankScope = Whole with { Scope = WholeScope with { WhenOutOfScope = " \n" } };
+        var mistakes = DefinitionValidator.Validate(With(blankScope), ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete));
+
+        var mistake = Assert.Single(mistakes, found => found.Code == MistakeCodes.PersonaIncomplete);
+        Assert.Equal(("scope.whenOutOfScope", ValidationStage.Version), (mistake.Path, mistake.Stage));
+        Assert.Equal(
+            ["personality", "scope.inScope", "scope.outOfScope", "scope.whenOutOfScope"],
+            DefinitionValidator
+                .Validate(With(null), ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete))
+                .Where(found => found.Code == MistakeCodes.PersonaIncomplete)
+                .Select(found => found.Path)
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-persona-15")]
+    public void A_partly_filled_persona_still_satisfies_required_and_any_third_word_is_refused()
+    {
+        var part = With(new Persona { Personality = "You help." });
+
+        Assert.Empty(Codes(part, ValidationStage.Version, Declaring(BotDeclaration.PersonaRequired)));
+        Assert.Equal(3, Codes(part, ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete)).Count);
+        Assert.Contains(
+            DeclarationValidator.CheckAnswer(Declaring("full"), "rzeczoznawca"),
+            mistake => mistake.Code == MistakeCodes.DeclarationPersonaUnknown
+        );
+        Assert.DoesNotContain(
+            DeclarationValidator.CheckAnswer(Declaring(BotDeclaration.PersonaComplete), "rzeczoznawca"),
+            mistake => mistake.Code == MistakeCodes.DeclarationPersonaUnknown
+        );
+    }
+
     [Theory]
     [Trait("criterion", "AC-bot-persona-13")]
     [InlineData(null)]

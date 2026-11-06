@@ -382,7 +382,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>6</b><span>routes on the bot</span></div>
-    <div><b>16</b><span>criteria</span></div>
+    <div><b>17</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -519,6 +519,7 @@ flowchart TB
     <li><code>AC-bot-runtime-sdk-14</code> When the store cannot be read while polling, the instance keeps serving what it has, and the state route says the store cannot be read.</li>
     <li><code>AC-bot-runtime-sdk-15</code> The default file store and a store supplied by a test give the same state for the same scenario.</li>
     <li><code>AC-bot-runtime-sdk-16</code> The published schema of every bot route (the state answer, a refusal, <code>PUT /suwagcms/current</code>, the declaration, the availability message and the test route) is compared on the gate, so a change without its schema fails with the command that regenerates it.</li>
+    <li><code>AC-bot-runtime-sdk-19</code> A bot reads a definition with one public SDK method that uses the options of the format, so a newer optional field is skipped and a document that does not fit is refused, as the SDK itself reads it.</li>
   </ul>
 </section>
 

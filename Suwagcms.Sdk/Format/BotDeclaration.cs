@@ -5,6 +5,8 @@ public sealed record BotDeclaration
 {
     public const string PersonaRequired = "required";
 
+    public const string PersonaComplete = "complete";
+
     public string Bot { get; init; } = "";
 
     public bool DeclaresNothing { get; init; }

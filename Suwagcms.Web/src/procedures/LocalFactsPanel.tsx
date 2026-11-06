@@ -1,12 +1,13 @@
 import { useState } from "react";
 
+import { NO_PATTERN, patternFormOf, patternOf, type PatternForm } from "@/api/textPattern";
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
 import { removeLocalFact, setLocalFact, type Draft, type LocalFact } from "./draft";
 
-interface Typed {
+interface Typed extends PatternForm {
     name: string;
     type: string;
     description: string;
@@ -17,7 +18,17 @@ interface Typed {
     maxLength: string;
 }
 
-const EMPTY: Typed = { name: "", type: "text", description: "", writableBy: "set", values: "", min: "", max: "", maxLength: "" };
+const EMPTY: Typed = {
+    name: "",
+    type: "text",
+    description: "",
+    writableBy: "set",
+    values: "",
+    min: "",
+    max: "",
+    maxLength: "",
+    ...NO_PATTERN,
+};
 
 function typedOf(name: string, fact: LocalFact): Typed {
     return {
@@ -29,6 +40,7 @@ function typedOf(name: string, fact: LocalFact): Typed {
         min: fact.min == null ? "" : String(fact.min),
         max: fact.max == null ? "" : String(fact.max),
         maxLength: fact.maxLength == null ? "" : String(fact.maxLength),
+        ...patternFormOf(fact.pattern),
     };
 }
 
@@ -39,6 +51,7 @@ function whole(text: string): number | null {
 
 // Why: only the constraints of the chosen type are sent, since a constraint of another type is a mistake.
 function factOf(typed: Typed): LocalFact {
+    const pattern = typed.type === "text" ? patternOf(typed) : null;
     return {
         type: typed.type,
         description: typed.description,
@@ -46,6 +59,7 @@ function factOf(typed: Typed): LocalFact {
         ...(typed.type === "enum" ? { values: typed.values.split(",").map((value) => value.trim()) } : {}),
         ...(typed.type === "int" ? { min: whole(typed.min), max: whole(typed.max) } : {}),
         ...(typed.type === "text" ? { maxLength: whole(typed.maxLength) } : {}),
+        ...(pattern === null ? {} : { pattern }),
     };
 }
 
@@ -55,7 +69,7 @@ function summaryOf(fact: LocalFact): string {
             ? `enum: ${(fact.values ?? []).join(", ")}`
             : fact.type === "int"
               ? `int, ${fact.min ?? "?"} to ${fact.max ?? "?"}`
-              : `text, up to ${fact.maxLength ?? "?"}`;
+              : `text, up to ${fact.maxLength ?? "?"}${fact.pattern == null ? "" : `, pattern ${fact.pattern.regex ?? ""}`}`;
     return `${limits} · ${fact.writableBy ?? "set"}`;
 }
 
@@ -148,6 +162,44 @@ function LocalFactForm({
                         change({ maxLength });
                     }}
                 />
+            )}
+            {typed.type === "text" && (
+                <>
+                    <TextInput
+                        label="Pattern: regular expression"
+                        value={typed.patternRegex}
+                        onChange={(patternRegex) => {
+                            change({ patternRegex });
+                        }}
+                    />
+                    <TextInput
+                        label="Pattern: what it means"
+                        value={typed.patternMeans}
+                        onChange={(patternMeans) => {
+                            change({ patternMeans });
+                        }}
+                    />
+                    <TextInput
+                        label="Pattern: example"
+                        value={typed.patternExample}
+                        onChange={(patternExample) => {
+                            change({ patternExample });
+                        }}
+                    />
+                    <label className="flex flex-col gap-1 text-sm">
+                        Pattern: tell the customer
+                        <Select
+                            className="w-full"
+                            value={typed.patternTellCustomer}
+                            onChange={(event) => {
+                                change({ patternTellCustomer: event.target.value });
+                            }}
+                        >
+                            <option value="upfront">upfront</option>
+                            <option value="afterRefusal">afterRefusal</option>
+                        </Select>
+                    </label>
+                </>
             )}
             <TextInput
                 label="Fact description"

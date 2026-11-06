@@ -413,7 +413,30 @@ public sealed class ProcedureRulesTests
         var mistake = Assert.Single(without);
         Assert.Equal((MistakeCodes.BotConversationMissing, ValidationStage.Version), (mistake.Code, mistake.Stage));
         Assert.Contains("'conversation'", mistake.Fix, StringComparison.Ordinal);
+        Assert.Contains("one listen step whose next returns to itself", mistake.Fix, StringComparison.Ordinal);
         Assert.Empty(with);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-model-9")]
+    public void A_conversation_of_one_listen_step_that_returns_to_itself_has_no_mistake_at_version()
+    {
+        var conversation = new Procedure
+        {
+            Id = Procedure.ConversationId,
+            Description = "The base of every conversation",
+            FirstStep = "wait",
+            Steps = new Dictionary<string, ProcedureStep>
+            {
+                ["wait"] = new()
+                {
+                    Listen = new ListenArguments(),
+                    Next = new NextSteps { Step = "wait" },
+                },
+            },
+        };
+
+        Assert.Empty(DefinitionValidator.Validate(ProcedureSamples.Bot(conversation), ValidationStage.Version));
     }
 
     [Fact]

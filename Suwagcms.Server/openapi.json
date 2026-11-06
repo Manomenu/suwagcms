@@ -3755,6 +3755,7 @@
           "min",
           "max",
           "maxLength",
+          "pattern",
           "revision",
           "usedBy"
         ],
@@ -3807,6 +3808,16 @@
               "string"
             ],
             "format": "int32"
+          },
+          "pattern": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TextPattern"
+              }
+            ]
           },
           "revision": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -4134,6 +4145,16 @@
               "string"
             ],
             "format": "int32"
+          },
+          "pattern": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TextPattern"
+              }
+            ]
           }
         }
       },
@@ -5004,7 +5025,8 @@
           "values",
           "min",
           "max",
-          "maxLength"
+          "maxLength",
+          "pattern"
         ],
         "type": "object",
         "properties": {
@@ -5061,6 +5083,16 @@
               "string"
             ],
             "format": "int32"
+          },
+          "pattern": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TextPattern"
+              }
+            ]
           }
         },
         "description": "What saving a fact takes: every field of it but the name, which the address gives. A field left out is checked by the server; only writableBy has a default, set."
@@ -5198,6 +5230,26 @@
           }
         },
         "description": "One line of a compared text; a folded one says how many unchanged lines it stands for."
+      },
+      "TextPattern": {
+        "type": "object",
+        "properties": {
+          "regex": {
+            "type": "string"
+          },
+          "means": {
+            "type": "string"
+          },
+          "example": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tellCustomer": {
+            "type": "string"
+          }
+        }
       },
       "UsageLink": {
         "required": [

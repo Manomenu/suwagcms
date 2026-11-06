@@ -1,11 +1,25 @@
 import type { Mistake } from "@/api/client";
 
+import { NO_PATTERN, patternFormOf, patternOf, type PatternForm } from "@/api/textPattern";
+
 import type { Fact, SaveFact } from "./api";
 
-export type FieldName = "name" | "type" | "description" | "writableBy" | "values" | "min" | "max" | "maxLength";
+export type FieldName =
+    | "name"
+    | "type"
+    | "description"
+    | "writableBy"
+    | "values"
+    | "min"
+    | "max"
+    | "maxLength"
+    | "pattern.regex"
+    | "pattern.means"
+    | "pattern.example"
+    | "pattern.tellCustomer";
 
 /** What the person typed, as text, so that a refusal never loses a keystroke. */
-export interface FactForm {
+export interface FactForm extends PatternForm {
     name: string;
     type: string;
     description: string;
@@ -16,10 +30,23 @@ export interface FactForm {
     maxLength: string;
 }
 
-const FIELDS: readonly FieldName[] = ["name", "type", "description", "writableBy", "values", "min", "max", "maxLength"];
+const FIELDS: readonly FieldName[] = [
+    "name",
+    "type",
+    "description",
+    "writableBy",
+    "values",
+    "min",
+    "max",
+    "maxLength",
+    "pattern.regex",
+    "pattern.means",
+    "pattern.example",
+    "pattern.tellCustomer",
+];
 
 export function emptyForm(): FactForm {
-    return { name: "", type: "text", description: "", writableBy: "set", values: "", min: "", max: "", maxLength: "" };
+    return { name: "", type: "text", description: "", writableBy: "set", values: "", min: "", max: "", maxLength: "", ...NO_PATTERN };
 }
 
 export function formOf(fact: Fact): FactForm {
@@ -32,6 +59,7 @@ export function formOf(fact: Fact): FactForm {
         min: fact.min === null ? "" : String(fact.min),
         max: fact.max === null ? "" : String(fact.max),
         maxLength: fact.maxLength === null ? "" : String(fact.maxLength),
+        ...patternFormOf(fact.pattern),
     };
 }
 
@@ -52,6 +80,7 @@ export function bodyOf(form: FactForm): SaveFact {
         min: form.type === "int" ? whole(form.min) : null,
         max: form.type === "int" ? whole(form.max) : null,
         maxLength: form.type === "text" ? whole(form.maxLength) : null,
+        pattern: form.type === "text" ? patternOf(form) : null,
     };
 }
 
@@ -72,6 +101,7 @@ export function referrerPlace(location: string): string {
 export function constraintOf(fact: Fact): string {
     if (fact.type === "enum") return `enum: ${(fact.values ?? []).join(", ")}`;
     if (fact.type === "int") return `int, ${fact.min ?? "?"} to ${fact.max ?? "?"}`;
-    if (fact.type === "text") return `text, up to ${fact.maxLength ?? "?"}`;
+    if (fact.type === "text")
+        return `text, up to ${fact.maxLength ?? "?"}${fact.pattern == null ? "" : `, pattern ${fact.pattern.regex ?? ""}`}`;
     return fact.type;
 }

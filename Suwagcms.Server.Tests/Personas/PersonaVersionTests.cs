@@ -48,6 +48,10 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
         return (scene, bot, new PersonaApi(client, id));
     }
 
+    private static async Task<DeclarationStatus> DeclarationOf(PushScene scene) =>
+        await scene.Client.GetFromJsonAsync<DeclarationStatus>($"/api/bots/{scene.Bot}/declaration", TestContext.Current.CancellationToken)
+        ?? throw new InvalidOperationException("no declaration in the answer");
+
     private static async Task<VersionComparison> Compare(VersionApi versions, int from, int to) =>
         await versions.Client.GetFromJsonAsync<VersionComparison>(
             $"/api/bots/{versions.Bot}/versions/{from}/diff/{to}",
@@ -186,6 +190,61 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
             "You help.\nBriefly.",
             (await bot.Definitions.GetAsync(version.Number, TestContext.Current.CancellationToken)).Persona?.Personality
         );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-persona-15")]
+    public async Task A_bot_that_declares_a_complete_persona_refuses_a_version_with_a_part_empty_and_takes_one_with_all_four()
+    {
+        var (scene, bot, persona) = await DeclaringBot(BotDeclaration.PersonaComplete);
+        await using var _ = bot;
+        Assert.True(
+            (await persona.Save("""{"personality":"You help.","scope":{"inScope":"In","outOfScope":"Out"}}""")).IsSuccessStatusCode
+        );
+
+        var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        var mistake = Assert.Single(await FactApi.MistakesOf(refused));
+        Assert.Equal(MistakeCodes.PersonaIncomplete, mistake.GetProperty("code").GetString());
+        Assert.Equal("scope.whenOutOfScope", mistake.GetProperty("path").GetString());
+        Assert.True(
+            (
+                await persona.Save("""{"personality":"You help.","scope":{"inScope":"In","outOfScope":"Out","whenOutOfScope":"Decline"}}""")
+            ).IsSuccessStatusCode
+        );
+        var version = await scene.CreateAsync();
+
+        Assert.Equal(PushOutcome.Succeeded, (await scene.PushAsync(version.Number)).Outcome);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-persona-15")]
+    public async Task A_partial_persona_is_not_listed_as_something_the_bot_cannot_run_and_stays_a_mistake_of_a_version()
+    {
+        var (scene, bot, persona) = await DeclaringBot(BotDeclaration.PersonaComplete);
+        await using var _ = bot;
+        Assert.True((await persona.Save("""{"personality":"You help."}""")).IsSuccessStatusCode);
+
+        var status = await DeclarationOf(scene);
+        var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
+
+        Assert.Empty(status.CannotRun);
+        Assert.Contains(MistakeCodes.PersonaIncomplete, await FactApi.CodesOf(refused));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-persona-13")]
+    public async Task A_missing_persona_is_not_listed_as_something_the_bot_cannot_run_and_stays_a_mistake_of_a_version()
+    {
+        var (scene, bot, _) = await DeclaringBot(BotDeclaration.PersonaRequired);
+        await using var _ = bot;
+
+        var status = await DeclarationOf(scene);
+        var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
+
+        Assert.Empty(status.CannotRun);
+        Assert.Contains(MistakeCodes.PersonaRequired, await FactApi.CodesOf(refused));
     }
 
     [Fact]

@@ -12,15 +12,26 @@ public static class MistakeCodes
     public const string FactEnumTooFewValues = "fact.enum.tooFewValues";
     public const string FactEnumValueBlank = "fact.enum.valueBlank";
     public const string FactEnumValueRepeated = "fact.enum.valueRepeated";
+    public const string FactEnumValueUnusable = "fact.enum.valueUnusable";
+    public const string FactEnumValueReserved = "fact.enum.valueReserved";
     public const string FactIntBoundMissing = "fact.int.boundMissing";
     public const string FactIntRangeInverted = "fact.int.rangeInverted";
     public const string FactTextMaxLengthInvalid = "fact.text.maxLengthInvalid";
+    public const string FactPatternRegexMissing = "fact.pattern.regexMissing";
+    public const string FactPatternRegexInvalid = "fact.pattern.regexInvalid";
+    public const string FactPatternRegexMatchesEmpty = "fact.pattern.regexMatchesEmpty";
+    public const string FactPatternMeansMissing = "fact.pattern.meansMissing";
+    public const string FactPatternExampleBlank = "fact.pattern.exampleBlank";
+    public const string FactPatternExampleMismatch = "fact.pattern.exampleMismatch";
+    public const string FactPatternExampleTooLong = "fact.pattern.exampleTooLong";
+    public const string FactPatternTellCustomerInvalid = "fact.pattern.tellCustomerInvalid";
     public const string FactConstraintForeign = "fact.constraint.foreign";
     public const string FactLocalNameClash = "fact.local.nameClash";
     public const string FactNameProcedurePrefix = "fact.name.procedurePrefix";
     public const string FactEnumValueInUse = "fact.enum.valueInUse";
     public const string FactTypeInUse = "fact.type.inUse";
     public const string FactRangeInUse = "fact.range.inUse";
+    public const string FactPatternInUse = "fact.pattern.inUse";
     public const string FactWritableByInUse = "fact.writableBy.inUse";
     public const string KnowledgeBaseIdInvalid = "knowledgeBase.id.invalid";
     public const string KnowledgeBaseTitleMissing = "knowledgeBase.title.missing";
@@ -110,5 +121,6 @@ public static class MistakeCodes
     public const string ActionCodeConflict = "action.code.conflict";
     public const string PersonaTextTooLong = "persona.text.tooLong";
     public const string PersonaRequired = "persona.required";
+    public const string PersonaIncomplete = "persona.incomplete";
     public const string DeclarationPersonaUnknown = "declaration.persona.unknown";
 }

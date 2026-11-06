@@ -18,6 +18,7 @@ const kind: Fact = {
     min: null,
     max: null,
     maxLength: null,
+    pattern: null,
     revision: 4,
     usedBy: [],
 };
@@ -41,6 +42,7 @@ describe("bodyOf", () => {
             min: null,
             max: null,
             maxLength: null,
+            pattern: null,
         });
         expect(bodyOf({ ...form, type: "int", min: "1", max: " 40 " })).toMatchObject({ values: null, min: 1, max: 40, maxLength: null });
         expect(bodyOf({ ...form, type: "text", maxLength: "80" })).toMatchObject({ values: null, min: null, max: null, maxLength: 80 });

@@ -40,6 +40,16 @@ describe("DeclarationView", () => {
         expect(html(declared)).not.toContain("a version without one is refused");
     });
 
+    it("AC-bot-persona-15: says when the bot needs every part of a persona", () => {
+        const requiring: DeclarationStatus = {
+            ...declared,
+            declaration: { bot: "rzeczoznawca", declaresNothing: false, formatVersion: 1, blocks: ["say"], persona: "complete" },
+        };
+
+        expect(html(requiring)).toContain("a version with any part left empty is refused");
+        expect(html(declared)).not.toContain("a version with any part left empty is refused");
+    });
+
     it("AC-bot-declaration-4: shows the format version, the blocks and the code actions, asked just now, with a button to ask again", () => {
         const page = html(declared);
 

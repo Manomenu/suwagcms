@@ -27,6 +27,27 @@ public sealed class FactRulesTests
 
     private static string[] Codes(params GlobalFact[] facts) => [.. Check(facts).Select(mistake => mistake.Code)];
 
+    [Theory]
+    [Trait("criterion", "AC-global-facts-16")]
+    [InlineData("a\nb", MistakeCodes.FactEnumValueUnusable)]
+    [InlineData("a\rb", MistakeCodes.FactEnumValueUnusable)]
+    [InlineData("a\0b", MistakeCodes.FactEnumValueUnusable)]
+    [InlineData("other", MistakeCodes.FactEnumValueReserved)]
+    public void An_enum_value_with_a_line_break_or_a_NUL_or_the_reserved_other_is_refused_beside_the_value(string value, string code)
+    {
+        var mistake = Assert.Single(Check(Kind with { Values = ["house", value] }));
+
+        Assert.Equal((code, "values[1]"), (mistake.Code, mistake.Path));
+        Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
+    }
+
+    [Theory]
+    [Trait("criterion", "AC-global-facts-16")]
+    [InlineData("Other")]
+    [InlineData("otherType")]
+    [InlineData("an other")]
+    public void Only_the_exact_value_other_is_reserved(string value) => Assert.Empty(Check(Kind with { Values = ["house", value] }));
+
     [Fact]
     [Trait("criterion", "AC-global-facts-1")]
     public void A_valid_enum_int_and_text_fact_are_each_accepted() => Assert.Empty(Check(Kind, Floors, Samples.CityFact));

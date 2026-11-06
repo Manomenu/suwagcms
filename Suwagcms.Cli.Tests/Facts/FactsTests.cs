@@ -33,7 +33,146 @@ public sealed class FactsTests
             });
     }
 
+    private const string Coded =
+        """{"name":"order.code","type":"text","description":"The code","writableBy":"set","maxLength":10,"pattern":{"regex":"[A-Z]{2}","means":"two capitals","example":"AB","tellCustomer":"afterRefusal"},"revision":3,"usedBy":[]}""";
+
     private static string[] Args(params string[] words) => [.. words, .. OnBot];
+
+    private static JsonElement PatternSent(Recorder recorder) =>
+        JsonDocument.Parse(recorder.Calls[^1].Body).RootElement.GetProperty("pattern");
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task Facts_add_sends_the_pattern_with_upfront_by_default_and_show_prints_it()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Coded));
+
+        var added = await TestCli.Run(
+            Args(
+                "facts",
+                "add",
+                "order.code",
+                "--type",
+                "text",
+                "--max-length",
+                "10",
+                "--description",
+                "The code",
+                "--pattern-regex",
+                "[A-Z]{2}",
+                "--pattern-means",
+                "two capitals"
+            ),
+            server
+        );
+        var pattern = PatternSent(recorder);
+        var shown = await TestCli.Run(Args("facts", "show", "order.code"), server);
+
+        Assert.Equal(0, added.ExitCode);
+        Assert.Equal("[A-Z]{2}", pattern.GetProperty("regex").GetString());
+        Assert.Equal("two capitals", pattern.GetProperty("means").GetString());
+        Assert.Equal("upfront", pattern.GetProperty("tellCustomer").GetString());
+        Assert.Contains("pattern [A-Z]{2}", added.Output, StringComparison.Ordinal);
+        Assert.Contains("means:     two capitals", shown.Output, StringComparison.Ordinal);
+        Assert.Contains("example:   AB", shown.Output, StringComparison.Ordinal);
+        Assert.Contains("tell:      afterRefusal", shown.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task Facts_edit_keeps_a_pattern_it_was_not_told_about_and_changes_only_the_part_given()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Coded));
+
+        await TestCli.Run(Args("facts", "edit", "order.code", "--description", "New"), server);
+        var kept = PatternSent(recorder);
+        await TestCli.Run(Args("facts", "edit", "order.code", "--pattern-means", "two big letters", "--pattern-example", ""), server);
+        var changed = PatternSent(recorder);
+
+        Assert.Equal("two capitals", kept.GetProperty("means").GetString());
+        Assert.Equal("AB", kept.GetProperty("example").GetString());
+        Assert.Equal("[A-Z]{2}", changed.GetProperty("regex").GetString());
+        Assert.Equal("two big letters", changed.GetProperty("means").GetString());
+        Assert.Equal("afterRefusal", changed.GetProperty("tellCustomer").GetString());
+        Assert.False(changed.TryGetProperty("example", out _));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task Facts_add_sends_the_telling_it_is_given()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Coded));
+
+        await TestCli.Run(
+            Args(
+                "facts",
+                "add",
+                "order.code",
+                "--type",
+                "text",
+                "--max-length",
+                "10",
+                "--description",
+                "The code",
+                "--pattern-regex",
+                "[A-Z]{2}",
+                "--pattern-means",
+                "two capitals",
+                "--pattern-tell-customer",
+                "afterRefusal"
+            ),
+            server
+        );
+
+        Assert.Equal("afterRefusal", PatternSent(recorder).GetProperty("tellCustomer").GetString());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task Facts_edit_sends_a_new_telling_or_a_new_regex_with_the_rest_of_the_pattern_kept()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Coded));
+
+        await TestCli.Run(Args("facts", "edit", "order.code", "--pattern-tell-customer", "upfront"), server);
+        var told = PatternSent(recorder).Clone();
+        await TestCli.Run(Args("facts", "edit", "order.code", "--pattern-regex", "[A-Z]{1,2}"), server);
+        var regexed = PatternSent(recorder).Clone();
+
+        Assert.Equal("upfront", told.GetProperty("tellCustomer").GetString());
+        Assert.Equal("[A-Z]{2}", told.GetProperty("regex").GetString());
+        Assert.Equal("two capitals", told.GetProperty("means").GetString());
+        Assert.Equal("AB", told.GetProperty("example").GetString());
+        Assert.Equal("[A-Z]{1,2}", regexed.GetProperty("regex").GetString());
+        Assert.Equal("two capitals", regexed.GetProperty("means").GetString());
+        Assert.Equal("AB", regexed.GetProperty("example").GetString());
+        Assert.Equal("afterRefusal", regexed.GetProperty("tellCustomer").GetString());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task No_pattern_takes_it_off_a_change_of_type_drops_it_and_no_pattern_with_a_pattern_option_is_refused()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Coded));
+
+        var removed = await TestCli.Run(Args("facts", "edit", "order.code", "--no-pattern"), server);
+        var none = PatternSent(recorder).ValueKind;
+        await TestCli.Run(Args("facts", "edit", "order.code", "--type", "int", "--min", "1", "--max", "2"), server);
+        var retyped = PatternSent(recorder).ValueKind;
+        var calls = recorder.Calls.Count;
+        var both = await TestCli.Run(Args("facts", "edit", "order.code", "--no-pattern", "--pattern-regex", "a"), server);
+
+        Assert.Equal(0, removed.ExitCode);
+        Assert.Equal(JsonValueKind.Null, none);
+        Assert.Equal(JsonValueKind.Null, retyped);
+        Assert.NotEqual(0, both.ExitCode);
+        Assert.Contains("--no-pattern", both.Error, StringComparison.Ordinal);
+        Assert.Equal(calls, recorder.Calls.Count);
+    }
 
     [Fact]
     [Trait("criterion", "AC-global-facts-1")]
@@ -104,7 +243,7 @@ public sealed class FactsTests
         var (method, url, body) = Assert.Single(recorder.Calls);
         Assert.Equal(("PUT", "/api/bots/rzeczoznawca/facts/order.kind?ifRevision=0"), (method, url));
         Assert.Equal(
-            """{"type":"enum","description":"What","writableBy":"correct","values":["house","flat"],"min":null,"max":null,"maxLength":null}""",
+            """{"type":"enum","description":"What","writableBy":"correct","values":["house","flat"],"min":null,"max":null,"maxLength":null,"pattern":null}""",
             body
         );
         Assert.Contains("Added 'order.kind'", result.Output, StringComparison.Ordinal);
@@ -183,7 +322,7 @@ public sealed class FactsTests
         Assert.Equal("GET", recorder.Calls[0].Method);
         Assert.Equal("PUT", recorder.Calls[1].Method);
         Assert.Equal(
-            """{"type":"text","description":"Where they live","writableBy":"set","values":null,"min":null,"max":null,"maxLength":80}""",
+            """{"type":"text","description":"Where they live","writableBy":"set","values":null,"min":null,"max":null,"maxLength":80,"pattern":null}""",
             recorder.Calls[1].Body
         );
     }
@@ -198,7 +337,7 @@ public sealed class FactsTests
         await TestCli.Run(Args("facts", "edit", "customer.city", "--type", "int", "--min", "1", "--max", "9"), server);
 
         Assert.Equal(
-            """{"type":"int","description":"The city","writableBy":"set","values":null,"min":1,"max":9,"maxLength":null}""",
+            """{"type":"int","description":"The city","writableBy":"set","values":null,"min":1,"max":9,"maxLength":null,"pattern":null}""",
             recorder.Calls[1].Body
         );
     }

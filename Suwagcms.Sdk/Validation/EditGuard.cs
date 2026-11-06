@@ -137,6 +137,7 @@ public static class EditGuard
         || was.Min != now.Min
         || was.Max != now.Max
         || was.MaxLength != now.MaxLength
+        || was.Pattern != now.Pattern
         || !(was.Values ?? []).SequenceEqual(now.Values ?? [], StringComparer.Ordinal);
 
     private static void Edited(Edit edit, List<Mistake> kept, List<Mistake> causes)
@@ -169,23 +170,43 @@ public static class EditGuard
                         )
                     ),
                 FactTypes.WholeNumber => Narrowed(edit, broken),
-                FactTypes.Text when broken.Count > 0 =>
-                [
-                    Cause(
-                        MistakeCodes.FactRangeInUse,
-                        edit,
-                        "maxLength",
-                        string.Create(
-                            CultureInfo.InvariantCulture,
-                            $"'{edit.Now.Name}' cannot have maxLength {edit.Now.MaxLength}: a longer value is used."
-                        ),
-                        "Change these steps first, or keep the length.",
-                        broken
-                    ),
-                ],
+                FactTypes.Text => TextNarrowed(edit, broken),
                 _ => [],
             }
         );
+    }
+
+    // Why: a value can fall out for its length or for the pattern, and each has its own field and its own way out.
+    private static IEnumerable<Mistake> TextNarrowed(Edit edit, List<Given> broken)
+    {
+        var tooLong = broken.Where(given => given.Value.EnumerateRunes().Count() > edit.Now.MaxLength).ToList();
+        if (tooLong.Count > 0)
+        {
+            yield return Cause(
+                MistakeCodes.FactRangeInUse,
+                edit,
+                "maxLength",
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"'{edit.Now.Name}' cannot have maxLength {edit.Now.MaxLength}: a longer value is used."
+                ),
+                "Change these steps first, or keep the length.",
+                tooLong
+            );
+        }
+        var unmatched = broken.Except(tooLong).ToList();
+        if (unmatched.Count > 0)
+        {
+            var values = string.Join(", ", unmatched.Select(given => $"'{given.Value}'").Distinct(StringComparer.Ordinal));
+            yield return Cause(
+                MistakeCodes.FactPatternInUse,
+                edit,
+                "pattern.regex",
+                $"'{edit.Now.Name}' cannot have the regex {edit.Now.Pattern?.Regex}: {values} is used and does not match it.",
+                "Change these steps first, or keep the pattern.",
+                unmatched
+            );
+        }
     }
 
     private static IEnumerable<Mistake> Narrowed(Edit edit, List<Given> broken)

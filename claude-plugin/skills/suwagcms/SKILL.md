@@ -51,7 +51,7 @@ rules into your own: the refusal already says what is wrong and how to fix it.
 
 `--dry-run` on an edit answers "what would this change break?" with the same refusal or answer as the real edit, and changes
 nothing. An edit of a fact that would leave a step invalid is refused at that edit, naming the fact and every step that relies on it,
-with no force option: `fact.enum.valueInUse` (a removed value a `when` or `assign` uses), `fact.range.inUse` (a narrowed `min`, `max` or `maxLength` that a value or bound falls outside), `fact.writableBy.inUse` (`assign` on a fact a `collect` names) and `fact.type.inUse` (any change of type while a procedure uses the fact, even if each use would still fit). Only the server sees a type change, because it compares with the stored fact: the validator alone, offline, cannot. A global fact cannot be named `<procedureId>.<anything>` (`fact.name.procedurePrefix`).
+with no force option: `fact.enum.valueInUse` (a removed value a `when` or `assign` uses), `fact.range.inUse` (a narrowed `min`, `max` or `maxLength` that a value or bound falls outside), `fact.pattern.inUse` (a pattern a value in a `when` or `assign` does not match), `fact.writableBy.inUse` (`assign` on a fact a `collect` names) and `fact.type.inUse` (any change of type while a procedure uses the fact, even if each use would still fit). Only the server sees a type change, because it compares with the stored fact: the validator alone, offline, cannot. A global fact cannot be named `<procedureId>.<anything>` (`fact.name.procedurePrefix`).
 
 ## Never edit local files
 
@@ -97,7 +97,7 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 - `suwagcms use [<id>]` - store the bot later commands work on, or say which bot is in use.
 - `suwagcms facts list` - list the global facts of the bot; `--open` opens the Facts screen in the web app.
 - `suwagcms facts show <name>` - show one fact with its revision and the procedures that use it.
-- `suwagcms facts add <name> --type enum|int|text --description <text> [--values a b | --min n --max n | --max-length n] [--writable-by assign|set|correct]` - add a fact. An enum needs two or more values, an int both bounds, a text a maximum length above 0; `--writable-by` is `set` when left out.
+- `suwagcms facts add <name> --type enum|int|text --description <text> [--values a b | --min n --max n | --max-length n] [--pattern-regex <regex> --pattern-means <text> [--pattern-example <value>] [--pattern-tell-customer upfront|afterRefusal]] [--writable-by assign|set|correct]` - add a fact. An enum needs two or more values, none with a line break or a NUL and none the reserved `other`; an int both bounds, a text a maximum length above 0; `--writable-by` is `set` when left out. For a pattern see "Text patterns".
 - `suwagcms facts edit <name> [options of add] [--if-revision n]` - change a fact: only the options given change. Without `--if-revision` the edit applies to the revision it just read and a change made meanwhile is refused with the current revision.
 - `suwagcms facts delete <name> [--if-revision n]` - delete a fact; refused with `reference.missing` while a procedure uses it, with every place that does listed in `related`.
 - `suwagcms kb list` - list the knowledge bases of the bot (the groups its articles are in); prints nothing when there are none; `--open` opens the Knowledge bases screen in the web app.
@@ -148,6 +148,16 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 
 Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
 
+## Text patterns
+
+A text fact, global or local, can say what its values look like: `pattern: { regex: "[A-Z0-9]{4}/[0-9]{8}/[0-9]", means: "4 letters or digits, a slash, 8 digits, a slash and 1 digit", example: WA1M/00012345/6, tellCustomer: upfront }`.
+
+- `regex` must match a whole value, and `means` says it in words; both are required. `regex` runs without backtracking, so lookarounds, backreferences, atomic groups and conditionals are refused (`fact.pattern.regexInvalid`), and it cannot match an empty text.
+- `example` is optional, must match the regex and must fit `maxLength` (`fact.pattern.exampleTooLong`). `tellCustomer` is `upfront` (the default) or `afterRefusal`. An `int` or an `enum` has no pattern.
+- A value in an `assign` or a `when` must match. A pattern change that a value no longer matches is refused with `fact.pattern.inUse`, naming the steps.
+- `suwagcms facts edit <name> --no-pattern` takes it off, and `--pattern-regex`, `--pattern-means`, `--pattern-example` and `--pattern-tell-customer` change only what they give. In a file of changes, `pattern` is replaced whole and `pattern: null` takes it off.
+- An enum never lists `other`: in every bot it stands for a value outside the list.
+
 ## Persona
 
 A bot has one persona: `personality` says how it talks and `scope` what it talks about. Read it with `suwagcms persona show` and change it
@@ -170,6 +180,7 @@ scope:
 - It reaches the bot only with a version: after a save, `suwagcms versions create` and `suwagcms push`. An empty persona, or an empty part of one, is left out of the version.
 - It cannot be renamed, deleted or turned off: to remove what it says, clear the fields. These texts are plain, so nothing in them refers to an article, a fact or a procedure.
 - A bot that declares `persona: required` gets `persona.required` when a version without one is created or pushed; saves go on.
+- A bot that declares `persona: complete` needs all four texts: each one left empty is a `persona.incomplete` when a version is created or pushed; saves go on.
 
 ## Before a push
 
@@ -256,7 +267,7 @@ steps:
   which says it: the CMS stores it as text and never runs it, the bot searches. A blank query (`context.query.blank`) and a query in a
   bot with no articles (`context.query.noArticles`) are saved and listed as unfinished.
 - `localFacts` (optional) maps a name to a fact that lives inside this procedure: `localFacts: { visitDate: { type: text, description: When to visit, maxLength: 20 } }`.
-  The name is one camelCase word with no dots; the type, its constraints (`values` / `min` and `max` / `maxLength`), `description` and `writableBy` are those of a global fact. Steps of the
+  The name is one camelCase word with no dots; the type, its constraints (`values` / `min` and `max` / `maxLength` and `pattern`), `description` and `writableBy` are those of a global fact. Steps of the
   procedure name it by that short name, and no other procedure sees it; `facts list` does not list it. A local fact with the name of a global fact is refused with `fact.local.nameClash`, from whichever side was saved second, and removing one that a step still uses is refused with `reference.missing`, listing the steps.
 - Two stages: a mistake that makes the procedure unsound is refused (a step or fact that does not exist, an unwritable collect, a value the
   fact cannot take, a missing description); what only makes it unfinished (no `firstStep`, a step with no block, an unreachable step, rules

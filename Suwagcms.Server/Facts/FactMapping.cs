@@ -17,10 +17,11 @@ internal static class FactMapping
             Min = body.Min,
             Max = body.Max,
             MaxLength = body.MaxLength,
+            Pattern = body.Pattern,
         };
 
     // Why: constraints belong to a type, so changing the type starts from none and the fields given are the new ones, as the CLI's edit does.
-    public static SaveFact Merged(GlobalFact stored, SaveFact given)
+    public static SaveFact Merged(GlobalFact stored, SaveFact given, bool clearsPattern)
     {
         var sameType = given.Type is null || given.Type == stored.Type;
         return new SaveFact(
@@ -30,7 +31,8 @@ internal static class FactMapping
             given.Values ?? (sameType ? stored.Values : null),
             given.Min ?? (sameType ? stored.Min : null),
             given.Max ?? (sameType ? stored.Max : null),
-            given.MaxLength ?? (sameType ? stored.MaxLength : null)
+            given.MaxLength ?? (sameType ? stored.MaxLength : null),
+            given.Pattern ?? (sameType && !clearsPattern ? stored.Pattern : null)
         );
     }
 
@@ -47,6 +49,7 @@ internal static class FactMapping
             fact.Min,
             fact.Max,
             fact.MaxLength,
+            fact.Pattern,
             revision,
             UsedBy(fact.Name, all)
         );

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Suwagcms.Sdk.Format;
 
 public sealed record GlobalFact
@@ -17,4 +19,7 @@ public sealed record GlobalFact
     public int? Max { get; init; }
 
     public int? MaxLength { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TextPattern? Pattern { get; init; }
 }
