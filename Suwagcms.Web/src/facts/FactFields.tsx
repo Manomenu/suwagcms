@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import type { Mistake } from "@/api/client";
 import { usageHref } from "@/api/usage";
 import { Anchor } from "@/design/anchor";
+import { ConstraintFields, PatternFields } from "@/design/constraintFields";
 import { Field as DesignField } from "@/design/field";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
@@ -66,6 +67,11 @@ export function FactFields({
     nameLocked: boolean;
     onChange: (change: Partial<FactForm>) => void;
 }) {
+    const field = (name: FieldName, label: string, control: (props: object) => ReactNode) => (
+        <Field bot={bot} field={name} label={label} mistakes={mistakes}>
+            {control}
+        </Field>
+    );
     return (
         <>
             <Field bot={bot} field="name" label="Name" mistakes={mistakes}>
@@ -97,115 +103,8 @@ export function FactFields({
                     </Select>
                 )}
             </Field>
-            {form.type === "enum" && (
-                <Field bot={bot} field="values" label="Values (separated by commas)" mistakes={mistakes}>
-                    {(props) => (
-                        <Input
-                            {...props}
-                            value={form.values}
-                            placeholder="house, flat"
-                            onChange={(event) => {
-                                onChange({ values: event.currentTarget.value });
-                            }}
-                        />
-                    )}
-                </Field>
-            )}
-            {form.type === "int" && (
-                <>
-                    <Field bot={bot} field="min" label="Minimum" mistakes={mistakes}>
-                        {(props) => (
-                            <Input
-                                {...props}
-                                inputMode="numeric"
-                                value={form.min}
-                                onChange={(event) => {
-                                    onChange({ min: event.currentTarget.value });
-                                }}
-                            />
-                        )}
-                    </Field>
-                    <Field bot={bot} field="max" label="Maximum" mistakes={mistakes}>
-                        {(props) => (
-                            <Input
-                                {...props}
-                                inputMode="numeric"
-                                value={form.max}
-                                onChange={(event) => {
-                                    onChange({ max: event.currentTarget.value });
-                                }}
-                            />
-                        )}
-                    </Field>
-                </>
-            )}
-            {form.type === "text" && (
-                <Field bot={bot} field="maxLength" label="Maximum length" mistakes={mistakes}>
-                    {(props) => (
-                        <Input
-                            {...props}
-                            inputMode="numeric"
-                            value={form.maxLength}
-                            onChange={(event) => {
-                                onChange({ maxLength: event.currentTarget.value });
-                            }}
-                        />
-                    )}
-                </Field>
-            )}
-            {form.type === "text" && (
-                <>
-                    <Field bot={bot} field="pattern.regex" label="Pattern: regular expression" mistakes={mistakes}>
-                        {(props) => (
-                            <Input
-                                {...props}
-                                value={form.patternRegex}
-                                placeholder="Left empty: any text"
-                                onChange={(event) => {
-                                    onChange({ patternRegex: event.currentTarget.value });
-                                }}
-                            />
-                        )}
-                    </Field>
-                    <Field bot={bot} field="pattern.means" label="Pattern: what it means" mistakes={mistakes}>
-                        {(props) => (
-                            <Input
-                                {...props}
-                                value={form.patternMeans}
-                                onChange={(event) => {
-                                    onChange({ patternMeans: event.currentTarget.value });
-                                }}
-                            />
-                        )}
-                    </Field>
-                    <Field bot={bot} field="pattern.example" label="Pattern: example" mistakes={mistakes}>
-                        {(props) => (
-                            <Input
-                                {...props}
-                                value={form.patternExample}
-                                onChange={(event) => {
-                                    onChange({ patternExample: event.currentTarget.value });
-                                }}
-                            />
-                        )}
-                    </Field>
-                    <Field bot={bot} field="pattern.tellCustomer" label="Pattern: tell the customer" mistakes={mistakes}>
-                        {(props) => (
-                            <Select
-                                {...props}
-                                className="w-full"
-                                value={form.patternTellCustomer}
-                                onChange={(event) => {
-                                    onChange({ patternTellCustomer: event.currentTarget.value });
-                                }}
-                            >
-                                <option value="upfront">upfront</option>
-                                <option value="afterRefusal">afterRefusal</option>
-                            </Select>
-                        )}
-                    </Field>
-                </>
-            )}
+            <ConstraintFields form={form} field={field} onChange={onChange} />
+            {form.type === "text" && <PatternFields form={form} field={field} onChange={onChange} />}
             <Field bot={bot} field="description" label="Description" mistakes={mistakes}>
                 {(props) => (
                     <Input

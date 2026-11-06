@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
+import { constraintText, whole } from "@/api/constraints";
 import { NO_PATTERN, patternFormOf, patternOf, type PatternForm } from "@/api/textPattern";
 import { Button } from "@/design/button";
+import { ConstraintFields, PatternFields } from "@/design/constraintFields";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
@@ -44,11 +46,6 @@ function typedOf(name: string, fact: LocalFact): Typed {
     };
 }
 
-function whole(text: string): number | null {
-    const number = Number(text.trim());
-    return text.trim() === "" || Number.isNaN(number) ? null : number;
-}
-
 // Why: only the constraints of the chosen type are sent, since a constraint of another type is a mistake.
 function factOf(typed: Typed): LocalFact {
     const pattern = typed.type === "text" ? patternOf(typed) : null;
@@ -64,14 +61,16 @@ function factOf(typed: Typed): LocalFact {
 }
 
 function summaryOf(fact: LocalFact): string {
-    const limits =
-        fact.type === "enum"
-            ? `enum: ${(fact.values ?? []).join(", ")}`
-            : fact.type === "int"
-              ? `int, ${fact.min ?? "?"} to ${fact.max ?? "?"}`
-              : `text, up to ${fact.maxLength ?? "?"}${fact.pattern == null ? "" : `, pattern ${fact.pattern.regex ?? ""}`}`;
-    return `${limits} · ${fact.writableBy ?? "set"}`;
+    return `${constraintText({ ...fact, type: fact.type ?? "text" })} · ${fact.writableBy ?? "set"}`;
 }
+
+// Why: a local fact's mistakes show in the procedure's live list, so its fields only need their label.
+const field = (_name: string, label: string, control: (props: object) => ReactNode) => (
+    <label className="flex flex-col gap-1 text-sm">
+        {label}
+        {control({})}
+    </label>
+);
 
 function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
     return (
@@ -127,80 +126,8 @@ function LocalFactForm({
                     <option value="int">int</option>
                 </Select>
             </label>
-            {typed.type === "enum" && (
-                <TextInput
-                    label="Values (separated by commas)"
-                    value={typed.values}
-                    onChange={(values) => {
-                        change({ values });
-                    }}
-                />
-            )}
-            {typed.type === "int" && (
-                <>
-                    <TextInput
-                        label="Minimum"
-                        value={typed.min}
-                        onChange={(min) => {
-                            change({ min });
-                        }}
-                    />
-                    <TextInput
-                        label="Maximum"
-                        value={typed.max}
-                        onChange={(max) => {
-                            change({ max });
-                        }}
-                    />
-                </>
-            )}
-            {typed.type === "text" && (
-                <TextInput
-                    label="Maximum length"
-                    value={typed.maxLength}
-                    onChange={(maxLength) => {
-                        change({ maxLength });
-                    }}
-                />
-            )}
-            {typed.type === "text" && (
-                <>
-                    <TextInput
-                        label="Pattern: regular expression"
-                        value={typed.patternRegex}
-                        onChange={(patternRegex) => {
-                            change({ patternRegex });
-                        }}
-                    />
-                    <TextInput
-                        label="Pattern: what it means"
-                        value={typed.patternMeans}
-                        onChange={(patternMeans) => {
-                            change({ patternMeans });
-                        }}
-                    />
-                    <TextInput
-                        label="Pattern: example"
-                        value={typed.patternExample}
-                        onChange={(patternExample) => {
-                            change({ patternExample });
-                        }}
-                    />
-                    <label className="flex flex-col gap-1 text-sm">
-                        Pattern: tell the customer
-                        <Select
-                            className="w-full"
-                            value={typed.patternTellCustomer}
-                            onChange={(event) => {
-                                change({ patternTellCustomer: event.target.value });
-                            }}
-                        >
-                            <option value="upfront">upfront</option>
-                            <option value="afterRefusal">afterRefusal</option>
-                        </Select>
-                    </label>
-                </>
-            )}
+            <ConstraintFields form={typed} field={field} onChange={change} />
+            {typed.type === "text" && <PatternFields form={typed} field={field} onChange={change} />}
             <TextInput
                 label="Fact description"
                 value={typed.description}

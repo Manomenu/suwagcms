@@ -1,4 +1,5 @@
 import type { Mistake } from "@/api/client";
+import { whole } from "@/api/constraints";
 
 import { implementationOf, type ActionField, type ActionView, type SaveAction } from "./api";
 
@@ -68,13 +69,6 @@ export function formOf(action: ActionView): ActionForm {
     };
 }
 
-function whole(text: string): number | null {
-    const trimmed = text.trim();
-    if (trimmed === "") return null;
-    const number = Number(trimmed);
-    return Number.isNaN(number) ? null : number;
-}
-
 function fieldsOf(rows: FieldRow[]): Record<string, ActionField> | null {
     if (rows.length === 0) return null;
     return Object.fromEntries(
@@ -134,9 +128,4 @@ export function placesOf(form: ActionForm): string[] {
     ];
 }
 
-export function constraintOf(field: ActionField): string {
-    if (field.type === "enum") return `enum: ${(field.values ?? []).join(", ")}`;
-    if (field.type === "int") return `int, ${field.min ?? "?"} to ${field.max ?? "?"}`;
-    if (field.type === "text") return `text, up to ${field.maxLength ?? "?"}`;
-    return field.type ?? "";
-}
+export { constraintText as constraintOf } from "@/api/constraints";
