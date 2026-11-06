@@ -29,14 +29,27 @@ internal static class EditOptions
         return parts.Count == 0 ? "" : "?" + string.Join('&', parts);
     }
 
-    public static void RefuseOpen(Command command, GlobalOptions options, string words) =>
+    public static void RefuseOpen(Command command, GlobalOptions options, string words, string why = "") =>
         command.Validators.Add(result =>
         {
             if (result.GetValue(options.Open))
             {
-                result.AddError($"`suwagcms {words}` has no web page to open: drop --open.");
+                result.AddError($"`suwagcms {words}` has no web page to open{why}: drop --open.");
             }
         });
+
+    // Why: a command that saves one resource opens it afterwards, and a dry run saves nothing, so there would be nothing new to see.
+    public static void OpenWhatItSaves(Command command, GlobalOptions options, Option<bool> dryRun)
+    {
+        RefuseOpenWithJson(command, options);
+        command.Validators.Add(result =>
+        {
+            if (result.GetValue(options.Open) && result.GetValue(dryRun))
+            {
+                result.AddError("--dry-run and --open cannot be used together: a dry run saves nothing, so there is nothing to open.");
+            }
+        });
+    }
 
     public static void RefuseOpenWithJson(Command command, GlobalOptions options) =>
         command.Validators.Add(result =>

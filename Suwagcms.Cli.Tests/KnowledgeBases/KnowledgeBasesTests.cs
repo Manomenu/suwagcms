@@ -324,15 +324,13 @@ public sealed class KnowledgeBasesTests
         Assert.Empty(server.Requests);
     }
 
-    [Theory]
-    [InlineData("add")]
-    [InlineData("edit")]
-    [InlineData("delete")]
-    [Trait("criterion", "AC-cli-foundation-9")]
-    public async Task A_command_that_changes_a_base_has_no_page_to_open(string word)
+    [Fact]
+    [Trait("criterion", "AC-cli-foundation-22")]
+    public async Task A_delete_of_a_base_has_no_page_to_open()
     {
-        var result = await TestCli.Run(Args("kb", word, "offer", "--title", "x", "--open"), StubServer.Healthy());
+        var result = await TestCli.Run(Args("kb", "delete", "--title", "--open"), StubServer.Healthy());
 
         Assert.Equal(2, result.ExitCode);
+        Assert.Contains("what it deletes is gone", result.Error, StringComparison.Ordinal);
     }
 }

@@ -6,7 +6,9 @@ namespace Suwagcms.Cli.Tests.CommandLine;
 
 public sealed partial class OpenParityTests
 {
-    private const string Changes = "it changes something and prints the result: `show --open` opens the resource";
+    private const string Deletes = "what it deletes is gone, so there is no page left to open";
+    private const string NoOneResource =
+        "it changes no one resource: `bots declaration --open` and `versions show --open` open what it made";
     private const string Spans = "what it reaches spans several screens, and no one screen shows it all";
     private const string NotOfTheCms = "it concerns this machine or a local file, not a page of the CMS";
 
@@ -19,26 +21,14 @@ public sealed partial class OpenParityTests
         ["apply"] = Spans,
         ["availability list"] = Spans,
         ["availability send"] = Spans,
-        ["availability on"] = Changes,
-        ["availability off"] = Changes,
-        ["bots add"] = Changes,
-        ["facts add"] = Changes,
-        ["facts edit"] = Changes,
-        ["facts delete"] = Changes,
-        ["kb add"] = Changes,
-        ["kb edit"] = Changes,
-        ["kb delete"] = Changes,
-        ["articles add"] = Changes,
-        ["articles edit"] = Changes,
-        ["articles delete"] = Changes,
-        ["actions add"] = Changes,
-        ["actions edit"] = Changes,
-        ["actions delete"] = Changes,
-        ["procedures edit"] = Changes,
-        ["procedures delete"] = Changes,
-        ["persona edit"] = Changes,
-        ["versions create"] = Changes,
-        ["push"] = Changes,
+        ["bots add"] = NoOneResource,
+        ["facts delete"] = Deletes,
+        ["kb delete"] = Deletes,
+        ["articles delete"] = Deletes,
+        ["actions delete"] = Deletes,
+        ["procedures delete"] = Deletes,
+        ["versions create"] = NoOneResource,
+        ["push"] = NoOneResource,
     };
 
     // Why: the screens as the web app routes them, each with the command that lands on it, or the reason none does.

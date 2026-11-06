@@ -31,14 +31,7 @@ internal static class ProcedureSaveCommands
             file,
             dryRun,
         };
-        EditOptions.RefuseOpenWithJson(command, options);
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Open) && result.GetValue(dryRun))
-            {
-                result.AddError("--dry-run and --open cannot be used together: a dry run saves nothing, so there is no procedure to open.");
-            }
-        });
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -63,10 +56,13 @@ internal static class ProcedureSaveCommands
                     Body(document),
                     cancellationToken
                 );
-                var reported = await ReportSavedAsync(target, answer, dry, "add", cancellationToken);
-                return reported == ExitCodes.Done && parsed.GetValue(options.Open)
-                    ? await target.OpenAsync(target.PageAt("Procedure", id), parsed)
-                    : reported;
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
+                    parsed,
+                    options,
+                    "Procedure",
+                    id
+                );
             }
         );
         return command;
@@ -80,7 +76,7 @@ internal static class ProcedureSaveCommands
         var dryRun = EditOptions.DryRun();
         var command = new Command(
             "edit",
-            "Replace a procedure with the whole of a YAML or JSON file (the output of `procedures show` is accepted back)."
+            "Replace a procedure with the whole of a YAML or JSON file (the output of `procedures show` is accepted back), and with --open show it in the web editor."
         )
         {
             id,
@@ -88,7 +84,7 @@ internal static class ProcedureSaveCommands
             ifRevision,
             dryRun,
         };
-        EditOptions.RefuseOpen(command, options, "procedures edit");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -128,7 +124,13 @@ internal static class ProcedureSaveCommands
                     Body(document),
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "edit", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
+                    parsed,
+                    options,
+                    "Procedure",
+                    name
+                );
             }
         );
         return command;

@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The gate fails for a server route that has no command, so the promise that the CLI can do anything the web can is enforced instead of hoped for.</p>
   </div>
   <div class="stats">
-    <div><b>21</b><span>criteria</span></div>
+    <div><b>22</b><span>criteria</span></div>
     <div><b>4</b><span>exit codes</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
@@ -474,13 +474,15 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <tr><td>Bots: list, register, what a bot supports</td><td><code>bots list</code>, <code>bots add</code>, <code>bots declaration</code></td></tr>
     <tr><td>Many changes at once, a check of a definition</td><td><code>apply</code>, <code>validate</code></td></tr>
   </table>
+  <p>A command that changes one resource saves it and then opens it: <code>add</code> and <code>edit</code> of each kind, <code>persona edit</code>, <code>rename</code>, <code>availability on</code> and <code>off</code>.</p>
   <p>The parity reaches below the route: every query parameter of a route has an option on the route's command, so <code>ask</code> is <code>--stored</code> and <code>knowledgeBase</code> is <code>--kb</code>. And every screen has a command whose <code>--open</code> lands on it.</p>
   <p>The exceptions are few, and each is a row of a guard with its reason:</p>
   <table>
     <tr><th>What has no counterpart</th><th>Why</th></tr>
     <tr><td><code>GET /api/settings</code> has no command</td><td>How many rows a screen holds is for the web app; the CLI takes <code>--limit</code>, so a script's output never moves with the setting.</td></tr>
     <tr><td>The new-procedure form has no <code>--open</code></td><td>It only starts a file, and <code>procedures add --file</code> takes the whole of it; <code>procedures add --open</code> shows the result.</td></tr>
-    <tr><td>A command that changes something refuses <code>--open</code>, but for <code>procedures add</code> and <code>rename</code></td><td>Its result is the answer it prints, and <code>show --open</code> opens the resource.</td></tr>
+    <tr><td>A command that deletes refuses <code>--open</code></td><td>What it deletes is gone, so there is no page left to open.</td></tr>
+    <tr><td><code>bots add</code>, <code>versions create</code>, <code>push</code> refuse <code>--open</code></td><td>They change no one resource; <code>bots declaration --open</code> and <code>versions show --open</code> open what they made.</td></tr>
     <tr><td><code>availability list</code>, <code>availability send</code>, <code>apply</code> refuse <code>--open</code></td><td>What they reach spans several screens, and no one screen shows it all.</td></tr>
     <tr><td><code>server</code>, <code>use</code>, <code>validate</code> refuse <code>--open</code></td><td>They concern this machine or a local file, not a page of the CMS.</td></tr>
   </table>
@@ -523,6 +525,7 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <li><code>AC-cli-foundation-19</code> <code>suwagcms history</code>, <code>history &lt;kind&gt; &lt;id&gt;</code> and <code>versions window</code> take <code>--page &lt;n&gt;</code>: the answer is that numbered page with the total and each change written out, as the web reads it, and says how to go on; <code>--page</code> below 1 or together with <code>--before</code> exits 2, a page past the end says so, and with <code>--open</code> the page lands on that page of the list. Without <code>--page</code> what they print does not change.</li>
     <li><code>AC-cli-foundation-20</code> <code>suwagcms availability list --stored</code> lists what the CMS holds without asking the bot, and says the bot was not asked.</li>
     <li><code>AC-cli-foundation-21</code> <code>usage --open</code> opens the resource's page, which lists the same references; <code>actions test --open</code> opens the action's page, with its test panel, and calls nothing; <code>versions show --open</code> opens that version's page; <code>articles list --open</code> carries its filters to the screen.</li>
+    <li><code>AC-cli-foundation-22</code> With <code>--open</code>, <code>add</code> and <code>edit</code> of a fact, knowledge base, article, procedure and action, <code>persona edit</code>, <code>rename</code>, <code>availability on</code> and <code>off</code> save and then open the resource; a refused change opens nothing; together with <code>--dry-run</code> or <code>--json</code> it exits 2 and sends nothing; a command that deletes exits 2 saying what it deletes is gone; the main skill says so.</li>
   </ul>
 </section>
 

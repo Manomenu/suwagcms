@@ -59,6 +59,7 @@ public sealed class MainSkillContentTests
             ["suwagcms persona show", "suwagcms persona edit --file <file>", "personality: |", "whenOutOfScope:", "only with a version"]
         ),
         ("to compare before pushing", "Before a push", ["suwagcms versions status", "suwagcms diff <has> <latest>"]),
+        ("what --open does on a change", "Show a page", ["opens the resource it saved", "with `--dry-run`", "A command that deletes"]),
         (
             "the current format and how the web's list is written in a file",
             "Procedure file",
@@ -137,6 +138,11 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-claude-plugin-7")]
     public void The_main_skill_shows_the_comparison_of_what_the_bot_has_with_the_latest_before_a_push() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("to compare before pushing", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-cli-foundation-22")]
+    public void The_main_skill_says_what_open_does_on_a_change() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("what --open does on a change", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-9")]

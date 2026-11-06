@@ -64,7 +64,7 @@ changing them changes nothing.
 ## Show a page
 
 `--open` opens the web page matching a command instead of printing. A command with no page refuses it with exit code `2`, and
-it cannot be combined with `--json`. A command that changes something has none, because `show --open` opens the result; `procedures add` and `rename` save and then open it. `availability list`, `availability send` and `apply` reach several screens at once, and `server`, `use` and `validate` concern no page. It only works from a shell that can reach the user's desktop:
+it cannot be combined with `--json`. A command that changes one resource (`add` and `edit` of a kind, `persona edit`, `rename`, `availability on` and `off`) saves first and then opens the resource it saved; a refused change opens nothing, and `--open` with `--dry-run` exits `2`, since a dry run saves nothing. A command that deletes has no page, because what it deletes is gone. `bots add`, `versions create` and `push` change no one resource; `availability list`, `availability send` and `apply` reach several screens at once; `server`, `use` and `validate` concern no page. It only works from a shell that can reach the user's desktop:
 
 - Run it as one command per Bash call, its output not piped or captured: a closed pipe kills it before the browser starts.
 - Run it outside Claude Code's sandbox (the Bash tool's sandbox override, which the user approves), never in the background.
@@ -115,7 +115,7 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 
 - `suwagcms procedures list` - list the procedures of the bot with what still stops each from becoming a version, and what stops the bot as a whole (no `conversation`); `--open` opens the Procedures screen in the web app.
 - `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`; `--open` opens it in the web editor instead.
-- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results` and `onFailure` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused. `--open` opens the saved procedure in the web editor.
+- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results` and `onFailure` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused.
 - `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
 - `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
 - `suwagcms actions list` - list the actions of the bot, HTTP and code in one list, with the implementation of each and whether the bot also declares an HTTP action's id or no longer declares a code action in use; `--open` opens the Actions screen in the web app.

@@ -97,7 +97,7 @@ internal static class ArticleSaveCommands
         };
         AddFields(command, fields);
         command.Options.Add(dryRun);
-        EditOptions.RefuseOpen(command, options, "articles add");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         RefuseBadTexts(command, fields);
         command.SetBotAction(
             options,
@@ -126,7 +126,13 @@ internal static class ArticleSaveCommands
                     body,
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "add", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
+                    parsed,
+                    options,
+                    "Article",
+                    parsed.GetRequiredValue(id)
+                );
             }
         );
         return command;
@@ -148,7 +154,7 @@ internal static class ArticleSaveCommands
         AddFields(command, fields);
         command.Options.Add(ifRevision);
         command.Options.Add(dryRun);
-        EditOptions.RefuseOpen(command, options, "articles edit");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         RefuseBadTexts(command, fields);
         command.Validators.Add(result =>
         {
@@ -203,7 +209,13 @@ internal static class ArticleSaveCommands
                     body,
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "edit", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
+                    parsed,
+                    options,
+                    "Article",
+                    parsed.GetRequiredValue(id)
+                );
             }
         );
         return command;

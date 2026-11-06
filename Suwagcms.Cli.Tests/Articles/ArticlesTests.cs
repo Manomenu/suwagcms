@@ -335,16 +335,14 @@ public sealed class ArticlesTests
         Assert.Empty(server.Requests);
     }
 
-    [Theory]
-    [InlineData("add")]
-    [InlineData("edit")]
-    [InlineData("delete")]
-    [Trait("criterion", "AC-cli-foundation-9")]
-    public async Task A_command_that_changes_an_article_has_no_page_to_open(string word)
+    [Fact]
+    [Trait("criterion", "AC-cli-foundation-22")]
+    public async Task A_delete_of_an_article_has_no_page_to_open()
     {
-        var result = await TestCli.Run(Args("articles", word, "priceList", "--title", "x", "--open"), StubServer.Healthy());
+        var result = await TestCli.Run(Args("articles", "delete", "--title", "--open"), StubServer.Healthy());
 
         Assert.Equal(2, result.ExitCode);
+        Assert.Contains("what it deletes is gone", result.Error, StringComparison.Ordinal);
     }
 
     [Theory]

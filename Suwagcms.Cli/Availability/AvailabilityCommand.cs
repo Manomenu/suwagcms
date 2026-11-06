@@ -11,6 +11,14 @@ internal static class AvailabilityCommand
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
+    // Why: the words a person types for a kind, mapped to the kind its page is found by; the server has refused any other word before a page is asked for.
+    private static readonly Dictionary<string, string> Pages = new(StringComparer.Ordinal)
+    {
+        ["article"] = "Article",
+        ["procedure"] = "Procedure",
+        ["action"] = "Action",
+    };
+
     public static Command Create(GlobalOptions options, CliEnvironment environment)
     {
         var command = new Command("availability", "Turn articles, procedures and actions on and off, a live setting outside versions.")
@@ -119,7 +127,7 @@ internal static class AvailabilityCommand
         {
             command.Add(yes);
         }
-        EditOptions.RefuseOpen(command, options, $"availability {word}");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -157,9 +165,17 @@ internal static class AvailabilityCommand
                     return failure;
                 }
                 var text = AvailabilityText.Done(target.Bot, done);
-                return done.Delivery.State == AvailabilityDeliveryState.Confirmed
-                    ? await target.Run.Report.DoneAsync(Document(target.Bot, done, false), text)
-                    : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, Document(target.Bot, done, false), text);
+                var reported =
+                    done.Delivery.State == AvailabilityDeliveryState.Confirmed
+                        ? await target.Run.Report.DoneAsync(Document(target.Bot, done, false), text)
+                        : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, Document(target.Bot, done, false), text);
+                return await target.OpenSavedAsync(
+                    reported,
+                    parsed,
+                    options,
+                    Pages[parsed.GetRequiredValue(kind)],
+                    parsed.GetRequiredValue(id)
+                );
             }
         );
         return command;
