@@ -9,6 +9,7 @@ using Dapper;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Facts;
+using Suwagcms.Server.Tests.Personas;
 using CliApp = Cli::Suwagcms.Cli.CliApp;
 using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 
@@ -22,6 +23,8 @@ internal sealed class ChangeScene(HttpClient client, string bot)
     public FactApi Facts { get; } = new(client, bot);
 
     public ArticleApi Articles { get; } = new(client, bot);
+
+    public PersonaApi Persona { get; } = new(client, bot);
 
     public static async Task<ChangeScene> NewAsync(HttpClient client) => new(client, (await FactApi.NewBotAsync(client)).Bot);
 
