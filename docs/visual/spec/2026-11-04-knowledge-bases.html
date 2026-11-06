@@ -476,6 +476,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-knowledge-bases-6</code> An edit or delete based on an old revision is refused, and <code>--dry-run</code> on an add, edit or delete changes nothing.</li>
     <li><code>AC-knowledge-bases-7</code> A bot with no bases shows a screen offering to create the first one, and <code>suwagcms kb list --json</code> returns an empty list with exit 0.</li>
     <li><code>AC-knowledge-bases-9</code> A base with articles cannot be deleted, and the refusal lists them.</li>
+    <li><code>AC-knowledge-bases-10</code> Leaving the form with unsaved changes asks before discarding them: on Cancel, on opening another form and on leaving the screen.</li>
+    <li><code>AC-knowledge-bases-11</code> The address <code>?open=&lt;id&gt;</code> opens the form of that base, and <code>suwagcms kb show --open</code> and <code>suwagcms rename kb --open</code> go there.</li>
   </ul>
 </section>
 

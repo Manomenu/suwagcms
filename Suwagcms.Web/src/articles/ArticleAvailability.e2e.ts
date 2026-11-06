@@ -121,3 +121,26 @@ test("AC-availability-22: a procedure turns off in its creator and the list of p
         server.close();
     }
 });
+
+test("AC-availability-31: an article that is off still shows off after Change id", async ({ page, request }) => {
+    const bot = freshId();
+    const { server, address } = await startBot(bot);
+    try {
+        await fill(request, bot, address);
+        await page.goto(`/bots/${bot}/articles?open=rabaty`);
+        await page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn off" }).click();
+        await page.getByRole("dialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
+        await expect(page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn on" })).toBeVisible();
+
+        await page.getByRole("button", { name: "Change id" }).click();
+        const dialog = page.getByRole("dialog", { name: "Change id" });
+        await dialog.getByLabel("New id").fill("discounts");
+        await expect(dialog).toContainText("This rewrites nothing else.");
+        await dialog.getByRole("button", { name: "Change id" }).click();
+
+        await expect(page.getByLabel("Id", { exact: true })).toHaveValue("discounts");
+        await expect(page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn on" })).toBeVisible();
+    } finally {
+        server.close();
+    }
+});

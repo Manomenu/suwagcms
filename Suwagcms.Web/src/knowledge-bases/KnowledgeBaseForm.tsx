@@ -6,7 +6,7 @@ import { FormFooter } from "@/design/formFooter";
 import { Paper } from "@/design/page";
 import { Select } from "@/design/select";
 
-import { saveKnowledgeBase } from "./api";
+import { knowledgeBasesApi } from "./api";
 import { HINTS, fieldOf, mistakesFor, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";
 
 /**
@@ -21,6 +21,7 @@ export function KnowledgeBaseForm({
     onSaved,
     onReload,
     onCancel,
+    onDirtyChange,
 }: {
     bot: string;
     initial: FormState;
@@ -29,12 +30,15 @@ export function KnowledgeBaseForm({
     onSaved: () => void;
     onReload: () => void;
     onCancel: () => void;
+    onDirtyChange: (dirty: boolean) => void;
 }) {
-    const saving = useSaveForm(
+    const saving = useSaveForm({
         initial,
-        (form: FormState) => saveKnowledgeBase(bot, form.id, { title: form.title, language: form.language }, revision),
+        save: (form: FormState) => knowledgeBasesApi.save(bot, form.id, { title: form.title, language: form.language }, revision),
         onSaved,
-    );
+        onCancel,
+        onDirtyChange,
+    });
     const { form, change, submit } = saving;
 
     const mistakes = mistakesFor(saving.mistakes, form.id);
@@ -86,14 +90,7 @@ export function KnowledgeBaseForm({
                         </Select>
                     )}
                 </Field>
-                <FormFooter
-                    saving={saving}
-                    loose={loose}
-                    editing={editing}
-                    reloadLabel="Reload the knowledge bases"
-                    onReload={onReload}
-                    onCancel={onCancel}
-                />
+                <FormFooter saving={saving} loose={loose} editing={editing} reloadLabel="Reload the knowledge bases" onReload={onReload} />
             </form>
         </Paper>
     );

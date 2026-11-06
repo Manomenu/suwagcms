@@ -4,7 +4,7 @@ import { ApiError, type Mistake } from "@/api/client";
 import { useResourceHistory } from "@/api/history";
 import { Alert } from "@/design/alert";
 import { HistoryPanel } from "@/design/historyPanel";
-import { useLeaveGuard } from "@/design/leaveGuard";
+import { useLeaveGuard } from "@/api/leaveGuard";
 
 import { fetchPersona, savePersona, type Persona } from "./api";
 import { bodyOf, formOf, isDirty, isEmpty, type FieldName, type PersonaForm } from "./personaForm";

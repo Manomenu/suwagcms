@@ -21,7 +21,7 @@ import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
-import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
+import { mayLeave, useLeaveGuard } from "@/api/leaveGuard";
 import { MistakeItems } from "@/design/mistakeItems";
 
 import { type ActionView, fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";

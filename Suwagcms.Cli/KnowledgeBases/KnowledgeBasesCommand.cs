@@ -76,7 +76,7 @@ internal static class KnowledgeBasesCommand
             {
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
+                    return await target.OpenAsync(target.PageAt("KnowledgeBase", parsed.GetRequiredValue(id)), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,

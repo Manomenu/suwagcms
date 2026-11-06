@@ -651,3 +651,21 @@ test("AC-article-procedure-links-2: the picker in content offers no procedure", 
 
     await expect(page.getByRole("listbox", { name: "What to link" })).toContainText("Nothing matches");
 });
+
+test("AC-delete-guard-19: the panels ask again when a reload brings a newer revision of the article", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik");
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("row").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("Nothing uses this.");
+
+    await addArticle(request, bot, "wycena", { content: "See [it](cms://article/cennik)." });
+    const changed = await request.put(`/api/bots/${bot}/articles/cennik?ifRevision=1`, {
+        data: { knowledgeBase: "offer", title: "Changed", content: "Changed", llmGuide: "Guide.", description: "Changed" },
+    });
+    expect(changed.status()).toBe(200);
+    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Reload the article" }).click();
+
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("wycena");
+});

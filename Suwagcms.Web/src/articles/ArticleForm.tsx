@@ -5,13 +5,11 @@ import { Alert } from "@/design/alert";
 import { FormFooter } from "@/design/formFooter";
 import { Paper } from "@/design/page";
 
-import { fetchArticles, fetchProcedures, saveArticle, type KnowledgeBase } from "./api";
+import { articlesApi, fetchArticles, fetchProcedures, type KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";
 import { bodyOf, fieldOf, isDirty, type ArticleForm as FormState } from "./articleForm";
 import { ArticleFields } from "./ArticleFields";
 import { linkTargets } from "./articlePicker";
-
-export const DISCARD_QUESTION = "Discard the changes you have not saved?";
 
 /**
  * The form that adds or edits an article. A refusal shows each mistake beside its field and keeps everything typed. `revision`
@@ -40,11 +38,17 @@ export function ArticleForm({
     onDirtyChange: (dirty: boolean) => void;
     onOpenArticle: (id: string, kind: "article" | "procedure") => void;
 }) {
-    const saving = useSaveForm(initial, (form: FormState) => saveArticle(bot, form.id, bodyOf(form, initial), revision), onSaved);
+    const saving = useSaveForm({
+        initial,
+        save: (form: FormState) => articlesApi.save(bot, form.id, bodyOf(form, initial), revision),
+        onSaved,
+        onCancel,
+        onDirtyChange,
+        same: (form, before) => !isDirty(form, before),
+    });
     const { form, change, submit, mistakes } = saving;
     const [targets, setTargets] = useState<LinkTarget[] | null>(null);
     const [targetsFailure, setTargetsFailure] = useState<string | null>(null);
-    const dirty = isDirty(form, initial);
 
     // Why: the picker and the chips need every article of the bot, not the filtered list the screen shows, and the guide's picker its procedures too.
     useEffect(() => {
@@ -64,13 +68,6 @@ export function ArticleForm({
         };
     }, [bot]);
 
-    useEffect(() => {
-        onDirtyChange(dirty);
-        return () => {
-            onDirtyChange(false);
-        };
-    }, [dirty, onDirtyChange]);
-
     const loose = mistakes.filter((mistake) => fieldOf(mistake, form.id) === null);
     return (
         <Paper>
@@ -88,16 +85,7 @@ export function ArticleForm({
                         onChange={change}
                     />
                 )}
-                <FormFooter
-                    saving={saving}
-                    loose={loose}
-                    editing={editing}
-                    reloadLabel="Reload the article"
-                    onReload={onReload}
-                    onCancel={() => {
-                        if (!dirty || window.confirm(DISCARD_QUESTION)) onCancel();
-                    }}
-                />
+                <FormFooter saving={saving} loose={loose} editing={editing} reloadLabel="Reload the article" onReload={onReload} />
             </form>
         </Paper>
     );

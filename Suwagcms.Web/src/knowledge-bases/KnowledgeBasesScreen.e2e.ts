@@ -167,3 +167,44 @@ test("AC-resource-rename-4: Change id on a base keeps its articles in it and lea
     const stored = (await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()) as { knowledgeBase: string };
     expect(stored.knowledgeBase).toBe("pricing");
 });
+
+test("AC-knowledge-bases-10, AC-resource-rename-28: unsaved changes ask before they are lost, and Change id waits for them", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addBase(request, bot, "oferta", "Offer");
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByRole("button", { name: "Change id" })).toBeEnabled();
+    await page.getByLabel("Title").fill("Unsaved");
+    const questions: string[] = [];
+    let accept = false;
+    page.on("dialog", (dialog) => {
+        questions.push(dialog.message());
+        if (accept) void dialog.accept();
+        else void dialog.dismiss();
+    });
+
+    await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByRole("link", { name: "Bots" }).click();
+    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases`);
+    await expect(page.getByLabel("Title")).toHaveValue("Unsaved");
+    accept = true;
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    await expect(page.getByLabel("Title")).toHaveCount(0);
+    expect(questions).toEqual(Array(4).fill("Discard the changes you have not saved?"));
+});
+
+test("AC-knowledge-bases-11: the address --open prints opens the form of that base", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addBase(request, bot, "oferta", "Offer");
+
+    await page.goto(`/bots/${bot}/knowledge-bases?open=oferta`);
+
+    await expect(page.getByLabel("Title")).toHaveValue("Offer");
+    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases`);
+});

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ApiError, type Mistake } from "./client";
+import { DISCARD_QUESTION } from "./leaveGuard";
 
 export interface SaveForm<Form> {
     form: Form;
@@ -9,12 +10,41 @@ export interface SaveForm<Form> {
     refusal: ApiError | null;
     mistakes: Mistake[];
     forgetRefusal: () => void;
+    dirty: boolean;
+    cancel: () => void;
 }
 
-/** What a form that saves a resource keeps: what was typed, which a refusal never loses, and the refusal itself. */
-export function useSaveForm<Form>(initial: Form, save: (form: Form) => Promise<unknown>, onSaved: () => void): SaveForm<Form> {
+function sameJson<Form>(form: Form, initial: Form): boolean {
+    return JSON.stringify(form) === JSON.stringify(initial);
+}
+
+/** What a form that saves a resource keeps: what was typed, which a refusal never loses, and the refusal itself. Cancelling with unsaved changes asks first. */
+export function useSaveForm<Form>({
+    initial,
+    save,
+    onSaved,
+    onCancel,
+    onDirtyChange,
+    same = sameJson,
+}: {
+    initial: Form;
+    save: (form: Form) => Promise<unknown>;
+    onSaved: () => void;
+    onCancel: () => void;
+    onDirtyChange: (dirty: boolean) => void;
+    same?: (form: Form, initial: Form) => boolean;
+}): SaveForm<Form> {
     const [form, setForm] = useState(initial);
     const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const dirty = !same(form, initial);
+
+    useEffect(() => {
+        onDirtyChange(dirty);
+        return () => {
+            onDirtyChange(false);
+        };
+    }, [dirty, onDirtyChange]);
+
     return {
         form,
         change: (change) => {
@@ -33,6 +63,10 @@ export function useSaveForm<Form>(initial: Form, save: (form: Form) => Promise<u
         mistakes: refusal?.mistakes ?? [],
         forgetRefusal: () => {
             setRefusal(null);
+        },
+        dirty,
+        cancel: () => {
+            if (!dirty || window.confirm(DISCARD_QUESTION)) onCancel();
         },
     };
 }

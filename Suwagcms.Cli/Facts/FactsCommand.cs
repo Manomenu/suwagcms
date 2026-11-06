@@ -60,7 +60,7 @@ internal static class FactsCommand
             {
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
+                    return await target.OpenAsync(target.PageAt("GlobalFact", parsed.GetRequiredValue(name)), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,

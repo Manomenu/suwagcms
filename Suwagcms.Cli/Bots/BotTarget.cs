@@ -12,11 +12,12 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
 
     public string ItemPath(string collection, string id) => $"{CollectionPath(collection)}/{Uri.EscapeDataString(id)}";
 
-    // Why: the web app opens a fact or an article in its list from ?open=<id>, and a procedure in its creator.
+    // Why: the web app opens a fact, a knowledge base, an article or an action in its list from ?open=<id>, and a procedure in its creator.
     private string? LinkTo(string kind, string id) =>
         kind switch
         {
             "GlobalFact" => new Uri(PageOf("facts"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
+            "KnowledgeBase" => new Uri(PageOf("knowledge-bases"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
             "Article" => new Uri(PageOf("articles"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
             "Action" => new Uri(PageOf("actions"), $"?open={Uri.EscapeDataString(id)}").AbsoluteUri,
             "Persona" => PageOf("persona").AbsoluteUri,
@@ -24,8 +25,10 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
             _ => null,
         };
 
-    // Why: a base is shown in its list, which opens no single base from the address.
-    public Uri PageAt(string kind, string id) => LinkTo(kind, id) is { } link ? new Uri(link) : PageOf("knowledge-bases");
+    public Uri PageAt(string kind, string id) =>
+        LinkTo(kind, id) is { } link
+            ? new Uri(link)
+            : throw new ArgumentOutOfRangeException(nameof(kind), kind, "This kind has no page of its own.");
 
     public Uri PageOf(string collection) => new(Address, $"bots/{Uri.EscapeDataString(Bot)}/{collection}");
 

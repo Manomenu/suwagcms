@@ -76,7 +76,7 @@ internal static class ActionsCommand
                 var name = parsed.GetRequiredValue(id);
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(new Uri(target.PageOf(Collection), $"?open={Uri.EscapeDataString(name)}"), parsed);
+                    return await target.OpenAsync(target.PageAt("Action", parsed.GetRequiredValue(id)), parsed);
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.ItemPath(Collection, name), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)

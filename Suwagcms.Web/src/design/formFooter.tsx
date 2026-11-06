@@ -12,14 +12,12 @@ export function FormFooter({
     editing,
     reloadLabel,
     onReload,
-    onCancel,
 }: {
-    saving: { refusal: { message: string; mistakes: ShownMistake[] } | null; forgetRefusal: () => void };
+    saving: { refusal: { message: string; mistakes: ShownMistake[] } | null; forgetRefusal: () => void; cancel: () => void };
     loose: ShownMistake[];
     editing: boolean;
     reloadLabel: string;
     onReload: () => void;
-    onCancel: () => void;
 }) {
     const { refusal } = saving;
     const moved = refusal?.mistakes.some((mistake) => mistake.code === "resource.stale") ?? false;
@@ -45,7 +43,7 @@ export function FormFooter({
                         {reloadLabel}
                     </Button>
                 )}
-                <Button type="button" variant="outline" onClick={onCancel}>
+                <Button type="button" variant="outline" onClick={saving.cancel}>
                     Cancel
                 </Button>
             </div>

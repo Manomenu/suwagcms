@@ -344,3 +344,40 @@ test("AC-action-test-run-13: while the form holds unsaved changes, Run is disabl
     await expect(panel).toContainText("Save first");
     running.close();
 });
+
+test("AC-http-actions-21, AC-resource-rename-28: unsaved changes ask before they are lost, and Change id waits for them", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await request.put(`/api/bots/${bot}/actions/check?ifRevision=0`, {
+        data: {
+            description: "Checks",
+            parameters: null,
+            results: null,
+            implementation: { http: { method: "GET", url: "https://x.internal", headers: null, timeoutSeconds: null } },
+        },
+    });
+    await page.goto(`/bots/${bot}/actions?open=check`);
+    await expect(page.getByRole("button", { name: "Change id" })).toBeEnabled();
+    await page.getByLabel("Description", { exact: true }).first().fill("Unsaved");
+    const questions: string[] = [];
+    let accept = false;
+    page.on("dialog", (dialog) => {
+        questions.push(dialog.message());
+        if (accept) void dialog.accept();
+        else void dialog.dismiss();
+    });
+
+    await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.getByRole("button", { name: "Add an action" }).click();
+    await page.getByRole("link", { name: "Bots" }).click();
+    await expect(page).toHaveURL(`/bots/${bot}/actions`);
+    await expect(page.getByLabel("Description", { exact: true }).first()).toHaveValue("Unsaved");
+    accept = true;
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    await expect(page.getByLabel("URL")).toHaveCount(0);
+    expect(questions).toEqual(Array(4).fill("Discard the changes you have not saved?"));
+});
