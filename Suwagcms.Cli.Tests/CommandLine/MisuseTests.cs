@@ -1,8 +1,8 @@
 using System.Text.Json;
 
-namespace Suwagcms.Cli.Tests.Usage;
+namespace Suwagcms.Cli.Tests.CommandLine;
 
-public sealed class UsageTests
+public sealed class MisuseTests
 {
     [Fact]
     [Trait("criterion", "AC-cli-foundation-8")]

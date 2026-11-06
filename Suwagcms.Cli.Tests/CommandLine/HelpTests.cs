@@ -1,6 +1,6 @@
 using System.CommandLine;
 
-namespace Suwagcms.Cli.Tests.Usage;
+namespace Suwagcms.Cli.Tests.CommandLine;
 
 public sealed class HelpTests
 {

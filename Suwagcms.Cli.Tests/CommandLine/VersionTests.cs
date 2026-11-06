@@ -1,6 +1,6 @@
 using System.Xml.Linq;
 
-namespace Suwagcms.Cli.Tests.Version;
+namespace Suwagcms.Cli.Tests.CommandLine;
 
 public sealed class VersionTests
 {
