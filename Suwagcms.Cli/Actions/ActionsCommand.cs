@@ -95,7 +95,7 @@ internal static class ActionsCommand
         var file = FileOption();
         var dryRun = EditOptions.DryRun();
         var command = new Command("add", "Add an action to the bot from a YAML or JSON file that holds the whole of it.") { file, dryRun };
-        EditOptions.RefuseOpen(command, options, "actions add");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -121,7 +121,13 @@ internal static class ActionsCommand
                     Body(document),
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "add", "Added", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "add", "Added", cancellationToken),
+                    parsed,
+                    options,
+                    "Action",
+                    id
+                );
             }
         );
         return command;
@@ -146,7 +152,7 @@ internal static class ActionsCommand
             ifRevision,
             dryRun,
         };
-        EditOptions.RefuseOpen(command, options, "actions edit");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -179,7 +185,13 @@ internal static class ActionsCommand
                     Body(document),
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "edit", "Saved", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "edit", "Saved", cancellationToken),
+                    parsed,
+                    options,
+                    "Action",
+                    name
+                );
             }
         );
         return command;

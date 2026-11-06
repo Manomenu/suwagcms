@@ -33,14 +33,14 @@ internal static class ActionTestCommand
         };
         var command = new Command(
             "test",
-            "Try a saved action through the bot, which really calls the service, and show the results or the failure. Writes nothing."
+            "Try a saved action through the bot, which really calls the service, and show the results or the failure. Writes nothing (or --open its page, with the test panel, and call nothing)."
         )
         {
             id,
             parameters,
             yes,
         };
-        EditOptions.RefuseOpen(command, options, "actions test");
+        EditOptions.RefuseOpenWithJson(command, options);
         command.Validators.Add(result =>
         {
             foreach (var given in result.GetValue(parameters) ?? [])
@@ -56,6 +56,10 @@ internal static class ActionTestCommand
             environment,
             async (target, parsed, cancellationToken) =>
             {
+                if (parsed.GetValue(options.Open))
+                {
+                    return await target.OpenAsync(target.PageAt("Action", parsed.GetRequiredValue(id)), parsed);
+                }
                 var path = target.ItemPath(ActionsCommand.Collection, parsed.GetRequiredValue(id));
                 var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
                 if (read.ExitCode != ExitCodes.Done)

@@ -7,8 +7,12 @@ namespace Suwagcms.Cli.History;
 
 internal static class HistoryText
 {
-    public static string Page(HistoryPage page, bool ofBot)
+    public static string Page(HistoryPage page, bool ofBot, int? number = null)
     {
+        if (page.Entries.Count == 0 && page.Total is > 0)
+        {
+            return string.Create(CultureInfo.InvariantCulture, $"Page {number} is past the end: {page.Total} entries in all.");
+        }
         if (page.Entries.Count == 0)
         {
             return $"No change has been recorded since {Day(page.Since)}, when history started.";
@@ -18,7 +22,13 @@ internal static class HistoryText
         {
             Entry(text, entry, ofBot);
         }
-        if (page.Next is { } next)
+        if (number is { } asked)
+        {
+            text.Append(string.Create(CultureInfo.InvariantCulture, $"Page {asked}, {page.Total} entries in all."));
+            text.Append(page.Next is null ? "" : string.Create(CultureInfo.InvariantCulture, $" More: --page {asked + 1}"));
+            text.Append(Environment.NewLine);
+        }
+        else if (page.Next is { } next)
         {
             text.Append(string.Create(CultureInfo.InvariantCulture, $"More: --before {next}{Environment.NewLine}"));
         }
@@ -26,13 +36,13 @@ internal static class HistoryText
     }
 
     // Why: a window with nothing in it belongs to one version, so "since that day" would be wrong: later changes exist and belong to later versions.
-    public static string Window(HistoryPage page)
+    public static string Window(HistoryPage page, int? number = null)
     {
         var note =
             page.Incomplete == true
                 ? $"Changes made before {Day(page.Since)} were not recorded, so this list may be incomplete.{Environment.NewLine}"
                 : "";
-        return page.Entries.Count == 0 ? $"{note}No change has been recorded for this version." : note + Page(page, ofBot: true);
+        return page.Entries.Count == 0 ? $"{note}No change has been recorded for this version." : note + Page(page, ofBot: true, number);
     }
 
     private static void Entry(StringBuilder text, HistoryEntry entry, bool ofBot)

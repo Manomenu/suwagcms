@@ -11,6 +11,14 @@ internal static class AvailabilityCommand
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
+    // Why: the words a person types for a kind, mapped to the kind its page is found by; the server has refused any other word before a page is asked for.
+    private static readonly Dictionary<string, string> Pages = new(StringComparer.Ordinal)
+    {
+        ["article"] = "Article",
+        ["procedure"] = "Procedure",
+        ["action"] = "Action",
+    };
+
     public static Command Create(GlobalOptions options, CliEnvironment environment)
     {
         var command = new Command("availability", "Turn articles, procedures and actions on and off, a live setting outside versions.")
@@ -25,10 +33,14 @@ internal static class AvailabilityCommand
 
     private static Command List(GlobalOptions options, CliEnvironment environment)
     {
+        var stored = new Option<bool>("--stored") { Description = "List what the CMS holds without asking the bot." };
         var command = new Command(
             "list",
             "List every article, procedure and action, on or off, and say whether the bot has the setting. Changes nothing."
-        );
+        )
+        {
+            stored,
+        };
         EditOptions.RefuseOpen(command, options, "availability list");
         command.SetBotAction(
             options,
@@ -38,7 +50,7 @@ internal static class AvailabilityCommand
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    target.CollectionPath("availability"),
+                    target.CollectionPath("availability") + (parsed.GetValue(stored) ? "?ask=false" : ""),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
@@ -50,7 +62,7 @@ internal static class AvailabilityCommand
                     ?? throw new InvalidOperationException("the server sent no availability");
                 return await target.Run.Report.DoneAsync(
                     new AvailabilityListDocument(target.Bot, view.Resources, view.Delivery),
-                    AvailabilityText.List(target.Bot, view)
+                    AvailabilityText.List(target.Bot, view, parsed.GetValue(stored))
                 );
             }
         );
@@ -115,7 +127,7 @@ internal static class AvailabilityCommand
         {
             command.Add(yes);
         }
-        EditOptions.RefuseOpen(command, options, $"availability {word}");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -153,9 +165,17 @@ internal static class AvailabilityCommand
                     return failure;
                 }
                 var text = AvailabilityText.Done(target.Bot, done);
-                return done.Delivery.State == AvailabilityDeliveryState.Confirmed
-                    ? await target.Run.Report.DoneAsync(Document(target.Bot, done, false), text)
-                    : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, Document(target.Bot, done, false), text);
+                var reported =
+                    done.Delivery.State == AvailabilityDeliveryState.Confirmed
+                        ? await target.Run.Report.DoneAsync(Document(target.Bot, done, false), text)
+                        : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, Document(target.Bot, done, false), text);
+                return await target.OpenSavedAsync(
+                    reported,
+                    parsed,
+                    options,
+                    Pages[parsed.GetRequiredValue(kind)],
+                    parsed.GetRequiredValue(id)
+                );
             }
         );
         return command;

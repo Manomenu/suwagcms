@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The plugin holds no rules of its own: the CLI and the server stay the only place that decides anything.</p>
   </div>
   <div class="stats">
-    <div><b>6</b><span>criteria</span></div>
+    <div><b>8</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -436,7 +436,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>Main skill</td><td>lists every CLI command with one line on what it does; says how to install the CLI, how to pick the server and the bot, to use <code>--json</code>, how to read a refusal, and that nobody edits a local copy</td></tr>
     <tr><td>Separate skills</td><td>for work that takes judgment or confirmation; the first ones arrive with the features that need them</td></tr>
   </table>
-  <p>The list is checked in both directions: a command missing from the skill fails the gate, and so does a line for a command the CLI no longer has.</p>
+  <p>The list is checked in both directions: a command missing from the skill fails the gate, and so does a line for a command the CLI no longer has. Each line also names the command's options, so what the CLI gains reaches the agent in the same change.</p>
 </section>
 
 <section data-role="decisions">
@@ -458,6 +458,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-claude-plugin-4</code> A line in the main skill naming a command the CLI does not have fails the gate.</li>
     <li><code>AC-claude-plugin-5</code> The main skill says how to install the CLI, how to pick the server and the bot, to use <code>--json</code>, how to read a refusal and that resources are never edited as local files; a guard checks each of these is present.</li>
     <li><code>AC-claude-plugin-7</code> The main skill shows, before a push, the comparison of what the bot has with the latest version.</li>
+    <li><code>AC-claude-plugin-8</code> An option of a command that its line in the main skill does not name fails the gate, naming the command and the option; an <code>edit</code> line may say it takes the options of <code>add</code>, and <code>--dry-run</code> may stand in the paragraph that lists the commands taking it.</li>
+    <li><code>AC-claude-plugin-9</code> The main skill teaches the current format: the <code>formatVersion</code> the SDK writes, how the web's <code>If</code>, <code>Else</code>, <code>Next:</code> and <code>End</code> are written in a file, and no <code>context</code> field; a guard fails on each of these.</li>
   </ul>
 </section>
 

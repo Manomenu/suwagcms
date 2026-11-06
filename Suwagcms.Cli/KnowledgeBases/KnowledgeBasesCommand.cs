@@ -105,7 +105,7 @@ internal static class KnowledgeBasesCommand
         var language = LanguageOption("pl or en; the language of every article in the base. en when this is left out.");
         var dryRun = EditOptions.DryRun();
         var command = new Command("add", "Add a knowledge base to the bot.") { id, title, language, dryRun };
-        EditOptions.RefuseOpen(command, options, "kb add");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -119,7 +119,13 @@ internal static class KnowledgeBasesCommand
                     new SaveKnowledgeBase(parsed.GetValue(title), parsed.GetValue(language)),
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "add", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
+                    parsed,
+                    options,
+                    "KnowledgeBase",
+                    parsed.GetRequiredValue(id)
+                );
             }
         );
         return command;
@@ -143,7 +149,7 @@ internal static class KnowledgeBasesCommand
             ifRevision,
             dryRun,
         };
-        EditOptions.RefuseOpen(command, options, "kb edit");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.Validators.Add(result =>
         {
             if (result.GetValue(title) is null && result.GetValue(language) is null)
@@ -174,7 +180,13 @@ internal static class KnowledgeBasesCommand
                     EditOverlay.Over(current, new SaveKnowledgeBase(parsed.GetValue(title), parsed.GetValue(language))),
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "edit", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
+                    parsed,
+                    options,
+                    "KnowledgeBase",
+                    parsed.GetRequiredValue(id)
+                );
             }
         );
         return command;

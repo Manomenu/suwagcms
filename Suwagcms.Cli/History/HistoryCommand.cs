@@ -40,8 +40,9 @@ internal static class HistoryCommand
             Description = "The resource's id, a fact's name or a version's number; a persona, being one, has none.",
             Arity = ArgumentArity.ZeroOrOne,
         };
-        var limit = new Option<int?>("--limit") { Description = "How many entries a page holds, 50 unless said otherwise." };
-        var before = new Option<long?>("--before") { Description = "Go on from this entry: the id the last page says." };
+        var limit = LimitOption();
+        var before = BeforeOption();
+        var page = PageOption();
         var command = new Command(
             "history",
             "Show what changed and when, newest first: every change to the bot, or to one resource, also after it is deleted (or --open the page)."
@@ -51,17 +52,15 @@ internal static class HistoryCommand
             id,
             limit,
             before,
+            page,
         };
         EditOptions.RefuseOpenWithJson(command, options);
+        RefuseWrongPaging(command, limit, before, page);
         command.Validators.Add(result =>
         {
             if (result.GetValue(kind) is not (null or PersonaWord) && result.GetValue(id) is null)
             {
                 result.AddError("Give the id too: `suwagcms history <kind> <id>`, or neither for the whole bot.");
-            }
-            if (result.GetValue(limit) is < 1)
-            {
-                result.AddError("--limit must be 1 or more.");
             }
         });
         command.SetBotAction(
@@ -75,7 +74,7 @@ internal static class HistoryCommand
                 if (parsed.GetValue(options.Open))
                 {
                     return await WebPage.ShowAsync(
-                        PageOf(target, word, resource),
+                        PageOf(target, word, resource, parsed.GetValue(page)),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         target.Machine.OpenBrowser
@@ -87,28 +86,62 @@ internal static class HistoryCommand
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    path + Query(parsed.GetValue(limit), parsed.GetValue(before)),
+                    path + Query(parsed.GetValue(limit), parsed.GetValue(before), parsed.GetValue(page)),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
                 {
                     return await target.FailedAsync(answer, cancellationToken);
                 }
-                var page = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no history");
-                return await target.Run.Report.DoneAsync(page, HistoryText.Page(page, word is null));
+                var shown = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no history");
+                return await target.Run.Report.DoneAsync(shown, HistoryText.Page(shown, word is null, parsed.GetValue(page)));
             }
         );
         return command;
     }
 
+    public static Option<int?> LimitOption() => new("--limit") { Description = "How many entries a page holds, 50 unless said otherwise." };
+
+    public static Option<long?> BeforeOption() => new("--before") { Description = "Go on from this entry: the id the last page says." };
+
+    public static Option<int?> PageOption() =>
+        new("--page") { Description = "This numbered page, as the web counts them, with the total and each change written out." };
+
+    public static void RefuseWrongPaging(Command command, Option<int?> limit, Option<long?> before, Option<int?> page) =>
+        command.Validators.Add(result =>
+        {
+            if (result.GetValue(limit) is < 1)
+            {
+                result.AddError("--limit must be 1 or more.");
+            }
+            if (result.GetValue(page) is < 1)
+            {
+                result.AddError("--page must be 1 or more.");
+            }
+            if (result.GetValue(page) is not null && result.GetValue(before) is not null)
+            {
+                result.AddError("--page and --before cannot be used together: give the page's number, or the entry to go on from.");
+            }
+        });
+
     // Why: a resource's page is its history, filtered on the bot's History page, because a deleted resource has no screen of its own to open.
-    private static Uri PageOf(BotTarget target, string? word, string? resource)
+    private static Uri PageOf(BotTarget target, string? word, string? resource, int? number)
     {
+        var parts = new List<string>();
+        if (word is not null)
+        {
+            parts.Add($"kind={Collections[word]}");
+            parts.Add($"id={Uri.EscapeDataString(resource ?? "")}");
+        }
+        if (number is { } asked)
+        {
+            parts.Add(string.Create(CultureInfo.InvariantCulture, $"page={asked}"));
+        }
         var page = target.PageOf("history");
-        return word is null ? page : new Uri(page, $"?kind={Collections[word]}&id={Uri.EscapeDataString(resource ?? "")}");
+        return parts.Count == 0 ? page : new Uri(page, "?" + string.Join('&', parts));
     }
 
-    internal static string Query(int? limit, long? before)
+    internal static string Query(int? limit, long? before, int? page)
     {
         var parts = new List<string>();
         if (limit is { } size)
@@ -118,6 +151,10 @@ internal static class HistoryCommand
         if (before is { } entry)
         {
             parts.Add(string.Create(CultureInfo.InvariantCulture, $"before={entry}"));
+        }
+        if (page is { } number)
+        {
+            parts.Add(string.Create(CultureInfo.InvariantCulture, $"page={number}"));
         }
         return parts.Count == 0 ? "" : "?" + string.Join('&', parts);
     }

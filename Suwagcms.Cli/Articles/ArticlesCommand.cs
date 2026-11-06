@@ -33,7 +33,10 @@ internal static class ArticlesCommand
         {
             Description = "Only the articles with this text in the title, id or description, ignoring case. The content is not read.",
         };
-        var command = new Command("list", "List the articles of the bot, filtered (or --open the Articles screen in the web app).")
+        var command = new Command(
+            "list",
+            "List the articles of the bot, filtered (or --open the Articles screen in the web app, filtered the same)."
+        )
         {
             knowledgeBase,
             language,
@@ -45,15 +48,16 @@ internal static class ArticlesCommand
             environment,
             async (target, parsed, cancellationToken) =>
             {
+                // Why: the screen reads its filters from the same words the route takes.
+                var filter = Query(parsed.GetValue(knowledgeBase), parsed.GetValue(language), parsed.GetValue(text));
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
+                    return await target.OpenAsync(new Uri(target.PageOf(Collection), filter), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    target.CollectionPath(Collection)
-                        + Query(parsed.GetValue(knowledgeBase), parsed.GetValue(language), parsed.GetValue(text)),
+                    target.CollectionPath(Collection) + filter,
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)

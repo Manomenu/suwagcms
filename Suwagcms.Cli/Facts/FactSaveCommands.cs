@@ -61,7 +61,7 @@ internal static class FactSaveCommands
         var command = new Command("add", "Add a global fact to the bot.") { name };
         AddFields(command, fields);
         command.Options.Add(dryRun);
-        EditOptions.RefuseOpen(command, options, "facts add");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -86,7 +86,13 @@ internal static class FactSaveCommands
                     body,
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "add", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
+                    parsed,
+                    options,
+                    "GlobalFact",
+                    factName
+                );
             }
         );
         return command;
@@ -102,7 +108,7 @@ internal static class FactSaveCommands
         AddFields(command, fields);
         command.Options.Add(ifRevision);
         command.Options.Add(dryRun);
-        EditOptions.RefuseOpen(command, options, "facts edit");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.Validators.Add(result =>
         {
             if (
@@ -165,7 +171,13 @@ internal static class FactSaveCommands
                     body,
                     cancellationToken
                 );
-                return await ReportSavedAsync(target, answer, dry, "edit", cancellationToken);
+                return await target.OpenSavedAsync(
+                    await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
+                    parsed,
+                    options,
+                    "GlobalFact",
+                    factName
+                );
             }
         );
         return command;

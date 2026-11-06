@@ -54,6 +54,82 @@ public sealed class HistoryCommandTests
         Assert.Equal(2, (await TestCli.Run(["history", "--limit", "0", .. OnBot], StubServer.Healthy())).ExitCode);
     }
 
+    private const string Numbered = """
+        {"entries":[{"id":9,"at":"2026-11-04T21:40:00+00:00","kind":"article","resourceId":"cennik","action":"edited","revision":8,
+        "changes":[{"field":"title","old":"a","new":"b"}],"batch":null,"written":{"fields":[],"parts":[]}}],
+        "next":9,"since":"2026-11-01T08:00:00+00:00","total":120}
+        """;
+
+    [Theory]
+    [Trait("criterion", "AC-cli-foundation-19")]
+    [InlineData("history", "api/bots/rzeczoznawca/history")]
+    [InlineData("history article cennik", "api/bots/rzeczoznawca/articles/cennik/history")]
+    [InlineData("versions window 14", "api/bots/rzeczoznawca/versions/14/window")]
+    public async Task A_numbered_page_is_asked_for_and_says_how_to_go_on(string words, string path)
+    {
+        ArgumentNullException.ThrowIfNull(words);
+        var server = StubServer.Answering(HttpStatusCode.OK, Numbered);
+
+        var result = await TestCli.Run([.. words.Split(' '), "--page", "2", "--limit", "20", .. OnBot], server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal($"http://cms.internal/{path}?limit=20&page=2", server.Requests[0].AbsoluteUri);
+        Assert.Contains("Page 2, 120 entries in all. More: --page 3", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-cli-foundation-19")]
+    public async Task A_numbered_page_with_json_gives_the_total_and_each_change_written_out()
+    {
+        var result = await TestCli.Run(["history", "--page", "2", "--json", .. OnBot], StubServer.Answering(HttpStatusCode.OK, Numbered));
+
+        var page = JsonNode.Parse(result.Output);
+        Assert.Equal(120, page?["total"]?.GetValue<int>());
+        Assert.NotNull(page?["entries"]?[0]?["written"]);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-cli-foundation-19")]
+    public async Task A_page_past_the_end_says_so()
+    {
+        const string Past = """{"entries":[],"next":null,"since":"2026-11-01T08:00:00+00:00","total":120}""";
+
+        var result = await TestCli.Run(["history", "--page", "9", .. OnBot], StubServer.Answering(HttpStatusCode.OK, Past));
+
+        Assert.Contains("Page 9 is past the end: 120 entries in all.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [Trait("criterion", "AC-cli-foundation-19")]
+    [InlineData("history --page 0")]
+    [InlineData("versions window 14 --page 0")]
+    [InlineData("history --page 2 --before 40")]
+    public async Task A_page_below_one_or_beside_before_is_wrong_use(string words)
+    {
+        ArgumentNullException.ThrowIfNull(words);
+        var server = StubServer.Healthy();
+
+        var result = await TestCli.Run([.. words.Split(' '), .. OnBot], server);
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Empty(server.Requests);
+    }
+
+    [Theory]
+    [Trait("criterion", "AC-cli-foundation-19")]
+    [InlineData("history", "history?page=3")]
+    [InlineData("history kb oferta", "history?kind=knowledge-bases&id=oferta&page=3")]
+    [InlineData("versions window 14", "versions/14?historyPage=3")]
+    public async Task Open_lands_on_the_page_asked_for(string words, string page)
+    {
+        ArgumentNullException.ThrowIfNull(words);
+        var opened = new List<Uri>();
+
+        await TestCli.Run([.. words.Split(' '), "--page", "3", "--open", .. OnBot], StubServer.Healthy(), openBrowser: opened.Add);
+
+        Assert.Equal($"http://cms.internal/bots/rzeczoznawca/{page}", Assert.Single(opened).AbsoluteUri);
+    }
+
     [Fact]
     [Trait("criterion", "AC-change-history-9")]
     public async Task Json_for_the_whole_bot_returns_the_same_entries()

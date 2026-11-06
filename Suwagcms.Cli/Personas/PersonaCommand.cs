@@ -78,7 +78,7 @@ internal static class PersonaCommand
             ifRevision,
             dryRun,
         };
-        EditOptions.RefuseOpen(command, options, "persona edit");
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -110,10 +110,11 @@ internal static class PersonaCommand
                     return await target.FailedAsync(answer, cancellationToken);
                 }
                 var saved = ViewOf(answer);
-                return await target.Run.Report.DoneAsync(
+                var reported = await target.Run.Report.DoneAsync(
                     new PersonaSavedDocument(target.Bot, saved, dry),
                     PersonaText.Saved(saved, target.Bot, dry)
                 );
+                return await target.OpenSavedAsync(reported, parsed, options, "Persona", Path);
             }
         );
         return command;

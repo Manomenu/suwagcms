@@ -3,7 +3,6 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts.Renames;
 
 namespace Suwagcms.Cli.Renames;
@@ -41,16 +40,7 @@ internal static class RenameCommand
             ifRevision,
             dryRun,
         };
-        EditOptions.RefuseOpenWithJson(command, options);
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Open) && result.GetValue(dryRun))
-            {
-                result.AddError(
-                    "--dry-run and --open cannot be used together: a dry run changes nothing, so there is no new address to open."
-                );
-            }
-        });
+        EditOptions.OpenWhatItSaves(command, options, dryRun);
         command.SetBotAction(
             options,
             environment,
@@ -75,14 +65,7 @@ internal static class RenameCommand
                     new RenameDocument(target.Bot, renamed.Kind, renamed.OldId, renamed.Id, renamed.Revision, renamed.Referrers, dry),
                     RenameText.Of(renamed, dry)
                 );
-                return parsed.GetValue(options.Open)
-                    ? await WebPage.ShowAsync(
-                        target.PageAt(pageKind, renamed.Id),
-                        parsed.InvocationConfiguration.Output,
-                        parsed.InvocationConfiguration.Error,
-                        environment.OpenBrowser
-                    )
-                    : reported;
+                return await target.OpenSavedAsync(reported, parsed, options, pageKind, renamed.Id);
             }
         );
         return command;

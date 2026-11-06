@@ -20,7 +20,7 @@ internal static class ResourceCommand
         var ifRevision = EditOptions.IfRevision();
         var dryRun = EditOptions.DryRun();
         var command = new Command("delete", description) { id, ifRevision, dryRun };
-        EditOptions.RefuseOpen(command, options, words);
+        EditOptions.RefuseOpen(command, options, words, ": what it deletes is gone");
         command.SetBotAction(
             options,
             environment,
