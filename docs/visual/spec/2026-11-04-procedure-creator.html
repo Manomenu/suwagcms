@@ -405,12 +405,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       </div>
       <div class="wf-card"><b>Steps</b>
         <div class="wf-row"><span class="wf-muted">1.</span><b>askProperty</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.type</code> <code>valuation.purpose</code> <code>property.area</code></span></div>
-        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.type</code> is one of <code>land</code></span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.type ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">land</span></div>
         <div style="margin-left:26px"><div class="wf-row"><span class="wf-muted">no steps: goes on to 2. askContact</span><span class="wf-grow"></span><span class="wf-btn">+ Add step</span></div></div>
         <div class="wf-row"><span class="tag">Else</span></div>
         <div style="margin-left:26px">
           <div class="wf-row"><span class="wf-muted">1.</span><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
-          <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.age</code> is at least <code>50</code></span></div>
+          <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.age ▾</span><span class="wf-input">range ▾</span><span class="wf-muted">from</span><span class="wf-input">50</span></div>
           <div style="margin-left:26px">
             <div class="wf-row"><span class="wf-muted">1.</span><b>askRenovation</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.lastRenovationYear</code></span></div>
             <div class="wf-row"><span class="wf-muted">2.</span><b>tellConditionReview</b><span class="tag ok">Tell</span><span class="wf-grow">Tell the customer how the age of the building affects this task. <span class="wf-muted">1 point</span></span></div>
@@ -470,7 +470,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h3>2. She adds an If</h3>
   <ol class="steps">
     <li><p>Below an Ask row she clicks <b>+ Add step</b> and picks <b>If</b>. She chooses <code>property.type</code>, then <code>oneOf</code>, then <code>land</code> from the fact's values. An empty Else comes with it.</p></li>
-    <li><p>The Else has no steps and nothing follows the If, so beside the Else she reads: <span class="wf-muted">A rule of step 'askProperty' has no 'to'. Add a step to this branch, or a Next: row.</span> She adds a row below the If and the mistake goes, without saving.</p></li>
+    <li><p>The Else has no steps and nothing follows the If, so beside the Else she reads: <span class="wf-muted">A branch of step 'askProperty' goes to no step. Add a step to this branch, or a Next: row.</span> She adds a row below the If and the mistake goes, without saving.</p></li>
   </ol>
   <h3>3. An agent saves a jump</h3>
   <ol class="steps">
@@ -543,17 +543,17 @@ askAge:
     <div><h4>Shown</h4>
       <div class="wire"><div class="wf-body">
         <div class="wf-row"><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
-        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.age</code> is at least <code>50</code></span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.age ▾</span><span class="wf-input">range ▾</span><span class="wf-muted">from</span><span class="wf-input">50</span></div>
         <div style="margin-left:26px"><div class="wf-row"><b>askRenovation</b><span class="tag accent">Ask</span></div></div>
         <div class="wf-row"><span class="tag">Else</span><span class="wf-muted">goes on to askContact</span></div>
       </div></div>
     </div>
   </div>
   <ul>
-    <li><b>An If needs a step directly above it.</b> It is not offered as the first row of a list, or right after another If. A step moves with the If below it, and deleting a step with an If below it is refused with that reason, and nothing changes.</li>
-    <li><b>A branch's conditions</b> are a fact and a condition (<code>oneOf</code>, <code>range</code>, <code>known</code>), fitted to the fact's type. <b>+ and</b> adds another, and all must hold, as <code>when</code> does today. There is never free text.</li>
+    <li><b>An If needs a step directly above it.</b> <b>+ Add step</b> is the only way to add one, so it goes below the last step of a list; it is not offered as the first row of a list, or right after another If. A step moves with the If below it by the arrows, which is how an If reaches the middle of a list, and deleting a step with an If below it is refused with that reason, and nothing changes.</li>
+    <li><b>A branch's conditions</b> are always on the row of an If or an Else if, with nothing to open. Each is a fact, global or local, and a condition (<code>oneOf</code>, <code>range</code>, <code>known</code>), fitted to the fact's type. <b>+ and</b> adds another, and all must hold, as <code>when</code> does today. There is never free text.</li>
     <li><b>Several rules may go to one step:</b> conditions in one rule combine with AND only, so two rules on different facts are how the format writes OR. Both branches show no steps and go on to that step, or one holds the step and the other a Next: row.</li>
-    <li><b>Else</b> comes with a new If and cannot be removed. <b>+ Else if</b> adds a branch before it. The rules' order is the branches' order.</li>
+    <li><b>Else</b> comes with a new If and cannot be removed. <b>+ Else if</b> adds a branch before it. <b>Remove this If</b>, on the If row, removes the whole If, asking first when it holds rows; an Else if row has its own <b>Remove this Else if</b>. The rules' order is the branches' order.</li>
   </ul>
 
   <h3>How the list becomes the graph</h3>
@@ -613,7 +613,7 @@ askAge:
       <div class="wire after"><div class="wf-body">
         <div class="wf-row"><span class="wf-muted">1.</span><b>askDetails</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.firstName</code> <code>customer.lastName</code> <code>property.landRegisterNumber</code></span></div>
         <div class="wf-row"><span class="wf-muted">2.</span><b>askDelivery</b><span class="tag accent">Ask</span><span class="wf-grow"><code>reportDelivery</code></span></div>
-        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>reportDelivery</code> is one of <code>phone</code></span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-input">reportDelivery ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">phone</span></div>
         <div style="margin-left:26px">
           <div class="wf-row"><span class="wf-muted">1.</span><b>askPhone</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.phone</code></span></div>
           <div class="wf-row"><span class="wf-muted">2.</span><b>tellPhoneDelivery</b><span class="tag ok">Tell</span><span class="wf-grow">Thank the customer… <span class="wf-muted">2 points</span></span></div>
@@ -674,13 +674,13 @@ askAge:
   <h2>Screens</h2>
   <p>The first picture on this page is the whole screen. These are its other states.</p>
 
-  <h3>An If open for editing</h3>
-  <div class="wire after"><span class="wf-label">Clicking the If under askAge</span>
+  <h3>An If</h3>
+  <div class="wire after"><span class="wf-label">The If under askAge: its conditions are on its row, with nothing to open</span>
     <div class="wf-body">
       <div class="wf-row"><span class="wf-muted">1.</span><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
       <div class="wf-card">
         <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.age ▾</span><span class="wf-input">range ▾</span><span class="wf-muted">from</span><span class="wf-input">50</span><span class="wf-muted">to</span><span class="wf-input">any</span></div>
-        <div class="wf-row"><span class="wf-btn">+ and</span></div>
+        <div class="wf-row"><span class="wf-btn">+ and</span><span class="wf-grow"></span><span class="wf-btn">Remove this If</span></div>
       </div>
       <div style="margin-left:26px">
         <div class="wf-row"><span class="wf-muted">1.</span><b>askRenovation</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.lastRenovationYear</code></span></div>
@@ -698,12 +698,12 @@ askAge:
       <div class="wf-card wf-row"><b>2 mistakes</b><span class="wf-muted">1 refuses a save, 1 stops a version. Click one to go to it.</span></div>
       <div class="wf-row"><span class="wf-muted">2.</span><b>askDelivery</b><span class="tag accent">Ask</span><span class="wf-grow wf-muted">no facts yet</span></div>
       <div class="wf-card" style="margin-left:26px"><span class="tag warn">Stops a version</span> In step 'askDelivery', collect lists no facts. <span class="wf-muted">List at least one fact.</span></div>
-      <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>reportDelivery</code> is one of <code>phone</code></span></div>
+      <div class="wf-row"><span class="tag">If</span><span class="wf-input">reportDelivery ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">phone</span></div>
       <div style="margin-left:26px">
         <div class="wf-row"><span class="wf-muted">1.</span><b>askPhone</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.phone</code></span></div>
       </div>
       <div class="wf-row"><span class="tag">Else</span><span class="wf-grow wf-muted">no steps</span><span class="wf-btn">+ Add step</span></div>
-      <div class="wf-card" style="margin-left:26px"><span class="tag bad">Refuses a save</span> A rule of step 'askDelivery' has no 'to'. <span class="wf-muted">Add a step to this branch, or a Next: row.</span></div>
+      <div class="wf-card" style="margin-left:26px"><span class="tag bad">Refuses a save</span> A branch of step 'askDelivery' goes to no step. <span class="wf-muted">Add a step to this branch, or a Next: row.</span></div>
     </div>
   </div>
 
@@ -740,7 +740,7 @@ askAge:
     <div class="wire after"><span class="wf-label">A branch that ends, a branch with a jump</span>
       <div class="wf-body">
         <div class="wf-row"><span class="wf-muted">1.</span><b>ask</b><span class="tag accent">Ask</span><code>property.type</code></div>
-        <div class="wf-row"><span class="tag">If</span><code>property.type</code> is one of <code>another</code></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.type ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">another</span></div>
         <div style="margin-left:26px">
           <div class="wf-row"><span class="wf-muted">1.</span><b>sorry</b><span class="tag note">Say</span>Sorry, we do not value this.</div>
           <div class="wf-row"><span class="tag">End</span></div>
@@ -882,7 +882,7 @@ tellContents:
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
-  <p>More than the usual 12, for one reason: this page joins two living specs. 28 are carried over with their ids, and 17 are new. Each new one names the lightest check that can fail for it; a browser test is used only where a browser is what is checked.</p>
+  <p>More than the usual 12, for one reason: this page joins two living specs. 28 are carried over with their ids, and 19 are new. Each new one names the lightest check that can fail for it; a browser test is used only where a browser is what is checked.</p>
   <h3>The page</h3>
   <ul class="checks">
     <li><code>AC-procedure-creator-23</code> The edit page of a procedure is the shared edit screen: in this order a way back, the heading with the id and Change id, Used by and Uses, the form, Delete and History, with no heading, Delete or History of a procedure's own. <span class="tag">web test</span></li>
@@ -890,7 +890,7 @@ tellContents:
     <li><code>AC-procedure-creator-25</code> Each block has its row as the table of rows says, with the step's name, editable on the row, its tag and its text, and <code>next</code> is shown nowhere except as a Next: row. <span class="tag">web test</span></li>
     <li><code>AC-procedure-creator-45</code> While a long procedure scrolls, Save stays in the viewport and can be clicked; at the end of the page it sits below the last row and above Delete, covering neither; every edit screen's actions behave the same. <span class="tag">browser test</span></li>
     <li><code>AC-procedure-creator-1</code> Using only the page's forms, an author builds a procedure with <code>listen</code>, <code>collect</code>, <code>say</code>, <code>assign</code> and an If with an Else if and an Else, and saves it; renaming a step renames every place that points at it, and a taken name changes nothing.</li>
-    <li><code>AC-procedure-creator-8</code> In an If, <code>range</code> is offered only for an <code>int</code> fact and <code>oneOf</code> offers an enum's values; <b>+ and</b> adds a condition; an Else is always last and cannot be removed.</li>
+    <li><code>AC-procedure-creator-8</code> The conditions of an If and an Else if are always on the row, with no step open, and offer global and local facts; <b>Remove this If</b> is on the If row alone, removes the whole If and asks first when it holds rows; an Else if row removes only itself. In an If, <code>range</code> is offered only for an <code>int</code> fact and <code>oneOf</code> offers an enum's values; <b>+ and</b> adds a condition; an Else is always last and cannot be removed.</li>
     <li><code>AC-procedure-creator-9</code> An Ask row does not offer a fact with <code>writableBy: assign</code>.</li>
     <li><code>AC-procedure-creator-15</code> <code>suwagcms procedures show --open</code> and <code>suwagcms procedures add --open</code> open that procedure on this page.</li>
     <li><code>AC-procedure-creator-18</code> The form adds, edits and removes a procedure's local facts with the same fields as a global fact; a step's forms offer them by their short name, and the save stores them in the procedure.</li>
@@ -901,7 +901,7 @@ tellContents:
   <h3>The list and the graph</h3>
   <ul class="checks">
     <li><code>AC-procedure-creator-26</code> Saving a list writes <code>firstStep</code>, <code>next</code> and rules as the table says: a row's <code>next</code> is the row below, a branch's last row goes to the first row after the If, an empty branch's <code>to</code> is that row, the rules keep the branches' order, and End leaves the step above it with no <code>next</code>. <span class="tag">web test</span></li>
-    <li><code>AC-procedure-creator-27</code> An If is offered only directly below a step, Next: and End only at the end of a list, End only in a branch with a row after it; a step moves with the If below it, and deleting a step with an If below it is refused with the reason and changes nothing. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-27</code> An If is offered only by <b>+ Add step</b>, directly below the last step of a list, Next: and End only at the end of a list, End only in a branch with a row after it; a step moves with the If below it by the arrows, so an If reaches the middle of a list, and deleting a step with an If below it is refused with the reason and changes nothing. <span class="tag">web test</span></li>
     <li><code>AC-procedure-creator-28</code> A new row gets a unique name from its block, and moving a row within a list or between lists changes the saved graph as its new place says and never changes a step's name. <span class="tag">web test</span></li>
     <li><code>AC-procedure-creator-2</code> A procedure saved through the CLI opens with every step, block and rule as stored, and <code>conversation</code>, <code>inspectionVisit</code>, <code>quoteRequest</code> and <code>valuationReport</code> open row for row as this page shows them.</li>
     <li><code>AC-procedure-creator-10</code> Deleting a row removes its step, the rows around it join up, an If with rows asks first, a Next: row naming the step stays with a mistake beside it that refuses a save, and the saved procedure names the step nowhere.</li>
@@ -912,6 +912,7 @@ tellContents:
   </ul>
   <h3>Mistakes and saving</h3>
   <ul class="checks">
+    <li><code>AC-procedure-creator-47</code> A message and its fix speak to an author of an If, an Else if, a branch and a condition: none says <code>rule</code> or puts <code>when</code> in quotes, and <code>when</code> stays only as the key in the file. <span class="tag">sdk test</span></li>
     <li><code>AC-procedure-creator-3</code> After a change and without saving, what the validator reports for the page shows beside the row, branch or field it concerns, a mistake with no place on the page shows at the top of the form, and a mistake goes when the change is undone by hand.</li>
     <li><code>AC-procedure-creator-4</code> Each mistake says whether it refuses a save or only stops a version and gives its fix; a count at the top of the form lists them, and clicking one shows and selects its place.</li>
     <li><code>AC-procedure-creator-6</code> A save with only <code>Version</code> mistakes succeeds; a save with a <code>Save</code> mistake is refused and the page stays as it was.</li>
@@ -934,6 +935,7 @@ tellContents:
     <li><code>AC-procedure-creator-34</code> An article outside its entry's base is refused with <code>knowledge.article.otherBase</code> and the fix, and so is moving an article to another base while an entry names it under the old one. <span class="tag">sdk test</span></li>
     <li><code>AC-procedure-creator-35</code> One base twice on an instruction is refused with <code>knowledge.base.repeated</code>, whose fix says to merge the entries. <span class="tag">sdk test</span></li>
     <li><code>AC-procedure-creator-36</code> A base an entry names cannot be deleted, the refusal lists each instruction, Used by and Uses show it, and changing the base's <code>id</code> rewrites each entry. <span class="tag">server test</span></li>
+    <li><code>AC-procedure-creator-46</code> A document in format 1 is refused with <code>format.version</code> and a fix that says to bring it to format 2, and a version the CMS keeps in format 1 can be neither pushed nor rolled back to: that is refused the same way, with nothing sent to the bot. <span class="tag">server test</span></li>
   </ul>
   <h3>The knowledge section and the declaration</h3>
   <ul class="checks">

@@ -33,7 +33,7 @@ import {
 import { PROCEDURE_HINTS } from "./hints";
 import type { Beside } from "./KnowledgeForm";
 import { fallOf, findRow, listAt, type ListEnd, type ListRef, type StepList, type StepRow } from "./list";
-import { ConditionsEditor, conditionsText } from "./RuleEditor";
+import { ConditionsEditor } from "./RuleEditor";
 import { StepForm } from "./StepForm";
 
 /** The writer's word for each block: Ask because a collect lists facts, and Tell because an inform has the model word the points. */
@@ -304,30 +304,38 @@ function goesOnText(draft: Draft, ref: ListRef): string {
 }
 
 function BranchView({ row, index, props }: { row: StepRow; index: number; props: StepsProps }) {
-    const { draft, facts, edit, selected, beside } = props;
+    const { draft, facts, edit, beside } = props;
     const branch = row.branches?.[index];
     if (branch === undefined) return null;
     const ref = { step: row.name, arm: index };
     const empty = branch.list.rows.length === 0 && branch.list.last === null;
     const label = branch.when === undefined ? "Else" : index === 0 ? "If" : "Else if";
-    const open = selected === row.name;
     return (
         <div className="flex flex-col gap-1" data-branch={label} data-place={`branch:${row.name}:${index}`}>
             <div className="flex flex-wrap items-center gap-2 text-sm">
                 <Tag tone="bg-warning/15 text-warning">{label}</Tag>
-                {branch.when !== undefined && !open && <span className="min-w-0">{conditionsText(branch.when)}</span>}
                 {empty && <span className="text-muted-foreground">{goesOnText(draft, { ...ref })}</span>}
-                {branch.when !== undefined && (
+                {index === 0 ? (
                     <RemoveButton
-                        label={`Remove this ${label}`}
-                        steps={stepsInBranch(branch)}
+                        label="Remove this If"
+                        steps={stepsInBranches(row)}
                         onRemove={() => {
-                            edit((current) => removeBranch(current, row.name, index));
+                            edit((current) => removeIf(current, row.name));
                         }}
                     />
+                ) : (
+                    branch.when !== undefined && (
+                        <RemoveButton
+                            label={`Remove this ${label}`}
+                            steps={stepsInBranch(branch)}
+                            onRemove={() => {
+                                edit((current) => removeBranch(current, row.name, index));
+                            }}
+                        />
+                    )
                 )}
             </div>
-            {branch.when !== undefined && open && (
+            {branch.when !== undefined && (
                 <ConditionsEditor
                     when={branch.when}
                     facts={facts}
@@ -425,13 +433,6 @@ function ArmsView({ row, props }: { row: StepRow; props: StepsProps }) {
                                 + Else
                             </Button>
                         )}
-                        <RemoveButton
-                            label="Remove this If"
-                            steps={stepsInBranches(row)}
-                            onRemove={() => {
-                                edit((current) => removeIf(current, row.name));
-                            }}
-                        />
                     </div>
                 </div>
             )}
@@ -503,19 +504,6 @@ function RowView({ row, number, props }: { row: StepRow; number: number; props: 
                     >
                         ↓
                     </Button>
-                    {canTakeIf(row) && (
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="xs"
-                            aria-label={`Add an If below ${row.name}`}
-                            onClick={() => {
-                                edit((current) => addIf(current, row.name));
-                            }}
-                        >
-                            + If
-                        </Button>
-                    )}
                     <Button
                         type="button"
                         variant="ghost"

@@ -73,7 +73,7 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
             return $" ({location})";
         }
         var block = parts[2].Split('[')[0];
-        return $", step {parts[1]} ({(block == "next" ? "when" : block)})";
+        return $", step {parts[1]} ({(block == "next" ? "condition" : block)})";
     }
 
     public static string Noun(string kind) =>

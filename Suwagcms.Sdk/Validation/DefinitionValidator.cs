@@ -108,7 +108,7 @@ public static class DefinitionValidator
 
             if (number != DefinitionFormat.Version)
             {
-                return [UnknownVersion(number.ToString(CultureInfo.InvariantCulture))];
+                return [OtherVersion(number)];
             }
 
             if (NullItemPath(root) is { } nullItem)
@@ -150,7 +150,7 @@ public static class DefinitionValidator
     {
         if (definition.FormatVersion != DefinitionFormat.Version)
         {
-            return [UnknownVersion(definition.FormatVersion.ToString(CultureInfo.InvariantCulture))];
+            return [OtherVersion(definition.FormatVersion)];
         }
 
         return
@@ -189,6 +189,17 @@ public static class DefinitionValidator
 
         return null;
     }
+
+    // Why: an older document cannot be fixed by a newer SDK, and a version the CMS keeps cannot be edited at all.
+    private static Mistake OtherVersion(int found) =>
+        found > DefinitionFormat.Version
+            ? UnknownVersion(found.ToString(CultureInfo.InvariantCulture))
+            : Envelope(
+                MistakeCodes.FormatVersion,
+                "formatVersion",
+                $"formatVersion {found.ToString(CultureInfo.InvariantCulture)}; this SDK reads {DefinitionFormat.Version}.",
+                $"Bring the document to format {DefinitionFormat.Version} and set formatVersion to {DefinitionFormat.Version}; a version the CMS keeps cannot change, so create a new version from the working state."
+            );
 
     private static Mistake UnknownVersion(string found) =>
         Envelope(

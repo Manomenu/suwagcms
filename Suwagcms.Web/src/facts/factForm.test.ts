@@ -79,7 +79,7 @@ describe("fieldOf", () => {
 
 describe("where a refusal points", () => {
     it("AC-edit-guard-11: a place in a procedure reads as its step and block, and any other place as the server names it", () => {
-        expect(referrerPlace("steps.ask.next[0].when.order.kind")).toBe("step ask (when)");
+        expect(referrerPlace("steps.ask.next[0].when.order.kind")).toBe("step ask (condition)");
         expect(referrerPlace("steps.ask.collect[0]")).toBe("step ask (collect)");
         expect(referrerPlace("steps.mark.assign.order.kind")).toBe("step mark (assign)");
         expect(referrerPlace("content")).toBe("content");

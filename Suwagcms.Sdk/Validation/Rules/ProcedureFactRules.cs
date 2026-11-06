@@ -207,7 +207,7 @@ internal static class ProcedureFactRules
         {
             FactUse.Collect => $"'collect' of step '{Step(reference)}'",
             FactUse.Assign => $"'assign' of step '{Step(reference)}'",
-            FactUse.Condition => $"'when' of a rule of step '{Step(reference)}'",
+            FactUse.Condition => $"A condition of step '{Step(reference)}'",
             FactUse.Parameter => $"'with' of step '{Step(reference)}'",
             FactUse.Result => $"'results' of step '{Step(reference)}'",
             _ => throw new ArgumentOutOfRangeException(nameof(reference)),

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { Rule, Step } from "./draft";
+import type { ProcedureDetail } from "./api";
+import { fromDetail, toSave, type Rule, type Step } from "./draft";
 import { firstStepOf, fallOf, linksOf, listOf, moveRow, type StepList } from "./list";
 
 type Graph = Record<string, Step>;
@@ -277,23 +278,36 @@ function generator(seed: number) {
     };
 }
 
-function randomGraph(seed: number): { first: string; steps: Graph } {
+function randomGraph(seed: number): { first: string | null; steps: Graph } {
     const pick = generator(seed);
     const names = Array.from({ length: 1 + pick(9) }, (_, index) => `s${index}`);
     const any = () => names[pick(names.length)] ?? "s0";
+    const rulesOf = (): Rule[] => {
+        const rules: Rule[] = Array.from({ length: 1 + pick(3) }, (_, index) => ({ when: when(`f${index}`, "1"), to: any() }));
+        const shape = pick(4);
+        if (shape === 0) return rules;
+        if (shape === 1) return [{ to: any() }];
+        // Why: the format allows a default anywhere, and a default that is not last must stay where it is.
+        const at = shape === 2 ? rules.length : pick(rules.length);
+        return [...rules.slice(0, at), { to: any() }, ...rules.slice(at)];
+    };
     const steps: Graph = {};
     for (const name of names) {
         const kind = pick(10);
         if (kind < 2) steps[name] = { say: name };
-        else if (kind < 6) steps[name] = { say: name, next: any() };
-        else if (kind < 9) {
-            const rules: Rule[] = Array.from({ length: 1 + pick(3) }, (_, index) => ({ when: when(`f${index}`, "1"), to: any() }));
-            steps[name] = { say: name, next: [...rules, { to: any() }] };
-        } else {
-            steps[name] = { action: "x", onFailure: any(), ...(pick(3) > 0 ? { next: any() } : {}) };
+        else if (kind < 5) steps[name] = { say: name, next: any() };
+        else if (kind < 8) steps[name] = { say: name, next: rulesOf() };
+        else {
+            const shape = pick(3);
+            steps[name] = { action: "x", onFailure: any(), ...(shape === 0 ? {} : { next: shape === 1 ? any() : rulesOf() }) };
         }
     }
-    return { first: names[0] ?? "s0", steps };
+    return { first: pick(10) === 0 ? null : (names[0] ?? "s0"), steps };
+}
+
+/** A lone default is the same as a fixed next, and is written as one. */
+function nextAsSaved(next: Step["next"]): Step["next"] {
+    return Array.isArray(next) && next.length === 1 && next[0]?.when === undefined ? next[0]?.to : next;
 }
 
 describe("the round trip", () => {
@@ -305,11 +319,30 @@ describe("the round trip", () => {
             expect(firstStepOf(list), `seed ${seed}`).toBe(first);
             for (const [name, step] of Object.entries(steps)) {
                 if (notConnected.includes(name)) continue;
-                const { next, onFailure } = step;
-                const stored = Array.isArray(next) && next.length === 1 && next[0]?.when === undefined ? next[0]?.to : next;
-                expect(links[name]?.next, `seed ${seed}, next of ${name}`).toEqual(stored);
-                expect(links[name]?.onFailure, `seed ${seed}, onFailure of ${name}`).toEqual(onFailure);
+                expect(links[name]?.next, `seed ${seed}, next of ${name}`).toEqual(nextAsSaved(step.next));
+                expect(links[name]?.onFailure, `seed ${seed}, onFailure of ${name}`).toEqual(step.onFailure);
             }
+        }
+    });
+
+    it("AC-procedure-creator-29: what a save would send holds every connected step as the graph says and a step Not connected as stored, and a second round changes nothing", () => {
+        for (let seed = 1; seed <= 2000; seed++) {
+            const { first, steps } = randomGraph(seed);
+            const detail = { description: "D", firstStep: first, steps, revision: 1, notReady: [] } as unknown as ProcedureDetail;
+            const saved = toSave(fromDetail(detail));
+            const { notConnected } = listOf(first, steps);
+            const expected = Object.fromEntries(
+                Object.entries(steps).map(([name, step]) => {
+                    if (notConnected.includes(name)) return [name, step];
+                    const { next, ...rest } = step;
+                    const written = next === undefined ? undefined : nextAsSaved(next);
+                    return [name, written === undefined ? rest : { ...rest, next: written }];
+                }),
+            );
+            expect(saved.firstStep, `seed ${seed}`).toBe(first);
+            expect(saved.steps, `seed ${seed}`).toEqual(expected);
+            const again = toSave(fromDetail({ ...detail, steps: saved.steps } as unknown as ProcedureDetail));
+            expect(again, `seed ${seed}, second round`).toEqual(saved);
         }
     });
 

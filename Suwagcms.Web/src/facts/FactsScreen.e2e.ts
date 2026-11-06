@@ -165,7 +165,7 @@ test("AC-edit-guard-11: a refused edit shows the mistake beside its field with a
     expect(after).toMatchObject({ values: ["house", "flat"], revision: 1 });
 
     const usedBy = page.getByRole("list", { name: "Used by" });
-    await expect(usedBy).toContainText("step ask (when)");
+    await expect(usedBy).toContainText("step ask (condition)");
     await usedBy.getByRole("link", { name: "orderValuation" }).click();
     await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation/edit$`));
 });

@@ -1,4 +1,5 @@
 using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Tests.Repository;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.Validation;
@@ -52,6 +53,27 @@ public sealed class MistakeShapeTests
             mistakes.Select(mistake => mistake.Code).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
         );
         Assert.All(rulesSeen, code => Assert.Contains(mistakes, mistake => mistake.Code == code));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-creator-47")]
+    public void No_mistake_of_any_rule_speaks_of_a_rule_or_of_when_to_an_author()
+    {
+        var mistakes = BadDocuments.SelectMany(json => DefinitionValidator.ValidateJson(json, ValidationStage.Version));
+
+        Assert.All(mistakes, mistake => Assert.DoesNotMatch("(?i)'when'|\\brules?\\b", $"{mistake.Message} {mistake.Fix}"));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-creator-47")]
+    public void No_text_of_the_sdk_puts_when_in_quotes()
+    {
+        var quoting = Directory
+            .EnumerateFiles(RepositoryFiles.Path("Suwagcms.Sdk"), "*.cs", SearchOption.AllDirectories)
+            .Where(file => !file.Contains("/obj/", StringComparison.Ordinal) && !file.Contains("/bin/", StringComparison.Ordinal))
+            .Where(file => File.ReadAllText(file).Contains("'when'", StringComparison.Ordinal));
+
+        Assert.Empty(quoting);
     }
 
     private static void AssertComplete(Mistake mistake)

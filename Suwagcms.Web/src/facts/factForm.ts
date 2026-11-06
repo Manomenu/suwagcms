@@ -89,7 +89,7 @@ export function fieldOf(mistake: Mistake): FieldName | null {
 export function referrerPlace(location: string): string {
     const match = /^steps\.([^.]+)\.([^.[]+)/.exec(location);
     if (match === null) return location;
-    return `step ${match[1] ?? ""} (${match[2] === "next" ? "when" : (match[2] ?? "")})`;
+    return `step ${match[1] ?? ""} (${match[2] === "next" ? "condition" : (match[2] ?? "")})`;
 }
 
 export { constraintText as constraintOf } from "@/api/constraints";

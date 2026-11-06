@@ -278,7 +278,7 @@ public sealed class LocalFactRulesTests
         Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
         Assert.Equal("localFacts.note", mistake.Path);
         Assert.Contains("no longer declares local fact 'note'", mistake.Message, StringComparison.Ordinal);
-        Assert.Contains("step ask (collect), step confirm (when)", mistake.Message, StringComparison.Ordinal);
+        Assert.Contains("step ask (collect), step confirm (condition)", mistake.Message, StringComparison.Ordinal);
         Assert.Equal(2, mistake.Related.Count);
 
         var cleaned = new BotDefinition

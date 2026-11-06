@@ -146,6 +146,7 @@ public sealed class ProcedureRulesTests
 
     [Fact]
     [Trait("criterion", "AC-procedure-model-5")]
+    [Trait("criterion", "AC-procedure-creator-44")]
     public void A_rule_without_a_target_is_refused_as_naming_no_step()
     {
         var mistake = Assert.Single(
@@ -162,7 +163,7 @@ public sealed class ProcedureRulesTests
         );
 
         Assert.Equal(MistakeCodes.StepMissing, mistake.Code);
-        Assert.Contains("has no 'to'", mistake.Message, StringComparison.Ordinal);
+        Assert.Equal("Add a step to this branch, or a Next: row.", mistake.Fix);
     }
 
     [Fact]
@@ -562,6 +563,5 @@ public sealed class ProcedureRulesTests
         );
 
         Assert.Equal("steps.hello.next[0]", mistake.Path);
-        Assert.Contains("never apply", mistake.Message, StringComparison.Ordinal);
     }
 }

@@ -11,7 +11,7 @@ public sealed class EditGuardTests
 
     private const string Refusal = """
         {"mistakes":[{"code":"fact.enum.valueInUse","stage":"Save","resource":{"kind":"GlobalFact","id":"order.kind"},"path":"values",
-          "message":"Value 'flat' of 'order.kind' is used, so it cannot be removed. Used by: procedure orderValuation, step ask (when).",
+          "message":"Value 'flat' of 'order.kind' is used, so it cannot be removed. Used by: procedure orderValuation, step ask (condition).",
           "fix":"Change these steps first, or keep the value.",
           "related":[{"resource":{"kind":"Procedure","id":"orderValuation"},"location":"steps.ask.next[0].when.order.kind"},
                      {"resource":{"kind":"Procedure","id":"leadIntake"},"location":"steps.tagOrder.assign.order.kind"}]}]}
@@ -50,7 +50,7 @@ public sealed class EditGuardTests
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains(
-            "procedure orderValuation, step ask (when)  http://cms.internal/bots/rzeczoznawca/procedures/orderValuation",
+            "procedure orderValuation, step ask (condition)  http://cms.internal/bots/rzeczoznawca/procedures/orderValuation",
             result.Error,
             StringComparison.Ordinal
         );

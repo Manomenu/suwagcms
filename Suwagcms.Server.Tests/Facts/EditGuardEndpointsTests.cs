@@ -79,7 +79,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal("values", mistake.GetProperty("path").GetString());
         Assert.Equal("GlobalFact", mistake.GetProperty("resource").GetProperty("kind").GetString());
         Assert.Contains("Value 'flat' of 'kind' is used", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
-        Assert.Contains("procedure first, step ask (when)", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Contains("procedure first, step ask (condition)", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Contains("procedure second, step ask (assign)", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal(["first:steps.ask.next[0].when.kind", "second:steps.ask.assign.kind"], Referrers(mistake));
         Assert.Equal(before, await Stored(api, "kind"));
