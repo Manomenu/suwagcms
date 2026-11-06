@@ -11,7 +11,9 @@ export function testBots(prefix: string) {
         freshId: () => freshId(prefix),
         newBot: async (request: APIRequestContext): Promise<string> => {
             const id = freshId(prefix);
-            const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
+            const response = await request.post("/api/bots", {
+                data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` },
+            });
             expect(response.status()).toBe(201);
             return id;
         },

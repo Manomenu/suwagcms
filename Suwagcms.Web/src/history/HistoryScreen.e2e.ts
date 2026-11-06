@@ -1,5 +1,5 @@
 // A person reads what changed: the bot's page lists every change newest first, and a deleted resource's history stays readable.
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 
 const { newBot } = testBots("hist");
