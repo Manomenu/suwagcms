@@ -1,6 +1,7 @@
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { MistakeItems, type ShownMistake } from "@/design/mistakeItems";
+import { StickyActions } from "@/design/stickyActions";
 
 /**
  * The end of a resource's form: a refusal no field shows, the save button, and Cancel. A resource that moved on since it was
@@ -29,7 +30,7 @@ export function FormFooter({
                     <MistakeItems mistakes={loose} />
                 </Alert>
             )}
-            <div className="flex gap-2">
+            <StickyActions>
                 <Button type="submit">{editing ? "Save" : "Add"}</Button>
                 {moved && (
                     <Button
@@ -46,7 +47,7 @@ export function FormFooter({
                 <Button type="button" variant="outline" onClick={saving.cancel}>
                     Cancel
                 </Button>
-            </div>
+            </StickyActions>
         </>
     );
 }

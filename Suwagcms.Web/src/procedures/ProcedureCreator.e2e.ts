@@ -152,21 +152,68 @@ test("AC-procedure-creator-23: the page has the shared edit screen's parts in th
 
     await expect(page.getByRole("button", { name: "Back to procedures" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Procedure orderValuation" })).toBeVisible();
-    const top = async (locator: ReturnType<Page["locator"]>) => {
+    // Why: the order on the page is the order in the document, since Save stays in view wherever the page has scrolled to.
+    const parts = [
+        page.getByRole("button", { name: "Change id" }),
+        page.getByRole("region", { name: "Uses" }),
+        page.getByLabel("Description"),
+        page.getByRole("region", { name: "Steps" }),
+        page.getByRole("button", { name: "Save", exact: true }),
+        page.getByRole("button", { name: "Delete", exact: true }),
+        page.getByRole("heading", { name: "History" }),
+    ];
+    for (const [index, part] of parts.slice(0, -1).entries()) {
+        const next = await parts[index + 1]?.elementHandle();
+        const follows = await part.evaluate(
+            (one, other) => (one.compareDocumentPosition(other as Node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+            next,
+        );
+        expect(follows, `part ${index} comes before part ${index + 1}`).toBe(true);
+    }
+});
+
+test("AC-procedure-creator-45: on a long procedure Save stays in view and works while the page scrolls, and at the end covers neither the last row nor Delete", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const names = Array.from({ length: 40 }, (_, index) => `step${index}`);
+    const steps = Object.fromEntries(
+        names.map((name, index) => [name, { say: `Text ${index}`, ...(names[index + 1] === undefined ? {} : { next: names[index + 1] }) }]),
+    );
+    await agentSaves(request, bot, "longOne", { description: "D", firstStep: "step0", steps }, 0);
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await page.goto(`/bots/${bot}/procedures/longOne/edit`);
+    await page.getByLabel("Description").fill("Changed");
+
+    const save = page.getByRole("button", { name: "Save", exact: true });
+    await page.evaluate(() => {
+        window.scrollTo(0, 900);
+    });
+    await expect(save).toBeInViewport({ ratio: 1 });
+    await expect(row(page, "step0")).not.toBeInViewport();
+    await save.click({ timeout: 2000, trial: true });
+
+    await page.evaluate(() => {
+        window.scrollTo(0, document.documentElement.scrollHeight);
+    });
+    const remove = page.getByRole("button", { name: "Delete", exact: true });
+    await expect(remove).toBeVisible();
+    const bottomOf = async (locator: ReturnType<Page["locator"]>) => {
         const box = await locator.boundingBox();
         if (box === null) throw new Error("not on screen");
-        return box.y;
+        return { top: box.y, bottom: box.y + box.height };
     };
-    const order = [
-        await top(page.getByRole("button", { name: "Change id" })),
-        await top(page.getByRole("region", { name: "Uses" })),
-        await top(page.getByLabel("Description")),
-        await top(page.getByRole("region", { name: "Steps" })),
-        await top(page.getByRole("button", { name: "Save", exact: true })),
-        await top(page.getByRole("button", { name: "Delete", exact: true })),
-        await top(page.getByRole("heading", { name: "History" })),
-    ];
-    expect(order).toEqual([...order].sort((one, other) => one - other));
+    const bar = await bottomOf(save);
+    expect((await bottomOf(page.getByLabel("Add step", { exact: true }))).bottom).toBeLessThanOrEqual(bar.top);
+    expect(bar.bottom).toBeLessThanOrEqual((await bottomOf(remove)).top);
+
+    await page.evaluate(() => {
+        window.scrollTo(0, 900);
+    });
+    await save.click();
+    await expect(page.getByText("Unsaved changes")).toHaveCount(0);
+    expect((await stored<{ description: string }>(request, bot, "longOne")).description).toBe("Changed");
 });
 
 test("AC-procedure-creator-4: a mistake beside its step says what it stops and its fix, the count goes to it, and AC-procedure-creator-3: it goes when undone by hand", async ({

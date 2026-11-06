@@ -5,7 +5,9 @@ import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Field, Legend } from "@/design/field";
 import { Input } from "@/design/input";
+import { Paper } from "@/design/page";
 import { Select } from "@/design/select";
+import { StickyActions } from "@/design/stickyActions";
 import { Textarea } from "@/design/textarea";
 
 import { factsSeen, withStallText } from "./draft";
@@ -109,7 +111,7 @@ export function ProcedureForm({
         );
     };
     return (
-        <div className="flex flex-col gap-4">
+        <Paper className="flex flex-col gap-4">
             <MistakeCount
                 done={check.state === "done"}
                 mistakes={placed}
@@ -201,12 +203,12 @@ export function ProcedureForm({
                 {note !== null && <p className="text-sm text-muted-foreground">{note}</p>}
                 <StepsEditor {...steps} facts={factsSeen(draft, allFacts)} beside={beside} />
             </section>
-            <div className="flex items-center justify-end gap-2">
-                {dirty && <span className="text-sm text-warning">Unsaved changes</span>}
+            <StickyActions>
                 <Button type="button" onClick={onSave} disabled={saving || !dirty}>
                     Save
                 </Button>
-            </div>
-        </div>
+                {dirty && <span className="text-sm text-warning">Unsaved changes</span>}
+            </StickyActions>
+        </Paper>
     );
 }

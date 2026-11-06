@@ -389,7 +389,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A list alone cannot show a loop or a jump, so a <b>Next:</b> row names any step, and an <b>End</b> row closes a branch. Every graph the format allows can therefore be shown, and the SDK gains no rule on a graph's shape.</p>
   </div>
   <div class="stats">
-    <div><b>44</b><span>criteria: 28 carried over, 16 new</span></div>
+    <div><b>45</b><span>criteria: 28 carried over, 17 new</span></div>
     <div><b>4 of 4</b><span>shipped procedures read as lists</span></div>
     <div><b>0</b><span>graphs refused for their shape</span></div>
   </div>
@@ -500,7 +500,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>History</td><td>last, as on every kind</td></tr>
   </table>
   <p><code>conversation</code> is the frame's existing "not editable" case: no Change id and no Delete, because the format requires it under this id. It also has no availability panel and no When interrupted, as today. Adding a procedure stays a short form (id and description) in the same frame, and lands on this page.</p>
-  <div class="callout note" data-label="Where it cannot follow"><p>Nowhere in the frame. Three things differ inside the form, and they are this form's own. <b>Save</b> is at the end of the form as on every kind, so it moves out of the header it has today and a long procedure scrolls to reach it. <b>Mistakes</b> are checked live and shown beside their place, where other kinds show them on save. <b>The selected step</b> is in the address. The whole-screen mode of the shell goes, because the page scrolls like any other.</p></div>
+  <div class="callout note" data-label="Where it cannot follow"><p>Nowhere in the frame. Three things differ inside the form, and they are this form's own. <b>Save</b> is at the end of the form as on every kind, and on every edit screen the actions there stay in view while a long form scrolls. <b>Mistakes</b> are checked live and shown beside their place, where other kinds show them on save. <b>The selected step</b> is in the address. The whole-screen mode of the shell goes, because the page scrolls like any other.</p></div>
 
   <h3>The form</h3>
   <table>
@@ -510,6 +510,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><b>When stalled</b></td><td><code>whenStalled</code>: its instruction, and its Knowledge section when the bot declares it</td></tr>
     <tr><td><b>When interrupted</b></td><td><code>whenInterrupted</code>: <code>keep</code> or <code>discard</code>; a value nobody chose is not written</td></tr>
     <tr><td><b>Steps</b></td><td>the numbered list; each list, including each branch, ends in <b>+ Add step</b></td></tr>
+    <tr><td><b>Save</b></td><td>stays at the bottom of the screen while the page scrolls; at the end of the form it rests below the last row and above Delete, covering neither. This belongs to the actions of every edit screen, not to this page alone</td></tr>
   </table>
 
   <h3>A row for every block</h3>
@@ -875,18 +876,19 @@ tellContents:
     <li>The tags use the writer's words, Ask and Tell, and the format keeps <code>collect</code> and <code>inform</code>: a row's form names both.</li>
     <li>A declaration field rather than a block: <code>knowledge</code> is a part of an instruction, and it has no row to leave out. It replaces the earlier decision to declare nothing until a second bot showed the need, because the section must hide.</li>
     <li>With nothing declared the section shows, as blocks do, because nothing is being checked either way.</li>
-    <li>Left out, because no real need shows yet: a Save that stays in view on a long page, a query form that tries the query, and a criterion that the layout routes are gone, since deleted tests and <code>EveryRouteHasACommand</code> already leave nothing to guard.</li>
+    <li>Left out, because no real need shows yet: a query form that tries the query, and a criterion that the layout routes are gone, since deleted tests and <code>EveryRouteHasACommand</code> already leave nothing to guard.</li>
   </ul>
 </section>
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
-  <p>More than the usual 12, for one reason: this page joins two living specs. 28 are carried over with their ids, and 16 are new. Each new one names the lightest check that can fail for it; a browser test is used only where a browser is what is checked.</p>
+  <p>More than the usual 12, for one reason: this page joins two living specs. 28 are carried over with their ids, and 17 are new. Each new one names the lightest check that can fail for it; a browser test is used only where a browser is what is checked.</p>
   <h3>The page</h3>
   <ul class="checks">
     <li><code>AC-procedure-creator-23</code> The edit page of a procedure is the shared edit screen: in this order a way back, the heading with the id and Change id, Used by and Uses, the form, Delete and History, with no heading, Delete or History of a procedure's own. <span class="tag">web test</span></li>
     <li><code>AC-procedure-creator-24</code> The form shows, top to bottom: Description, Local facts, When stalled, When interrupted, Steps as a numbered list, Save; every list and branch ends in <b>+ Add step</b>. <span class="tag">web test</span></li>
     <li><code>AC-procedure-creator-25</code> Each block has its row as the table of rows says, with the step's name, editable on the row, its tag and its text, and <code>next</code> is shown nowhere except as a Next: row. <span class="tag">web test</span></li>
+    <li><code>AC-procedure-creator-45</code> While a long procedure scrolls, Save stays in the viewport and can be clicked; at the end of the page it sits below the last row and above Delete, covering neither; every edit screen's actions behave the same. <span class="tag">browser test</span></li>
     <li><code>AC-procedure-creator-1</code> Using only the page's forms, an author builds a procedure with <code>listen</code>, <code>collect</code>, <code>say</code>, <code>assign</code> and an If with an Else if and an Else, and saves it; renaming a step renames every place that points at it, and a taken name changes nothing.</li>
     <li><code>AC-procedure-creator-8</code> In an If, <code>range</code> is offered only for an <code>int</code> fact and <code>oneOf</code> offers an enum's values; <b>+ and</b> adds a condition; an Else is always last and cannot be removed.</li>
     <li><code>AC-procedure-creator-9</code> An Ask row does not offer a fact with <code>writableBy: assign</code>.</li>
@@ -948,7 +950,6 @@ tellContents:
   <div class="callout warn"><p><b>A tangled graph reads as many Next: rows.</b> Nothing refuses it, so a list is only as readable as its graph. The editor always builds what the author arranged, so this comes only from a file.</p></div>
   <div class="callout warn"><p><b>Dropping <code>procedure_layout</code> is a data migration,</b> on the always-careful list, so a person reads that part of the diff. Node positions are lost, and they mean nothing without the canvas.</p></div>
   <div class="callout warn"><p>Format 2 stops version creation for a bot still on an older SDK, with <code>declaration.formatVersion</code> naming both, until it moves. The SDK must be released before the bot's package reference can follow it.</p></div>
-  <div class="callout assumption"><p>Save at the end of a long form is acceptable because the frame has no other place for it.</p></div>
 </section>
 
 

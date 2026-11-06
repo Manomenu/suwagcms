@@ -70,6 +70,11 @@ describe("the rules of every screen", () => {
         expect(filesWith(page, (path) => !path.startsWith("/src/procedures/") || path.endsWith("/ProceduresScreen.tsx"))).toEqual([]);
     });
 
+    it("AC-procedure-creator-45: every edit screen's Save sits in the shared actions that stay in view", () => {
+        expect(sources["/src/design/formFooter.tsx"]).toContain("<StickyActions");
+        expect(sources["/src/procedures/ProcedureForm.tsx"]).toContain("<StickyActions");
+    });
+
     it("AC-delete-guard-20: Delete has one place: DeleteAction, which only the edit screens use", () => {
         expect(filesWith(/>\s*Delete\s*</)).toEqual(["/src/design/deleteAction.tsx"]);
         expect(filesWith(/<DeleteAction\b/).sort()).toEqual(["/src/design/resourceEdit.tsx"]);
