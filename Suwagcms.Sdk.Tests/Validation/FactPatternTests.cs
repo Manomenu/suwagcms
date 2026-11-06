@@ -189,9 +189,9 @@ public sealed class FactPatternTests
 
     [Theory]
     [Trait("criterion", "AC-fact-pattern-5")]
-    [InlineData(EmailRegex, "anna@example.com")]
-    [InlineData(LandRegisterRegex, "WA1M/00012345/6")]
-    public void Both_real_examples_match_their_real_regexes(string regex, string example) =>
+    [InlineData(EmailRegex, "anna@example.com", 254)]
+    [InlineData(LandRegisterRegex, "WA1M/00012345/6", 30)]
+    public void Both_real_examples_match_their_real_regexes_within_their_real_lengths(string regex, string example, int maxLength) =>
         Assert.Empty(
             Mistakes(
                 Code(
@@ -201,7 +201,10 @@ public sealed class FactPatternTests
                         Means = "words",
                         Example = example,
                     }
-                )
+                ) with
+                {
+                    MaxLength = maxLength,
+                }
             )
         );
 
@@ -220,7 +223,101 @@ public sealed class FactPatternTests
                         Means = "words",
                         Example = example,
                     }
-                )
+                ) with
+                {
+                    MaxLength = 254,
+                }
+            )
+        );
+
+    [Theory]
+    [Trait("criterion", "AC-fact-pattern-16")]
+    [InlineData("ABC", 2, true)]
+    [InlineData("AB", 2, false)]
+    [InlineData("\U0001F600\U0001F600", 2, false)]
+    public void An_example_longer_than_the_maximum_length_in_characters_is_refused_with_the_fix(string example, int maxLength, bool refused)
+    {
+        var fact = Code(
+            new TextPattern
+            {
+                Regex = ".+",
+                Means = "words",
+                Example = example,
+            }
+        ) with
+        {
+            MaxLength = maxLength,
+        };
+
+        var mistakes = DefinitionValidator.Validate(new BotDefinition { FormatVersion = 1, Facts = [fact] }, ValidationStage.Save);
+
+        if (refused)
+        {
+            var mistake = Assert.Single(mistakes);
+            Assert.Equal((MistakeCodes.FactPatternExampleTooLong, "pattern.example"), (mistake.Code, mistake.Path));
+            Assert.Contains("raise maxLength", mistake.Fix, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Empty(mistakes);
+        }
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-16")]
+    public void An_example_of_a_local_fact_longer_than_its_maximum_length_is_refused_beside_it()
+    {
+        var local = new LocalFact
+        {
+            Type = FactTypes.Text,
+            Description = "D",
+            MaxLength = 2,
+            Pattern = new TextPattern
+            {
+                Regex = ".+",
+                Means = "words",
+                Example = "ABC",
+            },
+        };
+        var definition = new BotDefinition
+        {
+            FormatVersion = 1,
+            Procedures =
+            [
+                new Procedure
+                {
+                    Id = "p",
+                    Description = "D",
+                    FirstStep = "a",
+                    LocalFacts = new Dictionary<string, LocalFact> { ["code"] = local },
+                    Steps = new Dictionary<string, ProcedureStep> { ["a"] = new() { Say = "Hi" } },
+                },
+            ],
+        };
+
+        Assert.Contains(
+            Check(definition),
+            mistake => mistake is { Code: MistakeCodes.FactPatternExampleTooLong, Path: "localFacts.code.pattern.example" }
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-16")]
+    public void An_invalid_maximum_length_has_its_own_mistake_and_an_example_is_not_measured_against_it() =>
+        Assert.Equal(
+            [(MistakeCodes.FactTextMaxLengthInvalid, "maxLength")],
+            Mistakes(
+                Code(
+                    new TextPattern
+                    {
+                        Regex = ".+",
+                        Means = "words",
+                        Example = "ABC",
+                    }
+                ) with
+                {
+                    MaxLength = 0,
+                }
             )
         );
 
@@ -333,7 +430,7 @@ public sealed class FactPatternTests
         var mistake = Assert.Single(reshaped);
         Assert.Equal((MistakeCodes.FactPatternInUse, "pattern.regex"), (mistake.Code, mistake.Path));
         Assert.Contains("'AB'", mistake.Message, StringComparison.Ordinal);
-        Assert.Contains("procedure p", mistake.Message, StringComparison.Ordinal);
+        Assert.Contains("procedure p, step a", mistake.Message, StringComparison.Ordinal);
         Assert.Equal(["p"], mistake.Related.Select(related => related.Resource.Id));
     }
 

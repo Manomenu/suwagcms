@@ -153,7 +153,7 @@ Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <comma
 A text fact, global or local, can say what its values look like: `pattern: { regex: "[A-Z0-9]{4}/[0-9]{8}/[0-9]", means: "4 letters or digits, a slash, 8 digits, a slash and 1 digit", example: WA1M/00012345/6, tellCustomer: upfront }`.
 
 - `regex` must match a whole value, and `means` says it in words; both are required. `regex` runs without backtracking, so lookarounds, backreferences, atomic groups and conditionals are refused (`fact.pattern.regexInvalid`), and it cannot match an empty text.
-- `example` is optional and must match the regex. `tellCustomer` is `upfront` (the default) or `afterRefusal`. An `int` or an `enum` has no pattern.
+- `example` is optional, must match the regex and must fit `maxLength` (`fact.pattern.exampleTooLong`). `tellCustomer` is `upfront` (the default) or `afterRefusal`. An `int` or an `enum` has no pattern.
 - A value in an `assign` or a `when` must match. A pattern change that a value no longer matches is refused with `fact.pattern.inUse`, naming the steps.
 - `suwagcms facts edit <name> --no-pattern` takes it off, and `--pattern-regex`, `--pattern-means`, `--pattern-example` and `--pattern-tell-customer` change only what they give. In a file of changes, `pattern` is replaced whole and `pattern: null` takes it off.
 - An enum never lists `other`: in every bot it stands for a value outside the list.

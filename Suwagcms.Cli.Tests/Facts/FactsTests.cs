@@ -101,6 +101,59 @@ public sealed class FactsTests
 
     [Fact]
     [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task Facts_add_sends_the_telling_it_is_given()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Coded));
+
+        await TestCli.Run(
+            Args(
+                "facts",
+                "add",
+                "order.code",
+                "--type",
+                "text",
+                "--max-length",
+                "10",
+                "--description",
+                "The code",
+                "--pattern-regex",
+                "[A-Z]{2}",
+                "--pattern-means",
+                "two capitals",
+                "--pattern-tell-customer",
+                "afterRefusal"
+            ),
+            server
+        );
+
+        Assert.Equal("afterRefusal", PatternSent(recorder).GetProperty("tellCustomer").GetString());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task Facts_edit_sends_a_new_telling_or_a_new_regex_with_the_rest_of_the_pattern_kept()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Coded));
+
+        await TestCli.Run(Args("facts", "edit", "order.code", "--pattern-tell-customer", "upfront"), server);
+        var told = PatternSent(recorder).Clone();
+        await TestCli.Run(Args("facts", "edit", "order.code", "--pattern-regex", "[A-Z]{1,2}"), server);
+        var regexed = PatternSent(recorder).Clone();
+
+        Assert.Equal("upfront", told.GetProperty("tellCustomer").GetString());
+        Assert.Equal("[A-Z]{2}", told.GetProperty("regex").GetString());
+        Assert.Equal("two capitals", told.GetProperty("means").GetString());
+        Assert.Equal("AB", told.GetProperty("example").GetString());
+        Assert.Equal("[A-Z]{1,2}", regexed.GetProperty("regex").GetString());
+        Assert.Equal("two capitals", regexed.GetProperty("means").GetString());
+        Assert.Equal("AB", regexed.GetProperty("example").GetString());
+        Assert.Equal("afterRefusal", regexed.GetProperty("tellCustomer").GetString());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
     public async Task No_pattern_takes_it_off_a_change_of_type_drops_it_and_no_pattern_with_a_pattern_option_is_refused()
     {
         var recorder = new Recorder();

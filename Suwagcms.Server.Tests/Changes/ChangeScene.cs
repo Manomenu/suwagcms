@@ -55,10 +55,22 @@ internal sealed class ChangeScene(HttpClient client, string bot)
         Directory.CreateDirectory(folder);
         var path = Path.Combine(folder, "changes.yaml");
         await System.IO.File.WriteAllTextAsync(path, fileText, TestContext.Current.CancellationToken);
+        return await CommandIn(folder, ["apply", path, .. words]);
+    }
+
+    public async Task<CliRun> CommandAsync(params string[] words)
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "suwagcms-apply-tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        return await CommandIn(folder, words);
+    }
+
+    private async Task<CliRun> CommandIn(string folder, string[] words)
+    {
         using var output = new StringWriter();
         using var error = new StringWriter();
         var exit = await CliApp.Run(
-            ["apply", path, .. words, "--server", "http://localhost", "--bot", Bot],
+            [.. words, "--server", "http://localhost", "--bot", Bot],
             new InvocationConfiguration { Output = output, Error = error },
             new CliEnvironment(_ => null, folder, client)
         );

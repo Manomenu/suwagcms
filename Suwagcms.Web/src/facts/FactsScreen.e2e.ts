@@ -210,6 +210,9 @@ test("AC-fact-pattern-10: a person sets a pattern on a text fact, sees its mista
     await page.getByLabel("Pattern: example").fill("ab");
     await page.getByRole("button", { name: "Add", exact: true }).click();
     await expect(page.locator('[data-field="pattern.example"]')).toContainText("does not match its regex");
+    await expect(page.getByLabel("Pattern: regular expression")).toHaveValue("[A-Z]{2}");
+    await expect(page.getByLabel("Pattern: what it means")).toHaveValue("two capitals");
+    await expect(page.getByLabel("Pattern: example")).toHaveValue("ab");
 
     await page.getByLabel("Pattern: example").fill("AB");
     await page.getByLabel("Pattern: tell the customer").selectOption("afterRefusal");

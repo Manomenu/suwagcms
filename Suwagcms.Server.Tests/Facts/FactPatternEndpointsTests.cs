@@ -90,7 +90,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
 
     [Fact]
     [Trait("criterion", "AC-fact-pattern-1")]
-    public async Task A_version_holds_the_pattern_and_a_fact_without_one_has_no_such_member()
+    public async Task A_version_holds_the_pattern_and_a_fact_without_one_has_no_such_member_while_the_api_answers_null()
     {
         _ = database.Pool;
         var versions = await (await VersionApi.NewBotAsync(app.CreateClient())).Ready();
@@ -105,6 +105,10 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
         Assert.Equal(CodedPattern, found.Single(fact => fact.Name == "order.code").Pattern);
         var note = document.GetProperty("facts").EnumerateArray().Single(fact => fact.GetProperty("name").GetString() == "order.note");
         Assert.False(note.TryGetProperty("pattern", out _));
+        var answered = JsonDocument.Parse(
+            await (await facts.Get("order.note")).Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
+        );
+        Assert.Equal(JsonValueKind.Null, answered.RootElement.GetProperty("pattern").ValueKind);
     }
 
     [Fact]
@@ -175,6 +179,26 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         Assert.Contains("save.invalid", await FactApi.CodesOf(refused));
+        Assert.Equal(HttpStatusCode.NotFound, (await api.Facts.Get("order.code")).StatusCode);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-3")]
+    public async Task A_field_a_pattern_of_a_local_fact_does_not_have_is_refused_and_nothing_is_saved()
+    {
+        var api = await NewBot();
+
+        var refused = await api.Add(
+            "first",
+            Procedure(
+                Assign("code", "AB"),
+                ""","localFacts":{"code":{"type":"text","description":"D","maxLength":5,"pattern":{"regex":"[A-Z]{2}","means":"m","hint":"h"}}}"""
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        Assert.Contains("save.invalid", await FactApi.CodesOf(refused));
+        Assert.Equal(HttpStatusCode.NotFound, (await api.Get("first")).StatusCode);
     }
 
     [Theory]
@@ -227,7 +251,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
 
     [Fact]
     [Trait("criterion", "AC-fact-pattern-8")]
-    public async Task An_edit_of_a_local_facts_pattern_a_use_no_longer_satisfies_is_refused_beside_it()
+    public async Task An_edit_of_a_local_facts_pattern_is_refused_beside_it_naming_the_step_and_one_every_use_satisfies_is_saved()
     {
         var api = await NewBot();
         const string Local =
@@ -245,6 +269,21 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
             ("fact.pattern.inUse", "localFacts.code.pattern.regex"),
             (mistake.GetProperty("code").GetString(), mistake.GetProperty("path").GetString())
         );
+        Assert.Contains("procedure first, step ask", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Equal("[A-Z]{2}", await LocalRegex(api));
+        var accepted = await api.Put(
+            "first",
+            Procedure(Assign("code", "AB"), Local.Replace("REGEX", "[A-F]{2}", StringComparison.Ordinal)),
+            "?ifRevision=1"
+        );
+        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+        Assert.Equal("[A-F]{2}", await LocalRegex(api));
+    }
+
+    private static async Task<string?> LocalRegex(ProcedureApi api)
+    {
+        var body = JsonDocument.Parse(await (await api.Get("first")).Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        return body.RootElement.GetProperty("localFacts").GetProperty("code").GetProperty("pattern").GetProperty("regex").GetString();
     }
 
     [Fact]
@@ -300,6 +339,93 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
         Assert.Equal(first, kept);
         Assert.Equal(0, removed.ExitCode);
         Assert.Null(gone);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-13")]
+    public async Task An_edit_in_a_file_of_changes_naming_a_pattern_replaces_the_whole_of_it()
+    {
+        _ = database.Pool;
+        var scene = await ChangeScene.NewAsync(app.CreateClient());
+        await scene.Facts.Add("order.code", Coded);
+
+        var edited = await scene.CliAsync(
+            """
+            changes:
+              - edit: fact
+                name: order.code
+                pattern: { regex: '[A-Z]{3}', means: three capitals }
+            """
+        );
+
+        Assert.Equal(0, edited.ExitCode);
+        Assert.Equal(
+            new TextPattern { Regex = "[A-Z]{3}", Means = "three capitals" },
+            (await FactApi.FactOf(await scene.Facts.Get("order.code"))).Pattern
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-13")]
+    public async Task An_edit_in_a_file_of_changes_from_text_to_int_drops_the_pattern()
+    {
+        _ = database.Pool;
+        var scene = await ChangeScene.NewAsync(app.CreateClient());
+        await scene.Facts.Add("order.code", Coded);
+
+        var edited = await scene.Post(ChangeScene.File("""{"edit":"fact","name":"order.code","type":"int","min":1,"max":5}"""));
+
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        var fact = await FactApi.FactOf(await scene.Facts.Get("order.code"));
+        Assert.Equal("int", fact.Type);
+        Assert.Null(fact.Pattern);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-fact-pattern-12")]
+    public async Task The_commands_add_edit_show_and_take_off_a_pattern_on_the_real_server()
+    {
+        _ = database.Pool;
+        var scene = await ChangeScene.NewAsync(app.CreateClient());
+
+        var added = await scene.CommandAsync(
+            "facts",
+            "add",
+            "order.code",
+            "--type",
+            "text",
+            "--max-length",
+            "10",
+            "--description",
+            "The code",
+            "--pattern-regex",
+            "[A-Z]{2}",
+            "--pattern-means",
+            "two capitals",
+            "--pattern-example",
+            "AB",
+            "--pattern-tell-customer",
+            "afterRefusal"
+        );
+        var first = (await FactApi.FactOf(await scene.Facts.Get("order.code"))).Pattern;
+        var edited = await scene.CommandAsync("facts", "edit", "order.code", "--pattern-means", "two big letters");
+        var second = (await FactApi.FactOf(await scene.Facts.Get("order.code"))).Pattern;
+        var shown = await scene.CommandAsync("facts", "show", "order.code");
+        var removed = await scene.CommandAsync("facts", "edit", "order.code", "--no-pattern");
+        var third = (await FactApi.FactOf(await scene.Facts.Get("order.code"))).Pattern;
+        var shownBare = await scene.CommandAsync("facts", "show", "order.code");
+
+        Assert.Equal(0, added.ExitCode);
+        Assert.Equal(CodedPattern, first);
+        Assert.Equal(0, edited.ExitCode);
+        Assert.Equal(CodedPattern with { Means = "two big letters" }, second);
+        Assert.Equal(0, shown.ExitCode);
+        Assert.Contains("means:     two big letters", shown.Output, StringComparison.Ordinal);
+        Assert.Contains("example:   AB", shown.Output, StringComparison.Ordinal);
+        Assert.Contains("tell:      afterRefusal", shown.Output, StringComparison.Ordinal);
+        Assert.Equal(0, removed.ExitCode);
+        Assert.Null(third);
+        Assert.DoesNotContain("means:", shownBare.Output, StringComparison.Ordinal);
     }
 
     [Fact]

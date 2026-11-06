@@ -1,3 +1,4 @@
+using System.Globalization;
 using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.Validation;
@@ -89,6 +90,29 @@ internal static class FactPatternRules
                 "pattern.example",
                 $"The example '{example}' of '{fact.Name}' does not match its regex {pattern.Regex}.",
                 "Write an example the regex accepts, or change the regex."
+            );
+        }
+    }
+
+    // Why: an invalid maxLength has its own mistake, so an example is not measured against it.
+    public static IEnumerable<Mistake> ExampleTooLong(GlobalFact fact)
+    {
+        if (
+            PatternOf(fact) is { Example: { } example }
+            && !string.IsNullOrWhiteSpace(example)
+            && fact.MaxLength is > 0 and var limit
+            && example.EnumerateRunes().Count() > limit
+        )
+        {
+            yield return FactRules.Make(
+                MistakeCodes.FactPatternExampleTooLong,
+                fact,
+                "pattern.example",
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"The example '{example}' of '{fact.Name}' is longer than its maxLength {limit}."
+                ),
+                "Write a shorter example, or raise maxLength."
             );
         }
     }

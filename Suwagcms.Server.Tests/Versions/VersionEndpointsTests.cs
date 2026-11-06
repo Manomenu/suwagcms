@@ -207,7 +207,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-version-create-6")]
-    public async Task The_routes_under_versions_are_reads_a_creation_and_a_push_that_changes_the_bot_never_a_version()
+    public void The_routes_under_versions_are_reads_a_creation_and_a_push_that_changes_the_bot_never_a_version()
     {
         _ = database.Pool;
         var routes = app

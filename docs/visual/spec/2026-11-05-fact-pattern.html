@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>4</b><span>fields of a pattern</span></div>
-    <div><b>15</b><span>criteria</span></div>
+    <div><b>16</b><span>criteria</span></div>
     <div><b>1</b><span>criterion after another feature</span></div>
   </div>
 </section>
@@ -402,7 +402,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>How a bot uses the words, or what its model sees: that is the bot's concern.</li>
       <li>An action result written to a fact with a pattern: no bot needs it yet.</li>
-      <li>Checking that some value within <code>maxLength</code> can match, or that an example fits <code>maxLength</code>.</li>
+      <li>Checking that some value within <code>maxLength</code> can match: that takes a regular expression analyzer, which nothing here needs.</li>
     </ul></div>
   </div>
 </section>
@@ -430,8 +430,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>compiles on its own and as a whole-value match, with no backtracking: no lookaround, backreference, atomic group or conditional</td><td><code>fact.pattern.regexInvalid</code></td></tr>
     <tr><td>does not match an empty text</td><td><code>fact.pattern.regexMatchesEmpty</code></td></tr>
     <tr><td><code>means</code></td><td>required, not blank</td><td><code>fact.pattern.meansMissing</code></td></tr>
-    <tr><td rowspan="2"><code>example</code></td><td>optional; not blank when given</td><td><code>fact.pattern.exampleBlank</code></td></tr>
+    <tr><td rowspan="3"><code>example</code></td><td>optional; not blank when given</td><td><code>fact.pattern.exampleBlank</code></td></tr>
     <tr><td>matches the regular expression</td><td><code>fact.pattern.exampleMismatch</code></td></tr>
+    <tr><td>no longer than <code>maxLength</code>, in the characters a value is counted in</td><td><code>fact.pattern.exampleTooLong</code></td></tr>
     <tr><td><code>tellCustomer</code></td><td><code>upfront</code> or <code>afterRefusal</code>; <code>upfront</code> when left out</td><td><code>fact.pattern.tellCustomerInvalid</code></td></tr>
   </table>
   <h3>Edge cases</h3>
@@ -444,7 +445,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>A form with regular expression, words and example all empty</td><td>No pattern, whatever the telling says</td></tr>
     <tr><td>An edit in a file of changes</td><td><code>pattern</code> left out stays; given, it replaces the whole pattern; <code>pattern: null</code> takes it off</td></tr>
     <tr><td>A type changed away from <code>text</code></td><td>The pattern goes with the other constraints of the old type</td></tr>
-    <tr><td>A fact with no pattern</td><td>Its JSON has no <code>pattern</code> member, so a version without patterns reads as before</td></tr>
+    <tr><td>A fact with no pattern</td><td>In a version's JSON it has no <code>pattern</code> member, so a version without patterns reads as before; the API's answer for the fact carries <code>pattern: null</code></td></tr>
   </table>
 </section>
 
@@ -482,7 +483,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-fact-pattern-1</code> A global and a local text fact hold a pattern of <code>regex</code>, <code>means</code>, an optional <code>example</code> and <code>tellCustomer</code> and read it back unchanged, a version delivers it to the bot's SDK, and a fact with none has no <code>pattern</code> member in its JSON.</li>
+    <li><code>AC-fact-pattern-1</code> A global and a local text fact hold a pattern of <code>regex</code>, <code>means</code>, an optional <code>example</code> and <code>tellCustomer</code> and read it back unchanged, a version delivers it to the bot's SDK, and a fact with none has no <code>pattern</code> member in a version's JSON, while the API's answer for it carries <code>pattern: null</code>.</li>
     <li><code>AC-fact-pattern-2</code> <code>tellCustomer</code> is <code>upfront</code> when left out, and any value other than <code>upfront</code> or <code>afterRefusal</code> is refused with a mistake listing them.</li>
     <li><code>AC-fact-pattern-3</code> A pattern without <code>regex</code> or <code>means</code>, with a blank <code>example</code>, or with a field a pattern does not have, is refused, and nothing is saved.</li>
     <li><code>AC-fact-pattern-4</code> A regular expression that does not compile on its own and as a whole-value match with no backtracking, including lookaround, backreference, atomic group and conditional, and one that matches an empty text, are each refused with their own code and a fix.</li>
@@ -497,6 +498,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-fact-pattern-13</code> A file of changes adds a pattern, keeps it through an edit that does not name it, and takes it off with <code>pattern: null</code>.</li>
     <li><code>AC-fact-pattern-14</code> The main skill gives the form of a pattern, how to take it off and the code of a refused edit.</li>
     <li><code>AC-fact-pattern-15</code> The comparison of two versions names a changed pattern.</li>
+    <li><code>AC-fact-pattern-16</code> An example longer than the <code>maxLength</code> of its fact, global or local, is refused with <code>fact.pattern.exampleTooLong</code> and a fix.</li>
   </ul>
 </section>
 

@@ -35,6 +35,7 @@ internal static class FactRules
         For(MistakeCodes.FactPatternMeansMissing, FactPatternRules.MeansMissing),
         For(MistakeCodes.FactPatternExampleBlank, FactPatternRules.ExampleBlank),
         For(MistakeCodes.FactPatternExampleMismatch, FactPatternRules.ExampleMismatch),
+        For(MistakeCodes.FactPatternExampleTooLong, FactPatternRules.ExampleTooLong),
         For(MistakeCodes.FactPatternTellCustomerInvalid, FactPatternRules.TellCustomerInvalid),
         For(MistakeCodes.FactConstraintForeign, ForeignConstraints),
     ];

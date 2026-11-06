@@ -23,6 +23,7 @@ public static class MistakeCodes
     public const string FactPatternMeansMissing = "fact.pattern.meansMissing";
     public const string FactPatternExampleBlank = "fact.pattern.exampleBlank";
     public const string FactPatternExampleMismatch = "fact.pattern.exampleMismatch";
+    public const string FactPatternExampleTooLong = "fact.pattern.exampleTooLong";
     public const string FactPatternTellCustomerInvalid = "fact.pattern.tellCustomerInvalid";
     public const string FactConstraintForeign = "fact.constraint.foreign";
     public const string FactLocalNameClash = "fact.local.nameClash";
