@@ -1,11 +1,8 @@
-import { useState } from "react";
-
-import { ApiError } from "@/api/client";
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
+import { useSaveForm } from "@/api/saveForm";
+import { FormFooter } from "@/design/formFooter";
 import { Paper } from "@/design/page";
 
-import { saveFact } from "./api";
+import { factsApi } from "./api";
 import { bodyOf, fieldOf, type FactForm as FactFormState } from "./factForm";
 import { FactFields } from "./FactFields";
 
@@ -21,6 +18,7 @@ export function FactForm({
     onSaved,
     onReload,
     onCancel,
+    onDirtyChange,
 }: {
     bot: string;
     initial: FactFormState;
@@ -29,65 +27,23 @@ export function FactForm({
     onSaved: () => void;
     onReload: () => void;
     onCancel: () => void;
+    onDirtyChange: (dirty: boolean) => void;
 }) {
-    const [form, setForm] = useState(initial);
-    const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const saving = useSaveForm({
+        initial,
+        save: (form: FactFormState) => factsApi.save(bot, form.name, bodyOf(form), revision),
+        onSaved,
+        onCancel,
+        onDirtyChange,
+    });
+    const { form, change, submit, mistakes } = saving;
 
-    function submit(event: React.SyntheticEvent) {
-        event.preventDefault();
-        setRefusal(null);
-        saveFact(bot, form.name, bodyOf(form), revision)
-            .then(onSaved)
-            .catch((error: unknown) => {
-                setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
-            });
-    }
-
-    const mistakes = refusal?.mistakes ?? [];
     const loose = mistakes.filter((mistake) => fieldOf(mistake) === null);
-    const moved = mistakes.some((mistake) => mistake.code === "resource.stale");
     return (
         <Paper>
             <form onSubmit={submit} className="flex max-w-2xl flex-col gap-3">
-                <FactFields
-                    bot={bot}
-                    form={form}
-                    mistakes={mistakes}
-                    nameLocked={editing}
-                    onChange={(change) => {
-                        setForm((before) => ({ ...before, ...change }));
-                    }}
-                />
-                {refusal !== null && mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
-                {loose.length > 0 && (
-                    <Alert variant="destructive">
-                        <ul className="list-disc pl-4">
-                            {loose.map((mistake) => (
-                                <li key={`${mistake.code}:${mistake.path}`}>
-                                    {mistake.message} {mistake.fix}
-                                </li>
-                            ))}
-                        </ul>
-                    </Alert>
-                )}
-                <div className="flex gap-2">
-                    <Button type="submit">{editing ? "Save" : "Add"}</Button>
-                    {moved && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                                setRefusal(null);
-                                onReload();
-                            }}
-                        >
-                            Reload the facts
-                        </Button>
-                    )}
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
-                    </Button>
-                </div>
+                <FactFields bot={bot} form={form} mistakes={mistakes} nameLocked={editing} onChange={change} />
+                <FormFooter saving={saving} loose={loose} editing={editing} reloadLabel="Reload the facts" onReload={onReload} />
             </form>
         </Paper>
     );

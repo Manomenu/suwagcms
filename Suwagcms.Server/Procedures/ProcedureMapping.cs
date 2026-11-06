@@ -18,15 +18,6 @@ internal static class ProcedureMapping
             LocalFacts = body.LocalFacts,
         };
 
-    public static SaveProcedure Merged(Procedure stored, SaveProcedure given) =>
-        new(
-            given.Description ?? stored.Description,
-            given.FirstStep ?? stored.FirstStep,
-            given.Steps ?? stored.Steps,
-            given.WhenStalled ?? stored.WhenStalled,
-            given.LocalFacts ?? stored.LocalFacts
-        );
-
     public static ProcedureDetail Show(Procedure procedure, int revision, IReadOnlyList<Mistake> notReady) =>
         new(
             procedure.Id,

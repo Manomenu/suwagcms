@@ -19,3 +19,5 @@ export function useLeaveGuard(active: boolean, message: string) {
 export function mayLeave(): boolean {
     return question === null || window.confirm(question);
 }
+
+export const DISCARD_QUESTION = "Discard the changes you have not saved?";

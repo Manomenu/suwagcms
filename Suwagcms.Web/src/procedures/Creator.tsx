@@ -21,7 +21,8 @@ import { useUsage } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
-import { mayLeave, useLeaveGuard } from "@/design/leaveGuard";
+import { mayLeave, useLeaveGuard } from "@/api/leaveGuard";
+import { MistakeItems } from "@/design/mistakeItems";
 
 import { type ActionView, fetchProcedure, saveLayout, saveProcedure, type Fact, type ProcedureDetail } from "./api";
 import {
@@ -91,13 +92,7 @@ function noticeOf(state: ReturnType<typeof loaded>, onReload: () => void) {
         return (
             <Alert variant="destructive">
                 <p>Not saved: fix {notice.mistakes.length === 1 ? "this mistake" : "these mistakes"} first. Your drawing is unchanged.</p>
-                <ul className="list-disc pl-4">
-                    {notice.mistakes.map((mistake) => (
-                        <li key={`${mistake.code}:${mistake.path}`}>
-                            {mistake.message} {mistake.fix}
-                        </li>
-                    ))}
-                </ul>
+                <MistakeItems mistakes={notice.mistakes} />
             </Alert>
         );
     }

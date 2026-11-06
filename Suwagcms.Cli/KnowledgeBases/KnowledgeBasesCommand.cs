@@ -4,7 +4,6 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts;
 
 namespace Suwagcms.Cli.KnowledgeBases;
@@ -38,17 +37,14 @@ internal static class KnowledgeBasesCommand
     {
         var command = new Command("list", "List the knowledge bases of the bot (or --open the Knowledge bases screen in the web app).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)
@@ -73,17 +69,14 @@ internal static class KnowledgeBasesCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageAt("KnowledgeBase", parsed.GetRequiredValue(id)), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
@@ -112,14 +105,11 @@ internal static class KnowledgeBasesCommand
         var dryRun = EditOptions.DryRun();
         var command = new Command("add", "Add a knowledge base to the bot.") { id, title, language, dryRun };
         EditOptions.RefuseOpen(command, options, "kb add");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var dry = parsed.GetValue(dryRun);
                 var answer = await ServerCall.PutAsync(
                     environment,
@@ -160,14 +150,11 @@ internal static class KnowledgeBasesCommand
                 result.AddError("Nothing to change: give at least one of --title, --language.");
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var path = target.ItemPath(Collection, parsed.GetRequiredValue(id));
                 var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
                 if (read.ExitCode != ExitCodes.Done)
@@ -183,7 +170,7 @@ internal static class KnowledgeBasesCommand
                     environment,
                     target.Address,
                     path + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
-                    new SaveKnowledgeBase(parsed.GetValue(title) ?? current.Title, parsed.GetValue(language) ?? current.Language),
+                    EditOverlay.Over(current, new SaveKnowledgeBase(parsed.GetValue(title), parsed.GetValue(language))),
                     cancellationToken
                 );
                 return await ReportSavedAsync(target, answer, dry, "edit", cancellationToken);
@@ -192,41 +179,16 @@ internal static class KnowledgeBasesCommand
         return command;
     }
 
-    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment)
-    {
-        var id = IdArgument();
-        var ifRevision = EditOptions.IfRevision();
-        var dryRun = EditOptions.DryRun();
-        var command = new Command("delete", "Delete a knowledge base.") { id, ifRevision, dryRun };
-        EditOptions.RefuseOpen(command, options, "kb delete");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
-            {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
-                var baseId = parsed.GetRequiredValue(id);
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.DeleteAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, baseId) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                return await target.Run.Report.DoneAsync(
-                    new KnowledgeBaseDeletedDocument(target.Bot, baseId, dry),
-                    dry ? $"Would delete '{baseId}'. Nothing was changed." : $"Deleted '{baseId}'."
-                );
-            }
+    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment) =>
+        ResourceCommand.Delete(
+            options,
+            environment,
+            "kb delete",
+            Collection,
+            IdArgument(),
+            "Delete a knowledge base.",
+            (bot, name, dry) => new KnowledgeBaseDeletedDocument(bot, name, dry)
         );
-        return command;
-    }
 
     private static async Task<int> ReportSavedAsync(
         BotTarget target,
@@ -242,7 +204,7 @@ internal static class KnowledgeBasesCommand
         }
         var saved =
             answer.Body?.Deserialize<KnowledgeBaseView>(Web) ?? throw new InvalidOperationException("the server sent no knowledge base");
-        var past = word == "add" ? "Added" : "Edited";
+        var past = word == "add" ? "Added" : "Saved";
         var text = dry
             ? $"Would {word} '{saved.Id}' ({saved.Title}, {saved.Language}). Nothing was changed."
             : string.Create(
@@ -251,12 +213,4 @@ internal static class KnowledgeBasesCommand
             );
         return await target.Run.Report.DoneAsync(new KnowledgeBaseSavedDocument(target.Bot, saved, dry), text);
     }
-
-    private static Task<int> Open(BotTarget target, ParseResult parsed) =>
-        WebPage.ShowAsync(
-            target.PageOf(Collection),
-            parsed.InvocationConfiguration.Output,
-            parsed.InvocationConfiguration.Error,
-            target.Machine.OpenBrowser
-        );
 }

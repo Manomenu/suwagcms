@@ -6,6 +6,7 @@ import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
 import { Label } from "@/design/label";
+import { MistakeItems } from "@/design/mistakeItems";
 
 import { registerBot } from "./api";
 
@@ -63,17 +64,7 @@ export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot
             </div>
             {refusal !== null && (
                 <Alert variant="destructive">
-                    {refusal.mistakes.length === 0 ? (
-                        refusal.message
-                    ) : (
-                        <ul className="list-disc pl-4">
-                            {refusal.mistakes.map((mistake) => (
-                                <li key={`${mistake.code}:${mistake.path}`}>
-                                    {mistake.message} {mistake.fix}
-                                </li>
-                            ))}
-                        </ul>
-                    )}
+                    {refusal.mistakes.length === 0 ? refusal.message : <MistakeItems mistakes={refusal.mistakes} />}
                 </Alert>
             )}
             <div className="flex gap-2">

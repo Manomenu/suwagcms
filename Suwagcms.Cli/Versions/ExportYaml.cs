@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Suwagcms.Cli.Yaml;
 using Suwagcms.Contracts;
 using Suwagcms.Sdk.Format;
 using YamlDotNet.Core;
@@ -46,22 +47,9 @@ internal static class ExportYaml
     {
         using var text = new StringWriter(CultureInfo.InvariantCulture) { NewLine = "\n" };
         var settings = EmitterSettings.Default.WithBestWidth(int.MaxValue).WithNewLine("\n");
-        Serializer.Serialize(new Emitter(text, settings), Plain(value));
+        Serializer.Serialize(new Emitter(text, settings), FormatYaml.Plain(value, keepNulls: true));
         return text.ToString();
     }
-
-    private static object? Plain(JsonElement element) =>
-        element.ValueKind switch
-        {
-            JsonValueKind.Object => element.EnumerateObject().ToDictionary(property => property.Name, property => Plain(property.Value)),
-            JsonValueKind.Array => element.EnumerateArray().Select(Plain).ToList(),
-            JsonValueKind.String => element.GetString(),
-            JsonValueKind.Number => element.GetInt64(),
-            JsonValueKind.True => true,
-            JsonValueKind.False => false,
-            JsonValueKind.Undefined or JsonValueKind.Null => null,
-            _ => throw new ArgumentOutOfRangeException(nameof(element)),
-        };
 
     // Why: a text of several lines reads and greps best line by line, and the emitter falls back to a quoted form for what a block cannot hold; only a quoted form keeps the other line breaks of YAML, which any other form turns into another character.
     private sealed class LongTexts(IEventEmitter next) : ChainedEventEmitter(next)

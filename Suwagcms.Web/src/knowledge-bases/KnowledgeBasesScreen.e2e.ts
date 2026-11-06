@@ -1,16 +1,8 @@
 // A person works on the knowledge bases of one bot in the browser; the bot is in the address, and a refusal keeps what was typed.
 import { expect, test, type APIRequestContext } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `kb-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
-    return id;
-}
+const { newBot } = testBots("kb");
 
 async function addBase(request: APIRequestContext, bot: string, id: string, title: string): Promise<void> {
     const response = await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, { data: { title } });
@@ -25,10 +17,10 @@ test("AC-knowledge-bases-1: a bot with no bases offers to create the first one, 
     await page.goto(`/bots/${bot}/knowledge-bases`);
     await expect(page.getByText("No knowledge bases yet.")).toBeVisible();
 
-    await page.getByRole("button", { name: "New knowledge base" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
     await page.getByLabel("Id").fill("oferta");
     await page.getByLabel("Title").fill("Offer");
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
     const row = page.getByRole("row").filter({ hasText: "oferta" });
     await expect(row).toContainText("Offer");
@@ -53,10 +45,10 @@ test("AC-knowledge-bases-4: a title another base has is refused beside the title
     await addBase(request, bot, "oferta", "Our offer");
     await page.goto(`/bots/${bot}/knowledge-bases`);
 
-    await page.getByRole("button", { name: "New knowledge base" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
     await page.getByLabel("Id").fill("second");
     await page.getByLabel("Title").fill("  our OFFER ");
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
     await expect(page.locator('[data-field="title"]')).toContainText("used by knowledge base 'oferta'");
     await expect(page.getByLabel("Id")).toHaveValue("second");
@@ -130,14 +122,14 @@ test("AC-knowledge-base-language-2: a new base starts on en, the language chosen
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("button", { name: "New knowledge base" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
     await expect(page.locator('[data-field="language"] select')).toHaveValue("en");
     await expect(page.locator('[data-field="language"] select').locator("option")).toHaveText(["pl", "en"]);
     await page.getByLabel("Id").fill("oferta");
     await page.getByLabel("Title").fill("Oferta");
 
     await page.locator('[data-field="language"] select').selectOption("pl");
-    await page.getByRole("button", { name: "Create", exact: true }).click();
+    await page.getByRole("button", { name: "Add", exact: true }).click();
 
     const row = page.getByRole("row").filter({ hasText: "oferta" });
     await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
@@ -166,4 +158,45 @@ test("AC-resource-rename-4: Change id on a base keeps its articles in it and lea
     await expect(page.getByRole("row").filter({ hasText: "pricing" })).toBeVisible();
     const stored = (await (await request.get(`/api/bots/${bot}/articles/cennik`)).json()) as { knowledgeBase: string };
     expect(stored.knowledgeBase).toBe("pricing");
+});
+
+test("AC-knowledge-bases-10, AC-resource-rename-28: unsaved changes ask before they are lost, and Change id waits for them", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addBase(request, bot, "oferta", "Offer");
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByRole("button", { name: "Change id" })).toBeEnabled();
+    await page.getByLabel("Title").fill("Unsaved");
+    const questions: string[] = [];
+    let accept = false;
+    page.on("dialog", (dialog) => {
+        questions.push(dialog.message());
+        if (accept) void dialog.accept();
+        else void dialog.dismiss();
+    });
+
+    await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByRole("link", { name: "Bots" }).click();
+    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases`);
+    await expect(page.getByLabel("Title")).toHaveValue("Unsaved");
+    accept = true;
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    await expect(page.getByLabel("Title")).toHaveCount(0);
+    expect(questions).toEqual(Array(4).fill("Discard the changes you have not saved?"));
+});
+
+test("AC-knowledge-bases-11: the address --open prints opens the form of that base", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addBase(request, bot, "oferta", "Offer");
+
+    await page.goto(`/bots/${bot}/knowledge-bases?open=oferta`);
+
+    await expect(page.getByLabel("Title")).toHaveValue("Offer");
+    await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases`);
 });

@@ -41,6 +41,16 @@ public sealed class DeleteGuardTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-delete-guard-1")]
+    public void The_refusal_of_a_delete_points_at_the_id_of_a_resource_and_at_the_name_of_a_fact()
+    {
+        var article = Assert.Single(Deleting(Bot(Linking("wycena", "See [it](cms://article/cennik).")), Cennik));
+
+        Assert.Equal("id", article.Path);
+        Assert.Equal("name", new ResourceRef(ResourceKind.GlobalFact, "customer.city").IdField());
+    }
+
+    [Fact]
     [Trait("criterion", "AC-delete-guard-2")]
     public void The_refusal_lists_every_referrer_with_the_field_holding_the_reference_once_per_field()
     {

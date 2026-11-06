@@ -1,16 +1,8 @@
 // A person works on the facts of one bot in the browser; the bot is in the address, and a refusal keeps what was typed.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `facts-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
-
-async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
-    return id;
-}
+const { newBot } = testBots("facts");
 
 async function addCity(request: APIRequestContext, bot: string, description = "The city the customer lives in"): Promise<void> {
     const response = await request.put(`/api/bots/${bot}/facts/customer.city?ifRevision=0`, {
@@ -231,4 +223,36 @@ test("AC-fact-pattern-10: a person sets a pattern on a text fact, sees its mista
     await page.getByRole("button", { name: "Save" }).click();
     await expect(row).not.toContainText("pattern");
     expect(await (await request.get(`/api/bots/${bot}/facts/order.code`)).json()).toMatchObject({ pattern: null });
+});
+
+test("AC-global-facts-17, AC-resource-rename-28: unsaved changes ask before they are lost, and Change id waits for them", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addCity(request, bot);
+    await page.goto(`/bots/${bot}/facts`);
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByRole("button", { name: "Change id" })).toBeEnabled();
+    await page.getByLabel("Description").fill("Unsaved");
+    const questions: string[] = [];
+    let accept = false;
+    page.on("dialog", (dialog) => {
+        questions.push(dialog.message());
+        if (accept) void dialog.accept();
+        else void dialog.dismiss();
+    });
+
+    await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
+    await expect(page.getByText("Save your changes first.")).toBeVisible();
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await page.getByRole("button", { name: "Add a fact" }).click();
+    await page.getByRole("link", { name: "Bots" }).click();
+    await expect(page).toHaveURL(`/bots/${bot}/facts`);
+    await expect(page.getByLabel("Description")).toHaveValue("Unsaved");
+    accept = true;
+    await page.getByRole("button", { name: "Cancel" }).click();
+
+    await expect(page.getByLabel("Description")).toHaveCount(0);
+    expect(questions).toEqual(Array(4).fill("Discard the changes you have not saved?"));
 });

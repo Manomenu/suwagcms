@@ -1,15 +1,12 @@
-import { useState } from "react";
-
-import { ApiError } from "@/api/client";
+import { useSaveForm } from "@/api/saveForm";
 import { LANGUAGES } from "@/api/languages";
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
 import { Field } from "@/design/field";
 import { Input } from "@/design/input";
+import { FormFooter } from "@/design/formFooter";
 import { Paper } from "@/design/page";
 import { Select } from "@/design/select";
 
-import { saveKnowledgeBase } from "./api";
+import { knowledgeBasesApi } from "./api";
 import { HINTS, fieldOf, mistakesFor, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";
 
 /**
@@ -24,6 +21,7 @@ export function KnowledgeBaseForm({
     onSaved,
     onReload,
     onCancel,
+    onDirtyChange,
 }: {
     bot: string;
     initial: FormState;
@@ -32,25 +30,21 @@ export function KnowledgeBaseForm({
     onSaved: () => void;
     onReload: () => void;
     onCancel: () => void;
+    onDirtyChange: (dirty: boolean) => void;
 }) {
-    const [form, setForm] = useState(initial);
-    const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const saving = useSaveForm({
+        initial,
+        save: (form: FormState) => knowledgeBasesApi.save(bot, form.id, { title: form.title, language: form.language }, revision),
+        onSaved,
+        onCancel,
+        onDirtyChange,
+    });
+    const { form, change, submit } = saving;
 
-    function submit(event: React.SyntheticEvent) {
-        event.preventDefault();
-        setRefusal(null);
-        saveKnowledgeBase(bot, form.id, { title: form.title, language: form.language }, revision)
-            .then(onSaved)
-            .catch((error: unknown) => {
-                setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
-            });
-    }
-
-    const mistakes = mistakesFor(refusal?.mistakes ?? [], form.id);
+    const mistakes = mistakesFor(saving.mistakes, form.id);
     const errorsOf = (field: FieldName) =>
         mistakes.filter((mistake) => fieldOf(mistake) === field).map((mistake) => `${mistake.message} ${mistake.fix}`);
     const loose = mistakes.filter((mistake) => fieldOf(mistake) === null);
-    const moved = mistakes.some((mistake) => mistake.code === "resource.stale");
     return (
         <Paper>
             <form onSubmit={submit} className="flex max-w-2xl flex-col gap-3">
@@ -62,7 +56,7 @@ export function KnowledgeBaseForm({
                             disabled={editing}
                             placeholder="offer"
                             onChange={(event) => {
-                                setForm({ ...form, id: event.currentTarget.value });
+                                change({ id: event.currentTarget.value });
                             }}
                         />
                     )}
@@ -74,7 +68,7 @@ export function KnowledgeBaseForm({
                             value={form.title}
                             placeholder="Our offer"
                             onChange={(event) => {
-                                setForm({ ...form, title: event.currentTarget.value });
+                                change({ title: event.currentTarget.value });
                             }}
                         />
                     )}
@@ -85,7 +79,7 @@ export function KnowledgeBaseForm({
                             {...props}
                             value={form.language}
                             onChange={(event) => {
-                                setForm({ ...form, language: event.currentTarget.value });
+                                change({ language: event.currentTarget.value });
                             }}
                         >
                             {LANGUAGES.map((language) => (
@@ -96,36 +90,7 @@ export function KnowledgeBaseForm({
                         </Select>
                     )}
                 </Field>
-                {refusal !== null && refusal.mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
-                {loose.length > 0 && (
-                    <Alert variant="destructive">
-                        <ul className="list-disc pl-4">
-                            {loose.map((mistake) => (
-                                <li key={`${mistake.code}:${mistake.path}`}>
-                                    {mistake.message} {mistake.fix}
-                                </li>
-                            ))}
-                        </ul>
-                    </Alert>
-                )}
-                <div className="flex gap-2">
-                    <Button type="submit">{editing ? "Save" : "Create"}</Button>
-                    {moved && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                                setRefusal(null);
-                                onReload();
-                            }}
-                        >
-                            Reload the knowledge bases
-                        </Button>
-                    )}
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
-                    </Button>
-                </div>
+                <FormFooter saving={saving} loose={loose} editing={editing} reloadLabel="Reload the knowledge bases" onReload={onReload} />
             </form>
         </Paper>
     );

@@ -219,7 +219,7 @@ internal static class ChangeList
                 body => FactMapping.ToRecord(id, body),
                 // Why: every other field of an edit left out or null stays, and a pattern has no other way to be taken off in a file of changes.
                 (stored, body) =>
-                    FactMapping.Merged(
+                    EditOverlay.OverFact(
                         stored,
                         body,
                         element.TryGetProperty("pattern", out var pattern) && pattern.ValueKind == JsonValueKind.Null
@@ -231,7 +231,7 @@ internal static class ChangeList
                 element,
                 ifRevision,
                 body => KnowledgeBaseMapping.ToRecord(id, body),
-                KnowledgeBaseMapping.Merged
+                EditOverlay.Over
             ),
             ResourceKind.Article => Made<SaveArticle, Article>(
                 verb,
@@ -239,7 +239,7 @@ internal static class ChangeList
                 element,
                 ifRevision,
                 body => ArticleMapping.ToRecord(id, body),
-                ArticleMapping.Merged
+                EditOverlay.Over
             ),
             ResourceKind.Procedure => Made<SaveProcedure, Procedure>(
                 verb,
@@ -247,7 +247,7 @@ internal static class ChangeList
                 element,
                 ifRevision,
                 body => ProcedureMapping.ToRecord(id, body),
-                ProcedureMapping.Merged
+                EditOverlay.Over
             ),
             ResourceKind.Action => Made<SaveAction, BotAction>(
                 verb,
@@ -255,7 +255,7 @@ internal static class ChangeList
                 element,
                 ifRevision,
                 body => ActionMapping.ToRecord(id, body),
-                ActionMapping.Merged
+                EditOverlay.Over
             ),
             ResourceKind.Persona => Replacing(target, element, ifRevision),
             ResourceKind.Definition => throw new InvalidOperationException($"{kind} is not a kind of a file of changes."),

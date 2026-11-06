@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Contracts;
@@ -11,19 +12,17 @@ internal static class ProcedureSaveCommands
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    public static Option<int?> IfRevisionOption() =>
+    private static Option<int?> IfRevisionOption() =>
         new("--if-revision")
         {
             Description =
                 "Apply only if the procedure is still at this revision (see `procedures show`); refused with the current revision otherwise. Default: the revision field of the file, else the latest.",
         };
 
-    public static Option<bool> DryRunOption() => EditOptions.DryRun();
-
     public static Command CreateAdd(GlobalOptions options, CliEnvironment environment)
     {
         var file = FileOption();
-        var dryRun = DryRunOption();
+        var dryRun = EditOptions.DryRun();
         var command = new Command(
             "add",
             "Add a procedure to the bot from a YAML or JSON file that holds the whole of it, and with --open show it in the web creator."
@@ -40,14 +39,11 @@ internal static class ProcedureSaveCommands
                 result.AddError("--dry-run and --open cannot be used together: a dry run saves nothing, so there is no procedure to open.");
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await ProcedureTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (document, problem) = await ProcedureFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken);
                 if (document is null)
                 {
@@ -63,13 +59,13 @@ internal static class ProcedureSaveCommands
                 var answer = await ServerCall.PutAsync(
                     environment,
                     target.Address,
-                    target.ProcedurePath(id) + EditOptions.Query(dry, 0),
+                    target.ItemPath(ProceduresCommand.Collection, id) + EditOptions.Query(dry, 0),
                     Body(document),
                     cancellationToken
                 );
                 var reported = await ReportSavedAsync(target, answer, dry, "add", cancellationToken);
                 return reported == ExitCodes.Done && parsed.GetValue(options.Open)
-                    ? await target.OpenAsync(target.CreatorPage(id), parsed)
+                    ? await target.OpenAsync(target.PageAt("Procedure", id), parsed)
                     : reported;
             }
         );
@@ -81,7 +77,7 @@ internal static class ProcedureSaveCommands
         var id = new Argument<string>("id") { Description = "The procedure's id, like orderValuation. It does not change." };
         var file = FileOption();
         var ifRevision = IfRevisionOption();
-        var dryRun = DryRunOption();
+        var dryRun = EditOptions.DryRun();
         var command = new Command(
             "edit",
             "Replace a procedure with the whole of a YAML or JSON file (the output of `procedures show` is accepted back)."
@@ -92,15 +88,12 @@ internal static class ProcedureSaveCommands
             ifRevision,
             dryRun,
         };
-        RefuseOpen(command, options, "edit");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        EditOptions.RefuseOpen(command, options, "procedures edit");
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await ProcedureTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var name = parsed.GetRequiredValue(id);
                 var (document, problem) = await ProcedureFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken);
                 if (document is null)
@@ -113,7 +106,12 @@ internal static class ProcedureSaveCommands
                         $"The command edits '{name}' but the file holds '{inFile}'. Use the same id in both: change the id in the file, or the one on the command line."
                     );
                 }
-                var read = await ServerCall.GetAsync(environment, target.Address, target.ProcedurePath(name), cancellationToken);
+                var read = await ServerCall.GetAsync(
+                    environment,
+                    target.Address,
+                    target.ItemPath(ProceduresCommand.Collection, name),
+                    cancellationToken
+                );
                 if (read.ExitCode != ExitCodes.Done)
                 {
                     return await target.FailedAsync(read, cancellationToken);
@@ -126,7 +124,7 @@ internal static class ProcedureSaveCommands
                 var answer = await ServerCall.PutAsync(
                     environment,
                     target.Address,
-                    target.ProcedurePath(name) + EditOptions.Query(dry, expected),
+                    target.ItemPath(ProceduresCommand.Collection, name) + EditOptions.Query(dry, expected),
                     Body(document),
                     cancellationToken
                 );
@@ -159,17 +157,8 @@ internal static class ProcedureSaveCommands
         return body;
     }
 
-    private static void RefuseOpen(Command command, GlobalOptions options, string word) =>
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Open))
-            {
-                result.AddError($"`suwagcms procedures {word}` has no web page to open: drop --open.");
-            }
-        });
-
     private static async Task<int> ReportSavedAsync(
-        ProcedureTarget target,
+        BotTarget target,
         ServerAnswer answer,
         bool dry,
         string word,

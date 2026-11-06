@@ -1,4 +1,5 @@
 import type { Mistake } from "@/api/client";
+import { whole } from "@/api/constraints";
 
 import { NO_PATTERN, patternFormOf, patternOf, type PatternForm } from "@/api/textPattern";
 
@@ -63,13 +64,6 @@ export function formOf(fact: Fact): FactForm {
     };
 }
 
-function whole(text: string): number | null {
-    const trimmed = text.trim();
-    if (trimmed === "") return null;
-    const number = Number(trimmed);
-    return Number.isNaN(number) ? null : number;
-}
-
 /** Only the constraints of the chosen type are sent: the others are hidden, and a constraint of another type is a mistake. */
 export function bodyOf(form: FactForm): SaveFact {
     return {
@@ -98,10 +92,4 @@ export function referrerPlace(location: string): string {
     return `step ${match[1] ?? ""} (${match[2] === "next" ? "when" : (match[2] ?? "")})`;
 }
 
-export function constraintOf(fact: Fact): string {
-    if (fact.type === "enum") return `enum: ${(fact.values ?? []).join(", ")}`;
-    if (fact.type === "int") return `int, ${fact.min ?? "?"} to ${fact.max ?? "?"}`;
-    if (fact.type === "text")
-        return `text, up to ${fact.maxLength ?? "?"}${fact.pattern == null ? "" : `, pattern ${fact.pattern.regex ?? ""}`}`;
-    return fact.type;
-}
+export { constraintText as constraintOf } from "@/api/constraints";

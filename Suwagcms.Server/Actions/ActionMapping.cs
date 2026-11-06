@@ -16,14 +16,6 @@ internal static class ActionMapping
             Implementation = body.Implementation,
         };
 
-    public static SaveAction Merged(BotAction stored, SaveAction given) =>
-        new(
-            given.Description ?? stored.Description,
-            given.Parameters ?? stored.Parameters,
-            given.Results ?? stored.Results,
-            given.Implementation ?? stored.Implementation
-        );
-
     public static ActionView Show(StoredResource stored, IReadOnlyList<StoredResource> all, BotDeclaration? declaration) =>
         Show((BotAction)stored.Record, stored.Revision, all, declaration);
 

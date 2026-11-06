@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { Mistake } from "@/api/client";
 import { Button } from "@/design/button";
+import { ConstraintFields } from "@/design/constraintFields";
 import { Field } from "@/design/field";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
@@ -50,61 +51,25 @@ function Constraint({
     mistakes: Mistake[];
     onChange: (change: Partial<FieldRow>) => void;
 }) {
-    if (row.type === "enum") {
-        return (
-            <Placed place={`${at}.values`} label="Values" hint="Separated by commas." mistakes={mistakes}>
-                {(props) => (
-                    <Input
-                        {...props}
-                        value={row.values}
-                        onChange={(event) => {
-                            onChange({ values: event.target.value });
-                        }}
-                    />
-                )}
-            </Placed>
-        );
-    }
-    if (row.type === "int") {
-        return (
-            <div className="flex gap-2">
-                <Placed place={`${at}.min`} label="Min" mistakes={mistakes}>
-                    {(props) => (
-                        <Input
-                            {...props}
-                            value={row.min}
-                            onChange={(event) => {
-                                onChange({ min: event.target.value });
-                            }}
-                        />
-                    )}
-                </Placed>
-                <Placed place={`${at}.max`} label="Max" mistakes={mistakes}>
-                    {(props) => (
-                        <Input
-                            {...props}
-                            value={row.max}
-                            onChange={(event) => {
-                                onChange({ max: event.target.value });
-                            }}
-                        />
-                    )}
-                </Placed>
-            </div>
-        );
-    }
     return (
-        <Placed place={`${at}.maxLength`} label="Maximum length" mistakes={mistakes}>
-            {(props) => (
-                <Input
-                    {...props}
-                    value={row.maxLength}
-                    onChange={(event) => {
-                        onChange({ maxLength: event.target.value });
-                    }}
-                />
-            )}
-        </Placed>
+        <div className={row.type === "int" ? "flex gap-2" : "contents"}>
+            <ConstraintFields
+                form={row}
+                field={(name, label, control) =>
+                    // Why: a row's cell is too narrow to say it in the label, and every label of a row must stay on one line to line up.
+                    name === "values" ? (
+                        <Placed place={`${at}.values`} label="Values" hint="Separated by commas." mistakes={mistakes}>
+                            {control}
+                        </Placed>
+                    ) : (
+                        <Placed place={`${at}.${name}`} label={label} mistakes={mistakes}>
+                            {control}
+                        </Placed>
+                    )
+                }
+                onChange={onChange}
+            />
+        </div>
     );
 }
 
@@ -339,6 +304,7 @@ export function ActionFields({
                     {(props) => (
                         <Input
                             {...props}
+                            inputMode="numeric"
                             value={form.timeout}
                             onChange={(event) => {
                                 onChange({ timeout: event.target.value });

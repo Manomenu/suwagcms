@@ -1,14 +1,11 @@
 // A person works on the articles of one bot in the browser; the bot is in the address, and a refusal or a stale edit keeps what was typed.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `art-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
+const { newBot: newEmptyBot } = testBots("art");
 
 async function newBot(request: APIRequestContext): Promise<string> {
-    const id = freshId();
-    const response = await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address: `http://${id}.internal:8080` } });
-    expect(response.status()).toBe(201);
+    const id = await newEmptyBot(request);
     for (const [base, title] of [
         ["offer", "Offer"],
         ["forValuers", "For valuers"],
@@ -56,7 +53,7 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByRole("button", { name: "Add an article" }).click();
     for (const label of [/^content/, /^llmGuide/, /^description/]) {
         await expect(page.getByLabel(label)).toBeVisible();
     }
@@ -76,7 +73,7 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
 test("AC-articles-2: a bad article shows every mistake beside its field and keeps what was typed", async ({ page, request }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByRole("button", { name: "Add an article" }).click();
     await page.getByLabel("Id", { exact: true }).fill("cennik");
     await page.getByLabel("Title", { exact: true }).fill("Price list");
 
@@ -93,7 +90,7 @@ test("AC-articles-3: an id another article has, even in another base, is refused
     const bot = await newBot(request);
     await addArticle(request, bot, "priceList", { knowledgeBase: "forValuers" });
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByRole("button", { name: "Add an article" }).click();
 
     await fill(page, "priceList", "Another");
     await page.getByRole("button", { name: "Add", exact: true }).click();
@@ -182,7 +179,7 @@ test("AC-articles-11: the list filters by base and by text, the same as the API 
 test("AC-articles-13: leaving the editor with unsaved changes asks before discarding them", async ({ page, request }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByRole("button", { name: "Add an article" }).click();
     await page.getByLabel("Title", { exact: true }).fill("Unsaved");
     const questions: string[] = [];
     let accept = false;
@@ -206,7 +203,7 @@ test("AC-articles-13: leaving the editor with unsaved changes asks before discar
 test("AC-articles-13: closing an untouched editor asks nothing", async ({ page, request }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByRole("button", { name: "Add an article" }).click();
     page.on("dialog", () => {
         throw new Error("no question was expected");
     });
@@ -234,7 +231,7 @@ test("AC-knowledge-base-language-12: the article form shows the language of the 
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "Oferta", "pl");
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByRole("button", { name: "Add an article" }).click();
 
     await expect(page.locator('[data-field="language"] select')).toHaveCount(0);
     await expect(page.locator('[data-field="language"] output')).toHaveText("en");
@@ -528,7 +525,7 @@ test("AC-knowledge-base-language-12: the language stands beside the base selecto
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("button", { name: "New article" }).click();
+    await page.getByRole("button", { name: "Add an article" }).click();
     await expect(page.getByLabel(/^description/)).toBeVisible();
 
     const boxOf = async (selector: string) => {
@@ -650,4 +647,22 @@ test("AC-article-procedure-links-2: the picker in content offers no procedure", 
     await page.keyboard.type("orderValuation");
 
     await expect(page.getByRole("listbox", { name: "What to link" })).toContainText("Nothing matches");
+});
+
+test("AC-delete-guard-19: the panels ask again when a reload brings a newer revision of the article", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "cennik");
+    await page.goto(`/bots/${bot}/articles`);
+    await page.getByRole("row").filter({ hasText: "cennik" }).getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("Nothing uses this.");
+
+    await addArticle(request, bot, "wycena", { content: "See [it](cms://article/cennik)." });
+    const changed = await request.put(`/api/bots/${bot}/articles/cennik?ifRevision=1`, {
+        data: { knowledgeBase: "offer", title: "Changed", content: "Changed", llmGuide: "Guide.", description: "Changed" },
+    });
+    expect(changed.status()).toBe(200);
+    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Reload the article" }).click();
+
+    await expect(page.getByRole("region", { name: "Used by" })).toContainText("wycena");
 });

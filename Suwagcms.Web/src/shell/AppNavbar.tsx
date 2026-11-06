@@ -2,7 +2,7 @@ import { Link } from "wouter";
 
 import type { Bot } from "@/api/bots";
 import { cn } from "@/design/classNames";
-import { mayLeave } from "@/design/leaveGuard";
+import { mayLeave } from "@/api/leaveGuard";
 
 import { botHref, TABS, tabHref, type Tab } from "./navigation";
 

@@ -3,7 +3,6 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts;
 
 namespace Suwagcms.Cli.Articles;
@@ -41,17 +40,14 @@ internal static class ArticlesCommand
             text,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
@@ -97,17 +93,14 @@ internal static class ArticlesCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageAt("Article", parsed.GetRequiredValue(id)), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
@@ -127,55 +120,14 @@ internal static class ArticlesCommand
         return command;
     }
 
-    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment)
-    {
-        var id = new Argument<string>("id") { Description = "The article's id, like priceList." };
-        var ifRevision = EditOptions.IfRevision();
-        var dryRun = EditOptions.DryRun();
-        var command = new Command(
-            "delete",
-            "Delete an article. Refused while another article links to it, with every referrer listed; `usage article <id>` shows them first."
-        )
-        {
-            id,
-            ifRevision,
-            dryRun,
-        };
-        EditOptions.RefuseOpen(command, options, "articles delete");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
-            {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
-                var articleId = parsed.GetRequiredValue(id);
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.DeleteAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, articleId) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                return await target.Run.Report.DoneAsync(
-                    new ArticleDeletedDocument(target.Bot, articleId, dry),
-                    dry ? $"Would delete '{articleId}'. Nothing was changed." : $"Deleted '{articleId}'."
-                );
-            }
-        );
-        return command;
-    }
-
-    private static Task<int> Open(BotTarget target, ParseResult parsed) =>
-        WebPage.ShowAsync(
-            target.PageOf(Collection),
-            parsed.InvocationConfiguration.Output,
-            parsed.InvocationConfiguration.Error,
-            target.Machine.OpenBrowser
+    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment) =>
+        ResourceCommand.Delete(
+            options,
+            environment,
+            "articles delete",
+            Collection,
+            new Argument<string>("id") { Description = "The article's id, like priceList." },
+            "Delete an article. Refused while another article links to it, with every referrer listed; `usage article <id>` shows them first.",
+            (bot, name, dry) => new ArticleDeletedDocument(bot, name, dry)
         );
 }

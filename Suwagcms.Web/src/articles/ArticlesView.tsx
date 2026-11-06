@@ -41,7 +41,7 @@ export function ArticlesView({
             title={`Articles of ${bot}`}
             actions={
                 <Button onClick={onAdd} disabled={bases.length === 0}>
-                    New article
+                    Add an article
                 </Button>
             }
         >

@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 
 import { cn } from "@/design/classNames";
-import { mayLeave } from "@/design/leaveGuard";
+import { mayLeave } from "@/api/leaveGuard";
 
 import { AppNavbar } from "./AppNavbar";
 import { CONTENT_MAX_WIDTH, HEADER_HEIGHT, LOGO_SIZE, PANEL_SIDE, PANEL_WIDTH, panelSideClasses } from "./layout";

@@ -98,14 +98,11 @@ internal static class ArticleSaveCommands
         command.Options.Add(dryRun);
         EditOptions.RefuseOpen(command, options, "articles add");
         RefuseBadTexts(command, fields);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
                 var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
                 var problem = contentProblem ?? guideProblem;
@@ -167,14 +164,11 @@ internal static class ArticleSaveCommands
                 );
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
                 var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
                 var problem = contentProblem ?? guideProblem;
@@ -189,12 +183,15 @@ internal static class ArticleSaveCommands
                     return await target.FailedAsync(read, cancellationToken);
                 }
                 var current = read.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
-                var body = new SaveArticle(
-                    parsed.GetValue(fields.KnowledgeBase) ?? current.KnowledgeBase,
-                    parsed.GetValue(fields.Title) ?? current.Title,
-                    content ?? current.Content,
-                    guide ?? current.LlmGuide,
-                    parsed.GetValue(fields.Description) ?? current.Description
+                var body = EditOverlay.Over(
+                    current,
+                    new SaveArticle(
+                        parsed.GetValue(fields.KnowledgeBase),
+                        parsed.GetValue(fields.Title),
+                        content,
+                        guide,
+                        parsed.GetValue(fields.Description)
+                    )
                 );
                 var dry = parsed.GetValue(dryRun);
                 // Why: without --if-revision the edit still guards the fields it just read, so a change made in between is reported, never overwritten.
@@ -224,7 +221,7 @@ internal static class ArticleSaveCommands
             return await target.FailedAsync(answer, cancellationToken);
         }
         var article = answer.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
-        var past = word == "add" ? "Added" : "Edited";
+        var past = word == "add" ? "Added" : "Saved";
         var text = dry
             ? $"Would {word} '{article.Id}' ({article.Title}, {article.Language}, in {article.KnowledgeBase}). Nothing was changed."
             : string.Create(

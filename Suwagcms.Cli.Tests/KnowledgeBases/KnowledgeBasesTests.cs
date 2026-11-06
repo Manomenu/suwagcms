@@ -99,7 +99,7 @@ public sealed class KnowledgeBasesTests
             ("PUT", "/api/bots/rzeczoznawca/knowledge-bases/offer?ifRevision=3", """{"title":"Our offer","language":"pl"}"""),
             (recorder.Calls[1].Method, recorder.Calls[1].Url, recorder.Calls[1].Body)
         );
-        Assert.Contains("Edited 'offer'", result.Output, StringComparison.Ordinal);
+        Assert.Contains("Saved 'offer'", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

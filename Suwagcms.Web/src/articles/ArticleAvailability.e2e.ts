@@ -2,10 +2,9 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
+import { testBots } from "../../e2e/bots";
 
-function freshId(): string {
-    return `avail-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
+const { freshId } = testBots("avail");
 
 /** Answers the state and availability routes the way the SDK does, holding the last set it was told. */
 async function startBot(id: string): Promise<{ server: Server; address: string }> {
@@ -117,6 +116,29 @@ test("AC-availability-22: a procedure turns off in its creator and the list of p
 
         await page.goto(`/bots/${bot}/procedures`);
         await expect(page.getByRole("row").filter({ hasText: "orderValuation" })).toContainText("off");
+    } finally {
+        server.close();
+    }
+});
+
+test("AC-availability-31: an article that is off still shows off after Change id", async ({ page, request }) => {
+    const bot = freshId();
+    const { server, address } = await startBot(bot);
+    try {
+        await fill(request, bot, address);
+        await page.goto(`/bots/${bot}/articles?open=rabaty`);
+        await page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn off" }).click();
+        await page.getByRole("dialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
+        await expect(page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn on" })).toBeVisible();
+
+        await page.getByRole("button", { name: "Change id" }).click();
+        const dialog = page.getByRole("dialog", { name: "Change id" });
+        await dialog.getByLabel("New id").fill("discounts");
+        await expect(dialog).toContainText("This rewrites nothing else.");
+        await dialog.getByRole("button", { name: "Change id" }).click();
+
+        await expect(page.getByLabel("Id", { exact: true })).toHaveValue("discounts");
+        await expect(page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn on" })).toBeVisible();
     } finally {
         server.close();
     }

@@ -58,7 +58,7 @@ internal static class EditProblems
             ResourceMissing,
             ValidationStage.Save,
             target,
-            "name",
+            target.IdField(),
             $"Bot '{bot}' has no {ResourceKinds.Noun(target.Kind)} '{target.Id}'.",
             $"Check the name, or list the bot's {ResourceKinds.Noun(target.Kind)}s to see the ones that exist.",
             []
@@ -113,7 +113,7 @@ internal static class EditProblems
             ResourceSameId,
             ValidationStage.Save,
             target,
-            IdField(target),
+            target.IdField(),
             $"The {ResourceKinds.Noun(target.Kind)} '{target.Id}' already has this id, so nothing would change.",
             "Give another id.",
             []
@@ -124,13 +124,11 @@ internal static class EditProblems
             MistakeCodes.DuplicateId,
             ValidationStage.Save,
             target,
-            IdField(target),
+            target.IdField(),
             $"This bot already has {Noun(wanted)} '{wanted.Id}'.",
             $"Choose another id, or delete that {ResourceKinds.Noun(wanted.Kind)} first.",
-            [new RelatedResource(wanted, IdField(wanted))]
+            [new RelatedResource(wanted, wanted.IdField())]
         );
-
-    private static string IdField(ResourceRef target) => target.Kind == ResourceKind.GlobalFact ? "name" : "id";
 
     private static string Noun(ResourceRef target) =>
         target.Kind == ResourceKind.Article ? "an article" : $"a {ResourceKinds.Noun(target.Kind)}";

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text.Json;
+using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Contracts;
@@ -31,14 +32,11 @@ internal static class ProcedureLayoutCommand
             clear,
         };
         EditOptions.RefuseOpen(command, options, "procedures layout");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await ProcedureTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var name = parsed.GetRequiredValue(id);
                 var changes = parsed.GetValue(set) ?? [];
                 if (parsed.GetValue(clear) && changes.Length > 0)
@@ -50,7 +48,7 @@ internal static class ProcedureLayoutCommand
                 {
                     return await target.MisusedAsync(problem);
                 }
-                var path = target.LayoutPath(name);
+                var path = $"{target.ItemPath(ProceduresCommand.Collection, name)}/layout";
                 var answer = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
                 if (answer.ExitCode == ExitCodes.Done && (parsed.GetValue(clear) || given.Count > 0))
                 {

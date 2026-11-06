@@ -30,14 +30,11 @@ internal static class ApplyCommand
             dryRun,
         };
         EditOptions.RefuseOpen(command, options, "apply");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (document, problem) = await ChangeFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken);
                 if (document is null)
                 {

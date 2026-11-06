@@ -2,10 +2,7 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-
-function freshId(prefix: string): string {
-    return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
-}
+import { freshId } from "../../e2e/bots";
 
 async function register(request: APIRequestContext, id: string): Promise<void> {
     const response = await request.post("/api/bots", {

@@ -125,7 +125,7 @@ public sealed class RenameCommandTests
     [InlineData("article", "http://cms.internal/bots/rzeczoznawca/articles?open=priceList")]
     [InlineData("fact", "http://cms.internal/bots/rzeczoznawca/facts?open=priceList")]
     [InlineData("procedure", "http://cms.internal/bots/rzeczoznawca/procedures/priceList")]
-    [InlineData("kb", "http://cms.internal/bots/rzeczoznawca/knowledge-bases")]
+    [InlineData("kb", "http://cms.internal/bots/rzeczoznawca/knowledge-bases?open=priceList")]
     [Trait("criterion", "AC-resource-rename-16")]
     public async Task Open_opens_the_page_of_the_resource_at_its_new_address(string word, string page)
     {

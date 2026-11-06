@@ -32,14 +32,11 @@ internal static class PushCommand
             dryRun,
         };
         EditOptions.RefuseOpen(command, options, "push");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,

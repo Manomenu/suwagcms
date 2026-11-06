@@ -51,14 +51,11 @@ internal static class ActionTestCommand
                 }
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var path = target.ItemPath(ActionsCommand.Collection, parsed.GetRequiredValue(id));
                 var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
                 if (read.ExitCode != ExitCodes.Done)
