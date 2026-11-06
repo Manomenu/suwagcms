@@ -10,7 +10,7 @@ namespace Suwagcms.Cli.Tests.Procedures;
 // Why: this repository cannot read Suwchatbot's, so these are copies of its AppraiserBot/BotFiles at master b80c000; its scope-policy.yaml lists become one text per part, one rule per line.
 public sealed class SuwchatbotFilesTests
 {
-    private const int FormatVersion = 1;
+    private const int FormatVersion = 2;
 
     private static readonly System.Text.Json.JsonSerializerOptions Wire = new(System.Text.Json.JsonSerializerDefaults.Web);
 
@@ -125,7 +125,7 @@ public sealed class SuwchatbotFilesTests
         whenInterrupted: discard
         """;
 
-    private const string WithContext = """
+    private const string WithKnowledge = """
         id: telling
         description: Tells what happens next.
         firstStep: tell
@@ -133,9 +133,10 @@ public sealed class SuwchatbotFilesTests
           tell:
             inform:
               instruction: Tell it.
-              context:
-                articles: [deliveryTimes]
-                searchQueries: [how a report is sent]
+              knowledge:
+                - knowledgeBase: faq
+                  articles: [deliveryTimes]
+                  searchQueries: [how a report is sent]
               points:
                 delivery: The report is sent by e-mail.
             next: bye
@@ -270,10 +271,11 @@ public sealed class SuwchatbotFilesTests
             Bot = "appraiser",
             FormatVersion = FormatVersion,
             Blocks = ["listen", "collect", "say", "assign", "inform"],
+            Knowledge = true,
         };
 
         var mistakes = DefinitionValidator.ValidateJson(
-            Definition(Conversation, ValuationReport, QuoteRequest, InspectionVisit, WithContext),
+            Definition(Conversation, ValuationReport, QuoteRequest, InspectionVisit, WithKnowledge),
             ValidationStage.Version,
             declaration
         );

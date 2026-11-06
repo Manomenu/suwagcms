@@ -32,11 +32,11 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
             """.Replace("INFORM", inform, StringComparison.Ordinal);
 
     private const string Filled =
-        """{"instruction":"Tell the customer what happens next.","context":{"articles":["officeContact"],"searchQueries":["delivery times"]},"points":{"turnaround":"Ready within 7 working days.","delivery":"Sent by e-mail.","anotherLongerName":"A third point.","a":"The shortest name."}}""";
+        """{"instruction":"Tell the customer what happens next.","knowledge":[{"knowledgeBase":"offer","articles":["officeContact"],"searchQueries":["delivery times"]}],"points":{"turnaround":"Ready within 7 working days.","delivery":"Sent by e-mail.","anotherLongerName":"A third point.","a":"The shortest name."}}""";
 
     [Fact]
     [Trait("criterion", "AC-inform-block-1")]
-    public async Task An_inform_reads_back_with_its_instruction_its_context_its_points_and_its_next()
+    public async Task An_inform_reads_back_with_its_instruction_its_knowledge_its_points_and_its_next()
     {
         var scene = await NewBot();
 
@@ -46,8 +46,8 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
         var inform = read.Steps["tell"].Inform;
         Assert.NotNull(inform);
         Assert.Equal("Tell the customer what happens next.", inform.Instruction);
-        Assert.Equal(["officeContact"], inform.Context?.Articles);
-        Assert.Equal(["delivery times"], inform.Context?.SearchQueries);
+        Assert.Equal(["officeContact"], inform.Knowledge?[0].Articles);
+        Assert.Equal(["delivery times"], inform.Knowledge?[0].SearchQueries);
         Assert.Equal("Sent by e-mail.", inform.Points?["delivery"]);
         Assert.Equal("wait", read.Steps["tell"].Next?.Step);
         Assert.Empty(read.NotReady);
@@ -85,7 +85,9 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
 
         var response = await scene.Procedures.Add(
             "orderValuation",
-            Informing("""{"instruction":"Say it.","context":{"articles":["elsewhere"]},"points":{"bad_name":"Text."}}""")
+            Informing(
+                """{"instruction":"Say it.","knowledge":[{"knowledgeBase":"offer","articles":["elsewhere"]}],"points":{"bad_name":"Text."}}"""
+            )
         );
         var mistakes = await FactApi.MistakesOf(response);
 

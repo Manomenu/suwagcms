@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Only the target of a link changes: the rest of each referrer's text stays exactly as it was, and versions already created keep the old <code>id</code>. Plain text naming a resource is not a reference, so it is left alone.</p>
   </div>
   <div class="stats">
-    <div><b>24</b><span>criteria</span></div>
+    <div><b>23</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -438,7 +438,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
   <table>
     <tr><th>Kind</th><th>What is rewritten</th></tr>
     <tr><td>article</td><td>each link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles</td></tr>
-    <tr><td>knowledge base</td><td>the <code>knowledgeBase</code> of each of its articles</td></tr>
+    <tr><td>knowledge base</td><td>the <code>knowledgeBase</code> of each of its articles and of each <code>knowledge</code> entry naming it</td></tr>
     <tr><td>global fact</td><td>its <code>name</code>, in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it</td></tr>
     <tr><td>procedure</td><td>its <code>id</code>; <code>conversation</code> cannot change its id</td></tr>
   </table>
@@ -487,7 +487,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
   <h2>Decisions <span class="tag note">optional</span></h2>
   <ul>
     <li>A rename does not wait for edits that are open: each referrer gets a new revision, so those saves are refused as stale, the same protection every edit has; work stays on the screen, and no link can come back.</li>
-    <li>The renamed resource keeps its row and its next revision, so what hangs on the row, such as a procedure's node positions, stays with it.</li>
+    <li>The renamed resource keeps its row and its next revision, so what hangs on the row stays with it.</li>
     <li>One command for every kind, <code>suwagcms rename &lt;kind&gt; &lt;id&gt; &lt;newId&gt;</code>, in the shape of <code>suwagcms usage &lt;kind&gt; &lt;id&gt;</code>: the behaviour is one, and each new kind only adds a word.</li>
     <li>Labels stay as written: a label holds a title, not an <code>id</code>, and a version already fills in the current title.</li>
     <li>A rewrite bumps each referrer's revision: its text did change, and a stale save would otherwise put the old link back or be refused for a reason nobody could see.</li>
@@ -497,7 +497,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
   <h2>Acceptance criteria</h2>
   <ul class="checks">
     <li><code>AC-resource-rename-1</code> <code>suwagcms rename article cennik priceList</code> gives the article the new <code>id</code>, and every link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles then targets <code>priceList</code>; the article can no longer be read as <code>cennik</code>.</li>
-    <li><code>AC-resource-rename-2</code> The same change made with “Change id” in the web gives the same result, lists the referrers before it is confirmed, and leaves the author on the resource under its new <code>id</code>, and in the procedure creator at its new address.</li>
+    <li><code>AC-resource-rename-2</code> The same change made with “Change id” in the web gives the same result, lists the referrers before it is confirmed, and leaves the author on the resource under its new <code>id</code>, and in the procedure editor at its new address.</li>
     <li><code>AC-resource-rename-3</code> In a rewritten referrer only the link targets differ: for a test set covering labels, code spans and blocks, plain text naming the <code>id</code>, longer ids starting with the old one, and ordinary web links, everything else is identical, byte for byte.</li>
     <li><code>AC-resource-rename-4</code> Changing a knowledge base's <code>id</code> updates the <code>knowledgeBase</code> of each of its articles, which stay in that base.</li>
     <li><code>AC-resource-rename-5</code> A global fact's name can be changed the same way, including one with dots, and the form rules for a fact's name apply to the new one.</li>
@@ -515,10 +515,9 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <li><code>AC-resource-rename-18</code> Changing a fact's name also rewrites it in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it.</li>
     <li><code>AC-resource-rename-19</code> A procedure's <code>id</code> can be changed, and <code>conversation</code> cannot change its <code>id</code>, since the format requires it as the base of every conversation.</li>
     <li><code>AC-resource-rename-20</code> A new <code>id</code> or name that conflicts is refused: a fact's new name that a local fact already has, a procedure's new <code>id</code> that a global fact's name starts with, followed by a dot, and a fact's new name starting with a procedure's <code>id</code> and a dot.</li>
-    <li><code>AC-resource-rename-21</code> A procedure's node positions stay after its <code>id</code> changes.</li>
     <li><code>AC-resource-rename-23</code> Changing an action's <code>id</code> rewrites each <code>action</code> step, and changing a fact's name rewrites it in each step's mapping of parameters and results.</li>
     <li><code>AC-resource-rename-24</code> Changing a procedure's <code>id</code> rewrites each <code>start</code> that targets it.</li>
-    <li><code>AC-resource-rename-26</code> Changing an article's <code>id</code> rewrites each context that names it; a search query holding those words is text and stays as it is.</li>
+    <li><code>AC-resource-rename-26</code> Changing an article's <code>id</code> rewrites each <code>knowledge</code> entry that names it; a search query holding those words is text and stays as it is.</li>
     <li><code>AC-resource-rename-27</code> Changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
     <li><code>AC-resource-rename-28</code> Change id is disabled while the form has unsaved changes, with the reason beside it, on facts, knowledge bases, articles and actions.</li>
     <li><code>AC-resource-rename-29</code> The heading of the edit screen shows the id that Change id acts on, beside the button, with help saying what it does; on a fact, whose id is its name, the action, its dialog and its help say “name”.</li>

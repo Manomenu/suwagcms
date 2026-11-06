@@ -54,14 +54,29 @@ describe("the rules of every screen", () => {
         ]) {
             expect(sources[`/src/${feature}View.tsx`]).toContain("<ResourceList");
         }
-        for (const feature of ["facts/Facts", "knowledge-bases/KnowledgeBases", "articles/Articles", "actions/Actions"]) {
+        for (const feature of [
+            "facts/Facts",
+            "knowledge-bases/KnowledgeBases",
+            "articles/Articles",
+            "actions/Actions",
+            "procedures/Procedure",
+        ]) {
             expect(sources[`/src/${feature}Screen.tsx`]).toContain("<ResourceEdit");
         }
     });
 
+    it("AC-procedure-creator-23: a procedure's edit page draws no heading, Delete or History of its own: the shared edit screen does", () => {
+        const page = /<h1\b|<Page\b|<DeleteAction\b|<HistoryPanel\b|<UsagePanel\b|<ChangeIdDialog\b/;
+        expect(filesWith(page, (path) => !path.startsWith("/src/procedures/") || path.endsWith("/ProceduresScreen.tsx"))).toEqual([]);
+    });
+
+    it("AC-procedure-creator-45: every edit screen's Save sits in the shared actions that stay in view", () => {
+        expect(sources["/src/design/formFooter.tsx"]).toContain("<StickyActions");
+        expect(sources["/src/procedures/ProcedureForm.tsx"]).toContain("<StickyActions");
+    });
+
     it("AC-pagination-9: every list draws its controls with the one module, and nothing else moves between pages", () => {
-        // Why: a step of a procedure has a heading "Next", which is where it goes and not a way between pages.
-        const moves = /(?<!<h3[^>]*)>\s*(Previous|Next)( page)?\s*<|["'`](Previous|Next)( page)?["'`]/;
+        const moves = />\s*(Previous|Next)( page)?\s*<|["'`](Previous|Next)( page)?["'`]/;
         expect(filesWith(moves)).toEqual(["/src/design/pagination.tsx"]);
         expect(filesWith(/older changes|load more|show more/i)).toEqual([]);
         expect(filesWith(/<Paginated\b/).sort()).toEqual([
@@ -88,7 +103,7 @@ describe("the rules of every screen", () => {
 
     it("AC-delete-guard-20: Delete has one place: DeleteAction, which only the edit screens use", () => {
         expect(filesWith(/>\s*Delete\s*</)).toEqual(["/src/design/deleteAction.tsx"]);
-        expect(filesWith(/<DeleteAction\b/).sort()).toEqual(["/src/design/resourceEdit.tsx", "/src/procedures/ProcedurePanel.tsx"]);
+        expect(filesWith(/<DeleteAction\b/).sort()).toEqual(["/src/design/resourceEdit.tsx"]);
     });
 
     it("AC-web-shell-7: an address of a resource is built only in api/resourceAddress", () => {

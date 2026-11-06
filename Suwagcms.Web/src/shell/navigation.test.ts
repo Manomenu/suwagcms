@@ -13,29 +13,29 @@ describe("the Persona tab", () => {
 describe("navigationOf", () => {
     it("AC-web-shell-4: has no bot and no tab on / and /bots", () => {
         for (const path of ["/", "/bots", "/bots/"]) {
-            expect(navigationOf(path)).toEqual({ bot: null, tab: null, fills: false });
+            expect(navigationOf(path)).toEqual({ bot: null, tab: null });
         }
     });
 
     it("AC-web-shell-4: has the bot and no tab on the profile", () => {
-        expect(navigationOf("/bots/sklep")).toEqual({ bot: "sklep", tab: null, fills: false });
+        expect(navigationOf("/bots/sklep")).toEqual({ bot: "sklep", tab: null });
     });
 
     it("AC-web-shell-4: has each of the tabs as the current tab", () => {
         for (const { id } of TABS) {
-            expect(navigationOf(`/bots/sklep/${id}`)).toEqual({ bot: "sklep", tab: id, fills: false });
+            expect(navigationOf(`/bots/sklep/${id}`)).toEqual({ bot: "sklep", tab: id });
         }
     });
 
-    it("AC-web-shell-4: lights procedures and fills the content on the creator", () => {
-        expect(navigationOf("/bots/sklep/procedures/refund/edit")).toEqual({ bot: "sklep", tab: "procedures", fills: true });
-        expect(navigationOf("/bots/sklep/procedures/new")).toEqual({ bot: "sklep", tab: "procedures", fills: false });
+    it("AC-web-shell-4: lights procedures on its edit page and on the page that adds one", () => {
+        expect(navigationOf("/bots/sklep/procedures/refund/edit")).toEqual({ bot: "sklep", tab: "procedures" });
+        expect(navigationOf("/bots/sklep/procedures/new")).toEqual({ bot: "sklep", tab: "procedures" });
     });
 
     it("AC-web-shell-4: decodes the id, and a malformed % does not throw", () => {
         expect(navigationOf("/bots/a%20b").bot).toBe("a b");
         expect(() => navigationOf("/bots/100%/facts")).not.toThrow();
-        expect(navigationOf("/bots/100%/facts")).toEqual({ bot: "100%", tab: "facts", fills: false });
+        expect(navigationOf("/bots/100%/facts")).toEqual({ bot: "100%", tab: "facts" });
     });
 
     it("AC-web-shell-4: builds hrefs that encode the id", () => {

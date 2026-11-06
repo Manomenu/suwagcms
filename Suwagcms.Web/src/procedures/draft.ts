@@ -1,6 +1,25 @@
-// The procedure as the creator edits it, and every edit of it. The creator holds no rule of the format: it only keeps the draft
-// in the shape the server accepts, and the server's dry run says what is wrong with it.
+// The procedure as the editor holds it, and every edit of it. The editor holds no rule of the format: it only keeps the draft in the
+// shape the server accepts, and the server's dry run says what is wrong with it.
 import type { Fact, ProcedureDetail, SaveProcedure } from "./api";
+import {
+    changeList,
+    changeRow,
+    emptyList,
+    fallOf,
+    findRow,
+    firstStepOf,
+    linksOf,
+    listOf,
+    moveRow as moveRowIn,
+    namesIn,
+    renamedList,
+    withoutRow,
+    type Branch,
+    type ListEnd,
+    type ListRef,
+    type StepList,
+    type StepRow,
+} from "./list";
 
 export type BlockName = "listen" | "collect" | "say" | "assign" | "start" | "inform" | "action";
 export const BLOCKS: readonly BlockName[] = ["listen", "collect", "say", "assign", "start", "inform", "action"];
@@ -19,14 +38,15 @@ export interface Rule {
     to: string;
 }
 
-export interface Context {
+export interface KnowledgeEntry {
+    knowledgeBase: string;
     articles?: string[];
     searchQueries?: string[];
 }
 
 export interface Instruction {
     instruction: string;
-    context?: Context;
+    knowledge?: KnowledgeEntry[];
 }
 
 export interface Inform extends Instruction {
@@ -47,9 +67,8 @@ export interface Step {
     with?: Record<string, string>;
     /** Result name to the fact it writes. */
     results?: Record<string, string>;
-    /** The step to go to when the action fails. */
+    /** Held only by a step under Not connected: the place of a row in the list says where any other step goes. */
     onFailure?: string;
-    /** A step's name, or rules whose last one is the default. A target of "" is a rule not yet connected. */
     next?: string | Rule[];
 }
 
@@ -57,7 +76,10 @@ export type LocalFact = NonNullable<SaveProcedure["localFacts"]>[string];
 
 export interface Draft {
     description: string;
-    firstStep: string | null;
+    /** The steps in reading order: this, not the steps, says what comes after what. */
+    list: StepList;
+    /** Steps no path from the first step reaches, kept as stored until moved into the list. */
+    notConnected: string[];
     whenStalled: Instruction | null;
     /** Left out when the author chose nothing, so a save does not write a choice nobody made. */
     whenInterrupted?: string;
@@ -88,15 +110,15 @@ function ruleOf(raw: unknown): Rule {
 }
 
 function instructionOf(wire: NonNullable<ProcedureDetail["whenStalled"]>): Instruction {
-    const context = wire.context;
     return {
         instruction: wire.instruction ?? "",
-        ...(context
+        ...(wire.knowledge
             ? {
-                  context: {
-                      ...(context.articles ? { articles: [...context.articles] } : {}),
-                      ...(context.searchQueries ? { searchQueries: [...context.searchQueries] } : {}),
-                  },
+                  knowledge: wire.knowledge.map((entry) => ({
+                      knowledgeBase: entry.knowledgeBase ?? "",
+                      ...(entry.articles ? { articles: [...entry.articles] } : {}),
+                      ...(entry.searchQueries ? { searchQueries: [...entry.searchQueries] } : {}),
+                  })),
               }
             : {}),
     };
@@ -104,7 +126,7 @@ function instructionOf(wire: NonNullable<ProcedureDetail["whenStalled"]>): Instr
 
 function informOf(wire: NonNullable<Wire["inform"]>): Inform {
     return {
-        ...instructionOf({ instruction: wire.instruction ?? "", context: wire.context ?? null }),
+        ...instructionOf({ instruction: wire.instruction ?? "", knowledge: wire.knowledge ?? null }),
         ...(wire.points ? { points: { ...wire.points } } : {}),
     };
 }
@@ -128,11 +150,20 @@ function stepOf(wire: Wire): Step {
 }
 
 export function fromDetail(detail: ProcedureDetail): Draft {
+    const stored = Object.fromEntries(Object.entries(detail.steps).map(([name, wire]) => [name, stepOf(wire)]));
+    const { list, notConnected } = listOf(detail.firstStep, stored);
     return {
         description: detail.description,
-        firstStep: detail.firstStep,
+        list,
+        notConnected,
         whenStalled: detail.whenStalled ? instructionOf(detail.whenStalled) : null,
-        steps: Object.fromEntries(Object.entries(detail.steps).map(([name, wire]) => [name, stepOf(wire)])),
+        steps: Object.fromEntries(
+            Object.entries(stored).map(([name, step]) => {
+                if (notConnected.includes(name)) return [name, step];
+                const { next: _next, onFailure: _onFailure, ...block } = step;
+                return [name, block];
+            }),
+        ),
         localFacts: detail.localFacts ?? {},
         ...(detail.whenInterrupted ? { whenInterrupted: detail.whenInterrupted } : {}),
     };
@@ -140,123 +171,37 @@ export function fromDetail(detail: ProcedureDetail): Draft {
 
 /** What a save sends. Two equal drafts give equal text, so it also tells whether anything changed. */
 export function toSave(draft: Draft): SaveProcedure {
+    const links = linksOf(draft.list);
     return {
         description: draft.description,
-        firstStep: draft.firstStep,
+        firstStep: firstStepOf(draft.list),
         whenStalled: draft.whenStalled,
         steps: Object.fromEntries(
-            Object.entries(draft.steps).map(([name, step]) => [
-                name,
-                {
-                    ...(step.listen ? { listen: {} } : {}),
-                    ...(step.collect ? { collect: step.collect } : {}),
-                    ...(step.say === undefined ? {} : { say: step.say }),
-                    ...(step.assign ? { assign: step.assign } : {}),
-                    ...(step.start === undefined ? {} : { start: step.start }),
-                    ...(step.inform ? { inform: step.inform } : {}),
-                    ...(step.action === undefined ? {} : { action: step.action }),
-                    ...(step.with ? { with: step.with } : {}),
-                    ...(step.results ? { results: step.results } : {}),
-                    ...(step.onFailure === undefined ? {} : { onFailure: step.onFailure }),
-                    ...(step.next === undefined ? {} : { next: step.next }),
-                },
-            ]),
+            Object.entries(draft.steps).map(([name, step]) => {
+                const linked = links[name];
+                const next = linked ? linked.next : step.next;
+                const onFailure = linked ? linked.onFailure : step.onFailure;
+                return [
+                    name,
+                    {
+                        ...(step.listen ? { listen: {} } : {}),
+                        ...(step.collect ? { collect: step.collect } : {}),
+                        ...(step.say === undefined ? {} : { say: step.say }),
+                        ...(step.assign ? { assign: step.assign } : {}),
+                        ...(step.start === undefined ? {} : { start: step.start }),
+                        ...(step.inform ? { inform: step.inform } : {}),
+                        ...(step.action === undefined ? {} : { action: step.action }),
+                        ...(step.with ? { with: step.with } : {}),
+                        ...(step.results ? { results: step.results } : {}),
+                        ...(onFailure === undefined ? {} : { onFailure }),
+                        ...(next === undefined ? {} : { next }),
+                    },
+                ];
+            }),
         ),
         ...(Object.keys(draft.localFacts).length === 0 ? {} : { localFacts: draft.localFacts }),
         ...(draft.whenInterrupted ? { whenInterrupted: draft.whenInterrupted } : {}),
     };
-}
-
-function targetsOf(step: Step): string[] {
-    if (step.next === undefined) return [];
-    return typeof step.next === "string" ? [step.next] : step.next.map((rule) => rule.to);
-}
-
-/**
- * A stable order for the steps: from the first step along the edges, then the ones nothing reaches by name. The server sends steps
- * in the order its database keeps them, which is not the author's, so the graph is the only order there is.
- */
-export function stepOrder(draft: Draft): string[] {
-    const seen = new Set<string>();
-    const queue = draft.firstStep !== null && draft.firstStep in draft.steps ? [draft.firstStep] : [];
-    while (queue.length > 0) {
-        const name = queue.shift();
-        if (name === undefined || seen.has(name) || !(name in draft.steps)) continue;
-        seen.add(name);
-        const step = draft.steps[name] ?? {};
-        queue.push(...targetsOf(step), ...(step.onFailure === undefined ? [] : [step.onFailure]));
-    }
-    const rest = Object.keys(draft.steps)
-        .filter((name) => !seen.has(name))
-        .sort();
-    return [...seen, ...rest];
-}
-
-export const FAILURE = "failure";
-
-export interface Edge {
-    id: string;
-    source: string;
-    /** `next` for a fixed next, `rule-<n>` for the rule at that position, `failure` for an action's onFailure. */
-    handle: string;
-    target: string;
-}
-
-export function handlesOf(step: Step): string[] {
-    return Array.isArray(step.next) ? step.next.map((_, index) => `rule-${index}`) : ["next"];
-}
-
-export function edgesOf(draft: Draft): Edge[] {
-    return stepOrder(draft).flatMap((source) => {
-        const step = draft.steps[source] ?? {};
-        const failure = step.onFailure !== undefined && step.onFailure in draft.steps ? step.onFailure : null;
-        return [
-            ...targetsOf(step).flatMap((target, index) => {
-                if (!(target in draft.steps)) return [];
-                const handle = handlesOf(step)[index] ?? "next";
-                return [{ id: `${source}:${handle}`, source, handle, target }];
-            }),
-            ...(failure === null ? [] : [{ id: `${source}:${FAILURE}`, source, handle: FAILURE, target: failure }]),
-        ];
-    });
-}
-
-function withStep(draft: Draft, name: string, change: (step: Step) => Step): Draft {
-    if (!(name in draft.steps)) return draft;
-    return { ...draft, steps: { ...draft.steps, [name]: change(draft.steps[name] ?? {}) } };
-}
-
-function ruleIndex(handle: string): number | null {
-    const match = /^rule-(\d+)$/.exec(handle);
-    return match?.[1] === undefined ? null : Number(match[1]);
-}
-
-/** Draws an edge: sets the step's fixed next, or the target of the rule the handle belongs to. */
-export function connect(draft: Draft, source: string, handle: string, target: string): Draft {
-    const index = ruleIndex(handle);
-    return withStep(draft, source, (step) => {
-        if (handle === FAILURE) return { ...step, onFailure: target };
-        if (index !== null && Array.isArray(step.next)) {
-            return { ...step, next: step.next.map((rule, at) => (at === index ? { ...rule, to: target } : rule)) };
-        }
-        return { ...step, next: target };
-    });
-}
-
-/** Removes an edge; a rule stays, with no target yet, so the author does not lose its condition. */
-export function disconnect(draft: Draft, source: string, handle: string): Draft {
-    const index = ruleIndex(handle);
-    return withStep(draft, source, (step) => {
-        if (handle === FAILURE) {
-            const { onFailure: _, ...rest } = step;
-            return rest;
-        }
-        if (index !== null && Array.isArray(step.next)) {
-            return { ...step, next: step.next.map((rule, at) => (at === index ? { ...rule, to: "" } : rule)) };
-        }
-        const { next: _, ...rest } = step;
-        return rest;
-    });
 }
 
 function uniqueName(draft: Draft, base: string): string {
@@ -266,18 +211,159 @@ function uniqueName(draft: Draft, base: string): string {
     return `${base}${number}`;
 }
 
-export function addStep(draft: Draft, block: BlockName): { draft: Draft; name: string } {
+const EMPTY_BLOCK: Record<BlockName, Step> = {
+    listen: { listen: true },
+    collect: { collect: [] },
+    say: { say: "" },
+    assign: { assign: {} },
+    start: { start: "" },
+    inform: { inform: { instruction: "" } },
+    action: { action: "" },
+};
+
+/** Adds a step at the end of a list, above a Next: or End row if the list has one. Its name comes from its block and is free to change. */
+export function addStep(draft: Draft, ref: ListRef, block: BlockName): { draft: Draft; name: string } {
     const name = uniqueName(draft, block);
-    const empty: Record<BlockName, Step> = {
-        listen: { listen: true },
-        collect: { collect: [] },
-        say: { say: "" },
-        assign: { assign: {} },
-        start: { start: "" },
-        inform: { inform: { instruction: "" } },
-        action: { action: "" },
+    return {
+        draft: {
+            ...draft,
+            steps: { ...draft.steps, [name]: EMPTY_BLOCK[block] },
+            list: changeList(draft.list, ref, (one) => ({ ...one, rows: [...one.rows, { name }] })),
+        },
+        name,
     };
-    return { draft: { ...draft, steps: { ...draft.steps, [name]: empty[block] } }, name };
+}
+
+export function setListEnd(draft: Draft, ref: ListRef, last: ListEnd): Draft {
+    return { ...draft, list: changeList(draft.list, ref, (one) => ({ ...one, last })) };
+}
+
+/** End says a step has no next, which is what the end of a list already means when nothing follows, so it is only offered where a row would. */
+export function canEnd(draft: Draft, ref: ListRef): boolean {
+    return ref !== null && fallOf(draft.list, ref) !== null;
+}
+
+/** An If hangs on the step above it, so only a step with no If and no branches of its own can take one. */
+export function canTakeIf(row: StepRow | undefined): boolean {
+    return row !== undefined && row.branches === undefined;
+}
+
+/** A new If comes with its Else. On an action it takes the place of the fixed next, keeping what that branch held as its Else. */
+export function addIf(draft: Draft, name: string): Draft {
+    return {
+        ...draft,
+        list: changeRow(draft.list, name, (row) => {
+            const { success, ...rest } = row;
+            return { ...rest, branches: [{ when: {}, list: emptyList() }, { list: success ?? emptyList() }] };
+        }),
+    };
+}
+
+/** How many steps removing an If or a branch takes with it: the author is asked first when there are any. */
+export function stepsInBranches(row: StepRow | undefined): number {
+    return (row?.branches ?? []).flatMap((branch) => namesIn(branch.list)).length;
+}
+
+export function stepsInBranch(branch: Branch): number {
+    return namesIn(branch.list).length;
+}
+
+function withoutSteps(steps: Record<string, Step>, names: string[]): Record<string, Step> {
+    return Object.fromEntries(Object.entries(steps).filter(([name]) => !names.includes(name)));
+}
+
+export function removeIf(draft: Draft, name: string): Draft {
+    const row = findRow(draft.list, name);
+    const gone = (row?.branches ?? []).flatMap((branch) => namesIn(branch.list));
+    return {
+        ...draft,
+        steps: withoutSteps(draft.steps, gone),
+        list: changeRow(draft.list, name, (found) => {
+            const { branches: _, ...rest } = found;
+            return found.failure ? { ...rest, success: emptyList() } : rest;
+        }),
+    };
+}
+
+/** Adds a branch before the Else, whose rule must stay last. */
+export function addElseIf(draft: Draft, name: string): Draft {
+    return {
+        ...draft,
+        list: changeRow(draft.list, name, (row) => {
+            const branches = row.branches ?? [];
+            const fresh: Branch = { when: {}, list: emptyList() };
+            const last = branches[branches.length - 1];
+            return { ...row, branches: last && last.when === undefined ? [...branches.slice(0, -1), fresh, last] : [...branches, fresh] };
+        }),
+    };
+}
+
+export function addElse(draft: Draft, name: string): Draft {
+    return {
+        ...draft,
+        list: changeRow(draft.list, name, (row) => ({ ...row, branches: [...(row.branches ?? []), { list: emptyList() }] })),
+    };
+}
+
+/** Removes a branch and its steps. With only the Else left there is nothing to choose, so its rows simply follow the step. */
+export function removeBranch(draft: Draft, name: string, index: number): Draft {
+    const row = findRow(draft.list, name);
+    const branch = row?.branches?.[index];
+    if (row === undefined || branch?.when === undefined) return draft;
+    const gone = namesIn(branch.list);
+    const left = (row.branches ?? []).filter((_, at) => at !== index);
+    const only = left.length === 1 ? left[0] : undefined;
+    const steps = withoutSteps(draft.steps, gone);
+    if (only === undefined || only.when !== undefined) {
+        return { ...draft, steps, list: changeRow(draft.list, name, (found) => ({ ...found, branches: left })) };
+    }
+    const { branches: _, ...plain } = row;
+    const replaced = changeList(draft.list, ownerRef(draft.list, name), (one) => {
+        const at = one.rows.findIndex((other) => other.name === name);
+        return {
+            ...one,
+            rows: [...one.rows.slice(0, at), plain, ...only.list.rows, ...one.rows.slice(at + 1)],
+            last: at === one.rows.length - 1 && only.list.last !== null ? only.list.last : one.last,
+        };
+    });
+    return { ...draft, steps, list: replaced };
+}
+
+function ownerRef(list: StepList, name: string, ref: ListRef = null): ListRef {
+    if (list.rows.some((row) => row.name === name)) return ref;
+    for (const row of list.rows) {
+        const arms: { arm: NonNullable<ListRef>["arm"]; list: StepList }[] = [
+            ...(row.failure ? [{ arm: "failure" as const, list: row.failure }] : []),
+            ...(row.success ? [{ arm: "success" as const, list: row.success }] : []),
+            ...(row.branches ?? []).map((branch, arm) => ({ arm, list: branch.list })),
+        ];
+        for (const arm of arms) {
+            if (namesIn(arm.list).includes(name)) return ownerRef(arm.list, name, { step: row.name, arm: arm.arm });
+        }
+    }
+    return ref;
+}
+
+export function setConditions(draft: Draft, name: string, index: number, when: Record<string, Condition>): Draft {
+    return {
+        ...draft,
+        list: changeRow(draft.list, name, (row) => ({
+            ...row,
+            branches: (row.branches ?? []).map((branch, at) => (at === index ? { ...branch, when } : branch)),
+        })),
+    };
+}
+
+/** An action's On failure, opened by the author; empty, it goes on below. */
+export function openFailure(draft: Draft, name: string): Draft {
+    return {
+        ...draft,
+        list: changeRow(draft.list, name, (row) => ({
+            ...row,
+            failure: row.failure ?? emptyList(),
+            ...(row.branches === undefined ? { success: row.success ?? emptyList() } : {}),
+        })),
+    };
 }
 
 /** Renames a step and every place that points at it. A taken or empty name changes nothing. */
@@ -286,7 +372,8 @@ export function renameStep(draft: Draft, from: string, to: string): Draft {
     const again = (name: string) => (name === from ? to : name);
     return {
         ...draft,
-        firstStep: draft.firstStep === null ? null : again(draft.firstStep),
+        list: renamedList(draft.list, from, to),
+        notConnected: draft.notConnected.map(again),
         steps: Object.fromEntries(
             Object.entries(draft.steps).map(([name, step]) => [
                 again(name),
@@ -307,69 +394,46 @@ export function renameStep(draft: Draft, from: string, to: string): Draft {
     };
 }
 
-/** Deletes a step with every edge and rule target that points at it. What that leaves unfinished is for the server to say. */
-export function deleteStep(draft: Draft, name: string): Draft {
-    const rest = Object.fromEntries(
-        Object.entries(draft.steps)
-            .filter(([other]) => other !== name)
-            .map(([other, full]) => {
-                const { onFailure, ...others } = full;
-                const step: Step = onFailure === undefined || onFailure === name ? others : full;
-                if (typeof step.next === "string" && step.next === name) {
-                    const { next: _, ...without } = step;
-                    return [other, without];
-                }
-                if (Array.isArray(step.next))
-                    return [other, { ...step, next: step.next.map((rule) => (rule.to === name ? { ...rule, to: "" } : rule)) }];
-                return [other, step];
-            }),
-    );
-    return { ...draft, firstStep: draft.firstStep === name ? null : draft.firstStep, steps: rest };
+/** Why a step cannot be deleted yet, if so: an If needs the step above it, and what hangs there is the author's to remove first. */
+export function whyNotDeletable(row: StepRow | undefined): string | null {
+    if (row === undefined) return null;
+    if (row.branches) return "Remove the If below this step first: an If needs a step above it.";
+    if ((row.failure && namesIn(row.failure).length > 0) || (row.success && namesIn(row.success).length > 0)) {
+        return "Remove the steps in its branches first.";
+    }
+    return null;
 }
 
-export function markFirst(draft: Draft, name: string): Draft {
-    return { ...draft, firstStep: name };
+/** Deletes a step: the rows around it join up. A Next: row naming it stays, and the server's dry run says what that leaves to fix. */
+export function deleteStep(draft: Draft, name: string): Draft {
+    const row = findRow(draft.list, name);
+    if (whyNotDeletable(row) !== null) return draft;
+    return {
+        ...draft,
+        steps: withoutSteps(draft.steps, [name]),
+        notConnected: draft.notConnected.filter((other) => other !== name),
+        list: withoutRow(draft.list, name),
+    };
+}
+
+export function moveStep(draft: Draft, name: string, direction: "up" | "down"): Draft {
+    return { ...draft, list: moveRowIn(draft.list, name, direction) };
+}
+
+/** Moves a Not connected step to the end of the main list; its place says where it goes now, so what it stored goes. */
+export function connectStep(draft: Draft, name: string): Draft {
+    const { next: _next, onFailure: _onFailure, ...block } = draft.steps[name] ?? {};
+    return {
+        ...draft,
+        notConnected: draft.notConnected.filter((other) => other !== name),
+        steps: { ...draft.steps, [name]: block },
+        list: { ...draft.list, rows: [...draft.list.rows, { name }] },
+    };
 }
 
 export function setBlock(draft: Draft, name: string, change: Partial<Step>): Draft {
-    return withStep(draft, name, (step) => ({ ...step, ...change }));
-}
-
-/** The first rule added to a step splits its next in two: the rule, and the default rule that keeps the old target. */
-export function addRule(draft: Draft, name: string): Draft {
-    return withStep(draft, name, (step) => {
-        const fresh: Rule = { when: {}, to: "" };
-        if (Array.isArray(step.next)) return { ...step, next: [...step.next.slice(0, -1), fresh, ...step.next.slice(-1)] };
-        return { ...step, next: [fresh, { to: step.next ?? "" }] };
-    });
-}
-
-/** The default rule, the last, cannot be removed while others remain; removing the last other rule makes it a fixed next again. */
-export function canRemoveRule(step: Step, index: number): boolean {
-    return Array.isArray(step.next) && step.next.length > 1 && index < step.next.length - 1;
-}
-
-export function removeRule(draft: Draft, name: string, index: number): Draft {
-    return withStep(draft, name, (step) => {
-        if (!canRemoveRule(step, index) || !Array.isArray(step.next)) return step;
-        const rules = step.next.filter((_, at) => at !== index);
-        const only = rules.length === 1 ? rules[0] : undefined;
-        if (only !== undefined) {
-            const { next: _, ...rest } = step;
-            return only.to === "" ? rest : { ...rest, next: only.to };
-        }
-        return { ...step, next: rules };
-    });
-}
-
-export function setRuleTarget(draft: Draft, name: string, index: number, to: string): Draft {
-    return connect(draft, name, `rule-${index}`, to);
-}
-
-export function setConditions(draft: Draft, name: string, index: number, when: Record<string, Condition>): Draft {
-    return withStep(draft, name, (step) =>
-        Array.isArray(step.next) ? { ...step, next: step.next.map((rule, at) => (at === index ? { ...rule, when } : rule)) } : step,
-    );
+    if (!(name in draft.steps)) return draft;
+    return { ...draft, steps: { ...draft.steps, [name]: { ...draft.steps[name], ...change } } };
 }
 
 /** Which kinds of condition a fact takes: `range` only for a whole number; `oneOf` offers an enum's values. */
@@ -418,21 +482,37 @@ export function collectable(facts: Fact[]): Fact[] {
     return facts.filter((fact) => fact.writableBy !== "assign");
 }
 
-/** An article a block or a context may name: the id is what is stored, the title what the author sees. */
+/** An article an entry may name: the id is what is stored, the title what the author sees, and the base decides where it may be picked. */
 export interface LinkableArticle {
+    id: string;
+    title: string;
+    knowledgeBase: string;
+}
+
+export interface LinkableBase {
     id: string;
     title: string;
 }
 
-/** The text of a whenStalled as typed: emptying it removes the instruction, unless a context would be lost with it. */
+/** The text of a whenStalled as typed: emptying it removes the instruction, unless knowledge would be lost with it. */
 export function withStallText(whenStalled: Instruction | null, text: string): Instruction | null {
-    if (text === "" && !whenStalled?.context) return null;
+    if (text === "" && !whenStalled?.knowledge?.length) return null;
     return { ...whenStalled, instruction: text };
 }
 
-export function articleLabel(articles: LinkableArticle[], id: string): string {
-    const title = articles.find((article) => article.id === id)?.title;
-    return title === undefined ? id : `${title} (${id})`;
+/** The bases an instruction can still name, since a second entry for one is a mistake. */
+export function basesOffered(bases: LinkableBase[], knowledge: KnowledgeEntry[], keep?: string): LinkableBase[] {
+    return bases.filter((one) => one.id === keep || !knowledge.some((entry) => entry.knowledgeBase === one.id));
+}
+
+export function articlesOf(articles: LinkableArticle[], knowledgeBase: string): LinkableArticle[] {
+    return articles.filter((article) => article.knowledgeBase === knowledgeBase);
+}
+
+/** An article belongs to one base, so changing the base clears them; the queries are only text and stay. */
+export function withBase(entry: KnowledgeEntry, knowledgeBase: string): KnowledgeEntry {
+    const { articles: _, ...rest } = entry;
+    return { ...rest, knowledgeBase };
 }
 
 /** The procedures a start may target: not the base of every conversation, and not the procedure itself, which would be a loop. */

@@ -14,7 +14,6 @@ export type Tab = (typeof TABS)[number]["id"];
 export interface Navigation {
     bot: string | null;
     tab: Tab | null;
-    fills: boolean;
 }
 
 function decode(part: string): string {
@@ -32,10 +31,10 @@ function isTab(part: string | undefined): part is Tab {
 
 export function navigationOf(pathname: string): Navigation {
     const parts = pathname.split("/").filter((part) => part !== "");
-    if (parts[0] !== "bots" || parts[1] === undefined) return { bot: null, tab: null, fills: false };
+    if (parts[0] !== "bots" || parts[1] === undefined) return { bot: null, tab: null };
     const bot = decode(parts[1]);
     const tab = isTab(parts[2]) ? parts[2] : null;
-    return { bot, tab, fills: tab === "procedures" && parts[4] === "edit" };
+    return { bot, tab };
 }
 
 export function botHref(bot: string): string {

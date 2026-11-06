@@ -12,7 +12,7 @@ import { Paper } from "@/design/page";
 import { saveProcedure } from "./api";
 import { PROCEDURE_HINTS } from "./hints";
 
-/** Starts a procedure: an id and a description save an empty one, and the creator opens on it. */
+/** Starts a procedure: an id and a description save an empty one, and its page opens. */
 export function NewProcedureForm({ bot, onCancel }: { bot: string; onCancel: () => void }) {
     const [id, setId] = useState("");
     const [description, setDescription] = useState("");

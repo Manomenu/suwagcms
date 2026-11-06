@@ -21,7 +21,7 @@ export function BackToList({ plural, onBack }: { plural: string; onBack: () => v
 }
 
 /** Says what changing the id does, in the word a kind uses for it, beside the button. */
-export function changeIdHelp(noun: string, idWord: string): string {
+function changeIdHelp(noun: string, idWord: string): string {
     return `Gives this ${noun} a new ${idWord} and rewrites every link and reference to it, all or nothing. You see what would change before anything does. Plain text naming it and versions already created stay as they are.`;
 }
 

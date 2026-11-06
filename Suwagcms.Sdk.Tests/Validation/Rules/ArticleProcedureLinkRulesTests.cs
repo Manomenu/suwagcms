@@ -24,7 +24,7 @@ public sealed class ArticleProcedureLinkRulesTests
     private static BotDefinition Bot(Article article, params Procedure[] procedures) =>
         new()
         {
-            FormatVersion = 1,
+            FormatVersion = 2,
             KnowledgeBases = [Samples.Faq],
             Articles = [article],
             Procedures = [Samples.Procedure(Procedure.ConversationId), Samples.Procedure("orderValuation"), .. procedures],
@@ -167,7 +167,7 @@ public sealed class ArticleProcedureLinkRulesTests
             WhenStalled = new StallInstruction
             {
                 Instruction = "Say so.",
-                Context = new InstructionContext { Articles = ["wycena"] },
+                Knowledge = [new KnowledgeEntry { KnowledgeBase = "faq", Articles = ["wycena"] }],
             },
         };
 
@@ -181,7 +181,7 @@ public sealed class ArticleProcedureLinkRulesTests
 
     [Fact]
     [Trait("criterion", "AC-loop-guard-15")]
-    public void A_loop_article_procedure_article_through_a_context_of_an_inform_is_refused()
+    public void A_loop_article_procedure_article_through_the_knowledge_of_an_inform_is_refused()
     {
         var back = Samples.Procedure("orderValuation") with
         {
@@ -193,7 +193,7 @@ public sealed class ArticleProcedureLinkRulesTests
                     Inform = new InformArguments
                     {
                         Instruction = "Tell it.",
-                        Context = new InstructionContext { Articles = ["wycena"] },
+                        Knowledge = [new KnowledgeEntry { KnowledgeBase = "faq", Articles = ["wycena"] }],
                         Points = new Dictionary<string, string?> { ["one"] = "Text." },
                     },
                 },
@@ -206,6 +206,6 @@ public sealed class ArticleProcedureLinkRulesTests
 
         Assert.Equal(MistakeCodes.ReferenceLoop, mistake.Code);
         Assert.Equal("llmGuide", mistake.Path);
-        Assert.Equal("steps.tell.inform.context.articles[0]", Assert.Single(mistake.Related).Location);
+        Assert.Equal("steps.tell.inform.knowledge[0].articles[0]", Assert.Single(mistake.Related).Location);
     }
 }

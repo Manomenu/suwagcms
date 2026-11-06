@@ -377,7 +377,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="tldr">
   <h2>TL;DR</h2>
   <div class="tldr">
-    <p>A procedure is a graph of steps with a required description. Each step holds one block (<code>listen</code>, <code>collect</code>, <code>say</code>, <code>assign</code>, <code>action</code>) and says where to go next, by fixed target or by rules on facts. It is saved through the API and the CLI, with the visual creator arriving in its own feature.</p>
+    <p>A procedure is a graph of steps with a required description. Each step holds one block (<code>listen</code>, <code>collect</code>, <code>say</code>, <code>assign</code>, <code>action</code>) and says where to go next, by fixed target or by rules on facts. It is saved through the API and the CLI, with the editor arriving in its own feature.</p>
     <p>The working state may be unfinished, a version may not: a half-built procedure saves if it is referentially sound, and every save says what still stops it from becoming a version.</p>
   </div>
   <div class="stats">
@@ -403,10 +403,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>The author always knows what still stops a version.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Drawing a procedure: <code>procedure-creator</code>.</li>
+      <li>Editing a procedure on a page: <code>procedure-creator</code>.</li>
       <li>Running a procedure: bots do that, and the first bot's specs are in its own repository.</li>
       <li>Local facts, and the blocks <code>start</code>, <code>inform</code> and <code>action</code>: their own features.</li>
-      <li>A <code>context</code> for an instruction: <code>instruction-context</code>.</li>
+      <li><code>knowledge</code> for an instruction: <code>procedure-creator</code>.</li>
       <li>Availability, and checking blocks against what a bot declares: <code>availability</code>, <code>bot-declaration</code>.</li>
     </ul></div>
   </div>

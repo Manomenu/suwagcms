@@ -67,6 +67,12 @@ function Declared({ status }: { status: DeclarationStatus }) {
                     </span>
                 ))}
             </dd>
+            {declaration.knowledge === true && (
+                <>
+                    <dt className="text-muted-foreground">Knowledge</dt>
+                    <dd>Reads an instruction's knowledge</dd>
+                </>
+            )}
             {declaration.persona === "required" && (
                 <>
                     <dt className="text-muted-foreground">Persona</dt>
@@ -111,7 +117,7 @@ export function DeclarationView({
                     <Problem status={status} />
                     {status.stored === "DeclaresNothing" && (
                         <p className="text-sm text-muted-foreground">
-                            This bot declares nothing, so nothing is checked against a declaration and the creator offers every block.
+                            This bot declares nothing, so nothing is checked against a declaration and the editor offers every block.
                         </p>
                     )}
                     <Declared status={status} />

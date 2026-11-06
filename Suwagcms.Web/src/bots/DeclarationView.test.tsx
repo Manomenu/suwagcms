@@ -12,7 +12,7 @@ const declared: DeclarationStatus = {
     declaration: {
         bot: "rzeczoznawca",
         declaresNothing: false,
-        formatVersion: 1,
+        formatVersion: 2,
         blocks: ["listen", "say"],
         codeActions: [{ id: "lookupPolicy", description: "Finds a policy", parameters: [], results: [] }],
     },
@@ -33,7 +33,7 @@ describe("DeclarationView", () => {
     it("AC-bot-persona-13: says when the bot requires a persona, and says nothing when it does not", () => {
         const requiring: DeclarationStatus = {
             ...declared,
-            declaration: { bot: "rzeczoznawca", declaresNothing: false, formatVersion: 1, blocks: ["say"], persona: "required" },
+            declaration: { bot: "rzeczoznawca", declaresNothing: false, formatVersion: 2, blocks: ["say"], persona: "required" },
         };
 
         expect(html(requiring)).toContain("a version without one is refused");
@@ -43,7 +43,7 @@ describe("DeclarationView", () => {
     it("AC-bot-persona-15: says when the bot needs every part of a persona", () => {
         const requiring: DeclarationStatus = {
             ...declared,
-            declaration: { bot: "rzeczoznawca", declaresNothing: false, formatVersion: 1, blocks: ["say"], persona: "complete" },
+            declaration: { bot: "rzeczoznawca", declaresNothing: false, formatVersion: 2, blocks: ["say"], persona: "complete" },
         };
 
         expect(html(requiring)).toContain("a version with any part left empty is refused");
@@ -100,11 +100,11 @@ describe("DeclarationView", () => {
     it("AC-bot-declaration-8: a format version the CMS does not read is shown with its fix", () => {
         const page = html({
             ...declared,
-            declaration: { ...declared.declaration, formatVersion: 2 },
-            formatFix: "The bot wants format 2 and this CMS reads format 1: update Suwagcms.Sdk on the CMS.",
+            declaration: { ...declared.declaration, formatVersion: 3 },
+            formatFix: "The bot wants format 3 and this CMS reads format 3: update Suwagcms.Sdk on the CMS.",
         });
 
-        expect(page).toContain("The bot wants format 2");
+        expect(page).toContain("The bot wants format 3");
     });
 
     it("AC-bot-declaration-10: a bot that declares nothing says so, and shows no declaration", () => {

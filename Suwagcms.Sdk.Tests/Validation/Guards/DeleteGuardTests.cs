@@ -23,7 +23,7 @@ public sealed class DeleteGuardTests
     private static BotDefinition Bot(params Article[] articles) =>
         new()
         {
-            FormatVersion = 1,
+            FormatVersion = 2,
             KnowledgeBases = [Samples.Faq],
             Articles = articles,
         };
@@ -126,19 +126,19 @@ public sealed class DeleteGuardTests
 
     [Fact]
     [Trait("criterion", "AC-delete-guard-17")]
-    public void An_article_a_context_names_is_refused_listing_each_instruction_that_names_it()
+    public void An_article_a_knowledge_entry_names_is_refused_listing_each_instruction_that_names_it()
     {
-        var context = new InstructionContext { Articles = ["cennik"] };
-        var procedure = ProcedureSamples.WithStep("tell", new ProcedureStep { Inform = new InformArguments { Context = context } }) with
+        IReadOnlyList<KnowledgeEntry> knowledge = [new KnowledgeEntry { KnowledgeBase = "faq", Articles = ["cennik"] }];
+        var procedure = ProcedureSamples.WithStep("tell", new ProcedureStep { Inform = new InformArguments { Knowledge = knowledge } }) with
         {
-            WhenStalled = new StallInstruction { Instruction = "Say it.", Context = context },
+            WhenStalled = new StallInstruction { Instruction = "Say it.", Knowledge = knowledge },
         };
 
-        var mistake = Assert.Single(Deleting(ProcedureSamples.Bot(procedure), Cennik));
+        var mistake = Assert.Single(Deleting(ProcedureSamples.Bot(procedure) with { KnowledgeBases = [Samples.Faq] }, Cennik));
 
         Assert.Equal(Cennik, mistake.Resource);
         Assert.Equal(
-            ["steps.tell.inform.context.articles[0]", "whenStalled.context.articles[0]"],
+            ["steps.tell.inform.knowledge[0].articles[0]", "whenStalled.knowledge[0].articles[0]"],
             mistake.Related.Select(related => related.Location)
         );
     }

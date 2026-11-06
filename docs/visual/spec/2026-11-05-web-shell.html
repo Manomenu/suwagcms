@@ -392,11 +392,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><code>/</code>, <code>/bots</code></td><td>none</td><td>none</td></tr>
     <tr><td><code>/bots/&lt;id&gt;</code></td><td>that bot</td><td>none</td></tr>
     <tr><td><code>/bots/&lt;id&gt;/&lt;tab&gt;</code></td><td>that bot</td><td>that tab</td></tr>
-    <tr><td><code>/bots/&lt;id&gt;/procedures/&lt;procedure&gt;/edit</code></td><td>that bot</td><td>Procedures, and the creator fills the whole content area</td></tr>
+    <tr><td><code>/bots/&lt;id&gt;/procedures/&lt;procedure&gt;/edit</code></td><td>that bot</td><td>Procedures</td></tr>
   </table>
   <p>The tabs are Facts, Knowledge bases, Articles, Procedures, Actions, Persona, Versions and History.</p>
   <h3>Resource screens</h3>
-  <p>Facts, knowledge bases, articles, procedures and actions share one list and one way of opening an item. Their own fields and columns stay their own; a procedure's edit screen is its creator.</p>
+  <p>Facts, knowledge bases, articles, procedures and actions share one list and one way of opening an item. Their own fields and columns stay their own; a procedure's edit screen is the same one, with Steps as its form.</p>
   <table>
     <tr><th>Address</th><th>Screen</th></tr>
     <tr><td><code>/bots/&lt;id&gt;/&lt;collection&gt;</code></td><td>the list; a row only opens an item</td></tr>
@@ -404,7 +404,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><code>/bots/&lt;id&gt;/&lt;collection&gt;/&lt;item&gt;/edit</code></td><td>that item, and nothing else, with a way back; an unknown one says so</td></tr>
   </table>
   <p>The id comes before <code>edit</code> so that the last part of an address never holds a dot that reads as a file name, as <code>customer.email</code> would. <code>?open=&lt;item&gt;</code>, which the CLI prints, and the older <code>/procedures/&lt;procedure&gt;</code> lead to the edit address.</p>
-  <p>What says where a person is lives in the address, never in browser storage: the open item, the article filters, the selected step of the creator.</p>
+  <p>What says where a person is lives in the address, never in browser storage: the open item, the article filters, the selected step of the editor.</p>
   <p>Every field has an "i" in a circle beside its label, whose help says what the field does and when to use it. The persona's first text is the exception in form only: its section heading carries the help.</p>
 </section>
 
@@ -425,7 +425,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-web-shell-12</code> A form field cannot be written without its help: the shared field requires it, each form shows an "i" beside each label, and no form writes its own label or legend around that.</li>
     <li><code>AC-web-shell-13</code> The help opens on hover, on keyboard focus and on a tap, Escape closes it, and its button has an accessible name.</li>
     <li><code>AC-web-shell-14</code> Every resource's list, with its row and the row's action, and its edit screen are one shared module, with no row markup of its own.</li>
-    <li><code>AC-web-shell-15</code> The article filters and the selected step of the creator are in the address, so a reload keeps them.</li>
+    <li><code>AC-web-shell-15</code> The article filters and the selected step of the editor are in the address, so a reload keeps them.</li>
     <li><code>AC-web-shell-16</code> The web app uses neither <code>localStorage</code> nor <code>sessionStorage</code>: what says where a person is goes in the address.</li>
   </ul>
 </section>

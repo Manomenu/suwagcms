@@ -4,5 +4,5 @@ public sealed record StallInstruction
 {
     public string Instruction { get; init; } = "";
 
-    public InstructionContext? Context { get; init; }
+    public IReadOnlyList<KnowledgeEntry>? Knowledge { get; init; }
 }

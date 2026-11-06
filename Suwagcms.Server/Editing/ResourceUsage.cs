@@ -11,7 +11,7 @@ internal static class ResourceUsage
         // Why: a base lists its own articles on its screen, so that edge is no entry in these panels.
         var references = ReferenceWalker
             .From(ResourceKinds.Assemble(stored))
-            .Where(reference => reference.To.Kind != ResourceKind.KnowledgeBase)
+            .Where(reference => reference.To.Kind != ResourceKind.KnowledgeBase || reference.From.Kind != ResourceKind.Article)
             .ToList();
         return new UsageView(
             Links(references.Where(reference => reference.To == target), reference => reference.From),

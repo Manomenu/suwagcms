@@ -1,4 +1,4 @@
-// The state of the creator and how a save changes it. The drawing is never replaced by a failed save: only a reload does that.
+// The state of the editor and how a save changes it. What the author sees is never replaced by a failed save: only a reload does that.
 import type { Mistake } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
@@ -9,7 +9,7 @@ import { fromDetail, toSave, type Draft } from "./draft";
 
 type Notice = { kind: "refused"; mistakes: Mistake[] } | { kind: "stale"; message: string } | { kind: "failed"; message: string };
 
-export interface CreatorState {
+export interface EditorState {
     draft: Draft;
     /** The text of the draft as last saved or loaded; the draft differs from it exactly when there is something to save. */
     savedAs: string;
@@ -26,7 +26,7 @@ export type Action =
     | { type: "saved"; outcome: SaveOutcome; sent: string }
     | { type: "loaded"; detail: ProcedureDetail };
 
-export function loaded(detail: ProcedureDetail): CreatorState {
+export function loaded(detail: ProcedureDetail): EditorState {
     const draft = fromDetail(detail);
     return {
         draft,
@@ -37,11 +37,11 @@ export function loaded(detail: ProcedureDetail): CreatorState {
     };
 }
 
-export function isDirty(state: CreatorState): boolean {
+export function isDirty(state: EditorState): boolean {
     return JSON.stringify(toSave(state.draft)) !== state.savedAs;
 }
 
-export function reduce(state: CreatorState, action: Action): CreatorState {
+export function reduce(state: EditorState, action: Action): EditorState {
     switch (action.type) {
         case "edited":
             return { ...state, draft: action.draft, notice: state.notice?.kind === "stale" ? state.notice : null };

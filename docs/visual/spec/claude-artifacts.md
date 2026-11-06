@@ -5,5 +5,6 @@ source; the artifact is its published copy. Maintained by `vdoc.py register`, so
 
 | Document | File | Artifact | Updated |
 | :- | :- | :- | :- |
+| Procedure editor | [2026-11-04-procedure-creator.html](2026-11-04-procedure-creator.html) | <https://claude.ai/artifact/XqMCdSHBFLamfyXdPPqujq> | 2026-11-06 |
 | Chatbot contract | [2026-11-06-chatbot-contract.html](2026-11-06-chatbot-contract.html) | <https://claude.ai/artifact/XZVm1Hi4htoyngxZDnHeHS> | 2026-11-06 |
 | Pagination | [2026-11-06-pagination.html](2026-11-06-pagination.html) | <https://claude.ai/artifact/Tnk8e45Kq5hnjetuiVHmq4> | 2026-11-06 |

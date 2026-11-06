@@ -82,6 +82,10 @@ internal static class DeclarationText
         {
             yield return $"  persona {persona}";
         }
+        if (declaration.Knowledge)
+        {
+            yield return "  knowledge read";
+        }
         if (formatFix is not null)
         {
             yield return formatFix;

@@ -4,7 +4,7 @@ import { ApiError, type Mistake } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
 import type { Draft } from "./draft";
-import { checkOf, consequenceOf, stepsWithMistakes, targetOf } from "./mistakes";
+import { checkOf, consequenceOf, placeOf, stepOfPlace } from "./mistakes";
 import { isDirty, loaded, outcomeOf, reduce } from "./state";
 
 const mistake = (stage: "Save" | "Version", path: string, message = "m"): Mistake => ({
@@ -19,7 +19,8 @@ const mistake = (stage: "Save" | "Version", path: string, message = "m"): Mistak
 
 const draft: Draft = {
     description: "d",
-    firstStep: "ask",
+    list: { rows: [{ name: "ask" }], last: null },
+    notConnected: ["goodbye"],
     whenStalled: null,
     steps: { ask: { say: "hi" }, goodbye: { say: "bye" } },
     localFacts: {},
@@ -49,16 +50,33 @@ describe("the live list of mistakes", () => {
         expect(await checkOf(Promise.resolve(detail(1)))).toEqual({ state: "done", mistakes: [] });
     });
 
-    it("AC-procedure-creator-4: says whether a mistake refuses a save or only stops a version, and clicking it names its step or the panel", () => {
+    it("AC-procedure-creator-4: says whether a mistake refuses a save or only stops a version, and clicking it names its step", () => {
         expect(consequenceOf(mistake("Save", "steps.ask"))).toBe("Refuses a save");
         expect(consequenceOf(mistake("Version", "steps.ask"))).toBe("Stops a version");
-        expect(targetOf(mistake("Version", "steps.goodbye"), draft)).toBe("goodbye");
-        expect(targetOf(mistake("Save", "steps.ask.next[1].to"), draft)).toBe("ask");
-        expect(targetOf(mistake("Version", "firstStep"), draft)).toBeNull();
-        expect(targetOf(mistake("Version", "steps.gone"), draft)).toBeNull();
-        expect([...stepsWithMistakes([mistake("Version", "steps.goodbye"), mistake("Version", "whenStalled")], draft)]).toEqual([
-            "goodbye",
-        ]);
+        expect(stepOfPlace("step:ask")).toBe("ask");
+        expect(stepOfPlace("branch:ask:1")).toBe("ask");
+        expect(stepOfPlace("knowledge:whenStalled:0")).toBeNull();
+        expect(stepOfPlace("field:description")).toBeNull();
+    });
+
+    it("AC-procedure-creator-3: a mistake belongs beside its row, branch or field, and one with no place on the page at the top of the form", () => {
+        const at = (path: string) => placeOf(mistake("Version", path), "p", draft);
+
+        expect(at("steps.goodbye")).toBe("step:goodbye");
+        expect(at("steps.ask.collect[0]")).toBe("step:ask");
+        expect(at("steps.ask.next")).toBe("step:ask");
+        expect(at("steps.ask.next[1].to")).toBe("branch:ask:1");
+        expect(at("steps.ask.onFailure")).toBe("failure:ask");
+        expect(at("steps.ask.inform.knowledge[2].articles[0]")).toBe("knowledge:ask:2");
+        expect(at("whenStalled.knowledge[0]")).toBe("knowledge:whenStalled:0");
+        expect(at("whenStalled.instruction")).toBe("field:whenStalled");
+        expect(at("description")).toBe("field:description");
+        expect(at("whenInterrupted")).toBe("field:whenInterrupted");
+        expect(at("localFacts.visitDate")).toBe("field:localFacts");
+        expect(at("firstStep")).toBe("top");
+        expect(at("steps.gone")).toBe("top");
+        expect(placeOf({ ...mistake("Version", "procedures"), resource: { kind: "Definition", id: "" } }, "p", draft)).toBe("top");
+        expect(placeOf({ ...mistake("Version", "description"), resource: { kind: "Procedure", id: "other" } }, "p", draft)).toBe("top");
     });
 
     it("AC-procedure-creator-16: says it could not check when the server cannot be reached, instead of an empty list", async () => {
@@ -89,7 +107,7 @@ describe("saving", () => {
         expect(next.notice).toBeNull();
     });
 
-    it("AC-procedure-creator-6: a save with a Save mistake is refused and the drawing stays as it was", async () => {
+    it("AC-procedure-creator-6: a save with a Save mistake is refused and the page stays as it was", async () => {
         const save = mistake("Save", "steps.ask.next");
         const edited = reduce(loaded(detail(1)), { type: "edited", draft: { ...draft, description: "changed" } });
 
@@ -101,7 +119,7 @@ describe("saving", () => {
         expect(isDirty(next)).toBe(true);
     });
 
-    it("AC-procedure-creator-7: a save on an old revision is refused, the drawing stays, and a reload replaces it with what is stored", async () => {
+    it("AC-procedure-creator-7: a save on an old revision is refused, the page stays, and a reload replaces it with what is stored", async () => {
         const edited = reduce(loaded(detail(1)), { type: "edited", draft: { ...draft, description: "mine" } });
 
         const stale = reduce(edited, { type: "saved", outcome: await outcomeOf(refused(409, [], "it is now revision 2")), sent: "" });

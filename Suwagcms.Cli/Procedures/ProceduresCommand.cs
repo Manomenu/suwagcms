@@ -14,17 +14,13 @@ internal static class ProceduresCommand
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
-        new(
-            "procedures",
-            "List, show, add, edit and delete the procedures of a bot, and read or set where the web creator draws their steps."
-        )
+        new("procedures", "List, show, add, edit and delete the procedures of a bot.")
         {
             CreateList(options, environment),
             CreateShow(options, environment),
             ProcedureSaveCommands.CreateAdd(options, environment),
             ProcedureSaveCommands.CreateEdit(options, environment),
             CreateDelete(options, environment),
-            ProcedureLayoutCommand.Create(options, environment),
         };
 
     private static Command CreateList(GlobalOptions options, CliEnvironment environment)
@@ -65,7 +61,7 @@ internal static class ProceduresCommand
         var id = new Argument<string>("id") { Description = "The procedure's id, like orderValuation." };
         var command = new Command(
             "show",
-            "Show one procedure as YAML (or JSON with --json), both accepted back by `procedures edit --file`, or --open it in the web creator."
+            "Show one procedure as YAML (or JSON with --json), both accepted back by `procedures edit --file`, or --open it in the web editor."
         )
         {
             id,

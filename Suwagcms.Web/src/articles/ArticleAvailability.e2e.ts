@@ -102,7 +102,7 @@ test("AC-availability-16: with the bot unreachable the page says the change is s
     expect(view.resources.find((item) => item.id === "rabaty")?.off).toBe(true);
 });
 
-test("AC-availability-22: a procedure turns off in its creator and the list of procedures says so", async ({ page, request }) => {
+test("AC-availability-22: a procedure turns off on its page and the list of procedures says so", async ({ page, request }) => {
     const bot = freshId();
     const { server, address } = await startBot(bot);
     try {
