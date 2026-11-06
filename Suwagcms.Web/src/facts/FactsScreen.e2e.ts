@@ -125,6 +125,7 @@ test("AC-delete-guard-12: a fact a procedure uses is refused for delete in the A
     await expect(page.getByText("Used in 1 place. Remove that reference first.")).toBeVisible();
     const usedBy = page.getByRole("region", { name: "Used by" });
     await expect(usedBy).toContainText("steps.ask.");
+    await expect(page.getByRole("region", { name: "Uses", exact: true })).toHaveCount(0);
     await usedBy.getByRole("link", { name: "orderValuation" }).click();
     await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation/edit$`));
     expect((await request.get(`/api/bots/${bot}/facts/customer.city`)).status()).toBe(200);

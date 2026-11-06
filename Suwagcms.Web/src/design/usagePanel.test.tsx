@@ -10,10 +10,15 @@ const usedBy: UsageEntry[] = [
 ];
 const uses: UsageEntry[] = [{ kind: "article", id: "warunki", field: "content" }];
 
-function panel(entries: { usedBy: UsageEntry[]; uses: UsageEntry[] }): string {
+function panel(entries: { usedBy: UsageEntry[]; uses: UsageEntry[] }, showUses = true): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/articles">
-            <UsagePanel usage={entries} failure={null} hrefOf={(entry) => `/bots/rzeczoznawca/articles/${entry.id}/edit`} />
+            <UsagePanel
+                usage={entries}
+                failure={null}
+                hrefOf={(entry) => `/bots/rzeczoznawca/articles/${entry.id}/edit`}
+                showUses={showUses}
+            />
         </Router>,
     );
 }
@@ -27,6 +32,14 @@ describe("UsagePanel", () => {
         expect(html).toContain('href="/bots/rzeczoznawca/articles/warunki/edit"');
         expect(html).toContain("article · content");
         expect(html).toContain("article · llmGuide");
+    });
+
+    it("AC-delete-guard-7: a kind that can refer to nothing shows Used by and no Uses", () => {
+        const html = panel({ usedBy, uses: [] }, false);
+
+        expect(html).toContain("Used by");
+        expect(html).not.toContain("Uses");
+        expect(html).not.toContain("This uses nothing.");
     });
 
     it("AC-delete-guard-7: an empty list says so", () => {

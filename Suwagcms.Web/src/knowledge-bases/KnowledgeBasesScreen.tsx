@@ -15,7 +15,7 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
     if (!editor.isOpen) return <KnowledgeBasesView bot={bot} bases={editor.items} onAdd={editor.add} onEdit={editor.edit} />;
 
     return (
-        <ResourceEdit noun="knowledge base" plural="knowledge bases" addTitle="Add a knowledge base" {...editor.panels}>
+        <ResourceEdit showUses={false} noun="knowledge base" plural="knowledge bases" addTitle="Add a knowledge base" {...editor.panels}>
             <KnowledgeBaseForm
                 key={editor.item?.id ?? "add"}
                 bot={bot}

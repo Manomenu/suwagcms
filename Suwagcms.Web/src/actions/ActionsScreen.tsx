@@ -41,6 +41,7 @@ export function ActionsScreen({ bot }: { bot: string }) {
     const action = editor.item;
     return (
         <ResourceEdit
+            showUses={false}
             noun="action"
             plural="actions"
             addTitle="Add an action"
