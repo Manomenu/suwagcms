@@ -1,6 +1,8 @@
 using Dapper;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Sdk.Format.Facts;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Editing;
 using Row = (string PublicId, int Revision, string Body, System.DateTimeOffset UpdatedAt);

@@ -1,5 +1,5 @@
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.KnowledgeBases;
+using Suwagcms.Sdk.Format.Knowledge;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.KnowledgeBases;

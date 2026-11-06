@@ -2,7 +2,8 @@ extern alias Cli;
 
 using System.CommandLine;
 using System.Net.Http.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Versions;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Procedures;

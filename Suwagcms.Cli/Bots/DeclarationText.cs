@@ -1,6 +1,6 @@
 using System.Globalization;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Sdk.Format.Declaration;
 
 namespace Suwagcms.Cli.Bots;
 

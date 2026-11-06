@@ -1,5 +1,5 @@
 using System.Globalization;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Versions;
 
 namespace Suwagcms.Server.Versions;
 

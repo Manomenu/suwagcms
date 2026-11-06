@@ -1,6 +1,6 @@
 using Dapper;
 using Npgsql;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Versions;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 

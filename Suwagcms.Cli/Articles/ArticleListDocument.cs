@@ -1,4 +1,4 @@
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Articles;
 
 namespace Suwagcms.Cli.Articles;
 

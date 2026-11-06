@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Versions;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Procedures;
 

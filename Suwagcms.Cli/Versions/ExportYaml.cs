@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using Suwagcms.Cli.Yaml;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.References;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.EventEmitters;

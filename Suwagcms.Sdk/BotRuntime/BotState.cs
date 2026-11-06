@@ -1,3 +1,5 @@
+using Suwagcms.Sdk.BotRuntime.Availability;
+
 namespace Suwagcms.Sdk.BotRuntime;
 
 public sealed record BotState

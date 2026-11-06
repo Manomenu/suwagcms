@@ -2,7 +2,8 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Facts;
 
 namespace Suwagcms.Server.Tests.Bots;
 

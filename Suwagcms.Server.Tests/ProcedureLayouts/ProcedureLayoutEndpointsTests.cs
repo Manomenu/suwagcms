@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Procedures;
 using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.ProcedureLayouts;

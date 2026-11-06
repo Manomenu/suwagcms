@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Suwagcms.Cli.Connection;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
 
 namespace Suwagcms.Cli.Bots;
 

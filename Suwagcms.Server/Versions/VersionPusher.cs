@@ -1,5 +1,7 @@
 using System.Globalization;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Availability;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Availability;

@@ -6,7 +6,7 @@ using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Cli.Output;
 using Suwagcms.Cli.Procedures;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Personas;
 
 namespace Suwagcms.Cli.Personas;
 

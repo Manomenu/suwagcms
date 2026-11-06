@@ -4,7 +4,7 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Procedures;
 
 namespace Suwagcms.Cli.Procedures;
 

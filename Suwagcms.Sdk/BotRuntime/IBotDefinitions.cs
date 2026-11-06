@@ -1,4 +1,5 @@
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.BotRuntime;
 

@@ -1,4 +1,8 @@
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Procedures;
+using Suwagcms.Sdk.Format.Procedures.Blocks;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.Validation;

@@ -1,7 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using Dapper;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.History;
+using Suwagcms.Contracts.Versions;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 

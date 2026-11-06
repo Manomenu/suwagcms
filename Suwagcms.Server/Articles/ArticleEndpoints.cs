@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Articles;
+using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 

@@ -1,5 +1,5 @@
 using System.Globalization;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Procedures;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Procedures;

@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using System.Text;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.KnowledgeBases;
 using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;

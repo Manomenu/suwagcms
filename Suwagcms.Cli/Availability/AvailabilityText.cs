@@ -1,4 +1,5 @@
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Availability;
+using Suwagcms.Contracts.Usage;
 
 namespace Suwagcms.Cli.Availability;
 

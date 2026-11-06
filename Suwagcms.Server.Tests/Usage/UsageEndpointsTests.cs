@@ -1,5 +1,6 @@
 using System.Net;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Usage;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Procedures;

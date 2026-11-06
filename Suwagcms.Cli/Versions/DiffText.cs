@@ -1,6 +1,6 @@
 using System.Globalization;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Cli.Versions;
 

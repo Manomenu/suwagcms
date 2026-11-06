@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Suwagcms.Cli.Versions;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Personas;
 
 namespace Suwagcms.Cli.Personas;
 

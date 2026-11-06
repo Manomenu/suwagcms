@@ -11,7 +11,7 @@ public sealed class PersonaDeliveryTests
     [Trait("criterion", "AC-bot-persona-8")]
     public async Task A_version_holding_a_persona_gives_it_to_the_bots_code_with_its_line_breaks()
     {
-        await using var bot = await BotHost.StartAsync(new Suwagcms.Sdk.BotRuntime.InMemoryVersionStore());
+        await using var bot = await BotHost.StartAsync(new Suwagcms.Sdk.BotRuntime.Versions.InMemoryVersionStore());
         var document = Documents.Make(1);
         document["persona"] = new JsonObject
         {
@@ -31,7 +31,7 @@ public sealed class PersonaDeliveryTests
     [Trait("criterion", "AC-bot-persona-8")]
     public async Task A_document_with_no_persona_loads_as_having_none()
     {
-        await using var bot = await BotHost.StartAsync(new Suwagcms.Sdk.BotRuntime.InMemoryVersionStore());
+        await using var bot = await BotHost.StartAsync(new Suwagcms.Sdk.BotRuntime.Versions.InMemoryVersionStore());
         await bot.PutAsync(1, Documents.Make(1));
 
         Assert.Null((await bot.Definitions.GetAsync(1, Token)).Persona);

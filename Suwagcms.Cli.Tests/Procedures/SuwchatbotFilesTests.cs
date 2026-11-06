@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Suwagcms.Cli.Procedures;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Tests.Procedures;

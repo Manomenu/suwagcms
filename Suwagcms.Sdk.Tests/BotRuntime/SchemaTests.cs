@@ -2,7 +2,11 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
 using Suwagcms.Sdk.BotRuntime;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.BotRuntime.Actions;
+using Suwagcms.Sdk.BotRuntime.Availability;
+using Suwagcms.Sdk.BotRuntime.Versions;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Versions;
 using Suwagcms.Sdk.Tests.Repository;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;

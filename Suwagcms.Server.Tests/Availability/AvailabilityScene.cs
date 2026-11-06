@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Availability;
 using Suwagcms.Sdk.BotRuntime;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.BotRuntime.Availability;
+using Suwagcms.Sdk.BotRuntime.Versions;
+using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Versions;
 

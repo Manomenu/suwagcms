@@ -1,4 +1,4 @@
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 

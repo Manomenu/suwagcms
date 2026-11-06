@@ -1,0 +1,16 @@
+using Suwagcms.Sdk.Format.Facts;
+
+namespace Suwagcms.Sdk.Format.Procedures.Blocks;
+
+public sealed record CollectBlock(IReadOnlyList<string> FactNames) : Block
+{
+    public override string Name => "collect";
+
+    public override IEnumerable<BlockFact> Facts =>
+        FactNames.Select((name, index) => new BlockFact(name, $"collect[{index}]", FactUse.Collect));
+
+    public override IEnumerable<BlockTarget> Targets => [];
+
+    public override BlockGap? Gap =>
+        FactNames.Count == 0 ? new BlockGap("collect lists no facts.", "List at least one fact: collect: [customer.city].") : null;
+}

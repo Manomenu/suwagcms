@@ -1,5 +1,5 @@
 using System.Globalization;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Articles;
 
 namespace Suwagcms.Cli.Articles;
 
