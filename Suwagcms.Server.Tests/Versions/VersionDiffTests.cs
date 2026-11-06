@@ -40,6 +40,82 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-change-history-23")]
+    public async Task What_diff_prints_for_a_step_added_and_one_removed_is_pinned_word_for_word()
+    {
+        _ = database.Pool;
+        var versions = await (await VersionApi.NewBotAsync(app.CreateClient())).Ready();
+        var scene = new PushScene(versions.Client, versions.Bot);
+        await versions.Created();
+        const string Changed = """
+            {"description":"The base of every conversation","firstStep":"wait",
+             "steps":{"wait":{"listen":{},"next":"reply"},"reply":{"say":"Hello","next":"wait"}}}
+            """;
+        (await versions.Procedures.Put("conversation", Changed)).EnsureSuccessStatusCode();
+        await versions.Created();
+
+        const string Json = """
+            {
+              "bot": "{bot}",
+              "from": 1,
+              "to": 2,
+              "added": 0,
+              "removed": 0,
+              "changed": 1,
+              "definition": [],
+              "resources": [
+                {
+                  "kind": "Procedure",
+                  "id": "conversation",
+                  "difference": "Changed",
+                  "fields": [],
+                  "parts": [
+                    {
+                      "part": "step",
+                      "name": "answer",
+                      "difference": "Removed",
+                      "fields": []
+                    },
+                    {
+                      "part": "step",
+                      "name": "reply",
+                      "difference": "Added",
+                      "fields": []
+                    },
+                    {
+                      "part": "step",
+                      "name": "wait",
+                      "difference": "Changed",
+                      "fields": [
+                        {
+                          "field": "next",
+                          "old": "answer",
+                          "new": "reply"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+            """;
+        const string Text = """
+            From v1 to v2, bot {bot}: 0 added, 0 removed, 1 changed
+              procedure conversation changed
+                step 'answer' removed
+                step 'reply' added
+                step 'wait' changed
+                  next answer → reply
+            """;
+
+        var json = await scene.CliAsync("diff", "1", "2", "--json");
+        var text = await scene.CliAsync("diff", "1", "2");
+
+        Assert.Equal(Json.Replace("{bot}", versions.Bot, StringComparison.Ordinal), json.Output.ReplaceLineEndings("\n").TrimEnd());
+        Assert.Equal(Text.Replace("{bot}", versions.Bot, StringComparison.Ordinal), text.Output.ReplaceLineEndings("\n").TrimEnd());
+    }
+
+    [Fact]
     [Trait("criterion", "AC-version-diff-15")]
     public async Task A_resource_whose_id_changed_is_listed_as_removed_under_the_old_id_and_added_under_the_new_one()
     {

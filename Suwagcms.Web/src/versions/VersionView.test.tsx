@@ -154,6 +154,17 @@ describe("VersionView", () => {
         expect(page({ versions: [summary] })).not.toContain("Compare with…");
     });
 
+    it("AC-version-diff-8: on a bot with one version the refusal still shows, with a way to close it and nothing offered to compare with", () => {
+        const html = page({
+            versions: [summary],
+            comparison: { with: 99, answer: null, refusal: "Bot 'rzeczoznawca' has no version 99; its latest is 14." },
+        });
+
+        expect(html).toContain("has no version 99; its latest is 14.");
+        expect(html).toContain(">Close<");
+        expect(html).not.toContain("Compare with…");
+    });
+
     it("AC-version-diff-8: a number the bot does not have is the refusal in the comparison's place, with the page around it", () => {
         const html = page({
             comparison: { with: 99, answer: null, refusal: "Bot 'rzeczoznawca' has no version 99; its latest is 14." },

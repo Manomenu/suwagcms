@@ -40,29 +40,32 @@ function Compare({
     onClose: () => void;
 }) {
     const others = versions.map(numberOf).filter((other) => other !== number);
-    if (others.length === 0) return null;
+    // Why: with nothing to choose there is no select, but a comparison the address asked for still answers, or says why it cannot.
+    if (others.length === 0 && comparison === null) return null;
     return (
         <Paper className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
-                <label className="flex items-center gap-2 text-sm font-medium">
-                    Compare with…
-                    <Select
-                        value={comparison?.with ?? ""}
-                        onChange={(event) => {
-                            if (event.target.value !== "") onCompare(Number(event.target.value));
-                        }}
-                    >
-                        {comparison === null && <option value="">choose</option>}
-                        {comparison !== null && !others.includes(comparison.with) && (
-                            <option value={comparison.with}>v{comparison.with}</option>
-                        )}
-                        {others.map((other) => (
-                            <option key={other} value={other}>
-                                v{other}
-                            </option>
-                        ))}
-                    </Select>
-                </label>
+                {others.length > 0 && (
+                    <label className="flex items-center gap-2 text-sm font-medium">
+                        Compare with…
+                        <Select
+                            value={comparison?.with ?? ""}
+                            onChange={(event) => {
+                                if (event.target.value !== "") onCompare(Number(event.target.value));
+                            }}
+                        >
+                            {comparison === null && <option value="">choose</option>}
+                            {comparison !== null && !others.includes(comparison.with) && (
+                                <option value={comparison.with}>v{comparison.with}</option>
+                            )}
+                            {others.map((other) => (
+                                <option key={other} value={other}>
+                                    v{other}
+                                </option>
+                            ))}
+                        </Select>
+                    </label>
+                )}
                 <span className="flex-1 text-sm text-muted-foreground">{comparison?.answer && comparisonLine(comparison.answer)}</span>
                 {comparison !== null && (
                     <Button variant="outline" size="sm" onClick={onClose}>

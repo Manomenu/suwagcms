@@ -107,7 +107,9 @@ describe("the rules of every screen", () => {
         expect(sources["/src/procedures/ProcedureScreen.tsx"]).toContain("<ResourceEdit");
         expect(sources["/src/procedures/ProcedureScreen.tsx"]).toContain("history={history}");
         expect(filesWith(/<ComparisonRows\b/).sort()).toEqual(["/src/versions/VersionView.tsx", "/src/versions/VersionsView.tsx"]);
-        expect(filesWith(/"[−+] "|\bfield\.lines\b|changedLines/)).toEqual(["/src/design/changeList.tsx"]);
+        expect(filesWith(/"[−+] "|changedLines/)).toEqual(["/src/design/changeList.tsx"]);
+        // Why: a change-id preview lists its own rewritten lines, which are no lines of a change.
+        expect(filesWith(/\.lines\b/).sort()).toEqual(["/src/design/changeIdDialog.tsx", "/src/design/changeList.tsx"]);
         expect(filesWith(/ComparisonPanel|ComparisonDetails|HistoryList/)).toEqual([]);
     });
 

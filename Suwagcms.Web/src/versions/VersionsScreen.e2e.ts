@@ -247,6 +247,23 @@ test("AC-change-history-31: a version's panel moves with the same controls under
     await expect(panel.getByText("Page 2 of 2")).toBeVisible();
 });
 
+test("AC-change-history-25: a number the bot does not have, and an address that is not a number, say so with the way back", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addConversation(request, bot);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+
+    for (const asked of ["99", "abc"]) {
+        await page.goto(`/bots/${bot}/versions/${asked}`);
+        await expect(page.getByText(`This bot has no version ${asked}.`)).toBeVisible();
+        await page.getByRole("button", { name: "Back to versions" }).click();
+        await expect(page).toHaveURL(`/bots/${bot}/versions`);
+        await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toBeVisible();
+    }
+});
+
 test("AC-change-history-26: an earlier address is replaced by the version's, leaving no step for Back, and one with no number shows the list with a clean address", async ({
     page,
     request,
