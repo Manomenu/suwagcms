@@ -36,6 +36,7 @@ describe("withListSearch", () => {
         expect(withListSearch("/bots/b/facts", "")).toBe("/bots/b/facts");
         expect(withListSearch("/bots/b/facts", "page=3&language=pl")).toBe("/bots/b/facts?page=3&language=pl");
         expect(withListSearch("/bots/b/facts", "page=3&historyPage=2")).toBe("/bots/b/facts?page=3");
+        expect(withListSearch("/bots/b/procedures", "page=3&if=ask:0&if=ask:1")).toBe("/bots/b/procedures?page=3");
         expect(withListSearch("/bots/b/procedures", "step=hello&historyPage=2")).toBe("/bots/b/procedures");
     });
 

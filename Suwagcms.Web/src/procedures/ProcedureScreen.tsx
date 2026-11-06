@@ -63,6 +63,19 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
             { replace: true },
         );
     };
+    const openConditions = params.getAll("if");
+    const setConditionOpen = (row: string, open: boolean) => {
+        setParams(
+            (was) => {
+                const next = new URLSearchParams(was);
+                next.delete("if");
+                for (const other of was.getAll("if")) if (other !== row) next.append("if", other);
+                if (open) next.append("if", row);
+                return next;
+            },
+            { replace: true },
+        );
+    };
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [changingId, setChangingId] = useState(false);
@@ -204,6 +217,8 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
                     dispatch({ type: "edited", draft: change(draft) });
                 }}
                 onSelect={setSelected}
+                openConditions={openConditions}
+                onConditionOpen={setConditionOpen}
                 onSave={save}
                 onLeave={(href) => {
                     if (mayLeave()) navigate(href);

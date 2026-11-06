@@ -4,7 +4,7 @@ import { ApiError, type Mistake } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
 import type { Draft } from "./draft";
-import { checkOf, consequenceOf, placeOf, stepOfPlace } from "./mistakes";
+import { checkOf, conditionOfPlace, consequenceOf, placeOf, stepOfPlace } from "./mistakes";
 import { isDirty, loaded, outcomeOf, reduce } from "./state";
 
 const mistake = (stage: "Save" | "Version", path: string, message = "m"): Mistake => ({
@@ -54,7 +54,9 @@ describe("the live list of mistakes", () => {
         expect(consequenceOf(mistake("Save", "steps.ask"))).toBe("Refuses a save");
         expect(consequenceOf(mistake("Version", "steps.ask"))).toBe("Stops a version");
         expect(stepOfPlace("step:ask")).toBe("ask");
-        expect(stepOfPlace("branch:ask:1")).toBe("ask");
+        expect(stepOfPlace("branch:ask:1")).toBeNull();
+        expect(conditionOfPlace("branch:ask:1")).toBe("ask:1");
+        expect(conditionOfPlace("step:ask")).toBeNull();
         expect(stepOfPlace("knowledge:whenStalled:0")).toBeNull();
         expect(stepOfPlace("field:description")).toBeNull();
     });

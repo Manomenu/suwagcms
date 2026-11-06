@@ -14,6 +14,8 @@ import {
     canTakeIf,
     connectStep,
     deleteStep,
+    moveBranch,
+    moveIfBlock,
     moveStep,
     openFailure,
     removeBranch,
@@ -32,8 +34,8 @@ import {
 } from "./draft";
 import { PROCEDURE_HINTS } from "./hints";
 import type { Beside } from "./KnowledgeForm";
-import { fallOf, findRow, listAt, type ListEnd, type ListRef, type StepList, type StepRow } from "./list";
-import { ConditionsEditor } from "./RuleEditor";
+import { canMoveIf, canSwapBranch, fallOf, findRow, listAt, type ListEnd, type ListRef, type StepList, type StepRow } from "./list";
+import { ConditionsEditor, conditionsText } from "./RuleEditor";
 import { StepForm } from "./StepForm";
 
 /** The writer's word for each block: Ask because a collect lists facts, and Tell because an inform has the model word the points. */
@@ -105,6 +107,9 @@ export interface StepsProps {
     beside: Beside;
     edit: (change: (draft: Draft) => Draft) => void;
     onSelect: (step: string | null) => void;
+    /** The If and Else if rows unfolded, as `step:branch`. Unlike a step, several can be open at once, each on its own. */
+    openConditions: readonly string[];
+    onConditionOpen: (row: string, open: boolean) => void;
     onLeave: (href: string) => void;
 }
 
@@ -303,18 +308,84 @@ function goesOnText(draft: Draft, ref: ListRef): string {
     return fall === null ? "no steps yet" : `no steps: goes on to ${fall}`;
 }
 
+function Arrows({
+    what,
+    can,
+    onMove,
+}: {
+    what: string;
+    can: (direction: "up" | "down") => boolean;
+    onMove: (direction: "up" | "down") => void;
+}) {
+    return (
+        <span className="flex shrink-0 items-center">
+            {(["up", "down"] as const).map((direction) => (
+                <Button
+                    key={direction}
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    aria-label={`Move ${what} ${direction}`}
+                    disabled={!can(direction)}
+                    onClick={() => {
+                        onMove(direction);
+                    }}
+                >
+                    {direction === "up" ? "↑" : "↓"}
+                </Button>
+            ))}
+        </span>
+    );
+}
+
 function BranchView({ row, index, props }: { row: StepRow; index: number; props: StepsProps }) {
-    const { draft, facts, edit, beside } = props;
+    const { draft, facts, edit, beside, openConditions, onConditionOpen } = props;
     const branch = row.branches?.[index];
     if (branch === undefined) return null;
     const ref = { step: row.name, arm: index };
     const empty = branch.list.rows.length === 0 && branch.list.last === null;
     const label = branch.when === undefined ? "Else" : index === 0 ? "If" : "Else if";
+    const key = `${row.name}:${String(index)}`;
+    const hasCondition = Object.keys(branch.when ?? {}).length > 0;
+    // Why: a row with no condition cannot fold, or an If would again show nothing to set one with.
+    const open = branch.when !== undefined && (!hasCondition || openConditions.includes(key));
     return (
         <div className="flex flex-col gap-1" data-branch={label} data-place={`branch:${row.name}:${index}`}>
-            <div className="flex flex-wrap items-center gap-2 text-sm">
+            <div className={`flex flex-wrap items-center gap-2 rounded-md px-1 py-1 text-sm ${open ? "bg-secondary" : ""}`}>
                 <Tag tone="bg-warning/15 text-warning">{label}</Tag>
+                {branch.when !== undefined && (
+                    <button
+                        type="button"
+                        className="min-w-0 flex-1 cursor-pointer truncate text-left disabled:cursor-default"
+                        aria-expanded={open}
+                        aria-label={`Open ${label}${index === 0 ? "" : ` ${String(index)}`} of ${row.name}`}
+                        disabled={!hasCondition}
+                        onClick={() => {
+                            onConditionOpen(key, !open);
+                        }}
+                    >
+                        {conditionsText(branch.when)}
+                    </button>
+                )}
                 {empty && <span className="text-muted-foreground">{goesOnText(draft, { ...ref })}</span>}
+                {branch.when !== undefined &&
+                    (index === 0 ? (
+                        <Arrows
+                            what={`If of ${row.name}`}
+                            can={(direction) => canMoveIf(draft.list, row.name, direction)}
+                            onMove={(direction) => {
+                                edit((current) => moveIfBlock(current, row.name, direction));
+                            }}
+                        />
+                    ) : (
+                        <Arrows
+                            what={`Else if ${String(index)} of ${row.name}`}
+                            can={(direction) => canSwapBranch(row, index, direction)}
+                            onMove={(direction) => {
+                                edit((current) => moveBranch(current, row.name, index, direction));
+                            }}
+                        />
+                    ))}
                 {index === 0 ? (
                     <RemoveButton
                         label="Remove this If"
@@ -335,14 +406,18 @@ function BranchView({ row, index, props }: { row: StepRow; index: number; props:
                     )
                 )}
             </div>
-            {branch.when !== undefined && (
-                <ConditionsEditor
-                    when={branch.when}
-                    facts={facts}
-                    onChange={(when) => {
-                        edit((current) => setConditions(current, row.name, index, when));
-                    }}
-                />
+            {branch.when !== undefined && open && (
+                <div className="ml-6 rounded-md border border-border p-3">
+                    <ConditionsEditor
+                        when={branch.when}
+                        facts={facts}
+                        onChange={(when) => {
+                            edit((current) => setConditions(current, row.name, index, when));
+                            // Why: choosing the first fact gives the row a condition, and it must not fold under the hand that is setting it.
+                            if (!openConditions.includes(key)) onConditionOpen(key, true);
+                        }}
+                    />
+                </div>
             )}
             {beside(`branch:${row.name}:${index}`)}
             <div className="ml-6 border-l border-border pl-3">
