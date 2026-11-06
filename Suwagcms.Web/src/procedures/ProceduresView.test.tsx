@@ -77,3 +77,27 @@ describe("ProceduresView", () => {
         expect(html).toContain("No procedures yet");
     });
 });
+
+describe("a long list", () => {
+    it("AC-pagination-9: page 2 of 45 at 20 a page shows 20 rows and the shared controls", () => {
+        const many: ProcedureList = {
+            procedures: Array.from({ length: 45 }, (_, index) => ({
+                id: `procedure${String(index)}`,
+                description: "One",
+                revision: 1,
+                notReady: 0,
+            })),
+            botNotReady: [],
+        };
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/b/procedures?page=2">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ProceduresView bot="b" list={many} onAdd={() => undefined} onOpen={() => undefined} />
+                </PageSizeContext>
+            </Router>,
+        );
+
+        expect(/<tbody>[\s\S]*<\/tbody>/.exec(html)?.[0].match(/<tr>/g)).toHaveLength(20);
+        expect(html).toContain("Page 2 of 3");
+    });
+});

@@ -36,7 +36,7 @@ function disabled(html: string, label: string): boolean {
 }
 
 describe("a list divided into pages", () => {
-    it("AC-pagination-4: page 2 shows rows 21 to 40 and reads Page 2 of 3, with both ways open", () => {
+    it("AC-pagination-4, AC-pagination-9: page 2 shows rows 21 to 40 and reads Page 2 of 3, with both ways open", () => {
         const html = view("?page=2");
 
         expect(html).toContain("Page 2 of 3");

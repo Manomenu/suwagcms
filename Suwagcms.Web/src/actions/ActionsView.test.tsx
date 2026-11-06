@@ -37,3 +37,19 @@ describe("ActionsView", () => {
         expect(rows.find((row) => row.includes("What check does"))).toContain(">on<");
     });
 });
+
+describe("a long list", () => {
+    it("AC-pagination-9: page 2 of 45 at 20 a page shows 20 rows and the shared controls", () => {
+        const many = Array.from({ length: 45 }, (_, index) => action(`action${String(index)}`));
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/b/actions?page=2">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ActionsView bot="b" actions={many} onAdd={() => undefined} onOpen={() => undefined} />
+                </PageSizeContext>
+            </Router>,
+        );
+
+        expect(/<tbody>[\s\S]*<\/tbody>/.exec(html)?.[0].match(/<tr>/g)).toHaveLength(20);
+        expect(html).toContain("Page 2 of 3");
+    });
+});

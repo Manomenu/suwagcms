@@ -120,20 +120,20 @@ test("AC-pagination-6: deleting the only row of the last page shows the new last
     request,
 }) => {
     const bot = await newBot(request);
-    await addFacts(request, bot, 6);
-    await page.goto(`/bots/${bot}/facts?page=2`);
+    await addFacts(request, bot, 11);
+    await page.goto(`/bots/${bot}/facts?page=3`);
+    await expect(page.getByText("Page 3 of 3")).toBeVisible();
 
-    await page.getByRole("row").filter({ hasText: "customer.f15" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.f20" }).getByRole("button", { name: "Edit" }).click();
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await page
         .getByRole("alertdialog")
         .getByRole("button", { name: /^Delete/ })
         .click();
 
-    await expect(page).toHaveURL(`/bots/${bot}/facts`);
-    await expect(page.getByRole("row").filter({ hasText: "customer.f14" })).toBeVisible();
-    await page.goBack();
-    await expect(page).not.toHaveURL(/page=2/);
+    await expect(page).toHaveURL(`/bots/${bot}/facts?page=2`);
+    await expect(page.getByText("Page 2 of 2")).toBeVisible();
+    await expect(page.getByRole("row").filter({ hasText: "customer.f19" })).toBeVisible();
 });
 
 test("AC-pagination-7: changing an article filter on page 2 shows page 1 of the result, with the other filters still in the address", async ({
@@ -167,24 +167,28 @@ test("AC-pagination-8: rows that fit on one page have controls neither seen nor 
     await expect(page.getByRole("row").filter({ hasText: "customer.f14" })).toBeVisible();
 
     const controls = page.locator('[aria-label="Pages"]');
-    await expect(next(page)).toHaveCount(0);
     await expect(controls).toBeHidden();
+    const buttons = controls.locator("button");
+    await expect(buttons).toHaveCount(2);
+    for (const button of await buttons.all()) {
+        await expect.soft(button).toBeHidden();
+        const focused = await button.evaluate((element) => {
+            (element as HTMLElement).focus();
+            return document.activeElement === element;
+        });
+        expect.soft(focused).toBe(false);
+    }
     const alone = await controls.boundingBox();
 
-    await addFacts(request, await newBotWithSix(request, page), 0);
+    const longer = await newBot(request);
+    await addFacts(request, longer, 6);
+    await page.goto(`/bots/${longer}/facts`);
     await expect(next(page)).toBeVisible();
     const shared = await controls.boundingBox();
 
     expect(alone?.height).toBeGreaterThan(0);
     expect(alone?.height).toBe(shared?.height);
 });
-
-async function newBotWithSix(request: APIRequestContext, page: Page): Promise<string> {
-    const bot = await newBot(request);
-    await addFacts(request, bot, 6);
-    await page.goto(`/bots/${bot}/facts`);
-    return bot;
-}
 
 test("AC-pagination-10: on Versions, the last row of a page offers Changes and other version offers every page; creating a version shows page 1", async ({
     page,

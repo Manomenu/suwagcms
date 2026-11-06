@@ -291,3 +291,28 @@ describe("the language of an article", () => {
         expect(view([], bases, { knowledgeBase: "", language: "en", text: "" })).toContain("No article matches the filters.");
     });
 });
+
+describe("a long list", () => {
+    it("AC-pagination-9: page 2 of 45 at 20 a page shows 20 rows and the shared controls", () => {
+        const many = Array.from({ length: 45 }, (_, index) => ({ ...articles[0], id: `article${String(index)}` }) as Article);
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/b/articles?page=2">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ArticlesView
+                        bot="b"
+                        articles={many}
+                        bases={bases}
+                        filters={{ knowledgeBase: "", language: "", text: "" }}
+                        onFilters={() => undefined}
+                        onAdd={() => undefined}
+                        onEdit={() => undefined}
+                        onLeave={() => undefined}
+                    />
+                </PageSizeContext>
+            </Router>,
+        );
+
+        expect(/<tbody>[\s\S]*<\/tbody>/.exec(html)?.[0].match(/<tr>/g)).toHaveLength(20);
+        expect(html).toContain("Page 2 of 3");
+    });
+});
