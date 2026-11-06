@@ -25,6 +25,16 @@ internal static class HistoryText
         return text.ToString().TrimEnd();
     }
 
+    // Why: a window with nothing in it belongs to one version, so "since that day" would be wrong: later changes exist and belong to later versions.
+    public static string Window(HistoryPage page)
+    {
+        var note =
+            page.Incomplete == true
+                ? $"Changes made before {Day(page.Since)} were not recorded, so this list may be incomplete.{Environment.NewLine}"
+                : "";
+        return page.Entries.Count == 0 ? $"{note}No change has been recorded for this version." : note + Page(page, ofBot: true);
+    }
+
     private static void Entry(StringBuilder text, HistoryEntry entry, bool ofBot)
     {
         var parts = new List<string>

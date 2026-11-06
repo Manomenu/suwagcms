@@ -364,6 +364,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="doc-meta">
     <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
+    <span><b>Branch:</b> <code>feature/one-history-module</code></span>
     <span><b>Feature:</b> 27 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>version-create</code></span>
   </div>
@@ -392,7 +393,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="cols">
     <div><h4>Goals</h4><ul>
       <li>See exactly what differs between any two versions of a bot, through every door.</li>
-      <li>See what each version changed against the one before it.</li>
+      <li>From a version's page, see what differs from any other version, drawn with the rows of <code>change-history</code>.</li>
       <li>Give an agent the same answer in a form it can act on.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
@@ -423,8 +424,8 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
 0</div>
   <h3>2. Marta looks at what a version changed</h3>
   <ol class="steps">
-    <li><p>On the Versions screen she presses <span class="btn">Changes</span> on v14. She sees the comparison with v13, with the same list as the CLI.</p></li>
-    <li><p>She picks another version in the select above it to compare with something older.</p></li>
+    <li><p>On Versions she opens v14, whose page shows what happened before it. To see the net result she picks v13 under <span class="btn">Compare with…</span> and sees the same list as the CLI. The address now holds <code>?compare=13</code>.</p></li>
+    <li><p>She picks another version in the same select to compare with something older.</p></li>
   </ol>
   <h3>3. A change that was undone</h3>
   <ol class="steps">
@@ -449,19 +450,23 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
     <tr><td>differences found</td><td>exit 0: finding differences is the command working, not a refusal</td></tr>
     <tr><td>a number this bot does not have</td><td>refused, naming the number and the bot's latest; exit 1</td></tr>
     <tr><td>the later version given first</td><td>compared in the order given: <code>diff 14 12</code> says what going from v14 to v12 would change</td></tr>
-    <tr><td>the first version of a bot, on the web</td><td>nothing before it to compare with: the screen says so and offers none</td></tr>
+    <tr><td>a bot with one version, on the web</td><td>nothing to compare with, so its page offers no <b>Compare with…</b></td></tr>
+    <tr><td>the first version of a bot with more, on the web</td><td><b>Compare with…</b> offers the later ones: from the chosen one to this one</td></tr>
+    <tr><td>a version chosen on the web</td><td>compared from the chosen one to the version of the page, so choosing v15 on v14's page says what going from v15 to v14 would change</td></tr>
+    <tr><td>a number this bot does not have, in the web's address</td><td>the refusal in the comparison's place, and the version's page around it as usual</td></tr>
     <tr><td>the two versions differ in <code>formatVersion</code></td><td>the difference is listed like a changed field, and the rest is compared field by field</td></tr>
     <tr><td>a very long article</td><td>only the changed lines with a few around them, with the rest folded on the web</td></tr>
   </table>
 </section>
 <section data-role="ui">
   <h2>Screen</h2>
-  <div class="wire after"><span class="wf-label">Versions of rzeczoznawca, Changes in v14</span>
-    <div class="wf-bar"><b>From</b><span class="wf-input">v13 ▾</span><b>to v14</b><span class="wf-grow"></span><span class="wf-muted">1 added · 1 removed · 2 changed</span></div>
+  <div class="wire after"><span class="wf-label">Version 14's page, comparing with v13</span>
+    <div class="wf-bar"><b>Compare with…</b><span class="wf-input">v13 ▾</span><span class="wf-grow"></span><span class="wf-muted">1 added · 1 removed · 2 changed</span><span class="wf-btn">Close</span></div>
     <div class="wf-body">
-      <div class="wf-card"><span class="tag warn">changed</span> <b>cennik</b> article<p class="wf-muted">content: − Wycena domu: 900 zł · + Wycena domu: 1100 zł</p></div>
-      <div class="wf-card"><span class="tag ok">added</span> <b>rabaty</b> article</div>
-      <div class="wf-card"><span class="tag bad">removed</span> <b>stary-cennik</b> article</div>
+      <div class="wf-card"><span class="tag accent">changed</span> article <b>cennik</b><p class="wf-muted">content · … 12 unchanged lines<br>&nbsp; Cennik<br>− Wycena domu: 900 zł<br>+ Wycena domu: 1100 zł<br>… 37 unchanged lines</p></div>
+      <div class="wf-card"><span class="tag accent">changed</span> procedure <b>orderValuation</b><p class="wf-muted">▸ step 'askCity' changed<br>▸ step 'askStreet' added</p></div>
+      <div class="wf-card"><span class="tag ok">added</span> article <b>rabaty</b></div>
+      <div class="wf-card"><span class="tag bad">removed</span> article <b>stary-cennik</b></div>
     </div>
   </div>
 </section>
@@ -474,6 +479,8 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
     <li>Resources are listed by kind, then by id, whatever their change: the fixed order lets a script compare two answers.</li>
     <li>Two long texts whose changed parts are too long to align (more than 4 million pairs of lines) read as all those lines removed and added, which is still true, so a request never holds that much memory.</li>
     <li>A field the format gains later shows as a difference with no change to the comparison, since it reads the two documents as data.</li>
+    <li>A version's page is the one place with a net result between any two versions, because Versions keeps only the status, and a row's own comparison would repeat what the page's panel and select already answer.</li>
+    <li>The rows and the way of writing a change belong to <code>change-history</code>, so a comparison and an entry cannot drift apart; the comparison's data stays as it is, since it says what an entry cannot: a change made and restored is no difference.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -481,16 +488,16 @@ From v12 to v14, bot rzeczoznawca: 1 added, 1 removed, 2 changed
   <ul class="checks">
     <li><code>AC-version-diff-1</code> <code>suwagcms diff 12 14</code> and the web's comparison of the same two versions list the same resources as added, removed and changed, by kind, and list no unchanged resource; a format version that differs is listed like a changed field, and the rest is still compared.</li>
     <li><code>AC-version-diff-2</code> A changed fact, knowledge base or article lists each changed field with its old and new values, and <code>content</code> and <code>llmGuide</code> as lines removed and added.</li>
-    <li><code>AC-version-diff-3</code> A changed procedure lists its changed fields, its local facts added, removed or changed, and its steps added, removed or changed, with what changed in each.</li>
+    <li><code>AC-version-diff-3</code> A changed procedure lists its changed fields, its local facts added, removed or changed, and its steps added, removed or changed, with what changed in each; on the web each of these parts is folded and opens to what changed in it.</li>
     <li><code>AC-version-diff-4</code> A change of a knowledge base's language is listed as a changed field with both values.</li>
     <li><code>AC-version-diff-5</code> An article whose text is unchanged but whose link label changed because the target was retitled is listed as changed, with that line.</li>
     <li><code>AC-version-diff-6</code> Two versions with the same definition, and a version compared with itself, are reported as having no differences, with exit code 0; a comparison that finds differences also exits 0.</li>
     <li><code>AC-version-diff-7</code> Swapping the two numbers swaps added with removed, and old values with new ones.</li>
     <li><code>AC-version-diff-8</code> A number the bot does not have is refused, naming the number and the bot's latest, with exit code 1.</li>
     <li><code>AC-version-diff-9</code> Comparing changes no version and no part of the working state, and sends no request to the bot.</li>
-    <li><code>AC-version-diff-10</code> On the Versions screen, each version offers its changes against the one before it and a select of other versions to compare with; the first version offers neither.</li>
+    <li><code>AC-version-diff-10</code> A version's page offers <b>Compare with…</b>, a select of the bot's other versions, and shows the comparison from the chosen one to this one, with <code>?compare=</code> in the address so a reload keeps it; a bot with one version does not offer it, and Versions has no comparison on a row.</li>
     <li><code>AC-version-diff-11</code> <code>suwagcms diff --json</code> returns the same changes in a fixed order, so the same two versions always give the same output; <code>--open</code> opens the matching web comparison.</li>
-    <li><code>AC-version-diff-13</code> The bot's page offers a comparison between the version the bot reports and the one on offer.</li>
+    <li><code>AC-version-diff-13</code> The bot's page offers a comparison between the version the bot reports and the one on offer, which opens the page of the one on offer, compared with the one the bot reports.</li>
     <li><code>AC-version-diff-14</code> A comparison covers actions: their contract and implementation, with secrets only as the references the version holds.</li>
     <li><code>AC-version-diff-15</code> A resource whose <code>id</code> changed is listed as removed under its old <code>id</code> and added under its new one, because a version holds only the <code>id</code>.</li>
   </ul>

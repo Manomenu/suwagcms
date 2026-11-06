@@ -364,6 +364,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="doc-meta">
     <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
+    <span><b>Branch:</b> <code>feature/one-history-module</code></span>
     <span><b>Feature:</b> 31 of the suwagcms feature map</span>
     <span><b>Needs before it:</b> <code>version-push</code></span>
   </div>
@@ -475,7 +476,7 @@ flowchart TD
       <div class="wf-body">
         <div class="wf-row"><b>Bot has: v14</b><span class="wf-grow"></span><span>Latest: v14</span></div>
         <div class="wf-row wf-new"><span class="wf-grow"></span><span>other version:</span><span class="wf-input">v12 ▾</span><span class="wf-btn">Push v12</span></div>
-        <div class="wf-card wf-new">The bot goes from v14 to v12. The working state and the latest version stay as they are. Conversations in progress finish on their version.<span class="wf-btn primary">Push v12</span><span class="wf-btn">Cancel</span></div>
+        <div class="wf-card wf-new">The bot goes from v14 to v12. The working state and the latest version stay as they are. Conversations in progress finish on their version.<p class="wf-muted">What goes back: 1 added · 2 changed, in the rows of <code>change-history</code><br>changed article cennik · content: − 1100 zł + 900 zł</p><span class="wf-btn primary">Push v12</span><span class="wf-btn">Cancel</span></div>
       </div>
     </div>
     <div class="wire"><span class="wf-label">After the rollback</span>
@@ -513,6 +514,7 @@ flowchart TD
     <li>A rollback is an ordinary push in the record of attempts and in history, whose entry names the bot's version before and after it (<code>botVersion</code>) when the bot moved.</li>
     <li>The CLI uses <code>suwagcms push --version n</code>, and not a <code>rollback</code> command, because README's model is one push and the bot's route has no idea of direction.</li>
     <li>The web asks once and the CLI does not: a select is easy to misuse, and an agent has already decided.</li>
+    <li>The question draws what goes back with the rows of <code>change-history</code> and stays on Versions, so a person decides without leaving it; its rows carry no links, which would leave the question.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -534,7 +536,7 @@ flowchart TD
     <li><code>AC-version-rollback-14</code> <code>--dry-run</code> says whether the version would be sent, made current, or needs nothing, and the bot's state stays as it was.</li>
     <li><code>AC-version-rollback-15</code> The smoke test of <code>PUT /suwagcms/current</code> passes through the packed <code>Suwagcms.Sdk</code> package, with the default file store and a store supplied by a test.</li>
     <li><code>AC-version-rollback-16</code> The plugin's main skill says of <code>suwagcms push --version</code> that this is the rollback and that it changes only the bot.</li>
-    <li><code>AC-version-rollback-18</code> Before a rollback, the page shows what will go back, and <code>--dry-run</code> lists the same changes.</li>
+    <li><code>AC-version-rollback-18</code> Before a rollback, the page shows what will go back, drawn with the shared rows of <code>change-history</code> with a procedure's details opening into parts, and <code>--dry-run</code> lists the same changes.</li>
     <li><code>AC-version-rollback-20</code> A rollback also delivers the current availability set before it changes what the bot runs, and availability of a resource the chosen version does not hold has no effect.</li>
   </ul>
 </section>

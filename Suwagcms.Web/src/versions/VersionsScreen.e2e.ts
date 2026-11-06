@@ -47,6 +47,7 @@ test("AC-version-create-1: Create version in the web makes the next version and 
     await expect(row).toContainText("0 facts, 0 knowledge bases, 0 articles, 1 procedures");
     await row.getByRole("button", { name: "Open" }).click();
     await expect(page.getByText(`"bot":"${bot}"`)).toBeVisible();
+    await page.goBack();
     const listed = await request.get(`/api/bots/${bot}/versions`);
     expect(await listed.json()).toMatchObject([{ number: 1, procedures: 1 }]);
 
@@ -112,7 +113,7 @@ test("AC-version-push-1: Push in the web makes the bot hold the latest version, 
     }
 });
 
-test("AC-version-diff-10: Changes on a version compares it with the one before, a select compares it with another, and the first offers neither (AC-version-diff-1)", async ({
+test("AC-version-diff-10: a version's page compares it with a chosen one, keeps the choice in the address, and Versions has no comparison on a row (AC-version-diff-1)", async ({
     page,
     request,
 }) => {
@@ -126,18 +127,31 @@ test("AC-version-diff-10: Changes on a version compares it with the one before, 
     expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
     await page.goto(`/bots/${bot}/versions`);
 
-    await expect(page.getByRole("row").filter({ hasText: "v1 ·" }).getByRole("button", { name: "Changes" })).toHaveCount(0);
-    await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toContainText("Nothing before it");
+    await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Changes" })).toHaveCount(0);
 
-    await page.getByRole("row").filter({ hasText: "v3 ·" }).getByRole("button", { name: "Changes" }).click();
+    await page.getByRole("row").filter({ hasText: "v3 ·" }).getByRole("button", { name: "Open" }).click();
+    await page.getByLabel("Compare with…").selectOption("2");
     await expect(page.getByText("0 added · 0 removed · 1 changed")).toBeVisible();
-    await expect(page.getByText("maxLength:")).toBeVisible();
+    // Why: the comparison and the entry in the panel below it draw this change with the same row.
+    await expect(page.getByText("maxLength:")).toHaveCount(2);
+    await expect(page).toHaveURL(`/bots/${bot}/versions/3?compare=2`);
 
-    await page.getByLabel("From").selectOption("1");
+    await page.reload();
+    await expect(page.getByText("0 added · 0 removed · 1 changed")).toBeVisible();
+
+    await page.getByLabel("Compare with…").selectOption("1");
     await expect(page.getByText("1 added · 0 removed · 0 changed")).toBeVisible();
+
+    await page.getByRole("button", { name: "Close" }).click();
+    await expect(page).toHaveURL(`/bots/${bot}/versions/3`);
+    await expect(page.getByText("1 added · 0 removed · 0 changed")).toHaveCount(0);
+
+    await page.goto(`/bots/${bot}/versions/1?compare=3`);
+    await expect(page.getByText("0 added · 1 removed · 0 changed")).toBeVisible();
 });
 
-test("AC-version-diff-11: the address --open prints shows the same comparison, and AC-version-diff-13: the page compares what the bot has with the latest", async ({
+test("AC-version-diff-11: the address --open prints lands on the same comparison, and AC-version-diff-13: the page compares what the bot has with the latest", async ({
     page,
     request,
 }) => {
@@ -154,9 +168,11 @@ test("AC-version-diff-11: the address --open prints shows the same comparison, a
 
         await page.goto(`/bots/${id}/versions?from=2&to=1`);
         await expect(page.getByText("0 added · 1 removed · 0 changed")).toBeVisible();
-        await expect(page).toHaveURL(`/bots/${id}/versions`);
+        await expect(page).toHaveURL(`/bots/${id}/versions/1?compare=2`);
 
+        await page.goto(`/bots/${id}/versions`);
         await page.getByRole("button", { name: "Compare v1 with v2" }).click();
+        await expect(page).toHaveURL(`/bots/${id}/versions/2?compare=1`);
         await expect(page.getByText("1 added · 0 removed · 0 changed")).toBeVisible();
     } finally {
         bot.server.close();
@@ -172,7 +188,92 @@ test("AC-version-export-10: the address export --open prints opens that version"
 
     await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible();
     await expect(page.getByText(`"bot":"${bot}"`)).toBeVisible();
+    await expect(page).toHaveURL(`/bots/${bot}/versions/1`);
+});
+
+test("AC-change-history-24: opening a version goes to its address with a History panel beneath; a reload stays, and Back returns to the list on its page", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addConversation(request, bot);
+    for (let number = 1; number <= 6; number++) {
+        const data = { type: "text", description: "A field", maxLength: 80 };
+        expect((await request.put(`/api/bots/${bot}/facts/customer.f${String(number)}?ifRevision=0`, { data })).status()).toBe(200);
+        expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+    }
+    await page.goto(`/bots/${bot}/versions?page=2`);
+
+    await page.getByRole("row").filter({ hasText: "v1 ·" }).getByRole("button", { name: "Open" }).click();
+
+    await expect(page).toHaveURL(`/bots/${bot}/versions/1?page=2`);
+    await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible();
+    const panel = page.getByRole("region", { name: "History" });
+    await expect(panel.getByRole("link", { name: "customer.f1" })).toBeVisible();
+    await expect(panel.getByRole("link", { name: "customer.f2" })).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Version 1" })).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL(`/bots/${bot}/versions?page=2`);
+    await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toBeVisible();
+
+    await page.goto(`/bots/${bot}/versions/1?page=2&historyPage=1&compare=2`);
+    await page.getByRole("button", { name: "Back to versions" }).click();
+    await expect(page).toHaveURL(`/bots/${bot}/versions?page=2`);
+});
+
+test("AC-change-history-31: a version's panel moves with the same controls under historyPage, and a reload stays", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addConversation(request, bot);
+    for (let number = 1; number <= 6; number++) {
+        const data = { type: "text", description: "A field", maxLength: 80 };
+        expect((await request.put(`/api/bots/${bot}/facts/customer.f${String(number)}?ifRevision=0`, { data })).status()).toBe(200);
+    }
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+    await page.goto(`/bots/${bot}/versions/1`);
+    const panel = page.getByRole("region", { name: "History" });
+    await expect(panel.getByText("Page 1 of 2")).toBeVisible();
+
+    await panel.getByRole("button", { name: "Next" }).click();
+
+    await expect(page).toHaveURL(`/bots/${bot}/versions/1?historyPage=2`);
+    await expect(panel.getByRole("link", { name: "customer.f1" })).toBeVisible();
+    await page.reload();
+    await expect(panel.getByText("Page 2 of 2")).toBeVisible();
+});
+
+test("AC-change-history-26: an earlier address is replaced by the version's, leaving no step for Back, and one with no number shows the list with a clean address", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addConversation(request, bot);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+    const fact = { type: "text", description: "The city", maxLength: 80 };
+    expect((await request.put(`/api/bots/${bot}/facts/customer.city?ifRevision=0`, { data: fact })).status()).toBe(200);
+    expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
+    await page.goto(`/bots/${bot}/history`);
+
+    await page.goto(`/bots/${bot}/versions?open=2`);
+    await expect(page).toHaveURL(`/bots/${bot}/versions/2`);
+    await expect(page.getByRole("heading", { name: "Version 2" })).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(`/bots/${bot}/history`);
+
+    await page.goto(`/bots/${bot}/versions?from=1&to=2`);
+    await expect(page).toHaveURL(`/bots/${bot}/versions/2?compare=1`);
+    await expect(page.getByText("1 added · 0 removed · 0 changed")).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(`/bots/${bot}/history`);
+
+    await page.goto(`/bots/${bot}/versions?open=abc`);
     await expect(page).toHaveURL(`/bots/${bot}/versions`);
+    await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toBeVisible();
 });
 
 test("AC-version-rollback-1: the select pushes a version the bot does not hold, asking once (AC-version-rollback-13), and the page shows it beside the latest; AC-version-rollback-2: a held one is made current without sending it", async ({

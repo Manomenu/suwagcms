@@ -38,4 +38,8 @@ describe("withListSearch", () => {
         expect(withListSearch("/bots/b/facts", "page=3&historyPage=2")).toBe("/bots/b/facts?page=3");
         expect(withListSearch("/bots/b/procedures", "step=hello&historyPage=2")).toBe("/bots/b/procedures");
     });
+
+    it("AC-change-history-24: leaving a version's page takes the list's page and leaves its panel's page and comparison behind", () => {
+        expect(withListSearch("/bots/b/versions", "page=2&historyPage=3&compare=12")).toBe("/bots/b/versions?page=2");
+    });
 });

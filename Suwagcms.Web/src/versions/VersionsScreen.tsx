@@ -1,56 +1,59 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useSearchParams } from "wouter";
+import { Redirect, useLocation, useSearch, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
 import { useToFirstPage } from "@/api/pagination";
+import { versionHref, versionsHref, withListSearch } from "@/api/resourceAddress";
 import { Alert } from "@/design/alert";
 
 import {
     createVersion,
-    fetchComparison,
     fetchPushPlan,
     fetchStatus,
-    fetchVersion,
     fetchVersions,
     numberOf,
     pushVersion,
+    versionNumberOf,
     type BotStatus,
     type PushPlan,
     type PushResult,
-    type VersionComparison,
-    type VersionDetail,
     type VersionSummary,
 } from "./api";
 import { VersionsView } from "./VersionsView";
+
+/**
+ * Where an address of an earlier kind now leads, null when it is of today's: `suwagcms export --open` arrives as ?open=<n> and
+ * `suwagcms diff --open` as ?from=<n>&to=<n>, and a link kept from before them still works.
+ */
+function earlierAddress(bot: string, params: URLSearchParams): string | null {
+    const open = params.get("open");
+    const from = params.get("from");
+    const to = params.get("to");
+    if (open === null && from === null && to === null) return null;
+    const opened = versionNumberOf(open);
+    if (opened !== null) return versionHref(bot, opened);
+    const later = versionNumberOf(to);
+    const earlier = versionNumberOf(from);
+    if (later !== null && earlier !== null) return `${versionHref(bot, later)}?compare=${earlier}`;
+    const rest = new URLSearchParams(params);
+    for (const name of ["open", "from", "to"]) rest.delete(name);
+    return withListSearch(versionsHref(bot), rest.toString());
+}
 
 /** Loads the versions of the bot in the address when it opens, so versions created meanwhile from the CLI are found. */
 export function VersionsScreen({ bot }: { bot: string }) {
     const [versions, setVersions] = useState<VersionSummary[] | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
     const [refused, setRefused] = useState<ApiError["mistakes"] | null>(null);
-    const [shown, setShown] = useState<VersionDetail | null>(null);
     const [status, setStatus] = useState<BotStatus | null>(null);
     const [pushing, setPushing] = useState(false);
     const [pushFailure, setPushFailure] = useState<PushResult | null>(null);
     const [plan, setPlan] = useState<PushPlan | null>(null);
-    const [comparison, setComparison] = useState<VersionComparison | null>(null);
     const [params] = useSearchParams();
-    const [location, navigate] = useLocation();
-    const fromParam = params.get("from");
-    const toParam = params.get("to");
-    const openParam = params.get("open");
+    const search = useSearch();
+    const [, navigate] = useLocation();
     const toFirstPage = useToFirstPage();
-
-    const compare = useCallback(
-        (from: number, to: number) => {
-            fetchComparison(bot, from, to)
-                .then(setComparison)
-                .catch((error: unknown) => {
-                    setFailure(error instanceof Error ? error.message : String(error));
-                });
-        },
-        [bot],
-    );
+    const earlier = earlierAddress(bot, params);
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -75,24 +78,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
         };
     }, [load]);
 
-    // Why: `suwagcms diff --open` arrives as ?from=<n>&to=<n>; it is taken once and dropped from the address.
-    useEffect(() => {
-        if (fromParam === null || toParam === null) return;
-        navigate(location, { replace: true });
-        compare(Number(fromParam), Number(toParam));
-    }, [fromParam, toParam, location, navigate, compare]);
-
-    // Why: `suwagcms export --open` arrives as ?open=<n>; it is taken once and dropped from the address.
-    useEffect(() => {
-        if (openParam === null) return;
-        navigate(location, { replace: true });
-        fetchVersion(bot, Number(openParam))
-            .then(setShown)
-            .catch((error: unknown) => {
-                setFailure(error instanceof Error ? error.message : String(error));
-            });
-    }, [openParam, location, navigate, bot]);
-
+    if (earlier !== null) return <Redirect to={earlier} replace />;
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
@@ -106,11 +92,8 @@ export function VersionsScreen({ bot }: { bot: string }) {
             pushFailure={pushFailure}
             pushing={pushing}
             refused={refused}
-            shown={shown}
-            comparison={comparison}
-            onCompare={compare}
-            onCloseComparison={() => {
-                setComparison(null);
+            onCompare={(from, to) => {
+                navigate(`${versionHref(bot, to)}?compare=${from}`);
             }}
             plan={plan}
             onPlan={(number) => {
@@ -153,14 +136,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
                     });
             }}
             onOpen={(version) => {
-                fetchVersion(bot, numberOf(version))
-                    .then(setShown)
-                    .catch((error: unknown) => {
-                        setFailure(error instanceof Error ? error.message : String(error));
-                    });
-            }}
-            onClose={() => {
-                setShown(null);
+                navigate(withListSearch(versionHref(bot, numberOf(version)), search));
             }}
         />
     );
