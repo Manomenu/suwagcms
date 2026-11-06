@@ -12,6 +12,7 @@ import { PersonaScreen } from "./persona/PersonaScreen";
 import { CreatorScreen } from "./procedures/CreatorScreen";
 import { ProceduresScreen } from "./procedures/ProceduresScreen";
 import { AppShell } from "./shell/AppShell";
+import { VersionScreen } from "./versions/VersionScreen";
 import { VersionsScreen } from "./versions/VersionsScreen";
 
 /** Puts the page together from features. */
@@ -44,6 +45,15 @@ export function App() {
                     </Route>
                     <Route path="/bots/:id/versions">
                         {(params) => <VersionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}
+                    </Route>
+                    <Route path="/bots/:id/versions/:number">
+                        {(params) => (
+                            <VersionScreen
+                                key={`${params.id}/${params.number}`}
+                                bot={decodeURIComponent(params.id)}
+                                asked={params.number}
+                            />
+                        )}
                     </Route>
                     <Route path="/bots/:id/history">
                         {(params) => <HistoryScreen key={params.id} bot={decodeURIComponent(params.id)} />}

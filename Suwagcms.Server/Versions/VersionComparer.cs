@@ -1,9 +1,11 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Suwagcms.Contracts.History;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.Format.Personas;
 using Suwagcms.Sdk.Format.References;
+using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
@@ -26,6 +28,8 @@ internal static class VersionComparer
     private static readonly string[] PersonaTexts = ["personality", "scope.inScope", "scope.outOfScope", "scope.whenOutOfScope"];
 
     private static readonly string[] LongTexts = ["content", "llmGuide"];
+
+    private static readonly string[] ProcedureParts = ["steps", "localFacts"];
 
     private static readonly JsonSerializerOptions Compact = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
@@ -53,6 +57,40 @@ internal static class VersionComparer
             resources
         );
     }
+
+    // Why: an entry and a comparison are written by this one code, so given the same old and new text they cannot disagree; the entry stays as it was recorded.
+    public static WrittenChange Written(string kind, IReadOnlyList<FieldChange> changes)
+    {
+        var old = new JsonObject();
+        var fresh = new JsonObject();
+        foreach (var change in changes)
+        {
+            old[change.Field] = Node(change.Old);
+            fresh[change.Field] = Node(change.New);
+        }
+        if (kind == ResourceKinds.Word(ResourceKind.Persona))
+        {
+            return new WrittenChange([.. changes.Select(change => PersonaField(change.Field, old, fresh))], []);
+        }
+        if (kind != ResourceKinds.Word(ResourceKind.Procedure))
+        {
+            return new WrittenChange(Fields(old, fresh, ""), []);
+        }
+        return new WrittenChange(
+            Fields(Without(old, ProcedureParts), Without(fresh, ProcedureParts), ""),
+            [
+                .. Parts("step", old["steps"], fresh["steps"], whole: true),
+                .. Parts("local fact", old["localFacts"], fresh["localFacts"], whole: true),
+            ]
+        );
+    }
+
+    private static JsonNode? Node(JsonElement? value) => value is { } element ? JsonNode.Parse(element.GetRawText()) : null;
+
+    private static FieldDifference PersonaField(string field, JsonObject old, JsonObject fresh) =>
+        PersonaTexts.Contains(field, StringComparer.Ordinal)
+            ? new FieldDifference(field, null, null, LineComparer.Compare(Text(old[field]), Text(fresh[field])))
+            : new FieldDifference(field, Text(old[field]), Text(fresh[field]), null);
 
     private static JsonObject Parse(string document) =>
         JsonNode.Parse(document) as JsonObject ?? throw new InvalidOperationException("A stored version is not a JSON object.");
@@ -93,7 +131,7 @@ internal static class VersionComparer
                         kind,
                         id,
                         Difference.Changed,
-                        Fields(Without(was, ["steps", "localFacts"]), Without(now, ["steps", "localFacts"]), ""),
+                        Fields(Without(was, ProcedureParts), Without(now, ProcedureParts), ""),
                         [.. Parts("step", was["steps"], now["steps"]), .. Parts("local fact", was["localFacts"], now["localFacts"])]
                     )
                     : new ResourceDifference(kind, id, Difference.Changed, Fields(was, now, ""), []);
@@ -123,7 +161,8 @@ internal static class VersionComparer
     private static string? PersonaText(JsonNode? persona, string path) =>
         path.Split('.').Aggregate(persona, (node, name) => node?[name])?.GetValue<string>();
 
-    private static IEnumerable<PartDifference> Parts(string part, JsonNode? before, JsonNode? after)
+    // Why: `whole` is an entry's way: its record is all that is left of a part added or deleted, so unlike a comparison it keeps what the part held.
+    private static IEnumerable<PartDifference> Parts(string part, JsonNode? before, JsonNode? after, bool whole = false)
     {
         var old = Named(before);
         var fresh = Named(after);
@@ -131,11 +170,11 @@ internal static class VersionComparer
         {
             if (!fresh.TryGetValue(name, out var now))
             {
-                yield return new PartDifference(part, name, Difference.Removed, []);
+                yield return new PartDifference(part, name, Difference.Removed, whole ? Fields(old[name] as JsonObject ?? [], [], "") : []);
             }
             else if (!old.TryGetValue(name, out var was))
             {
-                yield return new PartDifference(part, name, Difference.Added, []);
+                yield return new PartDifference(part, name, Difference.Added, whole ? Fields([], now as JsonObject ?? [], "") : []);
             }
             else if (!JsonNode.DeepEquals(was, now))
             {

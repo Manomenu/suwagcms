@@ -10,16 +10,8 @@ import { Paginated } from "@/design/pagination";
 import { Select } from "@/design/select";
 import { Table } from "@/design/table";
 
-import {
-    numberOf,
-    type BotStatus,
-    type PushPlan,
-    type PushResult,
-    type VersionComparison,
-    type VersionDetail,
-    type VersionSummary,
-} from "./api";
-import { ComparisonDetails, comparisonLine, ComparisonPanel } from "./ComparisonPanel";
+import { contentOf, dateOf, numberOf, type BotStatus, type PushPlan, type PushResult, type VersionSummary } from "./api";
+import { comparisonLine, ComparisonRows } from "./comparison";
 import { otherVersions, statusView, whenOf } from "./pushStatus";
 
 /** The Resource kinds a mistake can name, and the screen that edits each; the bot as a whole (no conversation) is mended among the procedures. */
@@ -35,10 +27,6 @@ const SCREENS: Record<Mistake["resource"]["kind"], string> = {
 
 function screenOf(mistake: Mistake): string {
     return SCREENS[mistake.resource.kind];
-}
-
-function dateOf(version: VersionSummary): string {
-    return version.createdAt.slice(0, 16).replace("T", " ");
 }
 
 function digestOf(sha256: string): string {
@@ -93,7 +81,7 @@ function PushQuestion({ plan, onPush, onCancel }: { plan: PushPlan; onPush: (num
             {plan.changes !== null && (
                 <>
                     <p className="text-sm font-medium">What goes back: {comparisonLine(plan.changes)}</p>
-                    <ComparisonDetails comparison={plan.changes} />
+                    <ComparisonRows comparison={plan.changes} />
                 </>
             )}
             <div className="flex items-center gap-2">
@@ -120,17 +108,13 @@ export function VersionsView({
     pushFailure,
     pushing,
     refused,
-    shown,
-    comparison,
     plan,
     onCompare,
-    onCloseComparison,
     onPlan,
     onCancelPlan,
     onPush,
     onCreate,
     onOpen,
-    onClose,
 }: {
     bot: string;
     versions: VersionSummary[];
@@ -138,17 +122,13 @@ export function VersionsView({
     pushFailure: PushResult | null;
     pushing: boolean;
     refused: Mistake[] | null;
-    shown: VersionDetail | null;
-    comparison: VersionComparison | null;
     plan: PushPlan | null;
     onCompare: (from: number, to: number) => void;
-    onCloseComparison: () => void;
     onPlan: (number: number) => void;
     onCancelPlan: () => void;
     onPush: (number: number) => void;
     onCreate: () => void;
     onOpen: (version: VersionSummary) => void;
-    onClose: () => void;
 }) {
     const base = `~/bots/${encodeURIComponent(bot)}`;
     const bots = status === null ? null : statusView(status);
@@ -266,71 +246,34 @@ export function VersionsView({
                                 </tr>
                             </thead>
                             <tbody>
-                                {paged.rows.map((version) => {
-                                    // Why: the version before the last row of a page sits on the next page, so it is looked up in the whole list.
-                                    const before = versions[versions.indexOf(version) + 1];
-                                    return (
-                                        <tr key={numberOf(version)}>
-                                            <td className="font-medium">
-                                                v{numberOf(version)} · {dateOf(version)}
-                                            </td>
-                                            <td className="text-muted-foreground">
-                                                {version.facts} facts, {version.knowledgeBases} knowledge bases, {version.articles}{" "}
-                                                articles, {version.procedures} procedures, {version.actions} actions
-                                            </td>
-                                            <td>
-                                                <code className="text-muted-foreground" title={version.sha256}>
-                                                    {digestOf(version.sha256)}
-                                                </code>
-                                            </td>
-                                            <td>
-                                                <div className="flex items-center justify-end gap-2">
-                                                    {before === undefined ? (
-                                                        <span className="text-sm text-muted-foreground">Nothing before it</span>
-                                                    ) : (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => {
-                                                                onCompare(numberOf(before), numberOf(version));
-                                                            }}
-                                                        >
-                                                            Changes
-                                                        </Button>
-                                                    )}
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            onOpen(version);
-                                                        }}
-                                                    >
-                                                        Open
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                {paged.rows.map((version) => (
+                                    <tr key={numberOf(version)}>
+                                        <td className="font-medium">
+                                            v{numberOf(version)} · {dateOf(version)}
+                                        </td>
+                                        <td className="text-muted-foreground">{contentOf(version)}</td>
+                                        <td>
+                                            <code className="text-muted-foreground" title={version.sha256}>
+                                                {digestOf(version.sha256)}
+                                            </code>
+                                        </td>
+                                        <td className="text-right">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    onOpen(version);
+                                                }}
+                                            >
+                                                Open
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </Table>
                     </Paper>
                 </Paginated>
-            )}
-            {comparison !== null && (
-                <ComparisonPanel comparison={comparison} versions={versions} onCompare={onCompare} onClose={onCloseComparison} />
-            )}
-            {shown !== null && (
-                <Paper className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                        <h2 className="flex-1 text-xl font-bold">Version {numberOf(shown.version)}</h2>
-                        <Button variant="outline" size="sm" onClick={onClose}>
-                            Close
-                        </Button>
-                    </div>
-                    <p className="text-sm text-muted-foreground">sha256 {shown.version.sha256}</p>
-                    <pre className="max-h-96 overflow-auto text-xs whitespace-pre-wrap">{shown.document}</pre>
-                </Paper>
             )}
         </Page>
     );

@@ -34,7 +34,7 @@ describe("the rules of every screen", () => {
             "/src/procedures/Checklist.tsx",
             "/src/procedures/RuleEditor.tsx",
             "/src/procedures/StepForm.tsx",
-            "/src/versions/ComparisonPanel.tsx",
+            "/src/versions/VersionView.tsx",
             "/src/versions/VersionsView.tsx",
         ]);
     });
@@ -65,7 +65,7 @@ describe("the rules of every screen", () => {
         expect(filesWith(moves)).toEqual(["/src/design/pagination.tsx"]);
         expect(filesWith(/older changes|load more|show more/i)).toEqual([]);
         expect(filesWith(/<Paginated\b/).sort()).toEqual([
-            "/src/design/historyPanel.tsx",
+            "/src/design/changeList.tsx",
             "/src/design/resourceList.tsx",
             "/src/versions/VersionsView.tsx",
         ]);
@@ -79,6 +79,24 @@ describe("the rules of every screen", () => {
         ]);
         expect(sources["/src/design/pagination.tsx"]).not.toMatch(/history/i);
         expect(sources["/src/api/pagination.ts"]).not.toMatch(/history/i);
+    });
+
+    it("AC-change-history-18: every list of changes uses the one module, and no other source draws a change's row or its lines", () => {
+        expect(filesWith(/<ChangeList\b/).sort()).toEqual(["/src/design/historyPanel.tsx", "/src/history/HistoryScreen.tsx"]);
+        expect(filesWith(/<ChangeRow\b/).sort()).toEqual(["/src/design/changeList.tsx", "/src/versions/comparison.tsx"]);
+        expect(filesWith(/<HistoryPanel\b/).sort()).toEqual([
+            "/src/design/resourceEdit.tsx",
+            "/src/persona/PersonaScreen.tsx",
+            "/src/procedures/ProcedurePanel.tsx",
+            "/src/versions/VersionView.tsx",
+        ]);
+        expect(filesWith(/<ComparisonRows\b/).sort()).toEqual(["/src/versions/VersionView.tsx", "/src/versions/VersionsView.tsx"]);
+        expect(filesWith(/"[−+] "|\bfield\.lines\b|changedLines/)).toEqual(["/src/design/changeList.tsx"]);
+        expect(filesWith(/ComparisonPanel|ComparisonDetails|HistoryList/)).toEqual([]);
+    });
+
+    it("AC-change-history-19: the shared module holds no word for what it lists", () => {
+        expect(sources["/src/design/changeList.tsx"]).not.toMatch(/history/i);
     });
 
     it("AC-pagination-12: the panel asks for as many entries as the server's page size, never a number of its own", () => {

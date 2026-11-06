@@ -58,6 +58,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["GET /api/bots/{bot}/versions"] = Coverage.Cli("versions list"),
         ["GET /api/bots/{bot}/versions/{number}"] = Coverage.Cli("versions show"),
         ["POST /api/bots/{bot}/versions"] = Coverage.Cli("versions create"),
+        ["GET /api/bots/{bot}/versions/{number}/window"] = Coverage.Cli("versions window"),
         ["GET /api/bots/{bot}/versions/{from}/diff/{to}"] = Coverage.Cli("diff"),
         ["GET /api/bots/{bot}/versions/{number}/export"] = Coverage.Cli("export"),
         ["GET /api/bots/{bot}/versions/status"] = Coverage.Cli("versions status"),

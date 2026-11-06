@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec-draft/spec/2026-11-04-change-history.html">
+<html lang="en" data-lang="en" data-kind="spec" data-source="docs/visual/spec/2026-11-04-change-history.html">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -364,8 +364,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="doc-meta">
     <span><b>Status:</b> <span class="status approved">approved</span></span>
     <span><b>Date:</b> 2026-11-04</span>
+    <span><b>Branch:</b> <code>feature/one-history-module</code></span>
     <span><b>Feature:</b> 35 of the suwagcms feature map</span>
-    <span><b>Needs before it:</b> <code>articles</code></span>
+    <span><b>Needs before it:</b> <code>articles</code>, <code>pagination</code></span>
   </div>
   <nav class="doc-nav">
     <a href="https://claude.ai/artifact/RQv48BXAfWrMyjj54SjaJw">Remaining features</a>
@@ -378,16 +379,25 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="tldr">
     <p>Every change to a resource records what changed and when, with the old and new values. The resource's <b>History</b> panel and <code>suwagcms history</code> show it, even after the resource is deleted.</p>
     <p>README lets agents change a bot by themselves, and history is part of what makes that safe. The record cannot be edited. It does not yet say who made a change: that waits for <code>cms-identity</code>, listed below as a criterion for later.</p>
+    <p><b>One module everywhere.</b> The History page, Persona, every resource and every version draw the same rows, write a change the same way and page the same way. The module holds no name: the page that embeds it says “History”. A version gets its own address, <code>.../versions/14</code>, laid out like Persona: its number, digest and content, with a History panel beneath holding what happened between the previous version and this one. “Changes” and the separate comparison look go away, and <b>Compare with…</b> stays there as the one place with a net result between any two versions.</p>
+    <p>A change is written as a comparison writes it, with kept and folded lines; a procedure's entries read as parts; a version's window holds every entry; and a version's own pushes are not on its page. <code>suwagcms history --json</code> stays as it is, and <code>suwagcms versions window</code> reads the window.</p>
   </div>
   <div class="stats">
-    <div><b>15</b><span>criteria</span></div>
+    <div><b>31</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
-    <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
   <p>A customer gets the wrong price. The version shows the text that went out, and <code>version-diff</code> shows which version changed it, but neither says when the text was changed, what it said in between, or what else changed that morning. Several saves can fall between two versions, and many never reach one, so versions alone cannot answer.</p>
+  <p>The same question also has two answers on screen today. The History page, Persona and each resource's edit view share one list, while Versions has a look of its own: “Changes” opens a comparison panel under the table, “Open” a panel with the digest and the document, and neither has an address a person can reload or send, because <code>?open=</code> is taken once and dropped. The two also write a change differently:</p>
+  <table>
+    <tr><th></th><th>History</th><th>A comparison</th></tr>
+    <tr><td>a long text</td><td>removed and added lines only, trimmed at both ends: two edits 40 lines apart read as those 40 lines all removed and added</td><td>aligned line by line, with two kept lines around each change and the rest folded</td></tr>
+    <tr><td>a short value</td><td><code>− 80</code>, then <code>+ 120</code></td><td><code>maxLength: 80 → 120</code></td></tr>
+    <tr><td>a procedure</td><td><code>steps</code> as two long lines of JSON</td><td>its fields, then each step and local fact as a part</td></tr>
+  </table>
+  <p>The module also names itself: “Loading the history…” and “when history started” are inside it, so a page cannot name it in its own way.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
@@ -396,6 +406,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>For any resource, see each change: when and what.</li>
       <li>A record that nobody can edit, and that outlives the resource.</li>
       <li>See recent changes across one bot.</li>
+      <li>One module wherever changes are listed: same rows, same way of writing a change, same pagination.</li>
+      <li>A version has an address and a page laid out like Persona, with what happened between the previous version and this one.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
       <li>Saying who made a change: see “Criteria after other features”.</li>
@@ -403,6 +415,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>Recording reads, or refused attempts.</li>
       <li>Node positions in the creator: moving a node is not a change of a procedure.</li>
       <li>A note on a change: no one has asked for it.</li>
+      <li>Changing what the CLI prints: <code>suwagcms history</code> and <code>suwagcms diff</code> print what they print today, with their own words and marks.</li>
+      <li>Saying on a version's page when it was pushed (owner's decision): its pushes come after its creation, so they are outside its window, and Recent pushes on Versions, the row's link and <code>suwagcms history version 14</code> already say it.</li>
+      <li>Pushing from a version's page: the push stays on Versions, where the bot's status is.</li>
+      <li>Paging a comparison: one answer, as long as the resources that differ, read whole.</li>
+      <li>Links on a comparison's rows: an entry's resource links to its History page because that is how the list is narrowed; nothing has asked for it on a comparison, and in the rollback's question a link would leave the question.</li>
     </ul></div>
   </div>
 </section>
@@ -427,6 +444,19 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ol class="steps">
     <li><p><code>rabaty</code> has not changed since history started. Its panel says no changes have been recorded since the day history started.</p></li>
   </ol>
+  <h3>5. Marta opens a version</h3>
+  <ol class="steps">
+    <li><p>Customers got a wrong price after v14. On Versions she clicks v14 and lands on <code>/bots/rzeczoznawca/versions/14</code>, with its number, digest and content at the top.</p></li>
+    <li><p>The History panel beneath lists what happened after v13 was created, up to v14's creation: <code>cennik</code> edited at 21:40, a batch of three, and v14 created. She sends the address to Marek, and he sees the same.</p></li>
+  </ol>
+  <h3>6. A change made and restored</h3>
+  <ol class="steps">
+    <li><p>Between v13 and v14 someone raised a price at 10:00 and restored it at 10:05. The panel shows both entries, since both happened. <b>Compare with… v13</b> says there are no differences, since nothing differs. Each answers its own question, so both stay.</p></li>
+  </ol>
+  <h3>7. A version older than history</h3>
+  <ol class="steps">
+    <li><p>v3 was created before history started. Its page shows its digest and content as any other, and the panel says changes made before that day were not recorded, so the list may be incomplete.</p></li>
+  </ol>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
@@ -437,6 +467,66 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>what</td><td>the resource's kind and <code>id</code>, and added, edited or deleted</td></tr>
     <tr><td>changes</td><td>each changed field, with its old and new values; an add holds all the fields, and a delete all the last ones</td></tr>
     <tr><td>revision</td><td>the revision the change produced, as a save returns it</td></tr>
+  </table>
+  <h3>The module and who names it</h3>
+  <table>
+    <tr><th>Where</th><th>What names it</th><th>Rows name their resource?</th></tr>
+    <tr><td>a bot's History page, a resource's History page</td><td>the page title; no heading repeats it</td><td>on the bot's page, yes, linked to the resource's History page</td></tr>
+    <tr><td>Persona, every resource's edit view</td><td>the thin <code>HistoryPanel</code> wrapper's “History” heading</td><td>no: every row is that resource</td></tr>
+    <tr><td>a version's page</td><td>the same wrapper and heading</td><td>yes, linked as on the bot's page</td></tr>
+  </table>
+  <p>Inside the module no word says history, in any state: while loading it says “Loading…”, and with nothing to show it says “No change has been recorded since 2026-11-04.” Moving between pages is <code>pagination</code>'s, with “Older changes” gone and the panel's place under <code>historyPage</code>; nothing here repeats it. A failure shows what the server answered, as it does today.</p>
+  <h3>One way of writing a change</h3>
+  <p>An entry, a comparison and a rollback's “what goes back” draw the same row: a badge with the action, the resource when the page lists several, the time, revision and batch when there are any, and the change below.</p>
+  <table>
+    <tr><th>The field</th><th>How it is written</th></tr>
+    <tr><td>a short value</td><td><code>maxLength: 80 → 120</code>, with <code>(none)</code> for a side that has no value</td></tr>
+    <tr><td><code>content</code>, <code>llmGuide</code>, a persona's texts</td><td>the changed lines with two kept lines around each change, and <code>… 37 unchanged lines</code> for the rest</td></tr>
+    <tr><td>a procedure's steps and local facts</td><td>a line per part, <code>step 'askCity' changed</code>, which opens to its fields written the same way</td></tr>
+    <tr><td>an added entry</td><td>folded as “7 fields”, since it holds the whole resource</td></tr>
+  </table>
+  <p>The action keeps its own word: an entry is something that happened (added, edited, deleted, renamed, turned on, turned off, created, pushed), and a comparison is a net result (added, removed, changed). The same colour means the same thing in both. A comparison's added or removed resource lists no fields, as <code>version-diff</code> says.</p>
+  <div class="callout decision"><p><b>The comparison's way, everywhere</b> (owner's decision). Kept lines say where a change sits, folds keep a long article short, and two separate edits stay two. Removed and added lines alone would read two edits far apart as everything between them rewritten, keep a procedure as JSON, and lose the folds <code>version-diff</code> promises. The web and <code>suwagcms history</code> then write an entry differently, as the CLI does not change.</p></div>
+  <div class="callout decision"><p><b>An entry that changes a procedure reads as parts too</b> (owner's decision): one way of writing, and a step's change can be read in History as well. An entry keeps a part added or deleted with its fields, since the record is all that is left of it.</p></div>
+  <h3>A version's page</h3>
+  <script type="text/x-mermaid" data-caption="Where each entry falls, by the order it was recorded">
+flowchart LR
+  S[(History starts)] --> A["edits, pushes, switches"]
+  A --> C13["v13 created"]
+  C13 --> B["edits, a batch, a push of v12"]
+  B --> C14["v14 created"]
+  C14 --> D["later edits: in no version yet"]
+  subgraph W ["v14's window"]
+    B
+    C14
+  end
+  </script>
+  <ul>
+    <li><b>Opening:</b> a version's row on Versions opens <code>.../versions/14</code>. Back returns to the list as it was left, with its <code>page</code>.</li>
+    <li><b>Top:</b> the number as the page's title, the date, the whole digest, the counts of resources and the document as stored.</li>
+    <li><b>The window:</b> the server works it out. It holds every entry (owner's decision: one rule, and a <code>pushed</code> row beside the edits often explains them) recorded after the previous version's creation, through this version's own <code>created</code> entry; the first version starts from the beginning. It goes by the order entries were recorded, never the clock, so each entry falls in one window at most, and entries after the latest version in none.</li>
+    <li><b>Compare with…:</b> a select of the bot's other versions. Choosing v12 shows what going from v12 to v14 changes, between the top and the panel, and writes <code>?compare=12</code> to the address, so a reload and a sent link keep it. Close removes it. The rules of a comparison are in <code>version-diff</code>.</li>
+  </ul>
+  <h3>Edge cases of a version's page</h3>
+  <table>
+    <tr><th>Situation</th><th>Result</th></tr>
+    <tr><td>a version created before history started</td><td>no entries, and the note “Changes made before 2026-11-04 were not recorded, so this list may be incomplete.”, with “No change has been recorded for this version.” in the list: “since 2026-11-04” would be wrong there, since later changes exist and belong to later versions</td></tr>
+    <tr><td>the previous version was created before history started, this one after</td><td>the entries from the start of history, with the same note</td></tr>
+    <tr><td>the first version, on a bot registered before history started</td><td>the same note: the beginning was not recorded</td></tr>
+    <tr><td>the first version, on a bot registered after</td><td>everything from the beginning, with no note</td></tr>
+    <tr><td>a resource renamed in the window</td><td>one <code>renamed</code> row, as in any history, while a comparison lists it removed and added, because a version holds only the <code>id</code></td></tr>
+    <tr><td>a resource renamed or deleted after the window</td><td>its row keeps the <code>id</code> it had, and the link still finds its history, under either <code>id</code>; the document keeps the old <code>id</code>, since a version never changes</td></tr>
+    <tr><td>a resource deleted in the window</td><td>its <code>deleted</code> row, holding what it held last</td></tr>
+    <tr><td>a batch</td><td>all its entries in one window: a save and a version's creation take the same lock on the bot, so a creation cannot fall inside a batch</td></tr>
+    <tr><td>a rollback: v12 pushed after v14 exists</td><td>v12's window does not change. The <code>pushed</code> entry is recorded now, so it falls in the window of the next version created, as any later entry does</td></tr>
+    <tr><td>a resource switched on or off in the window</td><td>its row, with no revision: the row says what happened, not that the version holds it</td></tr>
+    <tr><td>a version renamed or deleted</td><td>cannot happen: no route renames or deletes a version or a bot, so the previous version is always the number before</td></tr>
+    <tr><td><code>.../versions/99</code>, or <code>.../versions/abc</code></td><td>says there is no such version, with the way back to Versions, as a resource's unknown <code>id</code> does</td></tr>
+    <tr><td><code>?compare=99</code></td><td>the page as usual, and the refusal naming the number and the bot's latest in the comparison's place</td></tr>
+    <tr><td>the window fails to load</td><td>the failure in the panel; the version above it stays</td></tr>
+    <tr><td><code>suwagcms export --open</code>'s <code>?open=14</code>, or an old link</td><td>replaced by <code>.../versions/14</code>, as the resource screens do, so Back does not bounce</td></tr>
+    <tr><td><code>suwagcms diff 12 14 --open</code>'s <code>?from=12&amp;to=14</code></td><td>replaced by <code>.../versions/14?compare=12</code></td></tr>
+    <tr><td><code>?open=abc</code>, or <code>?from=</code> without a number</td><td>the list, with the address cleaned</td></tr>
   </table>
   <h3>Edge cases</h3>
   <table>
@@ -453,13 +543,77 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 </section>
 <section data-role="ui">
   <h2>Screen</h2>
-  <div class="wire after"><span class="wf-label">Article cennik, History panel</span>
-    <div class="wf-bar"><b>History</b></div>
-    <div class="wf-body">
-      <div class="wf-card"><b>edited</b> <span class="wf-muted">2026-11-04 21:40 · revision 8</span><p class="wf-muted">content: − Wycena domu: 900 zł · + Wycena domu: 1100 zł</p></div>
-      <div class="wf-card"><b>added</b> <span class="wf-muted">2026-11-02 09:12 · revision 1</span></div>
+  <p>The same rows in the three places, with only what names them differing.</p>
+  <div class="wire-pair">
+    <div class="wire after"><span class="wf-label">A version's page, .../versions/14</span>
+      <div class="wf-bar"><b>Version 14</b><span class="wf-grow"></span><span class="wf-muted">← Versions</span></div>
+      <div class="wf-body">
+        <div class="wf-card wf-new"><span class="wf-muted">2026-11-04 22:02 · digest</span> <code>9f3a…c21e</code><p class="wf-muted">3 facts, 12 articles, 2 procedures, 1 action</p><div class="wf-line"></div><div class="wf-line"></div></div>
+        <div class="wf-row wf-new"><span>Compare with…</span><span class="wf-input">v13 ▾</span><span class="wf-grow"></span></div>
+        <div class="wf-card wf-new"><b>History</b>
+          <div class="wf-card"><span class="tag accent">created</span> <span class="wf-muted">version 14 · 22:02</span></div>
+          <div class="wf-card"><span class="tag accent">edited</span> article <u>cennik</u> <span class="wf-muted">21:40 · revision 8</span><p class="wf-muted">content · … 12 unchanged lines<br>&nbsp; Cennik<br>− Wycena domu: 900 zł<br>+ Wycena domu: 1100 zł<br>… 37 unchanged lines</p></div>
+          <div class="wf-card"><span class="tag ok">added</span> article <u>rabaty</u> <span class="wf-muted">21:12 · batch 4f2a91c0</span><p class="wf-muted">▸ 7 fields</p></div>
+          <div class="wf-row"><span class="wf-btn">Previous</span><span>Page 1 of 2</span><span class="wf-btn">Next</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="wire after"><span class="wf-label">The History page of a bot</span>
+      <div class="wf-bar"><b>History of rzeczoznawca</b></div>
+      <div class="wf-body">
+        <p class="wf-muted">The title names it; no heading under it.</p>
+        <div class="wf-card"><span class="tag accent">edited</span> article <u>cennik</u> <span class="wf-muted">21:40 · revision 8</span><p class="wf-muted">content · … 12 unchanged lines<br>&nbsp; Cennik<br>− Wycena domu: 900 zł<br>+ Wycena domu: 1100 zł<br>… 37 unchanged lines</p></div>
+        <div class="wf-card"><span class="tag accent">edited</span> fact <u>customer.city</u> <span class="wf-muted">20:15 · revision 3</span><p class="wf-muted">maxLength: 80 → 120</p></div>
+        <div class="wf-row"><span class="wf-btn">Previous</span><span>Page 2 of 7</span><span class="wf-btn">Next</span></div>
+      </div>
+    </div>
+    <div class="wire after"><span class="wf-label">Article cennik, its edit view</span>
+      <div class="wf-bar"><b>Article cennik</b><span class="wf-grow"></span><span class="wf-btn">Change id</span></div>
+      <div class="wf-body">
+        <div class="wf-card"><span class="wf-input">Title: Cennik</span><div class="wf-line"></div></div>
+        <div class="wf-card"><b>History</b>
+          <div class="wf-card"><span class="tag accent">edited</span> <span class="wf-muted">21:40 · revision 8</span><p class="wf-muted">content · … 12 unchanged lines<br>&nbsp; Cennik<br>− Wycena domu: 900 zł<br>+ Wycena domu: 1100 zł<br>… 37 unchanged lines</p></div>
+          <div class="wf-card"><span class="tag ok">added</span> <span class="wf-muted">2026-11-02 09:12 · revision 1</span><p class="wf-muted">▸ 7 fields</p></div>
+        </div>
+      </div>
     </div>
   </div>
+  <div class="wire-pair">
+    <div class="wire"><span class="wf-label">Versions, before</span>
+      <div class="wf-bar"><b>Versions of rzeczoznawca</b></div>
+      <div class="wf-body">
+        <div class="wf-card wf-row"><b>v14</b><span class="wf-grow wf-muted">2026-11-04 22:02</span><span class="wf-btn wf-gone">Changes</span><span class="wf-btn">Open</span></div>
+        <div class="wf-card wf-gone">From v13 to v14, under the table, in a look of its own</div>
+        <div class="wf-card wf-gone">Version 14, sha256 and the document, under the table, with no address</div>
+      </div>
+    </div>
+    <div class="wire after"><span class="wf-label">Versions, after</span>
+      <div class="wf-bar"><b>Versions of rzeczoznawca</b></div>
+      <div class="wf-body">
+        <div class="wf-card wf-row"><b>v14</b><span class="wf-grow wf-muted">2026-11-04 22:02</span><span class="wf-btn">Open</span></div>
+        <p class="wf-muted">Open goes to .../versions/14. The bot's status, its pushes and Compare v12 with v14 stay above the table.</p>
+      </div>
+    </div>
+    <div class="wire after"><span class="wf-label">A version older than history</span>
+      <div class="wf-bar"><b>Version 3</b></div>
+      <div class="wf-body">
+        <div class="wf-card"><span class="wf-muted">2026-10-01 · digest</span> <code>07bd…91a4</code></div>
+        <div class="wf-card"><b>History</b><p class="wf-new">Changes made before 2026-11-04 were not recorded, so this list may be incomplete.</p><p class="wf-muted">No change has been recorded for this version.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section data-role="contract">
+  <h2>Contract: the API and the addresses <span class="tag note">optional</span></h2>
+  <p>The API's contract is <code>Suwagcms.Server/openapi.json</code>. This adds one read-only route and one field only the web asks for, and changes nothing else.</p>
+  <table>
+    <tr><th>What</th><th>Behaviour</th></tr>
+    <tr><td>a version's window, a new route of the form <code>GET /api/bots/{bot}/versions/{number}/window</code></td><td>Answers the entries of the window, newest first, one page at a time as the History routes do (<code>limit</code>, <code>before</code>, and <code>page</code>, which adds <code>total</code>), with <code>since</code> and <code>incomplete</code>, which says the window opens before history started. A bot or number it does not know is refused, naming the latest. It only reads, so the guard of <code>AC-change-history-5</code> still holds.</td></tr>
+    <tr><td>an entry's <code>written</code>, on the History routes and the window's</td><td>The same changes as a comparison writes them, from the same code, answered only when a numbered <code>page</code> is asked for, as <code>total</code> is. The CLI never asks for one, so what <code>suwagcms history --json</code> prints does not change.</td></tr>
+    <tr><td><code>GET /api/bots/{bot}/versions/{id}/history</code></td><td>Stays as it is: the entries filed under that version, its creation and its pushes, which is what <code>suwagcms history version 14</code> prints. It is not the window.</td></tr>
+    <tr><td>the guard that ties routes to commands</td><td>Names the window's route with its command, <code>suwagcms versions window</code>, which the Claude plugin's main skill describes: everything in the CMS can be done through them (owner's decision).</td></tr>
+    <tr><td><code>/bots/{bot}/versions/{number}</code>, <code>?compare=</code></td><td>New web addresses, the second beside <code>historyPage</code> and the list's <code>page</code>. <code>?open=</code>, <code>?from=</code> and <code>?to=</code> remain as ways in, and lead there.</td></tr>
+  </table>
 </section>
 <section data-role="decisions">
   <h2>Decisions <span class="tag note">optional</span></h2>
@@ -473,6 +627,13 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li>The entries of a batch share an id only when one save changed more than one resource; a single entry has nothing to be told apart from.</li>
     <li>A resource's history opened with <code>--open</code> is the bot's History page narrowed to that resource, the one page that also exists for a deleted resource; the panel beside a resource's form shows the same entries.</li>
     <li>A version is a kind of its own in history, filed under its number: created with its digest, pushed with its result.</li>
+    <li>The shared module holds no name (owner's decision): it can then sit on any page, and the page says what it is.</li>
+    <li>A window is worked out by the server from the entries of creation, since an entry carries no version number and the browser would otherwise read the whole history to find one.</li>
+    <li>A window has its own route and command rather than a change to the version's history route, because that one answers what <code>suwagcms history version 14</code> prints, which does not change.</li>
+    <li>An entry's lines reach the screen as a field of their own, written by the comparison's code from the entry's old and new values, so there is no second aligner, and the entry as recorded stays what the CLI prints.</li>
+    <li>A version's <code>created</code> entry ends its own window, so the page shows when it was made and two windows never share an entry.</li>
+    <li>The net comparison stays beside the entries (owner's decision): a change made and restored is two entries and no difference, and only the comparison says what a push really changes.</li>
+    <li>A row's link stays one rule, the resource's History page, also for a version's row: that page lists its creation and its pushes, which its window does not.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -493,6 +654,22 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-change-history-14</code> A push of an older version is recorded with the version it left and the version it chose.</li>
     <li><code>AC-change-history-15</code> Turning a resource on or off is recorded, as a change outside versions: it holds the old and the new state and no revision.</li>
     <li><code>AC-change-history-17</code> A change of a resource's <code>id</code> is one entry for that resource, never a delete and an add, with the old and new <code>id</code>, and its history goes on under the new <code>id</code>; each rewritten referrer gets its own entry in the same batch; and the resource's history is found under either <code>id</code>, also when another resource takes the old one.</li>
+    <li><code>AC-change-history-18</code> A bot's History page, a resource's History page, Persona, every resource's edit view and a version's page list entries with one shared module, and a comparison and a rollback's “what goes back” draw their rows with its row; no other source draws a change's row or its lines. <span class="tag note">web test, reads the source</span></li>
+    <li><code>AC-change-history-19</code> Rendered loading, empty and with entries, the module draws no heading and no word “history” in any case: it says “Loading…” while loading and “No change has been recorded since 2026-11-04.” with no entries. <span class="tag note">web test</span></li>
+    <li><code>AC-change-history-20</code> A bot's History page has its title and no heading repeating it; Persona, a resource's edit view and a version's page each have exactly one “History” heading, from the wrapper. <span class="tag note">web test</span></li>
+    <li><code>AC-change-history-21</code> Given the same old and new text, an entry and a comparison draw the same lines: the changes with two kept lines around each and the rest folded, so two edits 40 lines apart read as two edits; a short value reads <code>maxLength: 80 → 120</code> in both. <span class="tag note">server test, web test</span></li>
+    <li><code>AC-change-history-22</code> An entry that changes a procedure's steps reads as parts, <code>step 'askCity' changed</code>, as a comparison's does, each opening to its fields, and no JSON of the steps is drawn. <span class="tag note">web test</span></li>
+    <li><code>AC-change-history-23</code> <code>suwagcms history</code> and <code>suwagcms diff</code>, as text and with <code>--json</code>, print exactly what they print today, and <code>GET .../versions/14/history</code> still answers only that version's creation and pushes. <span class="tag note">cli test, server test</span></li>
+    <li><code>AC-change-history-24</code> Opening a version from Versions goes to <code>.../versions/14</code>, which shows its number, date, whole digest, counts and document as stored, with a History panel beneath it; a reload stays there, and Back returns to the list on the page it left. <span class="tag note">browser test</span></li>
+    <li><code>AC-change-history-25</code> A number the bot does not have, and an address that is not a number, say there is no such version, with the way back to Versions. <span class="tag note">web test</span></li>
+    <li><code>AC-change-history-26</code> <code>?open=14</code> on Versions is replaced by <code>.../versions/14</code> and <code>?from=12&amp;to=14</code> by <code>.../versions/14?compare=12</code>, leaving no step for Back to return to, and <code>?open=abc</code> shows the list with a clean address. <span class="tag note">browser test</span></li>
+    <li><code>AC-change-history-27</code> With v1, then 2 saves, v2, 3 saves and v3, then 1 save: v1's window holds its own <code>created</code> entry and what came before it, v2's the 2 saves and its <code>created</code> entry, v3's the 3 saves and its <code>created</code> entry, newest first; the last save is in none, every other entry is in exactly one, and another bot's entries are in none, also when two entries share a timestamp. <span class="tag note">server test</span></li>
+    <li><code>AC-change-history-28</code> Pushing v1 after v3 exists leaves every window as it was, and the <code>pushed</code> entry falls in the window of the next version created. <span class="tag note">server test</span></li>
+    <li><code>AC-change-history-29</code> In a window, a file of changes keeps all its entries together under one batch, a rename is one <code>renamed</code> entry, and a deleted resource's entry holds what it held last; on a version's page each row names its resource with a link to its History page, which still opens after that resource is renamed or deleted. <span class="tag note">server test, web test</span></li>
+    <li><code>AC-change-history-30</code> A version whose window opens before history started, because it or the previous version is older than that or it is the first on an older bot, is answered as possibly incomplete, and its page says “Changes made before 2026-11-04 were not recorded, so this list may be incomplete.”, with “No change has been recorded for this version.” when it lists nothing; any other version says no such thing. <span class="tag note">server test, web test</span></li>
+    <li><code>AC-change-history-31</code> A window of 12 entries at a page size of 5 gives 3 pages, newest first, with no entry missing or repeated, and on a version's page they move with the same controls under <code>historyPage</code>. <span class="tag note">server test, web test</span></li>
+    <li><code>AC-change-history-32</code> A price changed and restored between v13 and v14 shows as two entries in v14's panel, and comparing v14 with v13 on that page says there are no differences. <span class="tag note">server test</span></li>
+    <li><code>AC-change-history-33</code> The window can be read through the CLI and the Claude plugin: <code>suwagcms versions window &lt;number&gt;</code> lists its entries with <code>--limit</code> and <code>--before</code>, says when it may be incomplete, <code>--json</code> gives the entries and <code>incomplete</code>, <code>--open</code> opens the version's page, a number the bot does not have is refused naming its latest with exit code 1, and the plugin's main skill describes the command. <span class="tag note">cli test, server test</span></li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">
@@ -504,6 +681,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 </section>
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
+  <div class="callout note"><p><b>Tests that must follow, with their criteria unchanged:</b> <code>AC-version-create-13</code> (a version read on its page), <code>AC-version-diff-11</code> and <code>AC-version-export-10</code> (what <code>--open</code> prints now arrives through a redirect), and <code>AC-change-history-6</code>, already named by <code>pagination</code>.</p></div>
   <div class="callout risk"><p><b>Deleted text stays in history.</b> Personal data pasted into an article is kept even after a delete, and no route removes it. If a legal request ever demands removal, it will be a task of its own against the database.</p></div>
   <div class="callout warn"><p><b>Without who, history cannot say whose change it was.</b> Entries made before <code>cms-identity</code> stay without an author for good. Anyone who can reach the CMS can make a change, so an entry proves what happened, not who did it.</p></div>
   <div class="callout warn"><p>History grows with each save and holds old and new values of long articles. Nobody has measured it; reads are paged so that the page stays quick.</p></div>

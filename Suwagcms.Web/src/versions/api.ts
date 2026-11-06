@@ -7,7 +7,6 @@ export type VersionDetail = components["schemas"]["VersionDetail"];
 export type VersionCreated = components["schemas"]["VersionCreated"];
 export type VersionComparison = components["schemas"]["VersionComparison"];
 export type ResourceDifference = components["schemas"]["ResourceDifference"];
-export type FieldDifference = components["schemas"]["FieldDifference"];
 
 function versionsPath(bot: string): string {
     return `/bots/${encodeURIComponent(bot)}/versions`;
@@ -17,12 +16,12 @@ export function fetchVersions(bot: string, signal: AbortSignal): Promise<Version
     return request<VersionSummary[]>(versionsPath(bot), { signal });
 }
 
-export function fetchVersion(bot: string, number: number): Promise<VersionDetail> {
-    return request<VersionDetail>(`${versionsPath(bot)}/${number}`);
+export function fetchVersion(bot: string, number: number, signal: AbortSignal): Promise<VersionDetail> {
+    return request<VersionDetail>(`${versionsPath(bot)}/${number}`, { signal });
 }
 
-export function fetchComparison(bot: string, from: number, to: number): Promise<VersionComparison> {
-    return request<VersionComparison>(`${versionsPath(bot)}/${from}/diff/${to}`);
+export function fetchComparison(bot: string, from: number, to: number, signal: AbortSignal): Promise<VersionComparison> {
+    return request<VersionComparison>(`${versionsPath(bot)}/${from}/diff/${to}`, { signal });
 }
 
 export function createVersion(bot: string): Promise<VersionCreated> {
@@ -32,6 +31,24 @@ export function createVersion(bot: string): Promise<VersionCreated> {
 /** The generated type allows a string for an int32; the server sends a number. */
 export function numberOf(version: VersionSummary): number {
     return Number(version.number);
+}
+
+// Why: the API takes a version as a 32-bit number, so anything longer in an address is no version at all rather than a refused request.
+const LARGEST_NUMBER = 2_147_483_647;
+
+/** The version an address asks for: a whole number, 1 or more; anything else is none. */
+export function versionNumberOf(raw: string | null): number | null {
+    if (raw === null || !/^[1-9]\d*$/.test(raw)) return null;
+    const number = Number(raw);
+    return number <= LARGEST_NUMBER ? number : null;
+}
+
+export function dateOf(version: VersionSummary): string {
+    return version.createdAt.slice(0, 16).replace("T", " ");
+}
+
+export function contentOf(version: VersionSummary): string {
+    return `${version.facts} facts, ${version.knowledgeBases} knowledge bases, ${version.articles} articles, ${version.procedures} procedures, ${version.actions} actions`;
 }
 
 export type BotStatus = components["schemas"]["BotStatus"];

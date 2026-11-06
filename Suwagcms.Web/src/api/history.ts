@@ -1,4 +1,4 @@
-// Why: the resource screens and the bot's History page all read the same two routes, so the calls and their hook exist once.
+// Why: the resource screens, the bot's History page and a version's page all read the same kind of answer, so the calls and their hook exist once.
 import { useContext, useEffect, useRef, useState } from "react";
 
 import { request } from "./client";
@@ -35,6 +35,7 @@ export interface HistoryState {
     since: string | null;
     failure: string | null;
     paging: Paging;
+    incomplete: boolean;
 }
 
 function useHistoryAt(path: string | null, revision: number, pageName: string): HistoryState {
@@ -76,6 +77,7 @@ function useHistoryAt(path: string | null, revision: number, pageName: string): 
         since: current?.body?.since ?? null,
         failure: sizeFailure ?? current?.failure ?? null,
         paging: { page, pages: pages ?? 1, asking: false, failure: null, onMove: move },
+        incomplete: current?.body?.incomplete ?? false,
     };
 }
 
@@ -100,4 +102,9 @@ export function useResourceHistory(
         revision,
         pageName,
     );
+}
+
+/** What happened between the previous version and this one; the server works it out. `number` null loads nothing. */
+export function useVersionWindow(bot: string, number: number | null): HistoryState {
+    return useHistoryAt(number === null ? null : `/bots/${encodeURIComponent(bot)}/versions/${number}/window`, 0, HISTORY_PAGE);
 }

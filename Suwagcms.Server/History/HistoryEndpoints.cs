@@ -5,10 +5,11 @@ using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Settings;
+using Suwagcms.Server.Versions;
 
 namespace Suwagcms.Server.History;
 
-// Why: the two routes only read: the record cannot be edited, and a guard in the tests fails when a route that writes it appears.
+// Why: the routes only read: the record cannot be edited, and a guard in the tests fails when a route that writes it appears.
 internal static class HistoryEndpoints
 {
     private const string Title = "The history was not shown.";
@@ -36,6 +37,7 @@ internal static class HistoryEndpoints
                 OfResource
             )
             .Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/versions/{number:int}/window", OfWindow).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
     }
 
     private static Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfBot(
@@ -58,6 +60,41 @@ internal static class HistoryEndpoints
         int? page = null
     ) => PageAsync(bot, (Kinds[kind], id), pool, limit, before, page, cancellationToken);
 
+    private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfWindow(
+        string bot,
+        int number,
+        Pool pool,
+        CancellationToken cancellationToken,
+        int limit = DefaultLimit,
+        long? before = null,
+        int? page = null
+    )
+    {
+        if (!await VersionStore.ExistsAsync(pool, bot, number, cancellationToken))
+        {
+            return await VersionEndpoints.MissingAsync(pool, bot, number, Title, cancellationToken);
+        }
+        var answer = await HistoryStore.ReadWindowAsync(
+            pool,
+            bot,
+            number,
+            Math.Clamp(limit, 1, PageSize.Most),
+            before,
+            page,
+            cancellationToken
+        );
+        return TypedResults.Ok(WrittenWhenPaged(answer, page));
+    }
+
+    // Why: a numbered page is what the web asks for, and the CLI never does, so its entries stay exactly as they were recorded.
+    private static HistoryPage WrittenWhenPaged(HistoryPage answer, int? page) =>
+        page is null
+            ? answer
+            : answer with
+            {
+                Entries = [.. answer.Entries.Select(entry => entry with { Written = VersionComparer.Written(entry.Kind, entry.Changes) })],
+            };
+
     private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> PageAsync(
         string bot,
         (string Kind, string Id)? resource,
@@ -69,6 +106,6 @@ internal static class HistoryEndpoints
     ) =>
         await HistoryStore.ReadAsync(pool, bot, resource, Math.Clamp(limit, 1, PageSize.Most), before, page, cancellationToken)
             is { } answer
-            ? TypedResults.Ok(answer)
+            ? TypedResults.Ok(WrittenWhenPaged(answer, page))
             : EditProblems.For(new EditResult.UnknownBot(), bot, Title);
 }

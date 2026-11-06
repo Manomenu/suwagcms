@@ -2630,6 +2630,92 @@
         }
       }
     },
+    "/api/bots/{bot}/versions/{number}/window": {
+      "get": {
+        "tags": [
+          "HistoryEndpoints"
+        ],
+        "parameters": [
+          {
+            "name": "bot",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPage"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Refusal"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots/{bot}/availability": {
       "get": {
         "tags": [
@@ -4015,9 +4101,19 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "written": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WrittenChange"
+              }
+            ]
           }
         },
-        "description": "One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure, action or version; and id), the action (added, edited, deleted, renamed, turned on, turned off, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share."
+        "description": "One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure, action or version; and id), the action (added, edited, deleted, renamed, turned on, turned off, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share. Written is the same changes as a comparison writes them, answered only when a numbered `page` was asked for."
       },
       "HistoryPage": {
         "required": [
@@ -4054,9 +4150,15 @@
               "string"
             ],
             "format": "int64"
+          },
+          "incomplete": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         },
-        "description": "A page of history, newest first. Next is the `before` that asks for the next page, empty on the last; Since is when history started, so an empty page can say no change has been recorded since then; Total is how many entries there are in all, answered only when a numbered `page` was asked for."
+        "description": "A page of history, newest first. Next is the `before` that asks for the next page, empty on the last; Since is when history started, so an empty page can say no change has been recorded since then; Total is how many entries there are in all, answered only when a numbered `page` was asked for; Incomplete, answered only for a version's window, says the window opens before history started, so changes may be missing from it."
       },
       "InformArguments": {
         "type": "object",
@@ -5619,6 +5721,28 @@
           }
         },
         "description": "A version of a bot in the list: its number, when it was created, how many resources of each kind it holds, and the sha256 of its document."
+      },
+      "WrittenChange": {
+        "required": [
+          "fields",
+          "parts"
+        ],
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartDifference"
+            }
+          }
+        },
+        "description": "An entry's changes written as a comparison writes them: each field with its old and new values or its lines, and a procedure's steps and local facts as parts."
       }
     }
   },

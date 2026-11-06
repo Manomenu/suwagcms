@@ -144,7 +144,7 @@ internal static class VersionEndpoints
     }
 
     // Why: an unknown bot and an unknown number are told apart, since the fix differs.
-    private static async Task<ProblemHttpResult> MissingAsync(
+    internal static async Task<ProblemHttpResult> MissingAsync(
         Pool pool,
         string bot,
         int number,

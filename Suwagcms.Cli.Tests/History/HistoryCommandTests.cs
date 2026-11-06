@@ -83,4 +83,72 @@ public sealed class HistoryCommandTests
         Assert.Equal("http://cms.internal/bots/rzeczoznawca/history", opened[0].AbsoluteUri);
         Assert.Equal("http://cms.internal/bots/rzeczoznawca/history?kind=knowledge-bases&id=oferta", opened[1].AbsoluteUri);
     }
+
+    private const string IncompleteWindow = """
+        {"entries":[],"next":null,"since":"2026-11-04T08:00:00+00:00","incomplete":true}
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-33")]
+    public async Task The_window_of_a_version_asks_its_route_and_names_each_resource()
+    {
+        var server = StubServer.Answering(HttpStatusCode.OK, Edited);
+
+        var result = await TestCli.Run(["versions", "window", "14", "--limit", "2", "--before", "40", .. OnBot], server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("http://cms.internal/api/bots/rzeczoznawca/versions/14/window?limit=2&before=40", server.Requests[0].AbsoluteUri);
+        Assert.Contains("article cennik", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("may be incomplete", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-33")]
+    public async Task A_window_that_opens_before_history_says_the_list_may_be_incomplete()
+    {
+        var result = await TestCli.Run(["versions", "window", "3", .. OnBot], StubServer.Answering(HttpStatusCode.OK, IncompleteWindow));
+
+        Assert.Contains(
+            "Changes made before 2026-11-04 were not recorded, so this list may be incomplete.",
+            result.Output,
+            StringComparison.Ordinal
+        );
+        Assert.Contains("No change has been recorded for this version.", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-33")]
+    public async Task Open_opens_the_versions_page_and_json_gives_the_incomplete_flag()
+    {
+        var opened = new List<Uri>();
+
+        await TestCli.Run(["versions", "window", "14", "--open", .. OnBot], StubServer.Healthy(), openBrowser: opened.Add);
+        var json = await TestCli.Run(
+            ["versions", "window", "3", "--json", .. OnBot],
+            StubServer.Answering(HttpStatusCode.OK, IncompleteWindow)
+        );
+
+        Assert.Equal("http://cms.internal/bots/rzeczoznawca/versions/14", opened[0].AbsoluteUri);
+        Assert.True(JsonNode.Parse(json.Output)?["incomplete"]?.GetValue<bool>());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-23")]
+    public async Task What_history_prints_as_text_stays_with_its_own_words_and_marks()
+    {
+        var result = await TestCli.Run(["history", "article", "cennik", .. OnBot], StubServer.Answering(HttpStatusCode.OK, Edited));
+
+        Assert.Contains("    - Wycena domu: 900 zł", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("→", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("  Cennik", result.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-33")]
+    public void The_plugins_skill_says_what_the_window_command_does()
+    {
+        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
+
+        Assert.Contains("suwagcms versions window <number>", skill, StringComparison.Ordinal);
+    }
 }

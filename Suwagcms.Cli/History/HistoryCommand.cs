@@ -108,7 +108,7 @@ internal static class HistoryCommand
         return word is null ? page : new Uri(page, $"?kind={Collections[word]}&id={Uri.EscapeDataString(resource ?? "")}");
     }
 
-    private static string Query(int? limit, long? before)
+    internal static string Query(int? limit, long? before)
     {
         var parts = new List<string>();
         if (limit is { } size)

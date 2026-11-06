@@ -22,7 +22,7 @@ test("AC-change-history-6: the bot's History page lists every change newest firs
 
     await page.getByRole("link", { name: "oferta", exact: true }).first().click();
     await expect(page.getByRole("heading", { name: "History of oferta" })).toBeVisible();
-    await expect(page.getByText("− Nowa oferta").first()).toBeVisible();
+    await expect(page.locator("li").filter({ hasText: "deleted" })).toContainText("title: Nowa oferta → (none)");
 });
 
 test("AC-change-history-1: a resource's History panel shows a change with its old and new values, and one with none says since when", async ({
@@ -43,6 +43,5 @@ test("AC-change-history-1: a resource's History panel shows a change with its ol
 
     const panel = page.getByRole("region", { name: "History" });
     await expect(panel.getByText("revision 2")).toBeVisible();
-    await expect(panel.getByText("− Oferta")).toBeVisible();
-    await expect(panel.getByText("+ Nowa oferta")).toBeVisible();
+    await expect(panel.locator("li").filter({ hasText: "revision 2" })).toContainText("title: Oferta → Nowa oferta");
 });
