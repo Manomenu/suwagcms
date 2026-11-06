@@ -5,6 +5,7 @@ using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Contracts;
+using Suwagcms.Contracts.KnowledgeBases;
 
 namespace Suwagcms.Cli.KnowledgeBases;
 

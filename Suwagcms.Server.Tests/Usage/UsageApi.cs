@@ -1,5 +1,5 @@
 using System.Net.Http.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Usage;
 
 namespace Suwagcms.Server.Tests.Usage;
 

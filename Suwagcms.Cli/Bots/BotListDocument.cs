@@ -1,4 +1,4 @@
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
 
 namespace Suwagcms.Cli.Bots;
 

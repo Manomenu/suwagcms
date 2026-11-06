@@ -6,8 +6,12 @@ public sealed class MainSkillContentTests
     private static readonly (string Topic, string Section, string[] Words)[] Required =
     [
         ("how to install the CLI", "Install", ["dotnet tool install -g Suwagcms.Cli"]),
-        ("how to pick the server", "Server and bot", ["--server", "SUWAGCMS_URL", "suwagcms server <url>"]),
-        ("how to pick the bot", "Server and bot", ["--bot", "SUWAGCMS_BOT", "suwagcms use <id>"]),
+        (
+            "how to pick the server",
+            "Server and bot",
+            ["--server", "SUWAGCMS_URL", "suwagcmsUrl", "suwagcms/config.yaml", "suwagcms server <url>"]
+        ),
+        ("how to pick the bot", "Server and bot", ["--bot", "SUWAGCMS_BOT", "botId", "suwagcms use <id>"]),
         ("to use --json", "Output", ["--json", "one JSON document"]),
         ("how to read a refusal", "Refusals", ["Exit code `1`", "mistakes", "fix"]),
         (

@@ -1,6 +1,7 @@
 using System.Globalization;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Availability;
 using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Sdk.BotRuntime.Availability;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 

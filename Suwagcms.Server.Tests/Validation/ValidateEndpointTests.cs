@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Validation;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Tests.Versions;
 

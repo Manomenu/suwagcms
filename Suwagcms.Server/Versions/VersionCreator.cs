@@ -1,7 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.History;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;

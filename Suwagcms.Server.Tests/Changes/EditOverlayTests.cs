@@ -1,6 +1,11 @@
 using System.Text.Json;
 using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Actions;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Procedures;
+using Suwagcms.Sdk.Format.Actions;
+using Suwagcms.Sdk.Format.Facts;
+using Suwagcms.Sdk.Format.Procedures;
 
 namespace Suwagcms.Server.Tests.Changes;
 

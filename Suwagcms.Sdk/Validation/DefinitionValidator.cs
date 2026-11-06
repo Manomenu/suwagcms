@@ -1,6 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.References;
+using Suwagcms.Sdk.Validation.Rules;
 
 namespace Suwagcms.Sdk.Validation;
 
@@ -19,7 +22,7 @@ public static class DefinitionValidator
         .. ReferenceRules.All,
         .. ProcedureShapeRules.All,
         .. ProcedureFactRules.All,
-        .. ActionStepRules.All,
+        .. ActionBlockRules.All,
         .. ProcedureVersionRules.All,
         .. PersonaRules.All,
     ];

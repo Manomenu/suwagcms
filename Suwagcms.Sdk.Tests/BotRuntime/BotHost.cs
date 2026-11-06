@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.BotRuntime;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.BotRuntime.Versions;
+using Suwagcms.Sdk.Format.Declaration;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 

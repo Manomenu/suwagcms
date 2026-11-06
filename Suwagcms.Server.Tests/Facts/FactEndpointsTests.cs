@@ -1,5 +1,5 @@
 using System.Net;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Facts;
 
 namespace Suwagcms.Server.Tests.Facts;
 

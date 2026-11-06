@@ -1,6 +1,9 @@
 using System.Net;
-using Suwagcms.Sdk.BotRuntime;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.BotRuntime.Versions;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Facts;
+using Suwagcms.Sdk.Format.Procedures.Blocks;
+using Suwagcms.Sdk.Format.Versions;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 

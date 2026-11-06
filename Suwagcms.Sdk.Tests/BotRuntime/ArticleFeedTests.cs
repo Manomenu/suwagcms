@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Sdk.BotRuntime.Versions;
+using Suwagcms.Sdk.Tests.BotRuntime.Versions;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 

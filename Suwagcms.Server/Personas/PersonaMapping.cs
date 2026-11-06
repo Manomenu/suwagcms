@@ -1,6 +1,7 @@
 using System.Text.Json;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Personas;
+using Suwagcms.Sdk.Format.Personas;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Editing;
 

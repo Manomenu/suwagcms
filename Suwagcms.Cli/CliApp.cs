@@ -24,9 +24,21 @@ internal static class CliApp
 {
     public static async Task<int> Run(string[] args, InvocationConfiguration configuration, CliEnvironment? environment = null)
     {
-        var root = Create(environment ?? CliEnvironment.Real());
+        var machine = environment ?? CliEnvironment.Real();
+        var root = Create(machine);
         var parsed = root.Parse(args);
-        return parsed.Errors.Count > 0 ? await MisusedAsync(root, parsed, configuration) : await parsed.InvokeAsync(configuration);
+        if (parsed.Errors.Count > 0)
+        {
+            return await MisusedAsync(root, parsed, configuration);
+        }
+        var (config, problem) = RepositoryConfig.Find(parsed.GetValue<string?>(RepositoryConfig.DirOption), machine.WorkingDirectory);
+        if (problem is not null)
+        {
+            var report = new Report(configuration.Output, configuration.Error, parsed.GetValue<bool>("--json"));
+            return await report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
+        }
+        // Why: the commands take the machine when they are built, and what the repository says is known only once the arguments are parsed.
+        return await Create(machine with { Config = config }).Parse(args).InvokeAsync(configuration);
     }
 
     public static RootCommand Create(CliEnvironment environment)

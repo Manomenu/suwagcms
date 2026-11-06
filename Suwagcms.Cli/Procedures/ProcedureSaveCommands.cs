@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Procedures;
 
 namespace Suwagcms.Cli.Procedures;
 
@@ -137,7 +137,8 @@ internal static class ProcedureSaveCommands
     private static Option<string> FileOption() =>
         new("--file")
         {
-            Description = "A YAML or JSON file with the whole procedure: id, description, firstStep, steps, whenStalled, localFacts.",
+            Description =
+                "A YAML or JSON file with the whole procedure: id, description, firstStep, steps, whenStalled, whenInterrupted, localFacts.",
             Required = true,
         };
 

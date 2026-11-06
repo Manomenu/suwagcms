@@ -1,5 +1,6 @@
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Versions;
 
 namespace Suwagcms.Server.Tests.Versions;

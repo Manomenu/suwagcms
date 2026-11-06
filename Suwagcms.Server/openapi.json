@@ -4370,6 +4370,12 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/LocalFact"
             }
+          },
+          "whenInterrupted": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "A procedure as the API shows it: the format's fields, the revision to send back to guard an edit, and what still stops it from becoming a version."
@@ -5193,6 +5199,12 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/LocalFact"
             }
+          },
+          "whenInterrupted": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "description": "What saving a procedure takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once."

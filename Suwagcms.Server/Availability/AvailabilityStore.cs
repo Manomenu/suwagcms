@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Dapper;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.BotRuntime;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Availability;
+using Suwagcms.Contracts.History;
+using Suwagcms.Contracts.Usage;
+using Suwagcms.Sdk.BotRuntime.Availability;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 

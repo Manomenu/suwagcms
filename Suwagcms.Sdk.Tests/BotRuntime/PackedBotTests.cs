@@ -11,7 +11,9 @@ public sealed class PackedBotTests
 {
     private const string Program = """
         using Suwagcms.Sdk.BotRuntime;
+        using Suwagcms.Sdk.BotRuntime.Versions;
         using Suwagcms.Sdk.Format;
+        using Suwagcms.Sdk.Format.Declaration;
 
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddSuwagcmsBot(

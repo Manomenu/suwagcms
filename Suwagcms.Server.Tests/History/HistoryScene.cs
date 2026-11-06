@@ -3,8 +3,7 @@ extern alias Cli;
 using System.CommandLine;
 using System.Net;
 using System.Net.Http.Json;
-using Suwagcms.Contracts;
-using Suwagcms.Server.Tests.Versions;
+using Suwagcms.Contracts.History;
 using CliApp = Cli::Suwagcms.Cli.CliApp;
 using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 

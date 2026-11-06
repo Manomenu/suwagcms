@@ -59,6 +59,8 @@ export interface Draft {
     description: string;
     firstStep: string | null;
     whenStalled: Instruction | null;
+    /** Left out when the author chose nothing, so a save does not write a choice nobody made. */
+    whenInterrupted?: string;
     steps: Record<string, Step>;
     localFacts: Record<string, LocalFact>;
 }
@@ -132,6 +134,7 @@ export function fromDetail(detail: ProcedureDetail): Draft {
         whenStalled: detail.whenStalled ? instructionOf(detail.whenStalled) : null,
         steps: Object.fromEntries(Object.entries(detail.steps).map(([name, wire]) => [name, stepOf(wire)])),
         localFacts: detail.localFacts ?? {},
+        ...(detail.whenInterrupted ? { whenInterrupted: detail.whenInterrupted } : {}),
     };
 }
 
@@ -160,6 +163,7 @@ export function toSave(draft: Draft): SaveProcedure {
             ]),
         ),
         ...(Object.keys(draft.localFacts).length === 0 ? {} : { localFacts: draft.localFacts }),
+        ...(draft.whenInterrupted ? { whenInterrupted: draft.whenInterrupted } : {}),
     };
 }
 

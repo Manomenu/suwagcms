@@ -2,6 +2,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Actions;
+using Suwagcms.Sdk.Format.Facts;
+using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.Personas;
+using Suwagcms.Sdk.Format.Procedures;
+using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Server.Editing;
 

@@ -37,7 +37,7 @@ After registration the CMS asks the bot what it supports:
 | :------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
 | **Knowledge base** | `id`, `title`, `language`                                                                    | all; `language` is `pl` or `en` and defaults to `en` |
 | **Article**    | `id`, `knowledgeBase`, `title`, `content`, `llmGuide`, `description`                             | all                                                      |
-| **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`                            | all except `localFacts`; `whenStalled` if it collects    |
+| **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`, `whenInterrupted`         | all except `localFacts` and `whenInterrupted`; `whenStalled` if it collects |
 | **Action**     | `id`, `description`, `parameters`, `results`, implementation                                      | all except `parameters` and `results`                    |
 | **Global fact**| `name`, `type` and its constraints, `description`, `writableBy`                                  | all; `writableBy` defaults to `set`                      |
 | **Local fact** | as a global fact, but it lives inside one procedure                                              | as above                                                 |
@@ -116,6 +116,7 @@ The creator draws a procedure as a graph of steps. Each step holds one block and
 
 The SDK defines this fixed set of blocks: a bot declares which of them it runs, and a bot's custom logic is an action.
 
+`whenInterrupted` says what happens to a procedure when another one is started on top of it: `keep`, the default, or `discard`.
 An `inform` holds an `instruction`, an optional `context` (`articles`, `searchQueries`) and `points`, a map from a name to what must be said.
 
 The creator offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
@@ -265,7 +266,7 @@ flowchart TD
 The validator takes a bot's whole definition and what the bot declared, and returns every mistake with its fix. It
 needs no database or network. The format of a version is the public contract between the CMS and any bot.
 
-The SDK is published on nuget.org as `Suwagcms.Sdk`, so any bot can use it.
+The SDK is to be published on nuget.org as `Suwagcms.Sdk`, so any bot can use it. Not for now: until then a bot imports it by a local path, a temporary arrangement.
 
 ## Stack
 
@@ -355,6 +356,8 @@ Rasa concepts in this project's terms:
 
 ## Integration with the bot
 
+Who owns what between the CMS and a bot, field by field, is settled in one place: the spec `chatbot-contract`.
+
 | The bot                                                     | The CMS                                              |
 | :---------------------------------------------------------- | :--------------------------------------------------- |
 | loads a pushed version without a restart and reports which it has | pushes versions and shows which one the bot has |
@@ -373,7 +376,7 @@ Rasa concepts in this project's terms:
 | What happens to a conversation when a push changes its procedure? | It finishes on the version it started on                                |
 | What is the CMS built with?                                       | The `solid-dotnet-app-tpl` template                                      |
 | Where does validation live?                                       | In one library in the SDK, used by the CMS, bots and agents              |
-| Where is the SDK published?                                       | On nuget.org                                                             |
+| Where is the SDK published?                                       | On nuget.org in the end; not for now, and a bot imports it by a local path as a temporary arrangement |
 | Who builds the search index?                                      | The bot, from data the SDK gives it, or an external search system        |
 | Does the CMS know who is asking?                                  | Not at first: it stays in a trusted network until `cms-identity`         |
 | How are bots and knowledge bases organised?                       | One CMS with several bot profiles; references only within one bot        |

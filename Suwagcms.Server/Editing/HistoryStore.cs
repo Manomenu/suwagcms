@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using Npgsql;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.History;
 using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;

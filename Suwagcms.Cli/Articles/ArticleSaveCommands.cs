@@ -6,6 +6,7 @@ using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Cli.Output;
 using Suwagcms.Contracts;
+using Suwagcms.Contracts.Articles;
 
 namespace Suwagcms.Cli.Articles;
 

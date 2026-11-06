@@ -1,4 +1,4 @@
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Versions;
 
 namespace Suwagcms.Cli.Versions;
 

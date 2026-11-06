@@ -2,8 +2,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.BotRuntime.Versions;
 using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Versions;

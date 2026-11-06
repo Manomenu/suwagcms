@@ -1,4 +1,4 @@
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.KnowledgeBases;
 
 namespace Suwagcms.Cli.KnowledgeBases;
 

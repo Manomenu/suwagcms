@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.History;
 
 namespace Suwagcms.Cli.History;
 

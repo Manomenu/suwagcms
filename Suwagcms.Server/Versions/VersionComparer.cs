@@ -1,8 +1,9 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.Personas;
+using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Server.Versions;
 

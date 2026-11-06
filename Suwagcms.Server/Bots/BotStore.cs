@@ -1,6 +1,6 @@
 using Dapper;
 using Npgsql;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
 using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Bots;

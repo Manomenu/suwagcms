@@ -12,7 +12,8 @@ internal static class TestCli
         Dictionary<string, string>? variables = null,
         string? settingsFolder = null,
         Action<Uri>? openBrowser = null,
-        byte[]? stdin = null
+        byte[]? stdin = null,
+        string? workingDirectory = null
     )
     {
         using var output = new StringWriter();
@@ -24,7 +25,8 @@ internal static class TestCli
             settingsFolder ?? FreshSettingsFolder(),
             http,
             openBrowser,
-            stdin is null ? null : () => new MemoryStream(stdin)
+            stdin is null ? null : () => new MemoryStream(stdin),
+            workingDirectory ?? ""
         );
 
         var exitCode = await CliApp.Run(args, new InvocationConfiguration { Output = output, Error = error }, environment);

@@ -76,6 +76,8 @@ public static class MistakeCodes
     public const string NextDefaultNotLast = "next.default.notLast";
     public const string ProcedureNoWhenStalled = "procedure.collect.noWhenStalled";
     public const string ProcedureInstructionBlank = "procedure.whenStalled.blank";
+    public const string ProcedureWhenInterruptedInvalid = "procedure.whenInterrupted.invalid";
+    public const string ProcedureWhenInterruptedOnConversation = "procedure.whenInterrupted.onConversation";
     public const string BotConversationMissing = "bot.conversation.missing";
     public const string VersionBot = "version.bot";
     public const string VersionNumber = "version.number";

@@ -437,6 +437,7 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
   <ol>
     <li><code>--server &lt;url&gt;</code></li>
     <li><code>SUWAGCMS_URL</code></li>
+    <li><code>suwagcmsUrl</code> in <code>suwagcms/config.yaml</code> under the current folder, or under <code>--dir</code>, a file a repository commits</li>
     <li>the address saved with <code>suwagcms server &lt;url&gt;</code></li>
     <li>the default local address of the development setup</li>
   </ol>
@@ -479,7 +480,7 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
   <h2>Acceptance criteria</h2>
   <ul class="checks">
     <li><code>AC-cli-foundation-1</code> Packing the CLI produces a .NET tool whose command is <code>suwagcms</code>, and <code>suwagcms --version</code> prints its version and exits 0.</li>
-    <li><code>AC-cli-foundation-2</code> The server address comes from <code>--server</code>, else <code>SUWAGCMS_URL</code>, else the address saved with <code>suwagcms server &lt;url&gt;</code>, else the local default; each level is proven to win over the next.</li>
+    <li><code>AC-cli-foundation-2</code> The server address comes from <code>--server</code>, else <code>SUWAGCMS_URL</code>, else <code>suwagcmsUrl</code> in the repository's <code>suwagcms/config.yaml</code>, else the address saved with <code>suwagcms server &lt;url&gt;</code>, else the local default; each level is proven to win over the next.</li>
     <li><code>AC-cli-foundation-3</code> <code>suwagcms status</code> prints the address used and whether the server answers, and exits 0 when it does.</li>
     <li><code>AC-cli-foundation-4</code> With the server unreachable, a command exits 3 and prints the address it tried and how to set another.</li>
     <li><code>AC-cli-foundation-5</code> When the server refuses a change, the command prints every mistake with its fix and exits 1.</li>
@@ -491,6 +492,7 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <li><code>AC-cli-foundation-11</code> <code>--help</code> on the root command lists every command, and on any command says what it does and lists its options.</li>
     <li><code>AC-cli-foundation-12</code> Saving an address or a chosen bot with no settings folder exits 2 with the fix and writes nothing in the current directory; reading works without one.</li>
     <li><code>AC-cli-foundation-13</code> An address that is not http or https exits 2 naming where it came from, and is neither used nor saved.</li>
+    <li><code>AC-cli-foundation-16</code> In a folder with <code>suwagcms/config.yaml</code>, or with <code>--dir</code> naming the folder that holds <code>config.yaml</code>, a command takes its address from <code>suwagcmsUrl</code> and its bot from <code>botId</code> with no variable and nothing saved; an unknown key, a file that cannot be read, and a <code>--dir</code> with no such file exit 2 saying the fix and send nothing.</li>
     <li><code>AC-cli-foundation-14</code> <code>GET /api/health</code> answers 200 while the database answers; otherwise 503, saying what to do, with a trace id that is in the log.</li>
     <li><code>AC-cli-foundation-15</code> <code>show --open</code> opens the item itself in the web, for facts, knowledge bases, articles, actions and procedures.</li>
   </ul>

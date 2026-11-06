@@ -19,11 +19,20 @@ internal sealed class GlobalOptions
 
     public Option<string?> Bot { get; } = new("--bot") { Description = Bots.ChosenBot.OptionDescription, Recursive = true };
 
+    public Option<string?> Dir { get; } =
+        new(RepositoryConfig.DirOption)
+        {
+            Description =
+                $"The folder with {RepositoryConfig.FileName}. Default: {RepositoryConfig.DefaultFolder} under the current folder, if it has one.",
+            Recursive = true,
+        };
+
     public void AddTo(RootCommand root)
     {
         root.Options.Add(Json);
         root.Options.Add(Open);
         root.Options.Add(Server);
         root.Options.Add(Bot);
+        root.Options.Add(Dir);
     }
 }

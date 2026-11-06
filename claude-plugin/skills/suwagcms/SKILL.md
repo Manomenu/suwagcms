@@ -22,11 +22,13 @@ Update it later with `dotnet tool update -g Suwagcms.Cli`.
 
 ## Server and bot
 
-The server's address is the first one set of: `--server <url>` on a command, the `SUWAGCMS_URL` variable, the address saved
+A repository can say which CMS and bot it works with, as a committed file suwagcms/config.yaml under the folder a command runs in (`--dir <folder>` names another folder), so plain `suwagcms ...` needs no variable and no saved address. It holds `suwagcmsUrl` and `botId`, either may be left out; any other key, or a `--dir` with no such file, exits `2` and says the fix.
+
+The server's address is the first one set of: `--server <url>` on a command, the `SUWAGCMS_URL` variable, `suwagcmsUrl` in that file, the address saved
 with `suwagcms server <url>`, else `http://localhost:3330` (the web app of a laptop running `just web`). `suwagcms status` says
 which address it used and whether the server answers.
 
-The bot a command works on is the first one set of: `--bot <id>` on a command, the `SUWAGCMS_BOT` variable, the bot stored
+The bot a command works on is the first one set of: `--bot <id>` on a command, the `SUWAGCMS_BOT` variable, `botId` in that file, the bot stored
 with `suwagcms use <id>`. The choice belongs to the client: the server keeps no active bot, so another agent or a browser tab
 working on a different bot does not change yours. A command that needs a bot and finds none exits `2` and lists the bots; a bot
 that does not exist exits `1` and lists the bots that do. `suwagcms use` alone says which bot is in use and where it came from.
@@ -146,7 +148,7 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 
 `actions add`, `actions edit`, `actions delete`, `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `persona edit`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
-Every command takes `--json`, `--open`, `--server` and `--bot`; `suwagcms <command> --help` lists the rest.
+Every command takes `--json`, `--open`, `--server`, `--bot` and `--dir`; `suwagcms <command> --help` lists the rest.
 
 ## Text patterns
 
@@ -261,6 +263,7 @@ steps:
 - `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)
   or `known: true|false` (any fact).
 - `whenStalled: { instruction: text }` is required when a step collects.
+- `whenInterrupted: keep|discard` (optional, `keep` when left out) says what happens to this procedure when another one is started on top of it: it waits below, or it is removed with its local facts. Any other value (`procedure.whenInterrupted.invalid`) and the field on `conversation` (`procedure.whenInterrupted.onConversation`) are refused.
 - An instruction (of `whenStalled` or of an `inform`) can carry `context: { articles: [id, ...], searchQueries: [text, ...] }`: what the model
   should read before following it. Name an article when you know which one holds the fact: it cannot miss, a wrong id is refused
   (`reference.missing`) and the article is protected. Write a query when you want what the articles say on a subject without knowing

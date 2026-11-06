@@ -6,8 +6,8 @@ using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Cli.Output;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Cli.Versions;
 

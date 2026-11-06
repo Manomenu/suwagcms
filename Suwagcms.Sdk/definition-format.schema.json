@@ -453,6 +453,12 @@
               }
             }
           },
+          "whenInterrupted": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "localFacts": {
             "type": "object",
             "additionalProperties": {

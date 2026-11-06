@@ -442,7 +442,7 @@ No bot 'rzeczoznawka'. Bots: rzeczoznawca, sklep.</div>
   <table>
     <tr><th>Client</th><th>The bot comes from</th></tr>
     <tr><td>Web</td><td>the address, <code>/bots/&lt;id&gt;/…</code>; switching profile goes to the same page of the other bot, or to its profile when that page has no equivalent</td></tr>
-    <tr><td>CLI and plugin</td><td><code>--bot</code>, else <code>SUWAGCMS_BOT</code>, else the bot saved with <code>suwagcms use</code></td></tr>
+    <tr><td>CLI and plugin</td><td><code>--bot</code>, else <code>SUWAGCMS_BOT</code>, else <code>botId</code> in the repository's <code>suwagcms/config.yaml</code>, else the bot saved with <code>suwagcms use</code></td></tr>
   </table>
   <h3>Edge cases</h3>
   <table>
@@ -496,7 +496,7 @@ No bot 'rzeczoznawka'. Bots: rzeczoznawca, sklep.</div>
     <li><code>AC-bot-profiles-6</code> Registration succeeds when the bot's address cannot be reached, and sends no request to it.</li>
     <li><code>AC-bot-profiles-7</code> The list of bots shows, with no bot registered, an empty state offering registration.</li>
     <li><code>AC-bot-profiles-8</code> Switching profile in one browser tab changes neither another tab's bot nor anything on the server.</li>
-    <li><code>AC-bot-profiles-9</code> The bot for a CLI command comes from <code>--bot</code>, else <code>SUWAGCMS_BOT</code>, else <code>suwagcms use</code>; each level is proven to win over the next.</li>
+    <li><code>AC-bot-profiles-9</code> The bot for a CLI command comes from <code>--bot</code>, else <code>SUWAGCMS_BOT</code>, else <code>botId</code> in <code>suwagcms/config.yaml</code>, else <code>suwagcms use</code>; each level is proven to win over the next.</li>
     <li><code>AC-bot-profiles-10</code> A command that needs a bot, with none chosen, exits 2 and says how to choose one; with a bot that does not exist it exits 1 and lists the existing bots.</li>
     <li><code>AC-bot-profiles-11</code> A web address naming a bot that does not exist shows a page saying so, with a link to the list of bots.</li>
     <li><code>AC-bot-profiles-13</code> A route of a bot that does not exist answers 404 with the mistake <code>bot.notFound</code>, and nothing is written.</li>

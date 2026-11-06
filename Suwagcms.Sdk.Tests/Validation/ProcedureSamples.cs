@@ -1,5 +1,8 @@
 using System.Text.Json.Nodes;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Facts;
+using Suwagcms.Sdk.Format.Procedures;
+using Suwagcms.Sdk.Format.Procedures.Blocks;
 
 namespace Suwagcms.Sdk.Tests.Validation;
 
@@ -126,6 +129,7 @@ internal static class ProcedureSamples
                     ["id"] = "Bad Id",
                     ["description"] = " ",
                     ["firstStep"] = "ghost",
+                    ["whenInterrupted"] = "sometimes",
                     ["steps"] = new JsonObject
                     {
                         ["Bad Name"] = new JsonObject { ["say"] = "x", ["extra"] = 1 },

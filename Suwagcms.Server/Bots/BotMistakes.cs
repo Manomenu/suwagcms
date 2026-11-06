@@ -1,5 +1,5 @@
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Server.Bots;

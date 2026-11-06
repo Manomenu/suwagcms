@@ -3,8 +3,12 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Procedures.Blocks;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Tests.Versions;
 

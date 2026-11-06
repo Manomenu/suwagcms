@@ -5,6 +5,7 @@ import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPane
 import { Field } from "@/design/field";
 import { HistoryPanel } from "@/design/historyPanel";
 import { Input } from "@/design/input";
+import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 import { UsagePanel } from "@/design/usagePanel";
 
@@ -93,6 +94,30 @@ export function ProcedurePanel({
                         );
                     }}
                 />
+            )}
+            {canBeOff && (
+                <Field
+                    prefix="procedure"
+                    name="whenInterrupted"
+                    label="When interrupted"
+                    hint="What happens to this procedure when another one is started on top of it: it waits below, or it is removed with its local facts."
+                    errors={[]}
+                >
+                    {(props) => (
+                        <Select
+                            {...props}
+                            className="w-full"
+                            value={draft.whenInterrupted ?? "keep"}
+                            onChange={(event) => {
+                                const whenInterrupted = event.currentTarget.value;
+                                edit((current) => ({ ...current, whenInterrupted }));
+                            }}
+                        >
+                            <option value="keep">keep</option>
+                            <option value="discard">discard</option>
+                        </Select>
+                    )}
+                </Field>
             )}
             <LocalFactsPanel draft={draft} edit={edit} />
             <UsagePanel usage={usage.usage} failure={usage.failure} hrefOf={(entry) => usageHref(bot, entry)} />

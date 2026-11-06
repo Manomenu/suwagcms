@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Facts;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 
@@ -18,7 +18,7 @@ public sealed class FactPatternDeliveryTests
     [Trait("criterion", "AC-fact-pattern-1")]
     public async Task A_version_holding_a_global_and_a_local_pattern_gives_both_to_the_bots_code()
     {
-        await using var bot = await BotHost.StartAsync(new Suwagcms.Sdk.BotRuntime.InMemoryVersionStore());
+        await using var bot = await BotHost.StartAsync(new Suwagcms.Sdk.BotRuntime.Versions.InMemoryVersionStore());
         var document = Documents.Make(1);
         var global = Documents.Fact("order.code");
         global["pattern"] = Pattern();

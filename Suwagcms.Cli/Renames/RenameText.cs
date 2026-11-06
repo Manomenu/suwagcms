@@ -1,5 +1,5 @@
 using System.Globalization;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Renames;
 
 namespace Suwagcms.Cli.Renames;
 
