@@ -176,7 +176,13 @@ describe("VersionsView", () => {
         const html = view({});
         expect(html).not.toContain(">Changes<");
         expect(html).not.toContain("Nothing before it");
-        expect(html.match(/>Open</g)).toHaveLength(2);
+        const rows = html
+            .split("<tr>")
+            .filter((row) => row.includes(" · 2026"))
+            .map((row) => row.split("</tr>")[0] ?? "");
+        expect(rows).toHaveLength(2);
+        for (const row of rows)
+            expect(row.match(/<button[^>]*>[^<]*<\/button>/g)?.map((button) => button.replace(/<[^>]+>/g, ""))).toEqual(["Open"]);
     });
 
     it("AC-pagination-10: other version offers versions of every page", () => {

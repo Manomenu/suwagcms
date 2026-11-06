@@ -210,6 +210,46 @@ public sealed class HistoryCommandTests
 
     [Fact]
     [Trait("criterion", "AC-change-history-23")]
+    public async Task What_history_prints_as_json_is_pinned_word_for_word()
+    {
+        const string Answer = """
+            {"entries":[{"id":9,"at":"2026-11-04T21:40:00+00:00","kind":"article","resourceId":"cennik","action":"edited","revision":8,
+            "changes":[{"field":"maxLength","old":80,"new":120}],"batch":"3f2a1b9c-0000-0000-0000-000000000000"}],
+            "next":3,"since":"2026-11-01T08:00:00+00:00"}
+            """;
+
+        const string Printed = """
+            {
+              "entries": [
+                {
+                  "id": 9,
+                  "at": "2026-11-04T21:40:00+00:00",
+                  "kind": "article",
+                  "resourceId": "cennik",
+                  "action": "edited",
+                  "revision": 8,
+                  "changes": [
+                    {
+                      "field": "maxLength",
+                      "old": 80,
+                      "new": 120
+                    }
+                  ],
+                  "batch": "3f2a1b9c-0000-0000-0000-000000000000"
+                }
+              ],
+              "next": 3,
+              "since": "2026-11-01T08:00:00+00:00"
+            }
+            """;
+
+        var result = await TestCli.Run(["history", "--json", .. OnBot], StubServer.Answering(HttpStatusCode.OK, Answer));
+
+        Assert.Equal(Printed, result.Output.ReplaceLineEndings("\n").TrimEnd());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-23")]
     public async Task What_history_prints_as_text_stays_with_its_own_words_and_marks()
     {
         var result = await TestCli.Run(["history", "article", "cennik", .. OnBot], StubServer.Answering(HttpStatusCode.OK, Edited));
