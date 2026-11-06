@@ -268,6 +268,30 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-batch-apply-21")]
+    public async Task An_edit_of_the_persona_takes_no_id_and_replaces_the_whole_of_it_and_it_is_never_added_or_deleted()
+    {
+        var scene = await NewScene();
+        await scene.Persona.Save("""{"personality":"Old\n","scope":{"inScope":"Old scope\n"}}""");
+
+        var response = await scene.Post(
+            ChangeScene.File(ChangeScene.AddFact("customer.city"), """{"edit":"persona","personality":"New\n"}""")
+        );
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var persona = await scene.Persona.Read();
+        Assert.Equal("New\n", persona.Personality);
+        Assert.Null(persona.Scope?.InScope);
+
+        foreach (var verb in new[] { "add", "delete" })
+        {
+            var refused = await scene.Post(ChangeScene.File($$"""{"{{verb}}":"persona"}"""));
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
+        }
+        Assert.Equal("New\n", (await scene.Persona.Read()).Personality);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-batch-apply-7")]
     public async Task Resources_the_file_does_not_name_keep_every_byte_and_their_revision()
     {

@@ -20,7 +20,7 @@ it: read the main `suwagcms` skill for the server, the bot, `--json` and refusal
 ```yaml
 bot: rzeczoznawca            # optional; refused if it is not the bot in use
 changes:
-  - add: article             # add, edit or delete; kinds: fact, knowledgeBase, article, procedure
+  - add: article             # add, edit or delete; kinds: fact, knowledgeBase, article, action, procedure, persona
     id: rabaty
     knowledgeBase: oferta
     title: Rabaty
@@ -36,6 +36,7 @@ changes:
 ```
 
 - A change's other fields are those of the resource's own save. An edit changes only the fields it gives.
+- `edit: persona` is the exception: it takes no `id` and replaces the whole persona, as `persona edit --file` does, so what it leaves out becomes empty. A persona is never added or deleted.
 - A file lists changes; it is not a copy of the bot. A resource the file does not name stays as it is, and nothing is deleted for being absent.
 - One resource may be named once: two changes to it are refused with `change.twice`, since what they did together would depend on their order.
 - Changes that only work together belong in one file: an article and the links to it can go at once, and articles may come before their knowledge base. Two articles linking to each other are still a loop, refused with `reference.loop`.
