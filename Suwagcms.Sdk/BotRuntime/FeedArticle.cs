@@ -1,4 +1,4 @@
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Knowledge;
 
 namespace Suwagcms.Sdk.BotRuntime;
 

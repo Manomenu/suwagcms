@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Suwagcms.Contracts;
+using Suwagcms.Contracts.Changes;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Editing;
 

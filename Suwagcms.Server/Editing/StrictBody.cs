@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Server.Editing;

@@ -6,7 +6,7 @@ using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Cli.Procedures;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Actions;
 
 namespace Suwagcms.Cli.Actions;
 

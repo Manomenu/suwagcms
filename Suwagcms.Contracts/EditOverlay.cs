@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Suwagcms.Contracts.Facts;
 
 namespace Suwagcms.Contracts;
 

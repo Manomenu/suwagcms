@@ -1,8 +1,10 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
-using Suwagcms.Sdk.BotRuntime;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.BotRuntime.Actions;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Facts;
+using Suwagcms.Sdk.Format.Procedures.Blocks;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Versions;
 

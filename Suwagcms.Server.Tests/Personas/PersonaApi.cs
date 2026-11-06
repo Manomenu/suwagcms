@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.History;
+using Suwagcms.Contracts.Personas;
 using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Personas;

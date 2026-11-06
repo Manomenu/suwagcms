@@ -4,8 +4,11 @@ using System.Text.Json;
 using Suwagcms.Cli.Personas;
 using Suwagcms.Cli.Procedures;
 using Suwagcms.Cli.Versions;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Personas;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.Personas;
+using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Cli.Tests.Personas;
 

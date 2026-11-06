@@ -1,6 +1,7 @@
 using Dapper;
 using Npgsql;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Database;
 

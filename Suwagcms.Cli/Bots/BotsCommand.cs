@@ -2,7 +2,7 @@ using System.CommandLine;
 using System.Text.Json;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Output;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
 
 namespace Suwagcms.Cli.Bots;
 

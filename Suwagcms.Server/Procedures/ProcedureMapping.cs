@@ -1,5 +1,6 @@
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Procedures;
+using Suwagcms.Sdk.Format.Procedures;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Editing;
 

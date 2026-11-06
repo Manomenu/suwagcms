@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json.Nodes;
-using Suwagcms.Sdk.BotRuntime;
+using Suwagcms.Sdk.BotRuntime.Versions;
+using Suwagcms.Sdk.Tests.BotRuntime.Versions;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;

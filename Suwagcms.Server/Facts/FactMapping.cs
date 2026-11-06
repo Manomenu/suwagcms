@@ -1,5 +1,6 @@
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Sdk.Format.Facts;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Facts;

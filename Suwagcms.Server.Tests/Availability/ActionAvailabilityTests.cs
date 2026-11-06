@@ -2,9 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using Microsoft.AspNetCore.Http;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.BotRuntime;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Actions;
+using Suwagcms.Contracts.Availability;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Sdk.BotRuntime.Actions;
+using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Procedures.Blocks;
+using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Tests.Actions;
 using Suwagcms.Server.Tests.History;
 

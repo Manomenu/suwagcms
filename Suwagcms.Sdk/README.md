@@ -7,7 +7,8 @@ dotnet add package Suwagcms.Sdk
 ```
 
 It holds the definition format (`Suwagcms.Sdk.Format`, JSON schema in `definition-format.schema.json`), the validator
-(`Suwagcms.Sdk.Validation`) and the bot runtime (`Suwagcms.Sdk.BotRuntime`).
+(`Suwagcms.Sdk.Validation`) and the bot runtime (`Suwagcms.Sdk.BotRuntime`). Each has a namespace per concept under it, such as
+`Suwagcms.Sdk.Format.Facts` or `Suwagcms.Sdk.BotRuntime.Versions`.
 
 ## The bot runtime
 

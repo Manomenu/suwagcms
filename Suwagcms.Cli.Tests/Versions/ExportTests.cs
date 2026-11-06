@@ -3,8 +3,9 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Suwagcms.Cli.Versions;
-using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Facts;
+using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Cli.Tests.Versions;
 

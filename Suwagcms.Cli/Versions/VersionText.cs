@@ -1,5 +1,6 @@
 using System.Globalization;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Bots;
+using Suwagcms.Contracts.Versions;
 
 namespace Suwagcms.Cli.Versions;
 

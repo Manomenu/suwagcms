@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Suwagcms.Contracts;
+using Suwagcms.Contracts.Articles;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.KnowledgeBases;
 

@@ -1,5 +1,5 @@
 using System.Text.Json.Nodes;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Versions;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 

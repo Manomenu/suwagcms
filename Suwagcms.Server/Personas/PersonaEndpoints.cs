@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Suwagcms.Contracts;
-using Suwagcms.Sdk.Format;
+using Suwagcms.Contracts.Personas;
+using Suwagcms.Sdk.Format.Personas;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
