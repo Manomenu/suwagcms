@@ -50,10 +50,13 @@ internal static class AvailabilityText
         );
     }
 
-    public static string List(string bot, AvailabilityView view) =>
+    public static string List(string bot, AvailabilityView view, bool stored) =>
         string.Join(
             Environment.NewLine,
-            [.. view.Resources.Select(item => $"{item.Kind} {item.Id}: {(item.Off ? "off" : "on")}"), Delivery(bot, view.Delivery)]
+            [
+                .. view.Resources.Select(item => $"{item.Kind} {item.Id}: {(item.Off ? "off" : "on")}"),
+                stored ? $"Bot {bot} was not asked: this is what the CMS holds." : Delivery(bot, view.Delivery),
+            ]
         );
 
     public static string Delivery(string bot, AvailabilityDelivery delivery) =>

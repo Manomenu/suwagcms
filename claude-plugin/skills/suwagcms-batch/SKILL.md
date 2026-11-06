@@ -1,6 +1,6 @@
 ---
 name: suwagcms-batch
-description: Make many Suwagcms changes that take effect together, or none, with suwagcms apply and a file of changes. Use when an agent writes several articles, facts, knowledge bases or procedures at once, or when changes only work together, such as removing a link and the article it points at.
+description: Make many Suwagcms changes that take effect together, or none, with suwagcms apply and a file of changes. Use when an agent writes several articles, facts, knowledge bases, actions or procedures at once, or when changes only work together, such as removing a link and the article it points at.
 ---
 
 # Batch changes in Suwagcms

@@ -86,7 +86,7 @@ internal static class HistoryEndpoints
         return TypedResults.Ok(WrittenWhenPaged(answer, page));
     }
 
-    // Why: a numbered page is what the web asks for, and the CLI never does, so its entries stay exactly as they were recorded.
+    // Why: a numbered page is for a person reading, on the web or with `--page`; a script going on with `before` keeps entries exactly as they were recorded.
     private static HistoryPage WrittenWhenPaged(HistoryPage answer, int? page) =>
         page is null
             ? answer

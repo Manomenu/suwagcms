@@ -1,3 +1,5 @@
+using Suwagcms.Sdk.Format;
+
 namespace Suwagcms.Cli.Tests.Plugin;
 
 public sealed class MainSkillContentTests
@@ -57,6 +59,11 @@ public sealed class MainSkillContentTests
             ["suwagcms persona show", "suwagcms persona edit --file <file>", "personality: |", "whenOutOfScope:", "only with a version"]
         ),
         ("to compare before pushing", "Before a push", ["suwagcms versions status", "suwagcms diff <has> <latest>"]),
+        (
+            "the current format and how the web's list is written in a file",
+            "Procedure file",
+            [$"formatVersion: {BotDefinition.CurrentFormatVersion}", "`If`", "`Else`", "`Next:`", "`End`", "`when`", "`onFailure`"]
+        ),
     ];
 
     private static string MainSkill() =>
@@ -130,6 +137,14 @@ public sealed class MainSkillContentTests
     [Trait("criterion", "AC-claude-plugin-7")]
     public void The_main_skill_shows_the_comparison_of_what_the_bot_has_with_the_latest_before_a_push() =>
         Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("to compare before pushing", StringComparison.Ordinal));
+
+    [Fact]
+    [Trait("criterion", "AC-claude-plugin-9")]
+    public void The_main_skill_teaches_the_current_format_with_no_context_field()
+    {
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the current format", StringComparison.Ordinal));
+        Assert.DoesNotContain("context:", MainSkill(), StringComparison.Ordinal);
+    }
 
     [Fact]
     [Trait("criterion", "AC-claude-plugin-5")]

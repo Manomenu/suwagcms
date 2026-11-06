@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The gate fails for a server route that has no command, so the promise that the CLI can do anything the web can is enforced instead of hoped for.</p>
   </div>
   <div class="stats">
-    <div><b>14</b><span>criteria</span></div>
+    <div><b>21</b><span>criteria</span></div>
     <div><b>4</b><span>exit codes</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
@@ -461,6 +461,29 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
   <p>Results go to stdout and problems to stderr, except with <code>--json</code>, where the one document holds either.</p>
   <h3>Every route has a command</h3>
   <p>Every route the server maps either names the command that covers it or states why no command is needed, such as the OpenAPI document the web generates its types from. A route with neither, or naming a command that does not exist, fails the full gate. A web action therefore cannot arrive without its command.</p>
+  <h3>The parity with the web</h3>
+  <p>Anything a person can do on a screen, the CLI can do, and each row below is held by a check that fails when the row stops being true.</p>
+  <table>
+    <tr><th>On the screens and the API</th><th>In the CLI</th></tr>
+    <tr><td>Facts, knowledge bases, articles, procedures, actions: list, read, add, edit, delete</td><td><code>facts</code>, <code>kb</code>, <code>articles</code>, <code>procedures</code>, <code>actions</code>, each with <code>list</code>, <code>show</code>, <code>add</code>, <code>edit</code>, <code>delete</code></td></tr>
+    <tr><td>Persona: read, edit</td><td><code>persona show</code>, <code>persona edit</code></td></tr>
+    <tr><td>Rename, what uses a resource, on or off</td><td><code>rename</code>, <code>usage</code>, <code>availability list</code>, <code>on</code>, <code>off</code>, <code>send</code></td></tr>
+    <tr><td>A test run of an action</td><td><code>actions test</code></td></tr>
+    <tr><td>Versions: create, list, read, compare, push, roll back, export, what the bot has, a version's window</td><td><code>versions create</code>, <code>list</code>, <code>show</code>, <code>status</code>, <code>window</code>, <code>diff</code>, <code>push</code>, <code>push --version</code>, <code>export</code></td></tr>
+    <tr><td>History, numbered pages included</td><td><code>history</code>, with <code>--limit</code> and <code>--page</code> or <code>--before</code></td></tr>
+    <tr><td>Bots: list, register, what a bot supports</td><td><code>bots list</code>, <code>bots add</code>, <code>bots declaration</code></td></tr>
+    <tr><td>Many changes at once, a check of a definition</td><td><code>apply</code>, <code>validate</code></td></tr>
+  </table>
+  <p>The parity reaches below the route: every query parameter of a route has an option on the route's command, so <code>ask</code> is <code>--stored</code> and <code>knowledgeBase</code> is <code>--kb</code>. And every screen has a command whose <code>--open</code> lands on it.</p>
+  <p>The exceptions are few, and each is a row of a guard with its reason:</p>
+  <table>
+    <tr><th>What has no counterpart</th><th>Why</th></tr>
+    <tr><td><code>GET /api/settings</code> has no command</td><td>How many rows a screen holds is for the web app; the CLI takes <code>--limit</code>, so a script's output never moves with the setting.</td></tr>
+    <tr><td>The new-procedure form has no <code>--open</code></td><td>It only starts a file, and <code>procedures add --file</code> takes the whole of it; <code>procedures add --open</code> shows the result.</td></tr>
+    <tr><td>A command that changes something refuses <code>--open</code>, but for <code>procedures add</code> and <code>rename</code></td><td>Its result is the answer it prints, and <code>show --open</code> opens the resource.</td></tr>
+    <tr><td><code>availability list</code>, <code>availability send</code>, <code>apply</code> refuse <code>--open</code></td><td>What they reach spans several screens, and no one screen shows it all.</td></tr>
+    <tr><td><code>server</code>, <code>use</code>, <code>validate</code> refuse <code>--open</code></td><td>They concern this machine or a local file, not a page of the CMS.</td></tr>
+  </table>
 </section>
 
 <section data-role="decisions">
@@ -495,6 +518,11 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <li><code>AC-cli-foundation-16</code> In a folder with <code>suwagcms/config.yaml</code>, or with <code>--dir</code> naming the folder that holds <code>config.yaml</code>, a command takes its address from <code>suwagcmsUrl</code> and its bot from <code>botId</code> with no variable and nothing saved; an unknown key, a file that cannot be read, and a <code>--dir</code> with no such file exit 2 saying the fix and send nothing.</li>
     <li><code>AC-cli-foundation-14</code> <code>GET /api/health</code> answers 200 while the database answers; otherwise 503, saying what to do, with a trace id that is in the log.</li>
     <li><code>AC-cli-foundation-15</code> <code>show --open</code> opens the item itself in the web, for facts, knowledge bases, articles, actions and procedures.</li>
+    <li><code>AC-cli-foundation-17</code> A query parameter of a route with no option on the route's command fails the full gate, with a message naming the route, the parameter and the fix.</li>
+    <li><code>AC-cli-foundation-18</code> A command that neither opens a page with <code>--open</code> nor stands in the guard's short list with its reason fails the gate; so does a screen of the web app with no command that opens it and no stated reason.</li>
+    <li><code>AC-cli-foundation-19</code> <code>suwagcms history</code>, <code>history &lt;kind&gt; &lt;id&gt;</code> and <code>versions window</code> take <code>--page &lt;n&gt;</code>: the answer is that numbered page with the total and each change written out, as the web reads it, and says how to go on; <code>--page</code> below 1 or together with <code>--before</code> exits 2, a page past the end says so, and with <code>--open</code> the page lands on that page of the list. Without <code>--page</code> what they print does not change.</li>
+    <li><code>AC-cli-foundation-20</code> <code>suwagcms availability list --stored</code> lists what the CMS holds without asking the bot, and says the bot was not asked.</li>
+    <li><code>AC-cli-foundation-21</code> <code>usage --open</code> opens the resource's page, which lists the same references; <code>actions test --open</code> opens the action's page, with its test panel, and calls nothing; <code>versions show --open</code> opens that version's page; <code>articles list --open</code> carries its filters to the screen.</li>
   </ul>
 </section>
 

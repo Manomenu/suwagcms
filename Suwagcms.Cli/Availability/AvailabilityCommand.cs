@@ -25,10 +25,14 @@ internal static class AvailabilityCommand
 
     private static Command List(GlobalOptions options, CliEnvironment environment)
     {
+        var stored = new Option<bool>("--stored") { Description = "List what the CMS holds without asking the bot." };
         var command = new Command(
             "list",
             "List every article, procedure and action, on or off, and say whether the bot has the setting. Changes nothing."
-        );
+        )
+        {
+            stored,
+        };
         EditOptions.RefuseOpen(command, options, "availability list");
         command.SetBotAction(
             options,
@@ -38,7 +42,7 @@ internal static class AvailabilityCommand
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    target.CollectionPath("availability"),
+                    target.CollectionPath("availability") + (parsed.GetValue(stored) ? "?ask=false" : ""),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
@@ -50,7 +54,7 @@ internal static class AvailabilityCommand
                     ?? throw new InvalidOperationException("the server sent no availability");
                 return await target.Run.Report.DoneAsync(
                     new AvailabilityListDocument(target.Bot, view.Resources, view.Delivery),
-                    AvailabilityText.List(target.Bot, view)
+                    AvailabilityText.List(target.Bot, view, parsed.GetValue(stored))
                 );
             }
         );

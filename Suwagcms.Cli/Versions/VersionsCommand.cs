@@ -134,8 +134,9 @@ internal static class VersionsCommand
     private static Command CreateWindow(GlobalOptions options, CliEnvironment environment)
     {
         var number = new Argument<int>("number") { Description = "The version's number, like 14." };
-        var limit = new Option<int?>("--limit") { Description = "How many entries a page holds, 50 unless said otherwise." };
-        var before = new Option<long?>("--before") { Description = "Go on from this entry: the id the last page says." };
+        var limit = HistoryCommand.LimitOption();
+        var before = HistoryCommand.BeforeOption();
+        var page = HistoryCommand.PageOption();
         var command = new Command(
             "window",
             "Show what happened from the previous version's creation through this version's, newest first (or --open the version's page)."
@@ -144,15 +145,10 @@ internal static class VersionsCommand
             number,
             limit,
             before,
+            page,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(limit) is < 1)
-            {
-                result.AddError("--limit must be 1 or more.");
-            }
-        });
+        HistoryCommand.RefuseWrongPaging(command, limit, before, page);
         command.SetBotAction(
             options,
             environment,
@@ -161,22 +157,26 @@ internal static class VersionsCommand
                 var version = parsed.GetValue(number).ToString(CultureInfo.InvariantCulture);
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(target.PageOf($"{Collection}/{version}"), parsed);
+                    // Why: beside the version, its window keeps its page under this name, as HISTORY_PAGE does in the web app.
+                    var asked = parsed.GetValue(page) is { } wanted
+                        ? string.Create(CultureInfo.InvariantCulture, $"?historyPage={wanted}")
+                        : "";
+                    return await target.OpenAsync(new Uri(target.PageOf($"{Collection}/{version}"), asked), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
                     target.ItemPath(Collection, version)
                         + "/window"
-                        + HistoryCommand.Query(parsed.GetValue(limit), parsed.GetValue(before)),
+                        + HistoryCommand.Query(parsed.GetValue(limit), parsed.GetValue(before), parsed.GetValue(page)),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
                 {
                     return await target.FailedAsync(answer, cancellationToken);
                 }
-                var page = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no window");
-                return await target.Run.Report.DoneAsync(page, HistoryText.Window(page));
+                var shown = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no window");
+                return await target.Run.Report.DoneAsync(shown, HistoryText.Window(shown, parsed.GetValue(page)));
             }
         );
         return command;
@@ -187,7 +187,7 @@ internal static class VersionsCommand
         var number = new Argument<int>("number") { Description = "The version's number, like 14." };
         var command = new Command(
             "show",
-            "Show one version with its document exactly as stored (or --open the Versions screen in the web app)."
+            "Show one version with its document exactly as stored (or --open the version's page in the web app)."
         )
         {
             number,
@@ -198,14 +198,15 @@ internal static class VersionsCommand
             environment,
             async (target, parsed, cancellationToken) =>
             {
+                var shownNumber = parsed.GetRequiredValue(number).ToString(CultureInfo.InvariantCulture);
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
+                    return await target.OpenAsync(target.PageOf($"{Collection}/{shownNumber}"), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    target.ItemPath(Collection, parsed.GetRequiredValue(number).ToString(CultureInfo.InvariantCulture)),
+                    target.ItemPath(Collection, shownNumber),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)

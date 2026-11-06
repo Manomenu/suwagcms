@@ -1,6 +1,7 @@
 extern alias Cli;
 
 using System.CommandLine;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,41 +15,43 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
 {
     private readonly TestApp app = new();
 
-    private sealed record Coverage(string? Command, string? Reason = null)
+    private sealed record Coverage(IReadOnlyList<string> Commands, string? Reason = null)
     {
-        public static Coverage Cli(string words) => new(words);
+        public static Coverage Cli(params string[] words) => new(words);
 
-        public static Coverage NoCommand(string reason) => new(null, reason);
+        public static Coverage NoCommand(string reason) => new([], reason);
     }
 
     // Why: words as typed after `suwagcms`; a new route is added here in the change that adds it, with its command.
     private static readonly Dictionary<string, Coverage> Routes = new()
     {
         ["GET /api/health"] = Coverage.Cli("status"),
-        ["GET /api/settings"] = Coverage.NoCommand("the CLI has no pages: only the web app reads how many rows a page holds"),
+        ["GET /api/settings"] = Coverage.NoCommand(
+            "how many rows a screen holds is for the web app: the CLI takes --limit, 50 when left out, so a script's output never moves with the setting"
+        ),
         ["GET /api/bots"] = Coverage.Cli("bots list"),
         ["POST /api/bots"] = Coverage.Cli("bots add"),
         ["GET /api/bots/{bot}/declaration"] = Coverage.Cli("bots declaration"),
         ["POST /api/validate"] = Coverage.Cli("validate"),
         ["GET /api/bots/{bot}/facts"] = Coverage.Cli("facts list"),
         ["GET /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts show"),
-        ["PUT /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts add"),
+        ["PUT /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts add", "facts edit"),
         ["DELETE /api/bots/{bot}/facts/{name}"] = Coverage.Cli("facts delete"),
         ["GET /api/bots/{bot}/knowledge-bases"] = Coverage.Cli("kb list"),
         ["GET /api/bots/{bot}/knowledge-bases/{id}"] = Coverage.Cli("kb show"),
-        ["PUT /api/bots/{bot}/knowledge-bases/{id}"] = Coverage.Cli("kb add"),
+        ["PUT /api/bots/{bot}/knowledge-bases/{id}"] = Coverage.Cli("kb add", "kb edit"),
         ["DELETE /api/bots/{bot}/knowledge-bases/{id}"] = Coverage.Cli("kb delete"),
         ["GET /api/bots/{bot}/articles"] = Coverage.Cli("articles list"),
         ["GET /api/bots/{bot}/articles/{id}"] = Coverage.Cli("articles show"),
-        ["PUT /api/bots/{bot}/articles/{id}"] = Coverage.Cli("articles add"),
+        ["PUT /api/bots/{bot}/articles/{id}"] = Coverage.Cli("articles add", "articles edit"),
         ["DELETE /api/bots/{bot}/articles/{id}"] = Coverage.Cli("articles delete"),
         ["GET /api/bots/{bot}/procedures"] = Coverage.Cli("procedures list"),
         ["GET /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures show"),
-        ["PUT /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures add"),
+        ["PUT /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures add", "procedures edit"),
         ["DELETE /api/bots/{bot}/procedures/{id}"] = Coverage.Cli("procedures delete"),
         ["GET /api/bots/{bot}/actions"] = Coverage.Cli("actions list"),
         ["GET /api/bots/{bot}/actions/{id}"] = Coverage.Cli("actions show"),
-        ["PUT /api/bots/{bot}/actions/{id}"] = Coverage.Cli("actions add"),
+        ["PUT /api/bots/{bot}/actions/{id}"] = Coverage.Cli("actions add", "actions edit"),
         ["DELETE /api/bots/{bot}/actions/{id}"] = Coverage.Cli("actions delete"),
         ["POST /api/bots/{bot}/actions/{id}/test"] = Coverage.Cli("actions test"),
         ["GET /api/bots/{bot}/persona"] = Coverage.Cli("persona show"),
@@ -73,7 +76,76 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["POST /api/bots/{bot}/availability/{kind}/{id}/on"] = Coverage.Cli("availability on"),
     };
 
+    // Why: a route's query parameter is something the web can ask for, so its option is part of the promise; the name it has on a command, when not the parameter's own.
+    private static readonly Dictionary<string, string> OptionOfParameter = new(StringComparer.Ordinal)
+    {
+        ["ask"] = "--stored",
+        ["before"] = "--before",
+        ["dryRun"] = "--dry-run",
+        ["ifRevision"] = "--if-revision",
+        ["knowledgeBase"] = "--kb",
+        ["language"] = "--language",
+        ["limit"] = "--limit",
+        ["page"] = "--page",
+        ["text"] = "--text",
+    };
+
     public void Dispose() => app.Dispose();
+
+    private static Command? Find(RootCommand root, string words)
+    {
+        Command? found = root;
+        foreach (var word in words.Split(' '))
+        {
+            found = found?.Subcommands.SingleOrDefault(command => command.Name == word);
+        }
+        return found;
+    }
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Suwagcms.slnx")))
+        {
+            directory = directory.Parent;
+        }
+        return directory?.FullName ?? throw new InvalidOperationException("The repository root was not found.");
+    }
+
+    private static List<(string Route, string Parameter)> QueryParameters()
+    {
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "Suwagcms.Server", "openapi.json")));
+        return
+        [
+            .. document
+                .RootElement.GetProperty("paths")
+                .EnumerateObject()
+                .SelectMany(path =>
+                    path.Value.EnumerateObject()
+                        .Where(operation => operation.Value.TryGetProperty("parameters", out _))
+                        .SelectMany(operation =>
+                            operation
+                                .Value.GetProperty("parameters")
+                                .EnumerateArray()
+                                .Where(parameter => parameter.GetProperty("in").GetString() == "query")
+                                .Select(parameter =>
+                                    ($"{operation.Name.ToUpperInvariant()} {path.Name}", parameter.GetProperty("name").GetString() ?? "")
+                                )
+                        )
+                ),
+        ];
+    }
+
+    private static List<string> ParametersWithNoOption(IEnumerable<(string Route, string Parameter)> parameters, RootCommand root) =>
+        [
+            .. parameters
+                .Where(item =>
+                    !OptionOfParameter.TryGetValue(item.Parameter, out var option)
+                    || !Routes.TryGetValue(item.Route, out var coverage)
+                    || !coverage.Commands.Any(words => Find(root, words)?.Options.Any(found => found.Name == option) == true)
+                )
+                .Select(item => $"{item.Route} ?{item.Parameter}"),
+        ];
 
     [GeneratedRegex(@"\{(\w+):[^}]+\}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex RouteConstraint();
@@ -126,7 +198,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
     public void Every_route_of_the_table_names_a_command_or_a_reason_never_both_or_neither()
     {
         var undecided = Routes
-            .Where(route => string.IsNullOrWhiteSpace(route.Value.Command) == string.IsNullOrWhiteSpace(route.Value.Reason))
+            .Where(route => route.Value.Commands.Any() != string.IsNullOrWhiteSpace(route.Value.Reason))
             .Select(route => route.Key)
             .ToList();
 
@@ -141,20 +213,43 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
     public void Every_command_the_table_names_exists()
     {
         var root = CliApp.Create(CliEnvironment.Real());
-        var commands = Routes
-            .Values.Where(coverage => coverage.Command is not null)
-            .Select(coverage => coverage.Command)
-            .OfType<string>()
-            .Distinct();
 
-        foreach (var words in commands)
+        foreach (var words in Routes.Values.SelectMany(coverage => coverage.Commands).Distinct())
         {
-            Command? found = root;
-            foreach (var word in words.Split(' '))
-            {
-                found = found.Subcommands.SingleOrDefault(command => command.Name == word);
-                Assert.True(found is not null, $"`suwagcms {words}` is named in the table of routes and commands but is not a command.");
-            }
+            Assert.True(
+                Find(root, words) is not null,
+                $"`suwagcms {words}` is named in the table of routes and commands but is not a command."
+            );
         }
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-cli-foundation-17")]
+    public void Every_query_parameter_of_a_route_has_an_option_on_its_command()
+    {
+        var parameters = QueryParameters();
+        var missing = ParametersWithNoOption(parameters, CliApp.Create(CliEnvironment.Real()));
+
+        Assert.NotEmpty(parameters);
+        Assert.True(
+            missing.Count == 0,
+            $"The CLI cannot ask for: {string.Join("; ", missing)}. Add the option to the route's command, with its tests and its "
+                + "place in claude-plugin/skills/suwagcms/SKILL.md, and name it in OptionOfParameter in Suwagcms.Server.Tests/Commands/EveryRouteHasACommandTests.cs."
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-cli-foundation-17")]
+    public void A_parameter_with_no_option_is_reported_by_route_and_name()
+    {
+        var root = CliApp.Create(CliEnvironment.Real());
+
+        Assert.Equal(
+            ["GET /api/bots/{bot}/history ?shoe", "GET /api/bots/{bot}/facts ?page"],
+            ParametersWithNoOption(
+                [("GET /api/bots/{bot}/history", "shoe"), ("GET /api/bots/{bot}/facts", "page"), ("GET /api/bots/{bot}/history", "page")],
+                root
+            )
+        );
     }
 }

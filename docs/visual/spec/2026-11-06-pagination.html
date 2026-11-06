@@ -417,7 +417,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <h4>Non-goals <span class="tag note">optional</span></h4>
       <ul>
         <li><b>Suwageval</b>: out of scope.</li>
-        <li><b>The CLI and its lists</b>: <code>suwagcms history</code> keeps <code>--limit</code>, <code>--before</code>, its default of 50 and what <code>--json</code> prints; list commands stay whole.</li>
+        <li><b>The CLI and its lists</b>: <code>suwagcms history</code> keeps <code>--limit</code>, <code>--before</code>, its default of 50 and what <code>--json</code> prints; <code>--page</code> is an addition (see cli-foundation); list commands stay whole.</li>
         <li><b>A page size chosen by the reader</b>, a jump to page N, or a link to every page: Previous and Next are enough until a real need shows up.</li>
         <li><b>Short lists that do not grow with content</b>: the bots in the panel, Recent pushes, Used by and Uses, mistakes, the steps of a procedure, the link picker.</li>
         <li><b>Dividing resource lists on the server</b>: it answers with whole lists, and the screens and pickers need them whole.</li>
@@ -578,7 +578,7 @@ flowchart TD
     <thead><tr><th>Contract</th><th>Change</th><th>Meaning</th></tr></thead>
     <tbody>
       <tr><td><code>PAGINATION_PAGE_SIZE</code></td><td>new setting of the server</td><td>Rows on a page: 1 to 500, 20 when unset.</td></tr>
-      <tr><td><code>GET /api/settings</code></td><td>new, read-only</td><td>Answers <code>{ "pageSize": 20 }</code>. The CLI has no pages, so the route is listed in the guard that ties routes to commands as having none, with that reason.</td></tr>
+      <tr><td><code>GET /api/settings</code></td><td>new, read-only</td><td>Answers <code>{ "pageSize": 20 }</code>. The setting is for screens: the CLI takes <code>--limit</code>, so the route is listed in the guard that ties routes to commands as having none, with that reason.</td></tr>
       <tr><td>History routes</td><td>additive</td><td><code>page</code> beside <code>limit</code> asks for a numbered page and adds <code>total</code> to the answer, which only then holds it. <code>limit</code>, <code>before</code>, <code>next</code> and the default of 50 stay for the CLI, whose output does not change; the web app asks with the page size.</td></tr>
       <tr><td><code>GET /api/bots/{bot}/versions/{number}/window</code></td><td>new in <code>change-history</code></td><td>The same: <code>page</code> asks for a numbered page and adds <code>total</code>, so a version's panel obeys every rule here.</td></tr>
       <tr><td><code>?page</code>, <code>?historyPage</code></td><td>new in web addresses</td><td>Where a person is, as a link or a reload reads it.</td></tr>
