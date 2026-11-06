@@ -35,7 +35,7 @@ export function navigationOf(pathname: string): Navigation {
     if (parts[0] !== "bots" || parts[1] === undefined) return { bot: null, tab: null, fills: false };
     const bot = decode(parts[1]);
     const tab = isTab(parts[2]) ? parts[2] : null;
-    return { bot, tab, fills: tab === "procedures" && parts[3] !== undefined };
+    return { bot, tab, fills: tab === "procedures" && parts[4] === "edit" };
 }
 
 export function botHref(bot: string): string {

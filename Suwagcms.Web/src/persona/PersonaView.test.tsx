@@ -37,7 +37,7 @@ describe("PersonaView", () => {
         const page = html();
 
         expect(page.match(/<textarea/g)).toHaveLength(4);
-        expect(page.match(/<button/g)).toHaveLength(1);
+        expect(page.match(/<button/g)?.length).toBe(1 + (page.match(/>About /g)?.length ?? 0));
         expect(page).toContain(">Save<");
         expect(page).toContain("revision 4");
         for (const label of ["Personality", "In scope", "Out of scope", "When out of scope"]) expect(page).toContain(label);
@@ -47,8 +47,8 @@ describe("PersonaView", () => {
     it("AC-bot-persona-1: a tooltip on each section says what it is for", () => {
         const page = html();
 
-        expect(page).toContain(`title="${HINTS.personality}"`);
-        expect(page).toContain(`title="${HINTS.scope}"`);
+        expect(page).toContain(`>${HINTS.personality}<`);
+        expect(page).toContain(`>${HINTS.scope}<`);
     });
 
     it("AC-bot-persona-2: an empty persona says so", () => {

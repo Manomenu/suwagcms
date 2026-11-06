@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link } from "wouter";
 
+import { listHref } from "@/api/resourceAddress";
 import { Button } from "@/design/button";
+import { Field, Legend } from "@/design/field";
+import { InfoTip } from "@/design/infoTip";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
@@ -31,10 +34,11 @@ import {
     type LinkableArticle,
     type Step,
 } from "./draft";
+import { PROCEDURE_HINTS } from "./hints";
 import { RuleEditor, TargetSelect } from "./RuleEditor";
 
 function NoFacts({ bot, onLeave }: { bot: string; onLeave: (href: string) => void }) {
-    const href = `/bots/${encodeURIComponent(bot)}/facts`;
+    const href = listHref(bot, "facts");
     return (
         <p className="text-sm text-muted-foreground">
             This bot has no facts yet.{" "}
@@ -72,7 +76,7 @@ function CollectForm({
         picked,
     );
     if (names.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
-    return <Checklist legend="Collect these facts" names={names} picked={picked} onChange={onChange} />;
+    return <Checklist legend="Collect these facts" hint={PROCEDURE_HINTS.collect} names={names} picked={picked} onChange={onChange} />;
 }
 
 function AssignForm({
@@ -93,7 +97,7 @@ function AssignForm({
     if (facts.length === 0 && entries.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
     return (
         <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium">Assign these values</legend>
+            <Legend hint={PROCEDURE_HINTS.assign}>Assign these values</Legend>
             {entries.map(([name, value]) => {
                 const values = valuesOffered(facts.find((fact) => fact.name === name));
                 const set = (next: string) => {
@@ -167,23 +171,25 @@ function StartForm({ target, offered, onChange }: { target: string; offered: str
     // Why: a target the step already names stays visible even when it is not offered, so opening a procedure never hides what is stored.
     const options = offered.includes(target) || target === "" ? offered : [target, ...offered];
     return (
-        <label className="flex flex-col gap-1 text-sm font-medium">
-            Start this procedure
-            <Select
-                className="w-full"
-                value={target}
-                onChange={(event) => {
-                    onChange(event.target.value);
-                }}
-            >
-                <option value="">(choose)</option>
-                {options.map((id) => (
-                    <option key={id} value={id}>
-                        {id}
-                    </option>
-                ))}
-            </Select>
-        </label>
+        <Field prefix="step" name="start" label="Start this procedure" hint={PROCEDURE_HINTS.start} errors={[]}>
+            {(props) => (
+                <Select
+                    {...props}
+                    className="w-full"
+                    value={target}
+                    onChange={(event) => {
+                        onChange(event.target.value);
+                    }}
+                >
+                    <option value="">(choose)</option>
+                    {options.map((id) => (
+                        <option key={id} value={id}>
+                            {id}
+                        </option>
+                    ))}
+                </Select>
+            )}
+        </Field>
     );
 }
 
@@ -191,7 +197,7 @@ function PointsForm({ points, onChange }: { points: Record<string, string>; onCh
     const entries = Object.entries(points);
     return (
         <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium">Points the customer must hear</legend>
+            <Legend hint={PROCEDURE_HINTS.points}>Points the customer must hear</Legend>
             {entries.map(([name, text], index) => (
                 // Why: a point's name is what is being typed, so its place in the list is what keeps the field focused.
                 <div key={index} className="flex items-start gap-1">
@@ -240,16 +246,18 @@ function PointsForm({ points, onChange }: { points: Record<string, string>; onCh
 function InformForm({ inform, articles, onChange }: { inform: Inform; articles: LinkableArticle[]; onChange: (inform: Inform) => void }) {
     return (
         <div className="flex flex-col gap-3">
-            <label className="flex flex-col gap-1 text-sm font-medium">
-                Instruction
-                <Textarea
-                    placeholder="What the agent does with these points"
-                    value={inform.instruction}
-                    onChange={(event) => {
-                        onChange({ ...inform, instruction: event.target.value });
-                    }}
-                />
-            </label>
+            <Field prefix="step" name="instruction" label="Instruction" hint={PROCEDURE_HINTS.instruction} errors={[]}>
+                {(props) => (
+                    <Textarea
+                        {...props}
+                        placeholder="What the agent does with these points"
+                        value={inform.instruction}
+                        onChange={(event) => {
+                            onChange({ ...inform, instruction: event.target.value });
+                        }}
+                    />
+                )}
+            </Field>
             <PointsForm
                 points={inform.points ?? {}}
                 onChange={(points) => {
@@ -270,6 +278,7 @@ function InformForm({ inform, articles, onChange }: { inform: Inform; articles: 
 function MappingRows({
     kind,
     title,
+    hint,
     fields,
     mapped,
     facts,
@@ -277,6 +286,7 @@ function MappingRows({
 }: {
     kind: "with" | "results";
     title: string;
+    hint: string;
     fields: NonNullable<ActionView["parameters"]>;
     mapped: Record<string, string>;
     facts: Fact[];
@@ -286,7 +296,7 @@ function MappingRows({
     if (names.length === 0) return null;
     return (
         <fieldset className="flex flex-col gap-2">
-            <legend className="text-sm font-medium">{title}</legend>
+            <Legend hint={hint}>{title}</Legend>
             {names.map((name) => {
                 const picked = mapped[name] ?? "";
                 const offered = factsThatFit(kind, fields[name] ?? {}, facts).map((fact) => fact.name);
@@ -340,26 +350,28 @@ function ActionStepForm({
     const options = step.action === undefined || step.action === "" || ids.includes(step.action) ? ids : [...ids, step.action];
     return (
         <>
-            <label className="flex flex-col gap-1 text-sm font-medium">
-                Action
-                <Select
-                    aria-label="Action"
-                    value={step.action ?? ""}
-                    onChange={(event) => {
-                        edit((current) => setBlock(current, name, { action: event.target.value }));
-                    }}
-                >
-                    <option value="">(choose an action)</option>
-                    {options.map((id) => (
-                        <option key={id} value={id}>
-                            {id}
-                        </option>
-                    ))}
-                </Select>
-            </label>
+            <Field prefix="step" name="action" label="Action" hint={PROCEDURE_HINTS.action} errors={[]}>
+                {(props) => (
+                    <Select
+                        {...props}
+                        value={step.action ?? ""}
+                        onChange={(event) => {
+                            edit((current) => setBlock(current, name, { action: event.target.value }));
+                        }}
+                    >
+                        <option value="">(choose an action)</option>
+                        {options.map((id) => (
+                            <option key={id} value={id}>
+                                {id}
+                            </option>
+                        ))}
+                    </Select>
+                )}
+            </Field>
             <MappingRows
                 kind="with"
                 title="Parameters"
+                hint={PROCEDURE_HINTS.actionParameters}
                 fields={chosen?.parameters ?? {}}
                 mapped={step.with ?? {}}
                 facts={facts}
@@ -370,6 +382,7 @@ function ActionStepForm({
             <MappingRows
                 kind="results"
                 title="Results"
+                hint={PROCEDURE_HINTS.actionResults}
                 fields={chosen?.results ?? {}}
                 mapped={step.results ?? {}}
                 facts={facts}
@@ -379,6 +392,7 @@ function ActionStepForm({
             />
             <TargetSelect
                 label="On failure, go to"
+                hint={PROCEDURE_HINTS.onFailure}
                 value={step.onFailure ?? ""}
                 draft={draft}
                 onChange={(to) => {
@@ -425,40 +439,46 @@ export function StepForm({
     return (
         <section aria-label={`Step ${name}`} className="flex flex-col gap-3">
             <h2 className="text-base font-semibold">Step: {name}</h2>
-            <label
-                className="flex flex-col gap-1 text-sm"
-                title="The step's name, used by next and firstStep. camelCase, unique in the procedure."
+            <Field
+                prefix="step"
+                name="name"
+                label="Name"
+                hint={PROCEDURE_HINTS.stepName}
+                errors={taken ? ["Another step already has this name."] : []}
             >
-                Name ⓘ
-                <Input
-                    value={typed}
-                    aria-invalid={taken || undefined}
-                    onChange={(event) => {
-                        setTyped(event.target.value);
-                    }}
-                    onBlur={() => {
-                        if (typed !== name && !taken && typed !== "") {
-                            edit((current) => renameStep(current, name, typed));
-                            onRenamed(typed);
-                        } else {
-                            setTyped(name);
-                        }
-                    }}
-                />
-                {taken && <span className="text-destructive">Another step already has this name.</span>}
-            </label>
-            <label className="flex items-center gap-2 text-sm" title="The procedure starts here. One step at a time carries the mark.">
-                <input
-                    type="radio"
-                    className="accent-primary"
-                    name="first-step"
-                    checked={draft.firstStep === name}
-                    onChange={() => {
-                        edit((current) => markFirst(current, name));
-                    }}
-                />
-                First step ⓘ
-            </label>
+                {(props) => (
+                    <Input
+                        {...props}
+                        value={typed}
+                        onChange={(event) => {
+                            setTyped(event.target.value);
+                        }}
+                        onBlur={() => {
+                            if (typed !== name && !taken && typed !== "") {
+                                edit((current) => renameStep(current, name, typed));
+                                onRenamed(typed);
+                            } else {
+                                setTyped(name);
+                            }
+                        }}
+                    />
+                )}
+            </Field>
+            <div className="flex items-center gap-1">
+                <label className="flex items-center gap-2 text-sm">
+                    <input
+                        type="radio"
+                        className="accent-primary"
+                        name="first-step"
+                        checked={draft.firstStep === name}
+                        onChange={() => {
+                            edit((current) => markFirst(current, name));
+                        }}
+                    />
+                    First step
+                </label>
+                <InfoTip about="First step" help={PROCEDURE_HINTS.firstStep} />
+            </div>
             {step.listen && <p className="text-sm text-muted-foreground">listen: waits for the customer to write.</p>}
             {step.collect && (
                 <CollectForm
@@ -472,15 +492,17 @@ export function StepForm({
                 />
             )}
             {step.say !== undefined && (
-                <label className="flex flex-col gap-1 text-sm font-medium">
-                    Say
-                    <Textarea
-                        value={step.say}
-                        onChange={(event) => {
-                            edit((current) => setBlock(current, name, { say: event.target.value }));
-                        }}
-                    />
-                </label>
+                <Field prefix="step" name="say" label="Say" hint={PROCEDURE_HINTS.say} errors={[]}>
+                    {(props) => (
+                        <Textarea
+                            {...props}
+                            value={step.say}
+                            onChange={(event) => {
+                                edit((current) => setBlock(current, name, { say: event.target.value }));
+                            }}
+                        />
+                    )}
+                </Field>
             )}
             {step.assign && (
                 <AssignForm
@@ -521,6 +543,7 @@ export function StepForm({
                 ) : (
                     <TargetSelect
                         label="Go to"
+                        hint={PROCEDURE_HINTS.goTo}
                         value={step.next ?? ""}
                         draft={draft}
                         onChange={(to) => {

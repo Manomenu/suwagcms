@@ -1,5 +1,6 @@
 import { Redirect, Route, Switch } from "wouter";
 
+import { editHref } from "./api/resourceAddress";
 import { ActionsScreen } from "./actions/ActionsScreen";
 import { ArticlesScreen } from "./articles/ArticlesScreen";
 import { BotsRoutes } from "./bots/BotsRoutes";
@@ -17,28 +18,41 @@ export function App() {
     return (
         <AppShell>
             <Switch>
-                <Route path="/bots/:id/articles">
+                <Route path="/bots/:id/articles/*?">
                     {(params) => <ArticlesScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>
-                <Route path="/bots/:id/facts">{(params) => <FactsScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
-                <Route path="/bots/:id/knowledge-bases">
+                <Route path="/bots/:id/facts/*?">{(params) => <FactsScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
+                <Route path="/bots/:id/knowledge-bases/*?">
                     {(params) => <KnowledgeBasesScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>
                 <Route path="/bots/:id/procedures">
                     {(params) => <ProceduresScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>
-                <Route path="/bots/:id/actions">{(params) => <ActionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
+                <Route path="/bots/:id/procedures/new">
+                    {(params) => <ProceduresScreen key={params.id} bot={decodeURIComponent(params.id)} />}
+                </Route>
+                <Route path="/bots/:id/actions/*?">
+                    {(params) => <ActionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}
+                </Route>
                 <Route path="/bots/:id/persona">{(params) => <PersonaScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
                 <Route path="/bots/:id/versions">
                     {(params) => <VersionsScreen key={params.id} bot={decodeURIComponent(params.id)} />}
                 </Route>
                 <Route path="/bots/:id/history">{(params) => <HistoryScreen key={params.id} bot={decodeURIComponent(params.id)} />}</Route>
-                <Route path="/bots/:id/procedures/:procedure">
+                <Route path="/bots/:id/procedures/:procedure/edit">
                     {(params) => (
                         <CreatorScreen
                             key={`${params.id}/${params.procedure}`}
                             bot={decodeURIComponent(params.id)}
                             id={decodeURIComponent(params.procedure)}
+                        />
+                    )}
+                </Route>
+                <Route path="/bots/:id/procedures/:procedure">
+                    {(params) => (
+                        <Redirect
+                            to={editHref(decodeURIComponent(params.id), "procedures", decodeURIComponent(params.procedure))}
+                            replace
                         />
                     )}
                 </Route>

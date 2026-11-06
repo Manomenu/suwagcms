@@ -28,7 +28,8 @@ describe("navigationOf", () => {
     });
 
     it("AC-web-shell-4: lights procedures and fills the content on the creator", () => {
-        expect(navigationOf("/bots/sklep/procedures/refund")).toEqual({ bot: "sklep", tab: "procedures", fills: true });
+        expect(navigationOf("/bots/sklep/procedures/refund/edit")).toEqual({ bot: "sklep", tab: "procedures", fills: true });
+        expect(navigationOf("/bots/sklep/procedures/new")).toEqual({ bot: "sklep", tab: "procedures", fills: false });
     });
 
     it("AC-web-shell-4: decodes the id, and a malformed % does not throw", () => {

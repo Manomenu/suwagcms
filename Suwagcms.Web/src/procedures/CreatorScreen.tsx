@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 
+import { ApiError } from "@/api/client";
 import { fetchDeclaration } from "@/api/declaration";
+import { listHref } from "@/api/resourceAddress";
 import { Alert } from "@/design/alert";
+import { Anchor } from "@/design/anchor";
 
 import {
     fetchActions,
@@ -33,6 +36,7 @@ interface Loaded {
 export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
     const [loaded, setLoaded] = useState<Loaded | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
+    const [missing, setMissing] = useState(false);
 
     useEffect(() => {
         // StrictMode runs effects twice in development: abort the first request, ignore its result.
@@ -61,13 +65,23 @@ export function CreatorScreen({ bot, id }: { bot: string; id: string }) {
                 });
             })
             .catch((error: unknown) => {
-                if (!controller.signal.aborted) setFailure(error instanceof Error ? error.message : String(error));
+                if (controller.signal.aborted) return;
+                if (error instanceof ApiError && error.status === 404) setMissing(true);
+                else setFailure(error instanceof Error ? error.message : String(error));
             });
         return () => {
             controller.abort();
         };
     }, [bot, id]);
 
+    if (missing) {
+        return (
+            <div className="flex flex-col gap-4 p-4">
+                <Anchor href={`~${listHref(bot, "procedures")}`}>← Back to procedures</Anchor>
+                <Alert variant="destructive">This bot has no procedure '{id}'. It may have been deleted, or its id changed.</Alert>
+            </div>
+        );
+    }
     if (failure !== null) {
         return (
             <div className="p-4">

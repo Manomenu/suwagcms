@@ -1,12 +1,16 @@
+import { Legend } from "@/design/field";
+
 /** A list to tick. What is ticked keeps its order, the one the author ticked it in, and anything already stored stays listed. */
 export function Checklist({
     legend,
+    hint,
     names,
     picked,
     labelOf,
     onChange,
 }: {
     legend: string;
+    hint: string;
     names: string[];
     picked: string[];
     labelOf?: (name: string) => string;
@@ -14,7 +18,7 @@ export function Checklist({
 }) {
     return (
         <fieldset className="flex flex-col gap-1">
-            <legend className="text-sm font-medium">{legend}</legend>
+            <Legend hint={hint}>{legend}</Legend>
             {names.map((name) => (
                 <label key={name} className="flex items-center gap-2 text-sm">
                     <input

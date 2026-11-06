@@ -1,8 +1,10 @@
 import { Button } from "@/design/button";
+import { InfoTip } from "@/design/infoTip";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
 import type { Fact } from "./api";
+import { PROCEDURE_HINTS } from "./hints";
 import {
     canRemoveRule,
     conditionKinds,
@@ -27,26 +29,41 @@ interface Context {
     edit: (change: (draft: Draft) => Draft) => void;
 }
 
-function TargetSelect({ label, value, draft, onChange }: { label: string; value: string; draft: Draft; onChange: (to: string) => void }) {
+function TargetSelect({
+    label,
+    hint,
+    value,
+    draft,
+    onChange,
+}: {
+    label: string;
+    hint: string;
+    value: string;
+    draft: Draft;
+    onChange: (to: string) => void;
+}) {
     return (
-        <label className="flex items-center gap-2 text-sm">
-            <span className="shrink-0">{label}</span>
-            <Select
-                aria-label={label}
-                className="flex-1"
-                value={value in draft.steps ? value : ""}
-                onChange={(event) => {
-                    onChange(event.target.value);
-                }}
-            >
-                <option value="">(not connected)</option>
-                {Object.keys(draft.steps).map((name) => (
-                    <option key={name} value={name}>
-                        {name}
-                    </option>
-                ))}
-            </Select>
-        </label>
+        <div className="flex items-center gap-1">
+            <label className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+                <span className="shrink-0">{label}</span>
+                <Select
+                    aria-label={label}
+                    className="flex-1"
+                    value={value in draft.steps ? value : ""}
+                    onChange={(event) => {
+                        onChange(event.target.value);
+                    }}
+                >
+                    <option value="">(not connected)</option>
+                    {Object.keys(draft.steps).map((name) => (
+                        <option key={name} value={name}>
+                            {name}
+                        </option>
+                    ))}
+                </Select>
+            </label>
+            <InfoTip about={label} help={hint} />
+        </div>
     );
 }
 
@@ -263,6 +280,7 @@ function RuleCard({ rule, index, context }: { rule: Rule; index: number; context
             {!isDefault && facts.length === 0 && <p className="text-xs text-muted-foreground">This bot has no facts to compare.</p>}
             <TargetSelect
                 label={isDefault ? "Otherwise go to" : "Go to"}
+                hint={isDefault ? PROCEDURE_HINTS.otherwiseGoTo : PROCEDURE_HINTS.ruleGoTo}
                 value={rule.to}
                 draft={draft}
                 onChange={(to) => {

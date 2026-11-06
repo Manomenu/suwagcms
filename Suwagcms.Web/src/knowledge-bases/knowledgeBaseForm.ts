@@ -2,8 +2,10 @@ import type { Mistake } from "@/api/client";
 
 export type FieldName = "id" | "title" | "language";
 
-/** What the language of a base is for: the label's tooltip. */
+/** What each field of a base is for: its tooltip. */
 export const HINTS = {
+    id: "The base's id: how its articles refer to it. One camelCase word, like offer. To change it later, use Change id.",
+    title: "The name people see in lists. No two bases of a bot may share it.",
     language:
         "The language of every article in this base, pl or en. The bot uses it to pick the right articles and to answer in the right way.",
 } as const;

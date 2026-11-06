@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { request } from "./client";
 import type { components } from "./openapi";
+import { editHref } from "./resourceAddress";
 
 type Usage = components["schemas"]["UsageView"];
 export type UsageLink = components["schemas"]["UsageLink"];
@@ -13,13 +14,11 @@ function fetchUsage(bot: string, collection: UsageCollection, id: string, signal
     return request<Usage>(`/bots/${encodeURIComponent(bot)}/${collection}/${encodeURIComponent(id)}/usage`, { signal });
 }
 
-/** Where the web app shows a resource: a fact or an article opens in its list from `?open=<id>`, a procedure in its creator. */
+/** Where the web app shows a resource: its edit screen. */
 export function usageHref(bot: string, link: UsageLink): string {
-    const base = `~/bots/${encodeURIComponent(bot)}`;
-    const id = encodeURIComponent(link.id);
-    if (link.kind === "procedure") return `${base}/procedures/${id}`;
-    const collection = link.kind === "fact" ? "facts" : link.kind === "action" ? "actions" : "articles";
-    return `${base}/${collection}?open=${id}`;
+    const collection =
+        link.kind === "procedure" ? "procedures" : link.kind === "fact" ? "facts" : link.kind === "action" ? "actions" : "articles";
+    return `~${editHref(bot, collection, link.id)}`;
 }
 
 export interface UsageState {

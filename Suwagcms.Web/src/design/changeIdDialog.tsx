@@ -19,6 +19,7 @@ const QUIET_MS = 300;
  */
 export function ChangeIdDialog({
     noun,
+    idWord = "id",
     id,
     preview,
     apply,
@@ -26,6 +27,8 @@ export function ChangeIdDialog({
     onCancel,
 }: {
     noun: string;
+    /** What the kind calls its id: a fact has a name. */
+    idWord?: string;
     id: string;
     preview: (newId: string, signal: AbortSignal) => Promise<IdAnswer>;
     apply: (newId: string) => Promise<IdAnswer>;
@@ -63,11 +66,17 @@ export function ChangeIdDialog({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4">
-            <Paper role="dialog" aria-label="Change id" className="flex w-full max-w-lg flex-col gap-3">
+            <Paper role="dialog" aria-label={`Change ${idWord}`} className="flex w-full max-w-lg flex-col gap-3">
                 <h2 className="text-base font-semibold">
-                    Change id of {noun} {id}
+                    Change {idWord} of {noun} {id}
                 </h2>
-                <Field prefix="change-id" name="newId" label="New id" errors={[...(current?.mistakes ?? []), ...refusal]}>
+                <Field
+                    prefix="change-id"
+                    name="newId"
+                    label={`New ${idWord}`}
+                    hint={`The ${idWord} this ${noun} will have. The answer below says whether it is free and in the right form, and what would be rewritten.`}
+                    errors={[...(current?.mistakes ?? []), ...refusal]}
+                >
                     {(props) => (
                         <Input
                             {...props}
@@ -102,7 +111,7 @@ export function ChangeIdDialog({
                         Cancel
                     </Button>
                     <Button type="button" disabled={current === null || current.mistakes.length > 0} onClick={confirm}>
-                        Change id
+                        Change {idWord}
                     </Button>
                 </div>
             </Paper>

@@ -47,7 +47,7 @@ export function ArticleFields({
     return (
         <>
             <div className="grid gap-3 md:grid-cols-4">
-                <Field prefix="article" name="id" label="Id" errors={errorsOf("id")}>
+                <Field prefix="article" name="id" label="Id" hint={HINTS.id} errors={errorsOf("id")}>
                     {(props) => (
                         <Input
                             {...props}
@@ -60,7 +60,7 @@ export function ArticleFields({
                         />
                     )}
                 </Field>
-                <Field prefix="article" name="title" label="Title" errors={errorsOf("title")}>
+                <Field prefix="article" name="title" label="Title" hint={HINTS.title} errors={errorsOf("title")}>
                     {(props) => (
                         <Input
                             {...props}
@@ -72,7 +72,13 @@ export function ArticleFields({
                         />
                     )}
                 </Field>
-                <Field prefix="article" name="knowledgeBase" label="Knowledge base" errors={errorsOf("knowledgeBase")}>
+                <Field
+                    prefix="article"
+                    name="knowledgeBase"
+                    label="Knowledge base"
+                    hint={HINTS.knowledgeBase}
+                    errors={errorsOf("knowledgeBase")}
+                >
                     {(props) => (
                         <Select
                             {...props}
