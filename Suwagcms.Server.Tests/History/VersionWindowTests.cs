@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -316,6 +317,33 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
         var own = (await history.Of("versions", "2")).Entries;
         Assert.Equal("created:2", Names(new HistoryPage(own, null, default)));
         Assert.Null((await history.Of("versions", "2")).Incomplete);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-33")]
+    public async Task Before_goes_on_from_the_entry_the_last_page_named_through_the_whole_window()
+    {
+        var (versions, facts, _, history) = await NewBot();
+        await versions.Created();
+        await facts.Add("a.one", FactApi.Text());
+        await facts.Add("a.two", FactApi.Text());
+        await versions.Created();
+
+        var seen = new List<string>();
+        string[] more = [];
+        for (var page = 0; page < 3; page++)
+        {
+            var run = await history.CliAsync(["versions", "window", "2", "--json", "--limit", "1", .. more]);
+            Assert.Equal(0, run.ExitCode);
+            using var printed = JsonDocument.Parse(run.Output);
+            seen.Add(printed.RootElement.GetProperty("entries")[0].GetProperty("resourceId").GetString() ?? "");
+            more = printed.RootElement.TryGetProperty("next", out var next)
+                ? ["--before", next.GetInt64().ToString(CultureInfo.InvariantCulture)]
+                : [];
+        }
+
+        Assert.Equal(["2", "a.two", "a.one"], seen);
+        Assert.Empty(more);
     }
 
     [Fact]
