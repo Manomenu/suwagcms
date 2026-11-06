@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Suwagcms.Cli.Connection;
 
 namespace Suwagcms.Cli;
 
@@ -7,7 +8,9 @@ internal sealed record CliEnvironment(
     string SettingsFolder,
     HttpClient? Http = null,
     Action<Uri>? OpenBrowser = null,
-    Func<Stream>? Stdin = null
+    Func<Stream>? Stdin = null,
+    string WorkingDirectory = "",
+    RepositoryConfig? Config = null
 )
 {
     public const string CannotSave =
@@ -25,7 +28,8 @@ internal sealed record CliEnvironment(
         return new(
             Environment.GetEnvironmentVariable,
             applicationData.Length == 0 ? "" : Path.Combine(applicationData, "suwagcms"),
-            Stdin: StandardInput
+            Stdin: StandardInput,
+            WorkingDirectory: Environment.CurrentDirectory
         );
     }
 

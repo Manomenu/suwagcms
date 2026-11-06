@@ -7,7 +7,7 @@ internal static class ServerAddress
     public const string Default = "http://localhost:3330";
 
     public const string OptionDescription =
-        $"The server's address (the web app; the API is under /api). Default: ${Variable}, else the address saved with `suwagcms server <url>`, else {Default}.";
+        $"The server's address (the web app; the API is under /api). Default: ${Variable}, else {RepositoryConfig.AddressKey} in {RepositoryConfig.DefaultFolder}/{RepositoryConfig.FileName} under the current folder, else the address saved with `suwagcms server <url>`, else {Default}.";
 
     public static AddressChoice Choose(string? option, CliEnvironment environment)
     {
@@ -19,6 +19,10 @@ internal static class ServerAddress
         if (Given(environment.Variable(Variable)) is { } fromVariable)
         {
             return Parse(fromVariable, Variable);
+        }
+        if (Given(environment.Config?.SuwagcmsUrl) is { } fromConfig)
+        {
+            return Parse(fromConfig, $"{RepositoryConfig.AddressKey} in {RepositoryConfig.FileName}");
         }
         if (Given(SavedAddress.Read(environment.SettingsFolder)) is { } saved)
         {
