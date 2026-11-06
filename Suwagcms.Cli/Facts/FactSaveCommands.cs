@@ -234,7 +234,7 @@ internal static class FactSaveCommands
             return await target.FailedAsync(answer, cancellationToken);
         }
         var fact = answer.Body?.Deserialize<Fact>(Web) ?? throw new InvalidOperationException("the server sent no fact");
-        var past = word == "add" ? "Added" : "Edited";
+        var past = word == "add" ? "Added" : "Saved";
         var text = dry
             ? $"Would {word} '{fact.Name}' ({FactText.Constraint(fact)}). Nothing was changed."
             : string.Create(CultureInfo.InvariantCulture, $"{past} '{fact.Name}' ({FactText.Constraint(fact)}), revision {fact.Revision}.");

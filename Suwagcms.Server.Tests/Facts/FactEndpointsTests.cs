@@ -236,6 +236,17 @@ public sealed class FactEndpointsTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-global-facts-8")]
+    public async Task Deleting_a_fact_that_does_not_exist_is_refused_at_its_name()
+    {
+        var api = await NewBot();
+
+        var mistake = Assert.Single(await FactApi.MistakesOf(await api.Delete("customer.city")));
+
+        Assert.Equal("name", mistake.GetProperty("path").GetString());
+    }
+
+    [Fact]
     [Trait("criterion", "AC-global-facts-9")]
     public async Task An_edit_replaces_the_description_constraints_and_writableBy_and_raises_the_revision()
     {

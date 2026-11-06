@@ -221,7 +221,7 @@ internal static class ArticleSaveCommands
             return await target.FailedAsync(answer, cancellationToken);
         }
         var article = answer.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
-        var past = word == "add" ? "Added" : "Edited";
+        var past = word == "add" ? "Added" : "Saved";
         var text = dry
             ? $"Would {word} '{article.Id}' ({article.Title}, {article.Language}, in {article.KnowledgeBase}). Nothing was changed."
             : string.Create(

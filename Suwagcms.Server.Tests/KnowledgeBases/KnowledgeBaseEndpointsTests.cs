@@ -75,6 +75,18 @@ public sealed class KnowledgeBaseEndpointsTests(TestDatabase database) : IDispos
     }
 
     [Fact]
+    [Trait("criterion", "AC-knowledge-bases-3")]
+    public async Task Deleting_a_base_that_does_not_exist_is_refused_at_its_id()
+    {
+        var api = await NewBot();
+
+        var mistake = Assert.Single(await FactApi.MistakesOf(await api.Delete("offer")));
+
+        Assert.Equal("resource.missing", mistake.GetProperty("code").GetString());
+        Assert.Equal("id", mistake.GetProperty("path").GetString());
+    }
+
+    [Fact]
     [Trait("criterion", "AC-knowledge-bases-4")]
     public async Task An_id_the_bot_already_has_is_refused_and_the_first_base_stays()
     {

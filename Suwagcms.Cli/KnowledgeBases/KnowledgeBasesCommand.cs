@@ -204,7 +204,7 @@ internal static class KnowledgeBasesCommand
         }
         var saved =
             answer.Body?.Deserialize<KnowledgeBaseView>(Web) ?? throw new InvalidOperationException("the server sent no knowledge base");
-        var past = word == "add" ? "Added" : "Edited";
+        var past = word == "add" ? "Added" : "Saved";
         var text = dry
             ? $"Would {word} '{saved.Id}' ({saved.Title}, {saved.Language}). Nothing was changed."
             : string.Create(

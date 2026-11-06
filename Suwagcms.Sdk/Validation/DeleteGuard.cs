@@ -51,7 +51,7 @@ public static class DeleteGuard
             MistakeCodes.ReferenceMissing,
             ValidationStage.Save,
             target,
-            "name",
+            target.IdField(),
             $"The {noun} '{target.Id}' is used in {referrers.Count} place(s), so it cannot be deleted. Used by: {where}.",
             $"Remove the reference to '{target.Id}' in each place listed in `related`, then delete the {noun} again.",
             [.. referrers.Select(reference => new RelatedResource(reference.From, reference.Path))]
