@@ -30,14 +30,11 @@ internal static class PersonaCommand
             "Print the persona as YAML, with its revision; `persona edit --file` takes this back with every text unchanged (or --open the Persona page in the web app)."
         );
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
                     return await WebPage.ShowAsync(
@@ -82,14 +79,11 @@ internal static class PersonaCommand
             dryRun,
         };
         EditOptions.RefuseOpen(command, options, "persona edit");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (document, problem) = await ProcedureFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken, OnePersona);
                 if (document is null)
                 {

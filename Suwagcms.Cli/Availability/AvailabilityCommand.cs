@@ -30,14 +30,11 @@ internal static class AvailabilityCommand
             "List every article, procedure and action, on or off, and say whether the bot has the setting. Changes nothing."
         );
         EditOptions.RefuseOpen(command, options, "availability list");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
@@ -64,14 +61,11 @@ internal static class AvailabilityCommand
     {
         var command = new Command("send", "Send everything that is off to the bot again, and exit 1 unless the bot confirms it.");
         EditOptions.RefuseOpen(command, options, "availability send");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var answer = await ServerCall.PostAsync(
                     environment,
                     target.Address,
@@ -122,14 +116,11 @@ internal static class AvailabilityCommand
             command.Add(yes);
         }
         EditOptions.RefuseOpen(command, options, $"availability {word}");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var path = target.CollectionPath(
                     $"availability/{Uri.EscapeDataString(parsed.GetRequiredValue(kind))}/{Uri.EscapeDataString(parsed.GetRequiredValue(id))}/{word}"
                 );

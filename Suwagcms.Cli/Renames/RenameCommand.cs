@@ -51,14 +51,11 @@ internal static class RenameCommand
                 );
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (collection, pageKind) = Kinds[parsed.GetRequiredValue(kind)];
                 var dry = parsed.GetValue(dryRun);
                 var answer = await ServerCall.PostAsync(

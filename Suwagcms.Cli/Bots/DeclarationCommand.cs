@@ -22,14 +22,11 @@ internal static class DeclarationCommand
             stored,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
                     return await WebPage.ShowAsync(

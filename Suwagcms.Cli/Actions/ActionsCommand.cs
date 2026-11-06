@@ -5,7 +5,6 @@ using System.Text.Json.Nodes;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Cli.Procedures;
 using Suwagcms.Contracts;
 
@@ -37,17 +36,14 @@ internal static class ActionsCommand
     {
         var command = new Command("list", "List the actions of the bot, each with its implementation (or --open the Actions screen).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed, target.PageOf(Collection));
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)
@@ -72,18 +68,15 @@ internal static class ActionsCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var name = parsed.GetRequiredValue(id);
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed, new Uri(target.PageOf(Collection), $"?open={Uri.EscapeDataString(name)}"));
+                    return await target.OpenAsync(new Uri(target.PageOf(Collection), $"?open={Uri.EscapeDataString(name)}"), parsed);
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.ItemPath(Collection, name), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)
@@ -103,24 +96,20 @@ internal static class ActionsCommand
         var dryRun = EditOptions.DryRun();
         var command = new Command("add", "Add an action to the bot from a YAML or JSON file that holds the whole of it.") { file, dryRun };
         EditOptions.RefuseOpen(command, options, "actions add");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var path = parsed.GetRequiredValue(file);
                 var (document, problem) = await ProcedureFile.ReadAsync(path, cancellationToken, OneAction);
                 if (document is null)
                 {
-                    return await MisusedAsync(target, problem);
+                    return await target.MisusedAsync(problem);
                 }
                 if (Id(document) is not { Length: > 0 } id)
                 {
-                    return await MisusedAsync(
-                        target,
+                    return await target.MisusedAsync(
                         $"'{path}' has no id. Add 'id: <name>' to the file: the name is camelCase, like checkServiceability."
                     );
                 }
@@ -158,24 +147,20 @@ internal static class ActionsCommand
             dryRun,
         };
         EditOptions.RefuseOpen(command, options, "actions edit");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var name = parsed.GetRequiredValue(id);
                 var (document, problem) = await ProcedureFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken, OneAction);
                 if (document is null)
                 {
-                    return await MisusedAsync(target, problem);
+                    return await target.MisusedAsync(problem);
                 }
                 if (Id(document) is { Length: > 0 } inFile && inFile != name)
                 {
-                    return await MisusedAsync(
-                        target,
+                    return await target.MisusedAsync(
                         $"The command edits '{name}' but the file holds '{inFile}'. Use the same id in both: change the id in the file, or the one on the command line."
                     );
                 }
@@ -200,41 +185,16 @@ internal static class ActionsCommand
         return command;
     }
 
-    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment)
-    {
-        var id = new Argument<string>("id") { Description = "The action's id." };
-        var ifRevision = EditOptions.IfRevision();
-        var dryRun = EditOptions.DryRun();
-        var command = new Command("delete", "Delete an action that no procedure uses.") { id, ifRevision, dryRun };
-        EditOptions.RefuseOpen(command, options, "actions delete");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
-            {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
-                var name = parsed.GetRequiredValue(id);
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.DeleteAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, name) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                return await target.Run.Report.DoneAsync(
-                    new ActionDeletedDocument(target.Bot, name, dry),
-                    dry ? $"Would delete '{name}'. Nothing was changed." : $"Deleted '{name}'."
-                );
-            }
+    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment) =>
+        ResourceCommand.Delete(
+            options,
+            environment,
+            "actions delete",
+            Collection,
+            new Argument<string>("id") { Description = "The action's id." },
+            "Delete an action that no procedure uses.",
+            (bot, name, dry) => new ActionDeletedDocument(bot, name, dry)
         );
-        return command;
-    }
 
     private static Option<string> FileOption() =>
         new("--file")
@@ -261,12 +221,6 @@ internal static class ActionsCommand
         }
         return body;
     }
-
-    private static Task<int> Open(BotTarget target, ParseResult parsed, Uri page) =>
-        WebPage.ShowAsync(page, parsed.InvocationConfiguration.Output, parsed.InvocationConfiguration.Error, target.Machine.OpenBrowser);
-
-    private static Task<int> MisusedAsync(BotTarget target, string text) =>
-        target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(text), text);
 
     private static async Task<int> ReportSavedAsync(
         BotTarget target,

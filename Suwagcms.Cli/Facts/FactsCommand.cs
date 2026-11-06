@@ -3,7 +3,6 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts;
 
 namespace Suwagcms.Cli.Facts;
@@ -28,17 +27,14 @@ internal static class FactsCommand
     {
         var command = new Command("list", "List the global facts of the bot (or --open the Facts screen in the web app).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)
@@ -57,17 +53,14 @@ internal static class FactsCommand
         var name = new Argument<string>("name") { Description = "The fact's name, like customer.city." };
         var command = new Command("show", "Show one global fact with its revision (or --open the Facts screen in the web app).") { name };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
@@ -86,55 +79,14 @@ internal static class FactsCommand
         return command;
     }
 
-    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment)
-    {
-        var name = new Argument<string>("name") { Description = "The fact's name, like customer.city." };
-        var ifRevision = EditOptions.IfRevision();
-        var dryRun = EditOptions.DryRun();
-        var command = new Command(
-            "delete",
-            "Delete a global fact. Refused while a procedure uses it, with every place listed; `usage fact <name>` shows them first."
-        )
-        {
-            name,
-            ifRevision,
-            dryRun,
-        };
-        EditOptions.RefuseOpen(command, options, "facts delete");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
-            {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
-                var factName = parsed.GetRequiredValue(name);
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.DeleteAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, factName) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                return await target.Run.Report.DoneAsync(
-                    new FactDeletedDocument(target.Bot, factName, dry),
-                    dry ? $"Would delete '{factName}'. Nothing was changed." : $"Deleted '{factName}'."
-                );
-            }
-        );
-        return command;
-    }
-
-    private static Task<int> Open(BotTarget target, ParseResult parsed) =>
-        WebPage.ShowAsync(
-            target.PageOf(FactsCommand.Collection),
-            parsed.InvocationConfiguration.Output,
-            parsed.InvocationConfiguration.Error,
-            target.Machine.OpenBrowser
+    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment) =>
+        ResourceCommand.Delete(
+            options,
+            environment,
+            "facts delete",
+            Collection,
+            new Argument<string>("name") { Description = "The fact's name, like customer.city." },
+            "Delete a global fact. Refused while a procedure uses it, with every place listed; `usage fact <name>` shows them first.",
+            (bot, name, dry) => new FactDeletedDocument(bot, name, dry)
         );
 }

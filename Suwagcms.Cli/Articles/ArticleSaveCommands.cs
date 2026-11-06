@@ -98,14 +98,11 @@ internal static class ArticleSaveCommands
         command.Options.Add(dryRun);
         EditOptions.RefuseOpen(command, options, "articles add");
         RefuseBadTexts(command, fields);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
                 var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
                 var problem = contentProblem ?? guideProblem;
@@ -167,14 +164,11 @@ internal static class ArticleSaveCommands
                 );
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
                 var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
                 var problem = contentProblem ?? guideProblem;

@@ -42,14 +42,11 @@ internal static class ExportCommand
                 result.AddError("--out is required: name a new or empty folder, like `suwagcms export 14 --out ./v14`.");
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var folder = parsed.GetValue(output);
                 if (folder is not null && FolderProblem(folder) is { } busy)
                 {

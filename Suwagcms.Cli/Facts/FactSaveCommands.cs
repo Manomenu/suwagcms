@@ -61,14 +61,11 @@ internal static class FactSaveCommands
         AddFields(command, fields);
         command.Options.Add(dryRun);
         EditOptions.RefuseOpen(command, options, "facts add");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var factName = parsed.GetRequiredValue(name);
                 var body = new SaveFact(
                     parsed.GetValue(fields.Type),
@@ -124,14 +121,11 @@ internal static class FactSaveCommands
                 );
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var factName = parsed.GetRequiredValue(name);
                 var read = await ServerCall.GetAsync(
                     environment,

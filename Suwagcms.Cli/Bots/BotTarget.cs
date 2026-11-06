@@ -81,6 +81,11 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
         return await Run.Report.ReportAsync(shown, Address);
     }
 
+    public Task<int> OpenAsync(Uri page, ParseResult parsed) =>
+        WebPage.ShowAsync(page, parsed.InvocationConfiguration.Output, parsed.InvocationConfiguration.Error, Machine.OpenBrowser);
+
+    public Task<int> MisusedAsync(string text) => Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(text), text);
+
     private static async Task<string> BotsLineAsync(CliEnvironment environment, Uri address, CancellationToken cancellationToken)
     {
         var (bots, _) = await BotListing.FetchAsync(environment, address, cancellationToken);

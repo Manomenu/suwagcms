@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Text.Json;
+using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Contracts;
@@ -8,6 +9,8 @@ namespace Suwagcms.Cli.Procedures;
 
 internal static class ProceduresCommand
 {
+    public const string Collection = "procedures";
+
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
@@ -31,19 +34,21 @@ internal static class ProceduresCommand
             "List the procedures of the bot, and what stops each from becoming a version (or --open the Procedures screen in the web app)."
         );
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await ProcedureTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(target.Page, parsed);
+                    return await target.OpenAsync(target.PageOf(ProceduresCommand.Collection), parsed);
                 }
-                var answer = await ServerCall.GetAsync(environment, target.Address, target.ProceduresPath, cancellationToken);
+                var answer = await ServerCall.GetAsync(
+                    environment,
+                    target.Address,
+                    target.CollectionPath(ProceduresCommand.Collection),
+                    cancellationToken
+                );
                 if (answer.ExitCode != ExitCodes.Done)
                 {
                     return await target.FailedAsync(answer, cancellationToken);
@@ -66,22 +71,19 @@ internal static class ProceduresCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await ProcedureTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await target.OpenAsync(target.CreatorPage(parsed.GetRequiredValue(id)), parsed);
+                    return await target.OpenAsync(target.PageAt("Procedure", parsed.GetRequiredValue(id)), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    target.ProcedurePath(parsed.GetRequiredValue(id)),
+                    target.ItemPath(ProceduresCommand.Collection, parsed.GetRequiredValue(id)),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
@@ -115,50 +117,14 @@ internal static class ProceduresCommand
         return JsonSerializer.SerializeToElement(node);
     }
 
-    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment)
-    {
-        var id = new Argument<string>("id") { Description = "The procedure's id. `conversation` cannot be deleted." };
-        var ifRevision = ProcedureSaveCommands.IfRevisionOption();
-        var dryRun = ProcedureSaveCommands.DryRunOption();
-        var command = new Command("delete", "Delete a procedure. `conversation`, the base of every conversation, is always refused.")
-        {
-            id,
-            ifRevision,
-            dryRun,
-        };
-        command.Validators.Add(result =>
-        {
-            if (result.GetValue(options.Open))
-            {
-                result.AddError("`suwagcms procedures delete` has no web page to open: drop --open.");
-            }
-        });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
-            {
-                var (target, exit) = await ProcedureTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
-                var name = parsed.GetRequiredValue(id);
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.DeleteAsync(
-                    environment,
-                    target.Address,
-                    target.ProcedurePath(name) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                return await target.Run.Report.DoneAsync(
-                    new ProcedureDeletedDocument(target.Bot, name, dry),
-                    dry ? $"Would delete '{name}'. Nothing was changed." : $"Deleted '{name}'."
-                );
-            }
+    private static Command CreateDelete(GlobalOptions options, CliEnvironment environment) =>
+        ResourceCommand.Delete(
+            options,
+            environment,
+            "procedures delete",
+            Collection,
+            new Argument<string>("id") { Description = "The procedure's id. `conversation` cannot be deleted." },
+            "Delete a procedure. `conversation`, the base of every conversation, is always refused.",
+            (bot, name, dry) => new ProcedureDeletedDocument(bot, name, dry)
         );
-        return command;
-    }
 }

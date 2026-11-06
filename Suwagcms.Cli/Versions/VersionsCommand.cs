@@ -4,7 +4,6 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts;
 
 namespace Suwagcms.Cli.Versions;
@@ -28,17 +27,14 @@ internal static class VersionsCommand
     {
         var command = new Command("list", "List the versions of the bot, newest first (or --open the Versions screen in the web app).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)
@@ -63,14 +59,11 @@ internal static class VersionsCommand
             dryRun,
         };
         EditOptions.RefuseOpen(command, options, "versions create");
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var answer = await ServerCall.PostAsync(
                     environment,
                     target.Address,
@@ -108,17 +101,14 @@ internal static class VersionsCommand
             "Ask the bot which version it has (never what the CMS last sent), with the latest version, the versions still in use and the recent pushes (or --open the Versions screen in the web app)."
         );
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
@@ -148,17 +138,14 @@ internal static class VersionsCommand
             number,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await Open(target, parsed);
+                    return await target.OpenAsync(target.PageOf(Collection), parsed);
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,
@@ -177,12 +164,4 @@ internal static class VersionsCommand
         );
         return command;
     }
-
-    private static Task<int> Open(BotTarget target, ParseResult parsed) =>
-        WebPage.ShowAsync(
-            target.PageOf(Collection),
-            parsed.InvocationConfiguration.Output,
-            parsed.InvocationConfiguration.Error,
-            target.Machine.OpenBrowser
-        );
 }

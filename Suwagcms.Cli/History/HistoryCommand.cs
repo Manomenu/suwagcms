@@ -64,14 +64,11 @@ internal static class HistoryCommand
                 result.AddError("--limit must be 1 or more.");
             }
         });
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var word = parsed.GetValue(kind);
                 // Why: a bot has one persona, so its history is asked for by the kind alone.
                 var resource = word == PersonaWord ? PersonaWord : parsed.GetValue(id);

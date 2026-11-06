@@ -26,14 +26,11 @@ internal static class DiffCommand
             to,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetAction(
-            async (parsed, cancellationToken) =>
+        command.SetBotAction(
+            options,
+            environment,
+            async (target, parsed, cancellationToken) =>
             {
-                var (target, exit) = await BotTarget.ResolveAsync(parsed, options, environment, cancellationToken);
-                if (target is null)
-                {
-                    return exit;
-                }
                 var first = parsed.GetRequiredValue(from).ToString(CultureInfo.InvariantCulture);
                 var second = parsed.GetRequiredValue(to).ToString(CultureInfo.InvariantCulture);
                 if (parsed.GetValue(options.Open))
