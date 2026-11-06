@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useLocation, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { useToFirstPage } from "@/api/pagination";
 import { Alert } from "@/design/alert";
 
 import {
@@ -38,6 +39,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const fromParam = params.get("from");
     const toParam = params.get("to");
     const openParam = params.get("open");
+    const toFirstPage = useToFirstPage();
 
     const compare = useCallback(
         (from: number, to: number) => {
@@ -141,6 +143,8 @@ export function VersionsScreen({ bot }: { bot: string }) {
                 setRefused(null);
                 createVersion(bot)
                     .then(() => {
+                        // Why: the new version is the first row, and it is what the person came for.
+                        toFirstPage();
                         load();
                     })
                     .catch((error: unknown) => {

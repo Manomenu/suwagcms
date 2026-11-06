@@ -27,6 +27,7 @@ services:
       dockerfile: Suwagcms.Server/Dockerfile
     environment:
       ConnectionStrings__Default: ${ConnectionStrings__Default:-Host=db;Port=5432;Database=suwagcms;Username=suwagcms;Password=suwagcms}
+      PAGINATION_PAGE_SIZE: ${PAGINATION_PAGE_SIZE:-}
     depends_on:
       db:
         condition: service_healthy

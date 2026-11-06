@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
+import { PageSizeContext } from "@/api/pagination";
 import type { Mistake } from "@/api/client";
 
 import type { Article, KnowledgeBase } from "./api";
@@ -30,16 +31,18 @@ const articles: Article[] = [
 function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase: "", language: "", text: "" }): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/articles">
-            <ArticlesView
-                bot="rzeczoznawca"
-                articles={list}
-                bases={knowledgeBases}
-                filters={filters}
-                onFilters={() => undefined}
-                onAdd={() => undefined}
-                onEdit={() => undefined}
-                onLeave={() => undefined}
-            />
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <ArticlesView
+                    bot="rzeczoznawca"
+                    articles={list}
+                    bases={knowledgeBases}
+                    filters={filters}
+                    onFilters={() => undefined}
+                    onAdd={() => undefined}
+                    onEdit={() => undefined}
+                    onLeave={() => undefined}
+                />
+            </PageSizeContext>
         </Router>,
     );
 }
@@ -81,17 +84,19 @@ describe("the list of articles and availability", () => {
         const shown = (isOff: (id: string) => boolean) =>
             renderToStaticMarkup(
                 <Router ssrPath="/bots/rzeczoznawca/articles">
-                    <ArticlesView
-                        bot="rzeczoznawca"
-                        articles={articles}
-                        bases={bases}
-                        isOff={isOff}
-                        filters={{ knowledgeBase: "", language: "", text: "" }}
-                        onFilters={() => undefined}
-                        onAdd={() => undefined}
-                        onEdit={() => undefined}
-                        onLeave={() => undefined}
-                    />
+                    <PageSizeContext value={{ size: 20, failure: null }}>
+                        <ArticlesView
+                            bot="rzeczoznawca"
+                            articles={articles}
+                            bases={bases}
+                            isOff={isOff}
+                            filters={{ knowledgeBase: "", language: "", text: "" }}
+                            onFilters={() => undefined}
+                            onAdd={() => undefined}
+                            onEdit={() => undefined}
+                            onLeave={() => undefined}
+                        />
+                    </PageSizeContext>
                 </Router>,
             );
 

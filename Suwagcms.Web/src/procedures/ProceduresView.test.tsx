@@ -2,6 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
+import { PageSizeContext } from "@/api/pagination";
+
 import type { ProcedureList } from "./api";
 import { ProceduresView } from "./ProceduresView";
 
@@ -17,7 +19,9 @@ const list: ProcedureList = {
 function view(shown: ProcedureList): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/procedures">
-            <ProceduresView onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <ProceduresView onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
+            </PageSizeContext>
         </Router>,
     );
 }
@@ -26,13 +30,15 @@ describe("ProceduresView", () => {
     it("AC-availability-22: the list says which procedure is off", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/rzeczoznawca/procedures">
-                <ProceduresView
-                    onAdd={() => undefined}
-                    onOpen={() => undefined}
-                    bot="rzeczoznawca"
-                    list={list}
-                    isOff={(id) => id === "goodbye"}
-                />
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ProceduresView
+                        onAdd={() => undefined}
+                        onOpen={() => undefined}
+                        bot="rzeczoznawca"
+                        list={list}
+                        isOff={(id) => id === "goodbye"}
+                    />
+                </PageSizeContext>
             </Router>,
         );
 

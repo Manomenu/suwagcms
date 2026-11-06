@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
+import { PageSizeContext } from "@/api/pagination";
 import type { Mistake } from "@/api/client";
 
 import type { Fact } from "./api";
@@ -54,7 +55,9 @@ const facts: Fact[] = [
 function view(list: Fact[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/facts">
-            <FactsView bot="rzeczoznawca" facts={list} onAdd={() => undefined} onEdit={() => undefined} />
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <FactsView bot="rzeczoznawca" facts={list} onAdd={() => undefined} onEdit={() => undefined} />
+            </PageSizeContext>
         </Router>,
     );
 }

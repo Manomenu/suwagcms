@@ -59,6 +59,26 @@ describe("the rules of every screen", () => {
         }
     });
 
+    it("AC-pagination-9: every list draws its controls with the one module, and nothing else moves between pages", () => {
+        expect(filesWith(/>\s*(Previous|Next)\s*<\/(Button|button|a|Anchor)>/)).toEqual(["/src/design/pagination.tsx"]);
+        expect(filesWith(/Older changes/)).toEqual([]);
+        expect(filesWith(/<Paginated\b/).sort()).toEqual([
+            "/src/design/historyPanel.tsx",
+            "/src/design/resourceList.tsx",
+            "/src/versions/VersionsView.tsx",
+        ]);
+        expect(filesWith(/usePagedRows\(/).sort()).toEqual([
+            "/src/actions/ActionsView.tsx",
+            "/src/articles/ArticlesView.tsx",
+            "/src/facts/FactsView.tsx",
+            "/src/knowledge-bases/KnowledgeBasesView.tsx",
+            "/src/procedures/ProceduresView.tsx",
+            "/src/versions/VersionsView.tsx",
+        ]);
+        expect(sources["/src/design/pagination.tsx"]).not.toMatch(/history/i);
+        expect(sources["/src/api/pagination.ts"]).not.toMatch(/history/i);
+    });
+
     it("AC-delete-guard-20: Delete has one place: DeleteAction, which only the edit screens use", () => {
         expect(filesWith(/>\s*Delete\s*</)).toEqual(["/src/design/deleteAction.tsx"]);
         expect(filesWith(/<DeleteAction\b/).sort()).toEqual(["/src/design/resourceEdit.tsx", "/src/procedures/ProcedurePanel.tsx"]);

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
 import type { Mistake } from "@/api/client";
+import { PageSizeContext } from "@/api/pagination";
 
 import type { KnowledgeBase } from "./api";
 import { HINTS, emptyForm, fieldOf, mistakesFor } from "./knowledgeBaseForm";
@@ -17,7 +18,9 @@ const bases: KnowledgeBase[] = [
 function view(list: KnowledgeBase[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/knowledge-bases">
-            <KnowledgeBasesView bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <KnowledgeBasesView bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
+            </PageSizeContext>
         </Router>,
     );
 }

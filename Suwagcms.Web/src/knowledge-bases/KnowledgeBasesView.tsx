@@ -1,3 +1,4 @@
+import { usePagedRows } from "@/api/pagination";
 import { ResourceList } from "@/design/resourceList";
 
 import type { KnowledgeBase } from "./api";
@@ -14,12 +15,14 @@ export function KnowledgeBasesView({
     onAdd: () => void;
     onEdit: (base: KnowledgeBase) => void;
 }) {
+    const paged = usePagedRows(bases);
     return (
         <ResourceList
             title={`Knowledge bases of ${bot}`}
             addLabel="Add a knowledge base"
             onAdd={onAdd}
-            rows={bases}
+            rows={paged.rows}
+            paging={paged.paging}
             idOf={(base) => base.id}
             onOpen={onEdit}
             columns={[

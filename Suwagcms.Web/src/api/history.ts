@@ -1,8 +1,10 @@
 // Why: the resource screens and the bot's History page all read the same two routes, so the calls and their hook exist once.
-import { useCallback, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 import { request } from "./client";
 import type { components } from "./openapi";
+import { lastPage, PageSizeContext, usePageInAddress, useToFirstPage, type Paging } from "./pagination";
+import { HISTORY_PAGE } from "./resourceAddress";
 
 type HistoryPage = components["schemas"]["HistoryPage"];
 export type HistoryEntry = components["schemas"]["HistoryEntry"];
@@ -31,61 +33,71 @@ export function historyHref(bot: string, entry: Pick<HistoryEntry, "kind" | "res
 export interface HistoryState {
     entries: HistoryEntry[] | null;
     since: string | null;
-    hasOlder: boolean;
     failure: string | null;
-    onOlder: () => void;
+    paging: Paging;
 }
 
-function useHistoryAt(path: string | null, revision: number): HistoryState {
-    const key = `${path ?? ""}/${revision.toString()}`;
-    const [answer, setAnswer] = useState<{ key: string; pages: HistoryPage[]; failure: string | null } | null>(null);
+function useHistoryAt(path: string | null, revision: number, pageName: string): HistoryState {
+    const { size, failure: sizeFailure } = useContext(PageSizeContext);
+    const asked = `${path ?? ""}/${revision.toString()}/${String(size)}`;
+    const [answer, setAnswer] = useState<{ asked: string; page: number; body: HistoryPage | null; failure: string | null } | null>(null);
+    const known = answer?.asked === asked ? answer : null;
+    const pages = known?.body && size !== null ? lastPage(Number(known.body.total ?? 0), size) : null;
+    const { page, move } = usePageInAddress(pageName, pages);
+    const toFirstPage = useToFirstPage(pageName);
 
     useEffect(() => {
-        if (path === null) return undefined;
+        if (path === null || size === null) return undefined;
         const controller = new AbortController();
-        request<HistoryPage>(path, { signal: controller.signal })
-            .then((page) => {
-                setAnswer({ key, pages: [page], failure: null });
+        request<HistoryPage>(`${path}?limit=${size}&page=${page}`, { signal: controller.signal })
+            .then((body) => {
+                setAnswer({ asked, page, body, failure: null });
             })
             .catch((error: unknown) => {
                 if (!controller.signal.aborted)
-                    setAnswer({ key, pages: [], failure: error instanceof Error ? error.message : String(error) });
+                    setAnswer({ asked, page, body: null, failure: error instanceof Error ? error.message : String(error) });
             });
         return () => {
             controller.abort();
         };
-    }, [path, key]);
+    }, [path, size, page, asked]);
 
-    // Why: an answer for another resource or revision is stale, so it reads as "still loading" instead of showing the wrong entries.
-    const current = answer?.key === key ? answer : null;
-    const next = current?.pages.at(-1)?.next ?? null;
+    // Why: a save or a rename adds an entry, which is on the newest page; 0 is only the revision before the resource has loaded.
+    const seenRevision = useRef(revision);
+    useEffect(() => {
+        if (seenRevision.current !== 0 && seenRevision.current !== revision) toFirstPage();
+        seenRevision.current = revision;
+    });
 
-    const onOlder = useCallback(() => {
-        if (path === null || next === null) return;
-        request<HistoryPage>(`${path}?before=${String(next)}`)
-            .then((page) => {
-                setAnswer((was) => (was?.key === key ? { ...was, pages: [...was.pages, page] } : was));
-            })
-            .catch((error: unknown) => {
-                setAnswer((was) => (was?.key === key ? { ...was, failure: error instanceof Error ? error.message : String(error) } : was));
-            });
-    }, [path, key, next]);
-
+    // Why: an answer for another resource, revision or page is stale, so it reads as "still loading" instead of showing the wrong entries.
+    const current = known?.page === page ? known : null;
     return {
-        entries: current === null || current.pages.length === 0 ? null : current.pages.flatMap((page) => page.entries),
-        since: current?.pages[0]?.since ?? null,
-        hasOlder: next !== null,
-        failure: current?.failure ?? null,
-        onOlder,
+        entries: current?.body?.entries ?? null,
+        since: current?.body?.since ?? null,
+        failure: sizeFailure ?? current?.failure ?? null,
+        paging: { page, pages: pages ?? 1, asking: false, failure: null, onMove: move },
     };
 }
 
-/** Every change to the bot, newest first. */
+/** Every change to the bot, newest first, under `page` in the address. */
 export function useBotHistory(bot: string): HistoryState {
-    return useHistoryAt(`/bots/${encodeURIComponent(bot)}/history`, 0);
+    return useHistoryAt(`/bots/${encodeURIComponent(bot)}/history`, 0, "page");
 }
 
-/** The history of one resource; `id` null loads nothing. A changed `revision` asks again, as a save does. */
-export function useResourceHistory(bot: string, collection: HistoryCollection, id: string | null, revision = 0): HistoryState {
-    return useHistoryAt(id === null ? null : `/bots/${encodeURIComponent(bot)}/${collection}/${encodeURIComponent(id)}/history`, revision);
+/**
+ * The history of one resource; `id` null loads nothing. A changed `revision` asks again, as a save does. On a page of its own it is
+ * under `page`; beside a form, whose address holds the `page` of the list it came from, it is under its own name.
+ */
+export function useResourceHistory(
+    bot: string,
+    collection: HistoryCollection,
+    id: string | null,
+    revision = 0,
+    pageName = HISTORY_PAGE,
+): HistoryState {
+    return useHistoryAt(
+        id === null ? null : `/bots/${encodeURIComponent(bot)}/${collection}/${encodeURIComponent(id)}/history`,
+        revision,
+        pageName,
+    );
 }

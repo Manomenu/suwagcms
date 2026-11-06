@@ -1,9 +1,9 @@
 import { Alert } from "@/design/alert";
 import { Anchor } from "@/design/anchor";
 import { Badge } from "@/design/badge";
-import { Button } from "@/design/button";
 import { changedLines } from "@/design/historyLines";
 import { Paper } from "@/design/page";
+import { Paginated, type Paging } from "@/design/pagination";
 
 /** One recorded change as the list needs it. */
 export interface HistoryLine {
@@ -81,16 +81,14 @@ function Entry({ line, hrefOf }: { line: HistoryLine; hrefOf: ((line: HistoryLin
 export function HistoryList({
     entries,
     since,
-    hasOlder,
     failure,
-    onOlder,
+    paging,
     hrefOf,
 }: {
     entries: HistoryLine[] | null;
     since: string | null;
-    hasOlder: boolean;
     failure: string | null;
-    onOlder: () => void;
+    paging: Paging;
     hrefOf?: (line: HistoryLine) => string;
 }) {
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
@@ -101,31 +99,18 @@ export function HistoryList({
         );
     }
     return (
-        <div className="flex flex-col gap-2">
+        <Paginated paging={paging}>
             <ul className="flex flex-col gap-2">
                 {entries.map((line) => (
                     <Entry key={String(line.id)} line={line} hrefOf={hrefOf} />
                 ))}
             </ul>
-            {hasOlder && (
-                <div>
-                    <Button type="button" variant="outline" onClick={onOlder}>
-                        Older changes
-                    </Button>
-                </div>
-            )}
-        </div>
+        </Paginated>
     );
 }
 
 /** The History panel of one resource. */
-export function HistoryPanel(props: {
-    entries: HistoryLine[] | null;
-    since: string | null;
-    hasOlder: boolean;
-    failure: string | null;
-    onOlder: () => void;
-}) {
+export function HistoryPanel(props: { entries: HistoryLine[] | null; since: string | null; failure: string | null; paging: Paging }) {
     return (
         <Paper aria-label="History" role="region" className="flex flex-col gap-2 wrap-anywhere">
             <h3 className="text-sm font-semibold">History</h3>
