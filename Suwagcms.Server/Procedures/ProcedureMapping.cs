@@ -23,7 +23,8 @@ internal static class ProcedureMapping
             given.Description ?? stored.Description,
             given.FirstStep ?? stored.FirstStep,
             given.Steps ?? stored.Steps,
-            given.WhenStalled ?? stored.WhenStalled
+            given.WhenStalled ?? stored.WhenStalled,
+            given.LocalFacts ?? stored.LocalFacts
         );
 
     public static ProcedureDetail Show(Procedure procedure, int revision, IReadOnlyList<Mistake> notReady) =>

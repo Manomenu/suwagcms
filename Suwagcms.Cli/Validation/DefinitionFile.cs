@@ -9,7 +9,7 @@ namespace Suwagcms.Cli.Validation;
 // Why: the validator reads JSON and an author may write YAML, so the file becomes one JSON document whose meaning does not depend on the format it was written in.
 internal static class DefinitionFile
 {
-    private static readonly string[] Numbers = ["formatVersion", "number", "min", "max", "maxLength"];
+    private static readonly string[] Numbers = ["formatVersion", "number", "min", "max", "maxLength", "timeoutSeconds"];
     private static readonly string[] Booleans = ["known", "declaresNothing"];
 
     // Why: YAML writes 42 and true unquoted, and a text may spell either, so only the fields of the format that hold a number or a boolean read one.
@@ -75,9 +75,13 @@ internal static class DefinitionFile
         }
         if (value is "" or "~" or "null")
         {
-            return key == "listen" ? new JsonObject()
-                : parent == "points" ? ""
-                : null;
+            return key switch
+            {
+                "listen" => new JsonObject(),
+                // Why: a block left empty is work still to do, which the Version stage lists; a null would make it no block at all.
+                "start" or "instruction" => "",
+                _ => parent == "points" ? "" : null,
+            };
         }
         if (parent is not ("assign" or "points") && Booleans.Contains(key, StringComparer.Ordinal) && value is "true" or "false")
         {
