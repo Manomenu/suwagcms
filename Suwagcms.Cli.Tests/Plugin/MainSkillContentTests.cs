@@ -31,9 +31,13 @@ public sealed class MainSkillContentTests
             ["inform: { instruction: text", "Where\n  `say` sends a fixed text"]
         ),
         (
-            "the form of context and when to name an article or write a query",
+            "the form of knowledge and when to name an article or write a query",
             "Procedure file",
-            ["context: { articles: [id, ...], searchQueries: [text, ...] }", "Name an article when", "Write a query when"]
+            [
+                "knowledge: [{ knowledgeBase: id, articles: [id, ...], searchQueries: [text, ...] }]",
+                "Name an article when",
+                "Write a query when",
+            ]
         ),
         ("the form of localFacts", "Procedure file", ["localFacts:", "one camelCase word", "fact.local.nameClash"]),
         (
@@ -104,8 +108,8 @@ public sealed class MainSkillContentTests
 
     [Fact]
     [Trait("criterion", "AC-instruction-context-9")]
-    public void The_main_skill_gives_the_form_of_context_and_when_to_name_an_article_or_write_a_query() =>
-        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of context", StringComparison.Ordinal));
+    public void The_main_skill_gives_the_form_of_knowledge_and_when_to_name_an_article_or_write_a_query() =>
+        Assert.DoesNotContain(Missing(MainSkill()), item => item.StartsWith("the form of knowledge", StringComparison.Ordinal));
 
     [Fact]
     [Trait("criterion", "AC-edit-guard-16")]

@@ -52,7 +52,7 @@ public static class ReferenceWalker
     {
         ArgumentNullException.ThrowIfNull(procedure);
         var from = new ResourceRef(ResourceKind.Procedure, procedure.Id);
-        foreach (var target in procedure.WhenStalled?.Context?.TargetsAt("whenStalled.context") ?? [])
+        foreach (var target in KnowledgeEntry.TargetsAt("whenStalled.knowledge", procedure.WhenStalled?.Knowledge))
         {
             yield return new Reference(from, target.Path, target.To, null);
         }
@@ -125,7 +125,14 @@ public static class ReferenceWalker
         }
         if (target.Kind == ResourceKind.Article)
         {
-            return RewriteArticle(procedure, target.Id, newId);
+            return RewriteKnowledge(
+                procedure,
+                entry => entry with { Articles = entry.Articles?.Select(id => id == target.Id ? newId : id).ToList() }
+            );
+        }
+        if (target.Kind == ResourceKind.KnowledgeBase)
+        {
+            return RewriteKnowledge(procedure, entry => entry.KnowledgeBase == target.Id ? entry with { KnowledgeBase = newId } : entry);
         }
         if (target.Kind != ResourceKind.GlobalFact || procedure.Locals.ContainsKey(target.Id))
         {
@@ -165,27 +172,23 @@ public static class ReferenceWalker
         };
     }
 
-    // Why: a search query is text that names nothing, so only the articles of a context are rewritten.
-    private static Procedure RewriteArticle(Procedure procedure, string oldId, string newId)
+    // Why: a search query is text that names nothing, so a rename only ever rewrites an entry's base and articles.
+    private static Procedure RewriteKnowledge(Procedure procedure, Func<KnowledgeEntry, KnowledgeEntry> rewrite)
     {
-        IReadOnlyList<string>? Renamed(IReadOnlyList<string>? ids)
+        IReadOnlyList<KnowledgeEntry>? Rewritten(IReadOnlyList<KnowledgeEntry>? entries)
         {
-            return ids?.Select(id => id == oldId ? newId : id).ToList();
-        }
-        InstructionContext? InContext(InstructionContext? context)
-        {
-            return context is null ? null : context with { Articles = Renamed(context.Articles) };
+            return entries?.Select(rewrite).ToList();
         }
         return procedure with
         {
-            WhenStalled = procedure.WhenStalled is { } stalled ? stalled with { Context = InContext(stalled.Context) } : null,
+            WhenStalled = procedure.WhenStalled is { } stalled ? stalled with { Knowledge = Rewritten(stalled.Knowledge) } : null,
             Steps = procedure.Steps.ToDictionary(
                 step => step.Key,
                 step =>
                     step.Value.Inform is { } inform
                         ? step.Value with
                         {
-                            Inform = inform with { Context = InContext(inform.Context) },
+                            Inform = inform with { Knowledge = Rewritten(inform.Knowledge) },
                         }
                         : step.Value
             ),

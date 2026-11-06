@@ -36,7 +36,7 @@ public sealed class ActionRulesTests
         };
 
     private static IReadOnlyList<Mistake> Check(params BotAction[] actions) =>
-        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 1, Actions = actions }, ValidationStage.Save);
+        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 2, Actions = actions }, ValidationStage.Save);
 
     private static string[] Codes(params BotAction[] actions) => [.. Check(actions).Select(mistake => mistake.Code)];
 
@@ -199,7 +199,7 @@ public sealed class ActionRulesTests
     public void The_validator_offline_gives_the_codes_and_messages_of_a_bad_action_from_its_json()
     {
         const string Json =
-            """{"formatVersion":1,"actions":[{"id":"check","description":"Checks","implementation":{"http":{"method":"POST","url":"https://crm.internal","headers":{"Authorization":"Bearer abc"}}}}]}""";
+            """{"formatVersion":2,"actions":[{"id":"check","description":"Checks","implementation":{"http":{"method":"POST","url":"https://crm.internal","headers":{"Authorization":"Bearer abc"}}}}]}""";
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(Json, ValidationStage.Save));
 

@@ -297,31 +297,40 @@
                     "instruction": {
                       "type": "string"
                     },
-                    "context": {
-                      "type": "object",
-                      "properties": {
-                        "articles": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
-                          "items": {
+                    "knowledge": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "knowledgeBase": {
+                            "type": "string"
+                          },
+                          "articles": {
                             "type": [
-                              "string",
+                              "array",
                               "null"
-                            ]
-                          }
-                        },
-                        "searchQueries": {
-                          "type": [
-                            "array",
-                            "null"
-                          ],
-                          "items": {
+                            ],
+                            "items": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "searchQueries": {
                             "type": [
-                              "string",
+                              "array",
                               "null"
-                            ]
+                            ],
+                            "items": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
                           }
                         }
                       }
@@ -440,15 +449,13 @@
               "instruction": {
                 "type": "string"
               },
-              "context": {
-                "type": "object",
-                "properties": {
-                  "articles": {
-                    "$ref": "#/properties/procedures/items/properties/steps/additionalProperties/properties/inform/properties/context/properties/articles"
-                  },
-                  "searchQueries": {
-                    "$ref": "#/properties/procedures/items/properties/steps/additionalProperties/properties/inform/properties/context/properties/searchQueries"
-                  }
+              "knowledge": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "$ref": "#/properties/procedures/items/properties/steps/additionalProperties/properties/inform/properties/knowledge/items"
                 }
               }
             }

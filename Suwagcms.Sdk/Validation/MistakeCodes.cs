@@ -69,8 +69,12 @@ public static class MistakeCodes
     public const string StepInformPointBlank = "step.inform.pointBlank";
     public const string StepInformPointName = "step.inform.pointName";
     public const string InstructionBlank = "instruction.blank";
-    public const string ContextQueryBlank = "context.query.blank";
-    public const string ContextQueryNoArticles = "context.query.noArticles";
+    public const string KnowledgeBaseMissing = "knowledge.base.missing";
+    public const string KnowledgeBaseRepeated = "knowledge.base.repeated";
+    public const string KnowledgeArticleOtherBase = "knowledge.article.otherBase";
+    public const string KnowledgeEntryEmpty = "knowledge.entry.empty";
+    public const string KnowledgeQueryBlank = "knowledge.query.blank";
+    public const string KnowledgeQueryNoArticles = "knowledge.query.noArticles";
     public const string StepUnreachable = "step.unreachable";
     public const string NextDefaultMissing = "next.default.missing";
     public const string NextDefaultNotLast = "next.default.notLast";
@@ -92,6 +96,7 @@ public static class MistakeCodes
     public const string DeclarationBlockUnknown = "declaration.block.unknown";
     public const string DeclarationFormatVersion = "declaration.formatVersion";
     public const string DeclarationBlock = "declaration.block";
+    public const string DeclarationKnowledge = "declaration.knowledge";
     public const string ActionIdInvalid = "action.id.invalid";
     public const string ActionDescriptionMissing = "action.description.missing";
     public const string ActionImplementationMissing = "action.implementation.missing";

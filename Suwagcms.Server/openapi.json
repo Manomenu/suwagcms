@@ -2282,118 +2282,6 @@
         }
       }
     },
-    "/api/bots/{bot}/procedures/{id}/layout": {
-      "get": {
-        "tags": [
-          "ProcedureLayoutEndpoints"
-        ],
-        "parameters": [
-          {
-            "name": "bot",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProcedureLayout"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Refusal"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "ProcedureLayoutEndpoints"
-        ],
-        "parameters": [
-          {
-            "name": "bot",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProcedureLayout"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProcedureLayout"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Refusal"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Unprocessable Entity",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Refusal"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/bots/{bot}/changes": {
       "post": {
         "tags": [
@@ -3383,6 +3271,9 @@
               "null",
               "string"
             ]
+          },
+          "knowledge": {
+            "type": "boolean"
           }
         }
       },
@@ -4166,15 +4057,14 @@
           "instruction": {
             "type": "string"
           },
-          "context": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/InstructionContext"
-              }
-            ]
+          "knowledge": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeEntry"
+            }
           },
           "points": {
             "type": [
@@ -4182,29 +4072,6 @@
               "object"
             ],
             "additionalProperties": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "InstructionContext": {
-        "type": "object",
-        "properties": {
-          "articles": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string"
-            }
-          },
-          "searchQueries": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
               "type": "string"
             }
           }
@@ -4239,6 +4106,32 @@
           }
         },
         "description": "A knowledge base of a bot as the API shows it: its id, title and language, and the revision to send back to guard an edit."
+      },
+      "KnowledgeEntry": {
+        "type": "object",
+        "properties": {
+          "knowledgeBase": {
+            "type": "string"
+          },
+          "articles": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "searchQueries": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "LineChange": {
         "enum": [
@@ -4351,32 +4244,6 @@
         }
       },
       "NextSteps": { },
-      "NodePosition": {
-        "required": [
-          "x",
-          "y"
-        ],
-        "type": "object",
-        "properties": {
-          "x": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
-          },
-          "y": {
-            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
-            "type": [
-              "number",
-              "string"
-            ],
-            "format": "double"
-          }
-        },
-        "description": "The top left corner of a step in the creator, in pixels of its canvas."
-      },
       "PartDifference": {
         "required": [
           "part",
@@ -4533,21 +4400,6 @@
           }
         },
         "description": "A procedure as the API shows it: the format's fields, the revision to send back to guard an edit, and what still stops it from becoming a version."
-      },
-      "ProcedureLayout": {
-        "required": [
-          "positions"
-        ],
-        "type": "object",
-        "properties": {
-          "positions": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/NodePosition"
-            }
-          }
-        },
-        "description": "Where the creator draws the steps of a procedure, by step name. It is not part of the procedure or of any version; a step with no position is arranged automatically."
       },
       "ProcedureList": {
         "required": [
@@ -5386,15 +5238,14 @@
           "instruction": {
             "type": "string"
           },
-          "context": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/InstructionContext"
-              }
-            ]
+          "knowledge": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeEntry"
+            }
           }
         }
       },
@@ -5785,9 +5636,6 @@
     },
     {
       "name": "RenameEndpoints"
-    },
-    {
-      "name": "ProcedureLayoutEndpoints"
     },
     {
       "name": "ChangesEndpoints"

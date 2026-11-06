@@ -1,4 +1,4 @@
-// Why: the profile asks the bot and the creator reads the last answer, and one feature cannot import another.
+// Why: the profile asks the bot and the editor reads the last answer, and one feature cannot import another.
 import type { components } from "./openapi";
 import { request } from "./client";
 

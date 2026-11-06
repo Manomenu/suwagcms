@@ -31,7 +31,7 @@ The bot does not read the CMS live, so what is saved reaches customers only afte
   <img alt="What the bot knows: knowledge bases and articles in Markdown, pl or en, with content for the customer, a guide for the model and a description for search; facts, global and local: text with a pattern, int with a range, enum, and writableBy says who may write; persona, one per bot, personality and scope delivered in the version. What the bot does: procedures in a visual creator from listen, collect, say, assign, start, inform and action; actions, http or code, a typed contract mapped to facts by each step, with a test run. What keeps it consistent: delete and edit guards, no loops, availability." src="docs/visual/board/img/readme/features-light.png" width="100%">
 </picture>
 
-<img alt="The procedure creator: the quoteRequest procedure as a graph of steps ask, askArea, mark, confirm and sorry, with the form of the selected step on the right." src="docs/visual/board/img/readme/screen-creator.png" width="100%">
+<img alt="The steps of the quoteRequest procedure on its page: a numbered list, an If with an indented branch ending in End, an Else if that goes on, and an Else holding a nested If with a Next: row." src="docs/visual/board/img/readme/screen-steps.png" width="100%">
 
 <img alt="The facts screen: customer.city, customer.email with a pattern, order.area, order.kind and order.status, each with its type, description and what uses it." src="docs/visual/board/img/readme/screen-facts.png" width="100%">
 
@@ -39,7 +39,7 @@ The bot does not read the CMS live, so what is saved reaches customers only afte
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visual/board/img/readme/doors-dark.png">
-  <img alt="A person draws a procedure or edits an article, with a live list of mistakes: web app. A script, CI or a quick change, with --json for machines and --open for the page: suwagcms CLI. A coding agent changes many resources, where apply is all or nothing with a dry run: Claude plugin. One rule: anything the web can do, the CLI and the plugin can do too; all three use one HTTP API and the same validators." src="docs/visual/board/img/readme/doors-light.png" width="100%">
+  <img alt="A person edits a procedure or an article, with each mistake shown as they work: web app. A script, CI or a quick change, with --json for machines and --open for the page: suwagcms CLI. A coding agent changes many resources, where apply is all or nothing with a dry run: Claude plugin. One rule: anything the web can do, the CLI and the plugin can do too; all three use one HTTP API and the same validators." src="docs/visual/board/img/readme/doors-light.png" width="100%">
 </picture>
 
 ## How a bot connects
@@ -126,7 +126,7 @@ After registration the CMS asks the bot what it supports:
 | Declared              | What the CMS does with it                                       |
 | :-------------------- | :-------------------------------------------------------------- |
 | format version        | validates and builds versions for that format                   |
-| blocks it can run     | offers only those in the creator; refuses any others in a version |
+| blocks it can run     | offers only those in the editor; refuses any others in a version |
 | actions in its code   | shows them as `code` actions, without anyone retyping them       |
 
 </details>
@@ -203,7 +203,7 @@ A secret written `{secret:NAME}` is read from the bot's environment variable `SU
 
 ### Procedures
 
-The creator draws a procedure as a graph of steps. Each step holds one block and says where to go next.
+The editor shows a procedure as a numbered list of steps, and the format stores it as a graph, built on save. Each step holds one block and says where to go next.
 
 | Block     | What it does                                      |
 | :-------- | :------------------------------------------------ |
@@ -218,9 +218,9 @@ The creator draws a procedure as a graph of steps. Each step holds one block and
 The SDK defines this fixed set of blocks: a bot declares which of them it runs, and a bot's custom logic is an action.
 
 `whenInterrupted` says what happens to a procedure when another one is started on top of it: `keep`, the default, or `discard`.
-An `inform` holds an `instruction`, an optional `context` (`articles`, `searchQueries`) and `points`, a map from a name to what must be said.
+An `inform` holds an `instruction`, optional `knowledge` (entries of `knowledgeBase`, `articles`, `searchQueries`) and `points`, a map from a name to what must be said.
 
-The creator offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
+The editor offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
 no unreachable steps, and `whenStalled` when the procedure collects.
 
 ```yaml
@@ -242,7 +242,7 @@ checkAddress:
 
 ```mermaid
 flowchart LR
-  P[Procedure] -->|instruction context| A[Article]
+  P[Procedure] -->|instruction knowledge| A[Article]
   A -->|link in content or guide| A
   A -->|link in guide| P
   P -->|start| P
@@ -376,7 +376,7 @@ The SDK is a public package on nuget.org, [`Suwagcms.Sdk`](https://www.nuget.org
 | :-------------- | :--------------------------------------------------------------------------------------- |
 | Bots            | Register a bot, see what it declared, switch the active profile                          |
 | Knowledge bases | Articles with search and filters; editor with content, guide and description side by side |
-| Procedures      | List with availability; visual creator with a live list of mistakes                     |
+| Procedures      | List with availability; editor with each mistake beside its step                     |
 | Actions         | Contract, implementation, which procedures use it, a test run                            |
 | Facts           | Name, type, values, description, `writableBy`, which procedures use it                   |
 | Any resource    | "Used by" and "Uses" panels; delete is disabled with the reason when it is referenced    |

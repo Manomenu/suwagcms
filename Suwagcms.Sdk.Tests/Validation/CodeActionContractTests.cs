@@ -29,12 +29,12 @@ public sealed class CodeActionContractTests
         new()
         {
             Bot = "b",
-            FormatVersion = 1,
+            FormatVersion = 2,
             Blocks = [.. Block.Names],
             CodeActions = actions,
         };
 
-    private static BotDefinition Holding(params BotAction[] actions) => new() { FormatVersion = 1, Actions = actions };
+    private static BotDefinition Holding(params BotAction[] actions) => new() { FormatVersion = 2, Actions = actions };
 
     private static BotAction Http(string id) =>
         new()
@@ -123,7 +123,7 @@ public sealed class CodeActionContractTests
     public void A_definition_holding_a_code_action_passes_the_validator_offline()
     {
         const string Json =
-            """{"formatVersion":1,"actions":[{"id":"lookupPolicy","description":"Finds","parameters":{"pesel":{"type":"text","maxLength":11,"description":"d"}},"implementation":"code"}]}""";
+            """{"formatVersion":2,"actions":[{"id":"lookupPolicy","description":"Finds","parameters":{"pesel":{"type":"text","maxLength":11,"description":"d"}},"implementation":"code"}]}""";
 
         Assert.Empty(DefinitionValidator.ValidateJson(Json, ValidationStage.Save));
         Assert.DoesNotContain(

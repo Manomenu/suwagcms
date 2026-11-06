@@ -112,11 +112,12 @@ public sealed class ArticleProcedureLinksTests(TestDatabase database) : IDisposa
 
     [Fact]
     [Trait("criterion", "AC-loop-guard-15")]
-    public async Task A_guide_link_that_closes_a_loop_through_a_context_is_refused_with_the_path()
+    public async Task A_guide_link_that_closes_a_loop_through_the_knowledge_is_refused_with_the_path()
     {
         var scene = await NewBot();
         Assert.True((await scene.Articles.Add("wycena", Guided("No link yet."))).IsSuccessStatusCode);
-        var body = """{"description":"Orders a valuation.","whenStalled":{"instruction":"Say so.","context":{"articles":["wycena"]}}}""";
+        var body =
+            """{"description":"Orders a valuation.","whenStalled":{"instruction":"Say so.","knowledge":[{"knowledgeBase":"offer","articles":["wycena"]}]}}""";
         Assert.True((await scene.Procedures.Put("orderValuation", body)).IsSuccessStatusCode);
 
         var refused = await scene.Articles.Put("wycena", Guided($"Start {Link}."));

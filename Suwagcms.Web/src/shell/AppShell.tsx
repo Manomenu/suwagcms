@@ -12,7 +12,7 @@ import { useBots } from "./useBots";
 export function AppShell({ children }: { children: ReactNode }) {
     const [pathname] = useLocation();
     const { bots, failure } = useBots(pathname);
-    const { bot, tab, fills } = navigationOf(pathname);
+    const { bot, tab } = navigationOf(pathname);
     const [opened, setOpened] = useState(false);
     const side = panelSideClasses(PANEL_SIDE);
 
@@ -67,11 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
                         }}
                     />
                 </aside>
-                <main
-                    className={cn("min-w-0 flex-1", !fills && "p-4", fills && "overflow-hidden")}
-                    style={fills ? { height: `calc(100vh - ${HEADER_HEIGHT}px)` } : undefined}
-                >
-                    {fills ? <div className="h-full">{children}</div> : <div style={{ maxWidth: CONTENT_MAX_WIDTH }}>{children}</div>}
+                <main className="min-w-0 flex-1 p-4">
+                    <div style={{ maxWidth: CONTENT_MAX_WIDTH }}>{children}</div>
                 </main>
             </div>
         </div>

@@ -42,7 +42,7 @@ public sealed class InformBlockRulesTests
                 {
                     Instruction = instruction,
                     Points = points,
-                    Context = articles is null ? null : new InstructionContext { Articles = articles },
+                    Knowledge = articles is null ? null : [new KnowledgeEntry { KnowledgeBase = "faq", Articles = articles }],
                 },
             }
         );
@@ -50,7 +50,7 @@ public sealed class InformBlockRulesTests
     private static BotDefinition Bot(Procedure procedure, params Article[] articles) =>
         new()
         {
-            FormatVersion = 1,
+            FormatVersion = 2,
             Facts = ProcedureSamples.Facts,
             KnowledgeBases = [Samples.Faq, Offer],
             Articles = articles,
@@ -62,7 +62,7 @@ public sealed class InformBlockRulesTests
 
     [Fact]
     [Trait("criterion", "AC-inform-block-1")]
-    public void An_inform_keeps_its_instruction_its_context_and_its_points_in_the_order_written_through_the_format()
+    public void An_inform_keeps_its_instruction_its_knowledge_and_its_points_in_the_order_written_through_the_format()
     {
         var procedure = Informing(TwoPoints, articles: ["zebra", "alpha"]);
 
@@ -71,21 +71,24 @@ public sealed class InformBlockRulesTests
         Assert.NotNull(back);
         var block = Assert.IsType<InformBlock>(Assert.Single(back.Steps["only"].Blocks));
         Assert.Equal("Tell the customer.", block.Arguments.Instruction);
-        Assert.Equal(["zebra", "alpha"], block.Arguments.Context?.Articles);
+        Assert.Equal(["zebra", "alpha"], Assert.Single(block.Arguments.Knowledge ?? []).Articles);
         Assert.Equal(["turnaround", "delivery"], block.Arguments.Points?.Keys);
     }
 
     [Fact]
     [Trait("criterion", "AC-inform-block-2")]
-    public void An_article_the_bot_does_not_have_is_refused_naming_the_step_and_one_in_another_base_is_accepted()
+    public void An_article_the_bot_does_not_have_is_refused_naming_the_step_and_one_in_another_base_is_refused_too()
     {
         var mistake = Assert.Single(Save(Informing(TwoPoints, articles: ["officeContacts"]), Office()));
 
         Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
-        Assert.Equal("steps.only.inform.context.articles[0]", mistake.Path);
-        Assert.Contains("'context' of step 'only'", mistake.Message, StringComparison.Ordinal);
+        Assert.Equal("steps.only.inform.knowledge[0].articles[0]", mistake.Path);
+        Assert.Contains("'knowledge' of step 'only'", mistake.Message, StringComparison.Ordinal);
 
-        Assert.Empty(Save(Informing(TwoPoints, articles: ["officeContact"]), Office(knowledgeBase: "offer")));
+        Assert.Equal(
+            MistakeCodes.KnowledgeArticleOtherBase,
+            Assert.Single(Save(Informing(TwoPoints, articles: ["officeContact"]), Office(knowledgeBase: "offer"))).Code
+        );
     }
 
     [Fact]
@@ -96,8 +99,8 @@ public sealed class InformBlockRulesTests
 
         Assert.Equal(
             [
-                "steps.only.inform.context.articles[0]",
-                "steps.only.inform.context.articles[1]",
+                "steps.only.inform.knowledge[0].articles[0]",
+                "steps.only.inform.knowledge[0].articles[1]",
                 "steps.only.inform.points.Other Name",
                 "steps.only.inform.points.bad_name",
             ],
@@ -110,8 +113,8 @@ public sealed class InformBlockRulesTests
     public void An_id_in_the_wrong_form_or_null_is_refused_as_malformed_and_not_also_as_missing()
     {
         const string json = """
-            {"formatVersion":1,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
-              "a":{"inform":{"instruction":"Say it.","points":{"one":"Text."},"context":{"articles":["Office Contact",null]}}}}}]}
+            {"formatVersion":2,"knowledgeBases":[{"id":"faq","title":"F"}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
+              "a":{"inform":{"instruction":"Say it.","points":{"one":"Text."},"knowledge":[{"knowledgeBase":"faq","articles":["Office Contact",null]}]}}}}]}
             """;
 
         var mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Save);
@@ -169,11 +172,11 @@ public sealed class InformBlockRulesTests
     public void The_validator_on_its_own_reports_the_reference_and_version_mistakes_with_the_same_codes_from_json()
     {
         const string missing = """
-            {"formatVersion":1,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
-              "a":{"inform":{"instruction":"Say it.","points":{"bad_name":"Text."},"context":{"articles":["ghost"]}}}}}]}
+            {"formatVersion":2,"knowledgeBases":[{"id":"faq","title":"F"}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
+              "a":{"inform":{"instruction":"Say it.","points":{"bad_name":"Text."},"knowledge":[{"knowledgeBase":"faq","articles":["ghost"]}]}}}}]}
             """;
         const string unfinished = """
-            {"formatVersion":1,"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{
+            {"formatVersion":2,"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{
               "a":{"inform":{}}}}]}
             """;
 
@@ -200,12 +203,15 @@ public sealed class InformBlockRulesTests
 
     [Fact]
     [Trait("criterion", "AC-delete-guard-7")]
-    public void The_walker_yields_only_the_articles_of_the_context_with_their_place()
+    public void The_walker_yields_the_base_and_the_articles_of_the_knowledge_with_their_place()
     {
         var references = ReferenceWalker.From(Informing(TwoPoints, articles: ["officeContact"])).ToList();
 
         Assert.Equal(
-            [("steps.only.inform.context.articles[0]", ResourceKind.Article, "officeContact")],
+            [
+                ("steps.only.inform.knowledge[0].knowledgeBase", ResourceKind.KnowledgeBase, "faq"),
+                ("steps.only.inform.knowledge[0].articles[0]", ResourceKind.Article, "officeContact"),
+            ],
             references.Select(reference => (reference.Path, reference.To.Kind, reference.To.Id))
         );
     }

@@ -1,30 +1,20 @@
-import { useState } from "react";
 import { Link } from "wouter";
 
 import { listHref } from "@/api/resourceAddress";
 import { Button } from "@/design/button";
 import { Field, Legend } from "@/design/field";
-import { InfoTip } from "@/design/infoTip";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 import { Textarea } from "@/design/textarea";
 
 import type { ActionView, Fact } from "./api";
 import { Checklist } from "./Checklist";
-import { ContextForm } from "./ContextForm";
 import {
     addPoint,
-    addRule,
     collectable,
-    connect,
-    disconnect,
-    deleteStep,
-    FAILURE,
     factsThatFit,
-    markFirst,
     removePoint,
     renamePoint,
-    renameStep,
     setBlock,
     startable,
     valuesOffered,
@@ -32,10 +22,11 @@ import {
     type Draft,
     type Inform,
     type LinkableArticle,
+    type LinkableBase,
     type Step,
 } from "./draft";
 import { PROCEDURE_HINTS } from "./hints";
-import { RuleEditor, TargetSelect } from "./RuleEditor";
+import { KnowledgeForm, type Beside } from "./KnowledgeForm";
 
 function NoFacts({ bot, onLeave }: { bot: string; onLeave: (href: string) => void }) {
     const href = listHref(bot, "facts");
@@ -243,7 +234,23 @@ function PointsForm({ points, onChange }: { points: Record<string, string>; onCh
     );
 }
 
-function InformForm({ inform, articles, onChange }: { inform: Inform; articles: LinkableArticle[]; onChange: (inform: Inform) => void }) {
+function InformForm({
+    name,
+    inform,
+    showKnowledge,
+    bases,
+    articles,
+    beside,
+    onChange,
+}: {
+    name: string;
+    inform: Inform;
+    showKnowledge: boolean;
+    bases: LinkableBase[];
+    articles: LinkableArticle[];
+    beside: Beside;
+    onChange: (inform: Inform) => void;
+}) {
     return (
         <div className="flex flex-col gap-3">
             <Field prefix="step" name="instruction" label="Instruction" hint={PROCEDURE_HINTS.instruction} errors={[]}>
@@ -264,11 +271,16 @@ function InformForm({ inform, articles, onChange }: { inform: Inform; articles: 
                     onChange({ ...inform, points });
                 }}
             />
-            <ContextForm
-                context={inform.context}
+            <KnowledgeForm
+                owner={name}
+                show={showKnowledge}
+                knowledge={inform.knowledge ?? []}
+                bases={bases}
                 articles={articles}
-                onChange={(context) => {
-                    onChange({ ...inform, context });
+                beside={beside}
+                onChange={(knowledge) => {
+                    const { knowledge: _, ...rest } = inform;
+                    onChange(knowledge.length === 0 ? rest : { ...inform, knowledge });
                 }}
             />
         </div>
@@ -333,14 +345,12 @@ function MappingRows({
 function ActionStepForm({
     name,
     step,
-    draft,
     facts,
     actions,
     edit,
 }: {
     name: string;
     step: Step;
-    draft: Draft;
     facts: Fact[];
     actions: ActionView[];
     edit: (change: (draft: Draft) => Draft) => void;
@@ -390,96 +400,43 @@ function ActionStepForm({
                     edit((current) => setBlock(current, name, { results: mapped }));
                 }}
             />
-            <TargetSelect
-                label="On failure, go to"
-                hint={PROCEDURE_HINTS.onFailure}
-                value={step.onFailure ?? ""}
-                draft={draft}
-                onChange={(to) => {
-                    edit((current) => (to === "" ? disconnect(current, name, FAILURE) : connect(current, name, FAILURE, to)));
-                }}
-            />
         </>
     );
 }
 
-/** The form of the selected step: its name, its blocks and its next. Every control writes into the draft; none of them judges it. */
+/** The form of an open row: what its block holds. Every control writes into the draft; none of them judges it. */
 export function StepForm({
     bot,
     id,
     name,
-    draft,
+    step,
     facts,
     procedures,
+    showKnowledge,
+    bases,
     articles,
     actions,
+    beside,
     edit,
-    onRenamed,
-    onDeleted,
     onLeave,
 }: {
     bot: string;
     id: string;
     name: string;
-    draft: Draft;
+    step: Step;
     facts: Fact[];
     procedures: string[];
+    showKnowledge: boolean;
+    bases: LinkableBase[];
     articles: LinkableArticle[];
     actions: ActionView[];
+    beside: Beside;
     edit: (change: (draft: Draft) => Draft) => void;
-    onRenamed: (name: string) => void;
-    onDeleted: () => void;
     onLeave: (href: string) => void;
 }) {
-    const step = draft.steps[name];
-    const [typed, setTyped] = useState(name);
-    if (step === undefined) return null;
-    const taken = typed !== name && typed in draft.steps;
-    const context = { draft, step: name, facts, edit };
     return (
         <section aria-label={`Step ${name}`} className="flex flex-col gap-3">
-            <h2 className="text-base font-semibold">Step: {name}</h2>
-            <Field
-                prefix="step"
-                name="name"
-                label="Name"
-                hint={PROCEDURE_HINTS.stepName}
-                errors={taken ? ["Another step already has this name."] : []}
-            >
-                {(props) => (
-                    <Input
-                        {...props}
-                        value={typed}
-                        onChange={(event) => {
-                            setTyped(event.target.value);
-                        }}
-                        onBlur={() => {
-                            if (typed !== name && !taken && typed !== "") {
-                                edit((current) => renameStep(current, name, typed));
-                                onRenamed(typed);
-                            } else {
-                                setTyped(name);
-                            }
-                        }}
-                    />
-                )}
-            </Field>
-            <div className="flex items-center gap-1">
-                <label className="flex items-center gap-2 text-sm">
-                    <input
-                        type="radio"
-                        className="accent-primary"
-                        name="first-step"
-                        checked={draft.firstStep === name}
-                        onChange={() => {
-                            edit((current) => markFirst(current, name));
-                        }}
-                    />
-                    First step
-                </label>
-                <InfoTip about="First step" help={PROCEDURE_HINTS.firstStep} />
-            </div>
-            {step.listen && <p className="text-sm text-muted-foreground">listen: waits for the customer to write.</p>}
+            {step.listen && <p className="text-sm text-muted-foreground">Waits for the customer to write.</p>}
             {step.collect && (
                 <CollectForm
                     picked={step.collect}
@@ -526,53 +483,18 @@ export function StepForm({
             )}
             {step.inform && (
                 <InformForm
+                    name={name}
                     inform={step.inform}
+                    showKnowledge={showKnowledge}
+                    bases={bases}
                     articles={articles}
+                    beside={beside}
                     onChange={(inform) => {
                         edit((current) => setBlock(current, name, { inform }));
                     }}
                 />
             )}
-            {step.action !== undefined && (
-                <ActionStepForm name={name} step={step} draft={draft} facts={facts} actions={actions} edit={edit} />
-            )}
-            <div className="flex flex-col gap-2">
-                <h3 className="text-base font-semibold">Next</h3>
-                {Array.isArray(step.next) ? (
-                    <RuleEditor rules={step.next} context={context} />
-                ) : (
-                    <TargetSelect
-                        label="Go to"
-                        hint={PROCEDURE_HINTS.goTo}
-                        value={step.next ?? ""}
-                        draft={draft}
-                        onChange={(to) => {
-                            edit((current) => (to === "" ? disconnect(current, name, "next") : connect(current, name, "next", to)));
-                        }}
-                    />
-                )}
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                        edit((current) => addRule(current, name));
-                    }}
-                >
-                    Add rule
-                </Button>
-            </div>
-            <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                    edit((current) => deleteStep(current, name));
-                    onDeleted();
-                }}
-            >
-                Delete step
-            </Button>
+            {step.action !== undefined && <ActionStepForm name={name} step={step} facts={facts} actions={actions} edit={edit} />}
         </section>
     );
 }

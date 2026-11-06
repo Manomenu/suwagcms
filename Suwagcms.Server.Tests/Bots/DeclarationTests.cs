@@ -18,7 +18,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
 {
     private static readonly BotCapabilities Everything = new()
     {
-        FormatVersion = 1,
+        FormatVersion = 2,
         Blocks = Block.Names,
         CodeActions = [new CodeAction { Id = "lookupPolicy", Description = "Finds a policy" }],
     };
@@ -62,6 +62,22 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         };
 
     [Fact]
+    [Trait("criterion", "AC-procedure-creator-39")]
+    public async Task Asking_a_bot_that_reads_knowledge_stores_it_and_the_cli_says_so()
+    {
+        var (scene, bot) = await SceneAsync(Client(), Everything with { Knowledge = true });
+        await using var _ = bot;
+
+        var asked = await AskAsync(scene);
+        var stored = await AskAsync(scene, ask: false);
+        var cli = await scene.CliAsync("bots", "declaration");
+
+        Assert.True(asked.Declaration?.Knowledge);
+        Assert.True(stored.Declaration?.Knowledge);
+        Assert.Contains("knowledge read", cli.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-bot-declaration-4")]
     public async Task Asking_stores_the_answer_with_its_time_and_shows_it_and_the_cli_returns_the_same_as_data()
     {
@@ -71,7 +87,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         var asked = await AskAsync(scene);
 
         Assert.Equal((DeclarationAsk.Answered, DeclarationStored.Declared), (asked.Ask, asked.Stored));
-        Assert.Equal(1, asked.Declaration?.FormatVersion);
+        Assert.Equal(2, asked.Declaration?.FormatVersion);
         Assert.Equal(Block.Names, asked.Declaration?.Blocks);
         Assert.Equal("lookupPolicy", Assert.Single(asked.Declaration?.CodeActions ?? []).Id);
         Assert.NotNull(asked.AnsweredAt);
@@ -85,7 +101,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         Assert.Equal(0, cli.ExitCode);
         using var document = JsonDocument.Parse(cli.Output);
         Assert.Equal("Answered", document.RootElement.GetProperty("ask").GetString());
-        Assert.Equal(1, document.RootElement.GetProperty("declaration").GetProperty("formatVersion").GetInt32());
+        Assert.Equal(2, document.RootElement.GetProperty("declaration").GetProperty("formatVersion").GetInt32());
         Assert.Equal(
             "lookupPolicy",
             document.RootElement.GetProperty("declaration").GetProperty("codeActions")[0].GetProperty("id").GetString()
@@ -160,19 +176,19 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"bot":"another","formatVersion":1,"blocks":["listen"]}""", MistakeCodes.DeclarationBot)]
-    [InlineData("""{"bot":"SELF","formatVersion":1,"blocks":[]}""", MistakeCodes.DeclarationBlocksMissing)]
-    [InlineData("""{"bot":"SELF","formatVersion":1,"blocks":["fly"]}""", MistakeCodes.DeclarationBlockUnknown)]
+    [InlineData("""{"bot":"another","formatVersion":2,"blocks":["listen"]}""", MistakeCodes.DeclarationBot)]
+    [InlineData("""{"bot":"SELF","formatVersion":2,"blocks":[]}""", MistakeCodes.DeclarationBlocksMissing)]
+    [InlineData("""{"bot":"SELF","formatVersion":2,"blocks":["fly"]}""", MistakeCodes.DeclarationBlockUnknown)]
     [InlineData(
-        """{"bot":"SELF","formatVersion":1,"blocks":["listen"],"codeActions":[{"id":"a"}]}""",
+        """{"bot":"SELF","formatVersion":2,"blocks":["listen"],"codeActions":[{"id":"a"}]}""",
         MistakeCodes.CodeActionDescriptionMissing
     )]
     [InlineData(
-        """{"bot":"SELF","formatVersion":1,"blocks":["listen"],"codeActions":[{"id":"a","description":"d"},{"id":"a","description":"d"}]}""",
+        """{"bot":"SELF","formatVersion":2,"blocks":["listen"],"codeActions":[{"id":"a","description":"d"},{"id":"a","description":"d"}]}""",
         MistakeCodes.CodeActionRepeated
     )]
     [InlineData(
-        """{"bot":"SELF","formatVersion":1,"blocks":["listen"],"codeActions":[{"id":"a","description":"d","parameters":[{"name":"n","type":"blob","description":"d"}]}]}""",
+        """{"bot":"SELF","formatVersion":2,"blocks":["listen"],"codeActions":[{"id":"a","description":"d","parameters":[{"name":"n","type":"blob","description":"d"}]}]}""",
         MistakeCodes.FactTypeInvalid
     )]
     [InlineData("not json", MistakeCodes.DeclarationInvalid)]
@@ -200,7 +216,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
     {
         var (scene, bot) = await SceneAsync(Client(), Everything);
         await using var _ = bot;
-        bot.OnDeclaration = Answering("""{"bot":"another","formatVersion":1,"blocks":[],"codeActions":[{"id":"a"},{"id":"a"}]}""");
+        bot.OnDeclaration = Answering("""{"bot":"another","formatVersion":2,"blocks":[],"codeActions":[{"id":"a"},{"id":"a"}]}""");
 
         var status = await AskAsync(scene);
 
@@ -222,14 +238,14 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
     {
         var (scene, bot) = await SceneAsync(Client(), null);
         await using var _ = bot;
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":2,"blocks":["fly"]}""");
+        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":3,"blocks":["fly"]}""");
 
         var status = await AskAsync(scene);
 
         Assert.Equal((DeclarationAsk.Answered, DeclarationStored.Declared), (status.Ask, status.Stored));
-        Assert.Equal(2, status.Declaration?.FormatVersion);
+        Assert.Equal(3, status.Declaration?.FormatVersion);
         Assert.Contains("update Suwagcms.Sdk on the CMS", status.FormatFix, StringComparison.Ordinal);
-        Assert.Contains("wants format 2", (await scene.CliAsync("bots", "declaration")).Output, StringComparison.Ordinal);
+        Assert.Contains("wants format 3", (await scene.CliAsync("bots", "declaration")).Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -239,7 +255,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         var (scene, bot) = await SceneAsync(Client(), Everything);
         await using var _ = bot;
         await AskAsync(scene);
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":1,"blocks":["listen"]}""");
+        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":2,"blocks":["listen"]}""");
 
         var status = await AskAsync(scene);
 
@@ -284,7 +300,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         var before = await scene.SnapshotAsync();
 
         await AskAsync(scene);
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":1,"blocks":["listen"]}""");
+        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":2,"blocks":["listen"]}""");
         await AskAsync(scene);
 
         Assert.Equal(before, await scene.SnapshotAsync());
@@ -298,7 +314,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         await using var _ = bot;
         await scene.FillAsync();
         Assert.Empty((await AskAsync(scene)).CannotRun);
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":1,"blocks":["listen","say","assign"]}""");
+        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":2,"blocks":["listen","say","assign"]}""");
 
         var status = await AskAsync(scene);
 
@@ -312,7 +328,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
     [Trait("criterion", "AC-version-create-16")]
     public async Task A_version_is_checked_against_the_stored_declaration_without_calling_the_bot_and_saves_go_on()
     {
-        var (scene, bot) = await SceneAsync(Client(), new BotCapabilities { FormatVersion = 1, Blocks = ["listen", "say", "assign"] });
+        var (scene, bot) = await SceneAsync(Client(), new BotCapabilities { FormatVersion = 2, Blocks = ["listen", "say", "assign"] });
         await using var _ = bot;
         await AskAsync(scene);
         var asked = bot.Requests;
@@ -338,7 +354,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         Assert.Equal(1, (await scene.CreateAsync()).Number);
 
         await scene.ChangeAsync();
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":2,"blocks":["fly"]}""");
+        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":3,"blocks":["fly"]}""");
         await AskAsync(scene);
 
         var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
@@ -361,7 +377,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
             return Task.CompletedTask;
         };
         bot.OnDeclaration = Answering(
-            $$"""{"bot":"{{scene.Bot}}","formatVersion":1,"blocks":["listen","say","assign"],"codeActions":[{"id":"lookupPolicy","description":"Finds a policy"}]}"""
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":2,"blocks":["listen","say","assign"],"codeActions":[{"id":"lookupPolicy","description":"Finds a policy"}]}"""
         );
 
         var result = await scene.PushAsync(version.Number);

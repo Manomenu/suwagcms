@@ -13,14 +13,14 @@ public sealed class DeclarationValidatorTests
         new()
         {
             Bot = "rzeczoznawca",
-            FormatVersion = 1,
+            FormatVersion = 2,
             Blocks = blocks.Length == 0 ? Block.Names : blocks,
         };
 
     private static BotDefinition Definition =>
         new()
         {
-            FormatVersion = 1,
+            FormatVersion = 2,
             Facts = ProcedureSamples.Facts,
             Procedures =
             [
@@ -58,7 +58,7 @@ public sealed class DeclarationValidatorTests
         var answer = new BotDeclaration
         {
             Bot = "another",
-            FormatVersion = 1,
+            FormatVersion = 2,
             Blocks = ["listen", "fly"],
             CodeActions =
             [
@@ -134,7 +134,7 @@ public sealed class DeclarationValidatorTests
         var answer = new BotDeclaration
         {
             Bot = "rzeczoznawca",
-            FormatVersion = 2,
+            FormatVersion = 3,
             Blocks = ["fly"],
         };
 
@@ -156,14 +156,14 @@ public sealed class DeclarationValidatorTests
     [Trait("criterion", "AC-bot-declaration-12")]
     public void Another_format_version_is_a_version_mistake_naming_both_with_its_fix_and_nothing_at_save()
     {
-        var declaration = Good() with { FormatVersion = 2 };
+        var declaration = Good() with { FormatVersion = 3 };
 
         var mistake = Assert.Single(DefinitionValidator.Validate(Definition, ValidationStage.Version, declaration));
 
         Assert.Equal(MistakeCodes.DeclarationFormatVersion, mistake.Code);
         Assert.Equal(ValidationStage.Version, mistake.Stage);
-        Assert.Equal("This definition is format 1 and the bot wants format 2.", mistake.Message);
-        Assert.Contains("declare format 1 in the bot", mistake.Fix, StringComparison.Ordinal);
+        Assert.Equal("This definition is format 2 and the bot wants format 3.", mistake.Message);
+        Assert.Contains("declare format 2 in the bot", mistake.Fix, StringComparison.Ordinal);
         Assert.Empty(DefinitionValidator.Validate(Definition, ValidationStage.Save, declaration));
     }
 

@@ -15,6 +15,28 @@ public sealed class DeclarationRouteTests
         ) ?? throw new InvalidOperationException("empty declaration");
 
     [Fact]
+    [Trait("criterion", "AC-procedure-creator-39")]
+    public async Task A_setup_stating_knowledge_answers_it_and_one_that_leaves_it_out_answers_no_such_member()
+    {
+        await using var reads = await BotHost.StartAsync(
+            new InMemoryVersionStore(),
+            declares: new BotCapabilities
+            {
+                FormatVersion = 2,
+                Blocks = ["listen"],
+                Knowledge = true,
+            }
+        );
+        await using var silent = await BotHost.StartAsync(
+            new InMemoryVersionStore(),
+            declares: new BotCapabilities { FormatVersion = 2, Blocks = ["listen"] }
+        );
+
+        Assert.True((await DeclarationAsync(reads))["knowledge"]?.GetValue<bool>());
+        Assert.Null((await DeclarationAsync(silent))["knowledge"]);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-bot-declaration-1")]
     public async Task A_bot_whose_setup_states_what_it_supports_answers_with_it_and_its_own_id()
     {
@@ -22,7 +44,7 @@ public sealed class DeclarationRouteTests
             new InMemoryVersionStore(),
             declares: new BotCapabilities
             {
-                FormatVersion = 1,
+                FormatVersion = 2,
                 Blocks = ["listen", "say"],
                 CodeActions =
                 [
@@ -49,7 +71,7 @@ public sealed class DeclarationRouteTests
 
         Assert.Equal("rzeczoznawca", answer.Member("bot").Text());
         Assert.False(answer.Member("declaresNothing").GetValue<bool>());
-        Assert.Equal(1, answer.Member("formatVersion").GetValue<int>());
+        Assert.Equal(2, answer.Member("formatVersion").GetValue<int>());
         Assert.Equal(["listen", "say"], answer.Member("blocks").Items().Select(block => block.Text()));
         var action = Assert.Single(answer.Member("codeActions").Items());
         Assert.Equal("lookupPolicy", action.Member("id").Text());
@@ -79,7 +101,7 @@ public sealed class DeclarationRouteTests
     {
         await using var bot = await BotHost.StartAsync(
             new InMemoryVersionStore(),
-            declares: new BotCapabilities { FormatVersion = 1, Blocks = Block.Names }
+            declares: new BotCapabilities { FormatVersion = 2, Blocks = Block.Names }
         );
         var good = Documents.Make(1);
         var (accepted, _) = await bot.PutAsync(1, good);

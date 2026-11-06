@@ -493,10 +493,10 @@ Mistakes, 1:
     <li>A mismatch with the declaration is a <code>Version</code> mistake, never a <code>Save</code> one: the working state may be unfinished, and the bot may change without anyone editing it.</li>
     <li>The endpoint takes the declaration as input rather than reading a stored one, so its answer depends only on what was sent, as the library's does.</li>
     <li>The bot's routes have no key until <code>cms-identity</code> (owner's decision), and this request carries none.</li>
-    <li>A bot with no declaration has nothing to check against: the creator offers every block and says nothing is being checked, and a version is created as usual. A bot can be prepared before it is deployed, and its own validation at a push remains the safeguard.</li>
+    <li>A bot with no declaration has nothing to check against: the editor offers every block and says nothing is being checked, and a version is created as usual. A bot can be prepared before it is deployed, and its own validation at a push remains the safeguard.</li>
     <li>A bot whose route answers 404 declares nothing: that is how a bot on an SDK older than this route looks.</li>
     <li>A push checks only a good answer the bot gives at that moment. When the bot does not answer, or its answer is refused, the push goes on to the bot, whose own validation and whose silence report the failure as before.</li>
-    <li>The creator reads the last answer without asking, so that opening a form never waits on a bot; <code>suwagcms bots declaration --stored</code> reads the same.</li>
+    <li>The editor reads the last answer without asking, so that opening a form never waits on a bot; <code>suwagcms bots declaration --stored</code> reads the same.</li>
     <li>What is wrong with an answer is reported with the codes <code>declaration.*</code> and <code>codeAction.*</code>; a parameter or a result fails with the codes of a fact, since the rules of facts judge it.</li>
   </ul>
 </section>

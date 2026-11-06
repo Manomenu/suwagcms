@@ -530,67 +530,6 @@ public sealed class ProceduresTests : IDisposable
         Assert.Contains("--dry-run and --open", result.Error, StringComparison.Ordinal);
     }
 
-    [Fact]
-    [Trait("criterion", "AC-procedure-creator-14")]
-    public async Task Layout_prints_the_stored_positions_and_says_when_there_are_none()
-    {
-        var stored = await TestCli.Run(
-            Args("procedures", "layout", "orderValuation"),
-            StubServer.Answering(HttpStatusCode.OK, """{"positions":{"ask":{"x":10,"y":20.5},"goodbye":{"x":300,"y":0}}}""")
-        );
-        var none = await TestCli.Run(
-            Args("procedures", "layout", "orderValuation"),
-            StubServer.Answering(HttpStatusCode.OK, """{"positions":{}}""")
-        );
-
-        Assert.Contains("ask      10  20.5", stored.Output, StringComparison.Ordinal);
-        Assert.Contains("goodbye  300  0", stored.Output, StringComparison.Ordinal);
-        Assert.Contains("No positions stored", none.Output, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-procedure-creator-14")]
-    public async Task Layout_set_keeps_the_other_positions_and_sends_the_whole_map_to_the_layout_route()
-    {
-        var recorder = new Recorder();
-        var server = recorder.Serving(
-            (request, sent) =>
-                request.Method == HttpMethod.Get
-                    ? (HttpStatusCode.OK, """{"positions":{"ask":{"x":1,"y":2}}}""")
-                    : (HttpStatusCode.OK, sent)
-        );
-
-        var result = await TestCli.Run(Args("procedures", "layout", "orderValuation", "--set", "goodbye=300,-4.5"), server);
-
-        Assert.Equal(0, result.ExitCode);
-        var (method, url, body) = recorder.Calls.Last();
-        Assert.Equal("PUT", method);
-        Assert.Equal("/api/bots/rzeczoznawca/procedures/orderValuation/layout", url);
-        Assert.Equal(
-            Canonical(JsonNode.Parse("""{"positions":{"ask":{"x":1,"y":2},"goodbye":{"x":300,"y":-4.5}}}""")),
-            Canonical(JsonNode.Parse(body))
-        );
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-procedure-creator-14")]
-    public async Task Layout_clear_sends_no_positions_and_a_misspelt_set_is_refused_before_any_call()
-    {
-        var recorder = new Recorder();
-        var cleared = await TestCli.Run(
-            Args("procedures", "layout", "orderValuation", "--clear"),
-            recorder.Serving((_, sent) => (HttpStatusCode.OK, sent.Length == 0 ? """{"positions":{"x":{"x":1,"y":1}}}""" : sent))
-        );
-        var server = StubServer.Healthy();
-        var misspelt = await TestCli.Run(Args("procedures", "layout", "orderValuation", "--set", "ask=12"), server);
-
-        Assert.Equal(0, cleared.ExitCode);
-        Assert.Equal("""{"positions":{}}""", recorder.Calls.Last().Body);
-        Assert.NotEqual(0, misspelt.ExitCode);
-        Assert.Contains("--set <step>=<x>,<y>", misspelt.Error, StringComparison.Ordinal);
-        Assert.Empty(server.Requests);
-    }
-
     private const string StartYaml = """
         id: orderValuation
         description: The customer orders a valuation of a property.
@@ -660,8 +599,9 @@ public sealed class ProceduresTests : IDisposable
           whatHappensNext:
             inform:
               instruction: Tell the customer where to bring the documents.
-              context:
-                articles: [zebraRules, officeContact]
+              knowledge:
+                - knowledgeBase: offer
+                  articles: [zebraRules, officeContact]
               points:
                 turnaround: The report is ready within 7 working days.
                 delivery: 5
@@ -689,7 +629,10 @@ public sealed class ProceduresTests : IDisposable
         var sent = JsonNode.Parse(recorder.Calls[0].Body);
         var inform = At(sent, "steps", "whatHappensNext", "inform");
         Assert.Equal("Tell the customer where to bring the documents.", At(inform, "instruction").GetValue<string>());
-        Assert.Equal(["zebraRules", "officeContact"], At(inform, "context", "articles").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(
+            ["zebraRules", "officeContact"],
+            At(At(inform, "knowledge").AsArray()[0], "articles").AsArray().Select(item => item?.GetValue<string>())
+        );
         Assert.Equal(["turnaround", "delivery"], At(inform, "points").AsObject().Select(point => point.Key));
         Assert.Equal("5", At(inform, "points", "delivery").GetValue<string>());
         Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
@@ -726,7 +669,7 @@ public sealed class ProceduresTests : IDisposable
         Assert.Contains("instruction.blank", result.Output, StringComparison.Ordinal);
     }
 
-    private const string ContextYaml = """
+    private const string KnowledgeYaml = """
         id: orderValuation
         description: The customer orders a valuation of a property.
         firstStep: wait
@@ -735,35 +678,37 @@ public sealed class ProceduresTests : IDisposable
             listen:
         whenStalled:
           instruction: Tell the customer you could not finish and how to reach the office.
-          context:
-            articles: [officeContact]
-            searchQueries:
-              - how long a valuation takes
-              - "42"
+          knowledge:
+            - knowledgeBase: offer
+              articles: [officeContact]
+              searchQueries:
+                - how long a valuation takes
+                - "42"
         """;
 
     [Fact]
     [Trait("criterion", "AC-instruction-context-1")]
-    public async Task A_when_stalled_with_a_context_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
+    public async Task A_when_stalled_with_knowledge_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
     {
         var recorder = new Recorder();
         var server = recorder.Serving(
             (request, body) =>
                 request.Method == HttpMethod.Get
-                    ? Echo(Wire(ContextYaml).ToJsonString(), "orderValuation")
+                    ? Echo(Wire(KnowledgeYaml).ToJsonString(), "orderValuation")
                     : Echo(body, "orderValuation", 2)
         );
 
-        var yaml = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", ContextYaml)), server);
-        var json = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.json", Wire(ContextYaml).ToJsonString())), server);
+        var yaml = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", KnowledgeYaml)), server);
+        var json = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.json", Wire(KnowledgeYaml).ToJsonString())), server);
         var shown = await TestCli.Run(Args("procedures", "show", "orderValuation"), server);
         var edited = await TestCli.Run(Args("procedures", "edit", "orderValuation", "--file", FileWith("s.yaml", shown.Output)), server);
 
         Assert.Equal((0, 0, 0, 0), (yaml.ExitCode, json.ExitCode, shown.ExitCode, edited.ExitCode));
         var sent = JsonNode.Parse(recorder.Calls[0].Body);
-        var context = At(sent, "whenStalled", "context");
-        Assert.Equal(["officeContact"], At(context, "articles").AsArray().Select(item => item?.GetValue<string>()));
-        Assert.Equal(["how long a valuation takes", "42"], At(context, "searchQueries").AsArray().Select(item => item?.GetValue<string>()));
+        var entry = At(sent, "whenStalled", "knowledge").AsArray()[0];
+        Assert.Equal("offer", At(entry, "knowledgeBase").GetValue<string>());
+        Assert.Equal(["officeContact"], At(entry, "articles").AsArray().Select(item => item?.GetValue<string>()));
+        Assert.Equal(["how long a valuation takes", "42"], At(entry, "searchQueries").AsArray().Select(item => item?.GetValue<string>()));
         Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[1].Body)));
         Assert.Equal(Canonical(sent), Canonical(JsonNode.Parse(recorder.Calls[^1].Body)));
     }
@@ -773,15 +718,15 @@ public sealed class ProceduresTests : IDisposable
     public async Task A_blank_query_saved_with_the_cli_is_listed_as_a_version_mistake_with_exit_0()
     {
         const string notReady = """
-            [{"code":"context.query.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"whenStalled.context.searchQueries[0]",
-              "message":"'context' of whenStalled in 'orderValuation' has a blank search query.","fix":"Write the query, or remove it.","related":[]}]
+            [{"code":"knowledge.query.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"whenStalled.knowledge[0].searchQueries[0]",
+              "message":"'knowledge' of whenStalled in 'orderValuation' has a blank search query.","fix":"Write the query, or remove it.","related":[]}]
             """;
         var server = new Recorder().Serving((_, body) => Echo(body, "orderValuation", 1, notReady));
 
-        var result = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", ContextYaml)), server);
+        var result = await TestCli.Run(Args("procedures", "add", "--file", FileWith("p.yaml", KnowledgeYaml)), server);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains("context.query.blank", result.Output, StringComparison.Ordinal);
+        Assert.Contains("knowledge.query.blank", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]

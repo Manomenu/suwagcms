@@ -98,7 +98,7 @@ internal static class ProcedureSamples
     public static BotDefinition Bot(params Procedure[] procedures) =>
         new()
         {
-            FormatVersion = 1,
+            FormatVersion = 2,
             Facts = Facts,
             Procedures = procedures,
         };
@@ -121,7 +121,7 @@ internal static class ProcedureSamples
     public static string EveryMistake { get; } =
         new JsonObject
         {
-            ["formatVersion"] = 1,
+            ["formatVersion"] = 2,
             ["facts"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Facts, Web)),
             ["procedures"] = new JsonArray(
                 new JsonObject
@@ -196,7 +196,9 @@ internal static class ProcedureSamples
                     ["whenStalled"] = new JsonObject
                     {
                         ["instruction"] = " ",
-                        ["context"] = new JsonObject { ["searchQueries"] = new JsonArray("how long", " ") },
+                        ["knowledge"] = new JsonArray(
+                            new JsonObject { ["knowledgeBase"] = "nowhere", ["searchQueries"] = new JsonArray("how long", " ") }
+                        ),
                     },
                 },
                 new JsonObject

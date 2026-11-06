@@ -1,4 +1,4 @@
-// A person draws a procedure in the browser: the graph, the forms, the live list of mistakes, and the save.
+// A person edits a procedure in the browser: the list of steps, the forms, the mistakes beside their place, and the save.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -15,7 +15,7 @@ async function newBot(request: APIRequestContext): Promise<string> {
     ] as const) {
         expect((await request.put(`/api/bots/${id}/facts/${name}?ifRevision=0`, { data })).status()).toBe(200);
     }
-    // Why: a bot with no `conversation` always has that one mistake, which would hide whether the drawing is ready.
+    // Why: a bot with no `conversation` always has that one mistake, which would hide whether the page is ready.
     await agentSaves(request, id, "conversation", CONVERSATION, 0);
     return id;
 }
@@ -46,29 +46,23 @@ async function agentSaves(request: APIRequestContext, bot: string, id: string, b
     expect((await request.put(`/api/bots/${bot}/procedures/${id}?ifRevision=${ifRevision}`, { data: body })).status()).toBe(200);
 }
 
-function node(page: Page, name: string) {
+function row(page: Page, name: string) {
     return page.locator(`[data-step="${name}"]`);
 }
 
-async function boxOf(page: Page, name: string) {
-    const box = await node(page, name).boundingBox();
-    if (box === null) throw new Error(`${name} is not on screen`);
-    return box;
+async function open(page: Page, name: string): Promise<void> {
+    await page.getByRole("button", { name: `Open step ${name}`, exact: true }).click();
 }
 
-// Why: React Flow starts a connection on mouse down on a handle, needs moves in between, and ends it over the target's handle.
-async function drawEdge(page: Page, from: string, to: string): Promise<void> {
-    await page.locator(".react-flow__controls-fitview").click();
-    const handle = await node(page, from).locator(".react-flow__handle.source").boundingBox();
-    const target = await node(page, to).locator(".react-flow__handle.target").boundingBox();
-    if (handle === null || target === null) throw new Error(`${from} or ${to} has no handle to draw between`);
-    await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
-    await page.mouse.down();
-    await page.mouse.move(target.x + target.width / 2, target.y + target.height / 2, { steps: 12 });
-    await page.mouse.up();
+async function addStep(page: Page, block: string, list = "Add step"): Promise<void> {
+    await page.getByLabel(list, { exact: true }).selectOption(block);
 }
 
-test("AC-procedure-creator-1: an author builds a procedure with the mouse and the forms, with rules and a loop, and saves it", async ({
+async function stored<T>(request: APIRequestContext, bot: string, id: string): Promise<T> {
+    return (await (await request.get(`/api/bots/${bot}/procedures/${id}`)).json()) as T;
+}
+
+test("AC-procedure-creator-1: an author builds a procedure with the forms, with an If, an Else if and an Else, and saves it", async ({
     page,
     request,
 }) => {
@@ -78,90 +72,77 @@ test("AC-procedure-creator-1: an author builds a procedure with the mouse and th
     await page.getByLabel("Id").fill("orderValuation");
     await page.getByLabel("Description").fill("The customer orders a valuation of a property.");
     await page.getByRole("button", { name: "Create procedure" }).click();
-    await expect(page.getByRole("heading", { name: /Creator: orderValuation/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Procedure orderValuation" })).toBeVisible();
     await expect(page.getByText("'orderValuation' has no firstStep.")).toBeVisible();
 
-    const blocks = page.getByRole("complementary", { name: "Blocks" });
-    await blocks.getByRole("button", { name: "listen", exact: true }).click();
-    await page.getByLabel("First step").check();
-    await blocks.getByRole("button", { name: "collect", exact: true }).click();
+    await addStep(page, "listen");
+    await addStep(page, "collect");
     await page.getByLabel("customer.city").check();
     await page.getByLabel("order.kind").check();
     await expect(page.getByLabel("system.flag")).toHaveCount(0);
-    await blocks.getByRole("button", { name: "assign", exact: true }).click();
+
+    await addStep(page, "if");
+    await page.locator('[data-branch="If"]').getByRole("button", { name: "+ Choose a fact" }).click();
+    await page.locator('[data-branch="If"]').getByLabel("Fact", { exact: true }).selectOption("order.kind");
+    await page.locator('[data-branch="If"]').getByRole("checkbox", { name: "house" }).check();
+    await page.getByRole("button", { name: "+ Else if" }).click();
+    await page.locator('[data-branch="Else if"]').getByRole("button", { name: "+ Choose a fact" }).click();
+    await page.locator('[data-branch="Else if"]').getByLabel("Condition", { exact: true }).selectOption("known");
+
+    await addStep(page, "assign", "Add step to If of collect");
     await page.getByLabel("Assign another fact").selectOption("system.flag");
     await page.getByLabel("Value of system.flag").fill("big");
-    await blocks.getByRole("button", { name: "say", exact: true }).click();
+    await addStep(page, "say", "Add step to If of collect");
     await page.getByLabel("Say", { exact: true }).fill("Thank you, we will call you.");
-    await blocks.getByRole("button", { name: "say", exact: true }).click();
+    await addStep(page, "next", "Add step to If of collect");
+    await page.locator('[data-row="next"]').getByLabel("Next step").selectOption("listen");
+    await addStep(page, "next", "Add step to Else if of collect");
+    await page.locator('[data-row="next"]').nth(1).getByLabel("Next step").selectOption("say");
+    await addStep(page, "say", "Add step to Else of collect");
     await page.getByLabel("Say", { exact: true }).fill("Sorry, we only value houses.");
-    await expect(node(page, "say2")).toBeVisible();
+    await expect(row(page, "say2")).toBeVisible();
 
-    // The edges are drawn with the mouse: from a step's handle onto the step it leads to.
-    await drawEdge(page, "listen", "collect");
-    await drawEdge(page, "assign", "say");
-    await drawEdge(page, "say", "listen");
-
-    // The rule of collect: when order.kind is house, go to assign; otherwise say2. The form already holds the default rule.
-    await node(page, "collect").click();
-    await page.getByRole("button", { name: "Add rule" }).click();
-    await page.getByRole("button", { name: "Add a condition" }).click();
-    await page.getByLabel("Fact", { exact: true }).selectOption("order.kind");
-    await page.getByRole("checkbox", { name: "house" }).check();
-    await page.locator('[data-rule="0"]').getByLabel("Go to").selectOption("assign");
-    await page.locator('[data-rule="default"]').getByLabel("Otherwise go to").selectOption("say2");
-
-    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
     await page.getByLabel("When stalled").fill("Tell the customer you could not finish.");
     await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
 
     await page.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("unsaved changes")).toHaveCount(0);
-    const saved = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+    await expect(page.getByText("Unsaved changes")).toHaveCount(0);
+    const saved = await stored<{
         firstStep: string;
         revision: number;
         steps: Record<string, Record<string, unknown>>;
         notReady: unknown[];
-    };
+    }>(request, bot, "orderValuation");
     expect(saved).toMatchObject({ firstStep: "listen", revision: 2, notReady: [] });
     expect(saved.steps["listen"]).toMatchObject({ next: "collect" });
     expect(saved.steps["collect"]).toMatchObject({
         collect: ["customer.city", "order.kind"],
-        next: [{ when: { "order.kind": { oneOf: ["house"] } }, to: "assign" }, { to: "say2" }],
+        next: [
+            { when: { "order.kind": { oneOf: ["house"] } }, to: "assign" },
+            { when: { "customer.city": { known: true } }, to: "say" },
+            { to: "say2" },
+        ],
     });
     expect(saved.steps["assign"]).toMatchObject({ assign: { "system.flag": "big" }, next: "say" });
     expect(saved.steps["say"]).toMatchObject({ say: "Thank you, we will call you.", next: "listen" });
     expect(saved.steps["say2"]).toMatchObject({ say: "Sorry, we only value houses." });
 });
 
-test("AC-procedure-creator-5: removing the only edge into a step shows it unreachable, and AC-procedure-creator-4: clicking the mistake selects the step", async ({
+test("AC-procedure-creator-2: a procedure an agent wrote opens with every step in its list, and AC-procedure-creator-29: saving is not offered until something changes", async ({
     page,
     request,
 }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
     await expect(page.locator("[data-step]")).toHaveCount(4);
-    await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
-
-    await page.locator('[data-id="mark:next"]').click({ force: true });
-    await page.keyboard.press("Backspace");
-
-    const mistake = page.getByRole("button", { name: /No path from firstStep reaches step 'confirm'/ });
-    await expect(mistake).toBeVisible();
-    await expect(mistake).toContainText("Stops a version");
-    await expect(mistake).toContainText("Connect it from the next of a step that is reached, or delete it.");
-    await mistake.click();
-    await expect(page.getByRole("region", { name: "Step confirm" })).toBeVisible();
-    await expect(node(page, "confirm")).toBeInViewport();
-
-    // AC-procedure-creator-3: the mistake goes when the change is undone by hand.
-    await node(page, "mark").click();
-    await page.getByLabel("Go to").selectOption("confirm");
-    await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
+    await expect(page.locator('[data-row="next"]').getByLabel("Next step")).toHaveValue("ask");
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
+    expect((await stored<{ revision: number }>(request, bot, "orderValuation")).revision).toBe(1);
 });
 
-test("AC-procedure-creator-3: a mistake of the drawing appears without saving, with its fix, and nothing was saved", async ({
+test("AC-procedure-creator-23: the page has the shared edit screen's parts in their order, with Delete and History after the form", async ({
     page,
     request,
 }) => {
@@ -169,120 +150,212 @@ test("AC-procedure-creator-3: a mistake of the drawing appears without saving, w
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
 
-    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
+    await expect(page.getByRole("button", { name: "Back to procedures" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Procedure orderValuation" })).toBeVisible();
+    // Why: the order on the page is the order in the document, since Save stays in view wherever the page has scrolled to.
+    const parts = [
+        page.getByRole("button", { name: "Change id" }),
+        page.getByRole("region", { name: "Uses" }),
+        page.getByLabel("Description"),
+        page.getByRole("region", { name: "Steps" }),
+        page.getByRole("button", { name: "Save", exact: true }),
+        page.getByRole("button", { name: "Delete", exact: true }),
+        page.getByRole("heading", { name: "History" }),
+    ];
+    for (const [index, part] of parts.slice(0, -1).entries()) {
+        const next = await parts[index + 1]?.elementHandle();
+        const follows = await part.evaluate(
+            (one, other) => (one.compareDocumentPosition(other as Node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+            next,
+        );
+        expect(follows, `part ${index} comes before part ${index + 1}`).toBe(true);
+    }
+});
+
+test("AC-pagination-6: going back from a procedure's page returns to the list's page, without the step that was open", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    for (let index = 0; index < 25; index++) {
+        await agentSaves(request, bot, `extra${index}`, { description: "D", firstStep: null, steps: {} }, 0);
+    }
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation/edit?page=2&step=ask`);
+    await expect(page.locator('section[aria-label="Step ask"]')).toBeVisible();
+
+    await open(page, "ask");
+    await expect(page).toHaveURL(/\?page=2$/);
+    await page.getByRole("button", { name: "Back to procedures" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures\\?page=2$`));
+});
+
+test("AC-procedure-creator-45: on a long procedure Save stays in view and works while the page scrolls, and at the end covers neither the last row nor Delete", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const names = Array.from({ length: 40 }, (_, index) => `step${index}`);
+    const steps = Object.fromEntries(
+        names.map((name, index) => [name, { say: `Text ${index}`, ...(names[index + 1] === undefined ? {} : { next: names[index + 1] }) }]),
+    );
+    await agentSaves(request, bot, "longOne", { description: "D", firstStep: "step0", steps }, 0);
+    await page.setViewportSize({ width: 1280, height: 700 });
+    await page.goto(`/bots/${bot}/procedures/longOne/edit`);
+    await page.getByLabel("Description").fill("Changed");
+
+    const save = page.getByRole("button", { name: "Save", exact: true });
+    await page.evaluate(() => {
+        window.scrollTo(0, 900);
+    });
+    await expect(save).toBeInViewport({ ratio: 1 });
+    await expect(row(page, "step0")).not.toBeInViewport();
+    await save.click({ timeout: 2000, trial: true });
+
+    await page.evaluate(() => {
+        window.scrollTo(0, document.documentElement.scrollHeight);
+    });
+    const remove = page.getByRole("button", { name: "Delete", exact: true });
+    await expect(remove).toBeVisible();
+    const bottomOf = async (locator: ReturnType<Page["locator"]>) => {
+        const box = await locator.boundingBox();
+        if (box === null) throw new Error("not on screen");
+        return { top: box.y, bottom: box.y + box.height };
+    };
+    const bar = await bottomOf(save);
+    expect((await bottomOf(page.getByLabel("Add step", { exact: true }))).bottom).toBeLessThanOrEqual(bar.top);
+    expect(bar.bottom).toBeLessThanOrEqual((await bottomOf(remove)).top);
+
+    await page.evaluate(() => {
+        window.scrollTo(0, 900);
+    });
+    await save.click();
+    await expect(page.getByText("Unsaved changes")).toHaveCount(0);
+    expect((await stored<{ description: string }>(request, bot, "longOne")).description).toBe("Changed");
+});
+
+test("AC-procedure-creator-4: a mistake beside its step says what it stops and its fix, the count goes to it, and AC-procedure-creator-3: it goes when undone by hand", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
+
+    await open(page, "goodbye");
+    await page.getByLabel("Say", { exact: true }).fill("");
+
+    const note = page.locator('[data-mistake="step.block.empty"]');
+    await expect(note).toContainText("Stops a version");
+    await expect(note).toContainText("say");
+    await open(page, "goodbye");
+    await page.getByRole("region", { name: "Mistakes" }).getByRole("button").first().click();
+    await expect(page).toHaveURL(/[?&]step=goodbye/);
+    await expect(row(page, "goodbye")).toBeInViewport();
+
+    await page.getByLabel("Say", { exact: true }).fill("Sorry, we only value houses.");
+    await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
+    expect((await stored<{ revision: number }>(request, bot, "orderValuation")).revision).toBe(1);
+});
+
+test("AC-procedure-creator-3: a mistake with a field goes beside it without saving, with its fix, and nothing was saved", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+
     await page.getByLabel("When stalled").fill("");
 
-    await expect(page.getByRole("button", { name: /whenStalled/ })).toBeVisible();
+    await expect(page.locator('[data-place="top"], [data-mistake="procedure.collect.noWhenStalled"]').first()).toContainText("whenStalled");
     await page.getByLabel("When stalled").fill("Tell the customer you could not finish.");
     await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
-    const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { revision: number };
-    expect(stored.revision).toBe(1);
+    expect((await stored<{ revision: number }>(request, bot, "orderValuation")).revision).toBe(1);
 });
 
-test("AC-procedure-creator-2: a procedure an agent wrote opens laid out, AC-procedure-creator-12: a moved node stays where it was left and the revision stays, AC-procedure-creator-13: arrange lays out the whole graph", async ({
+test("AC-procedure-creator-10: deleting a step a Next: names keeps the row with a mistake that refuses a save, until it is pointed elsewhere", async ({
     page,
     request,
 }) => {
     const bot = await newBot(request);
-    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
-    expect((await (await request.get(`/api/bots/${bot}/procedures/orderValuation/layout`)).json()) as object).toEqual({ positions: {} });
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "D",
+            firstStep: "a",
+            steps: { a: { say: "A", next: "b" }, b: { say: "B", next: "c" }, c: { say: "C", next: "b" } },
+        },
+        0,
+    );
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
-    await expect(page.locator("[data-step]")).toHaveCount(4);
+    await page.getByRole("button", { name: "Delete step b" }).click();
 
-    const before = await boxOf(page, "mark");
-    const grip = await node(page, "mark").locator("div").first().boundingBox();
-    if (grip === null) throw new Error("no header to drag");
-    await page.mouse.move(grip.x + 20, grip.y + 8);
-    await page.mouse.down();
-    await page.mouse.move(grip.x + 20 + 40, grip.y + 8 + 120, { steps: 8 });
-    await page.mouse.up();
-    await expect
-        .poll(async () =>
-            Object.keys(
-                ((await (await request.get(`/api/bots/${bot}/procedures/orderValuation/layout`)).json()) as { positions: object })
-                    .positions,
-            ),
-        )
-        .toContain("mark");
-    const moved = await boxOf(page, "mark");
-    const ask0 = await boxOf(page, "ask");
-    expect(Math.round(moved.y - before.y)).toBeGreaterThan(80);
-
-    const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { revision: number };
-    expect(stored.revision).toBe(1);
-    await page.reload();
-    await expect(page.locator("[data-step]")).toHaveCount(4);
-    const reloaded = await boxOf(page, "mark");
-    const askAfter = await boxOf(page, "ask");
-    expect(Math.abs(reloaded.y - askAfter.y - (moved.y - ask0.y))).toBeLessThan(2);
-
-    await page.getByRole("button", { name: "Arrange" }).click();
-    await expect
-        .poll(async () =>
-            Object.keys(
-                ((await (await request.get(`/api/bots/${bot}/procedures/orderValuation/layout`)).json()) as { positions: object })
-                    .positions,
-            ).sort(),
-        )
-        .toEqual(["ask", "confirm", "goodbye", "mark"]);
+    await expect(page.locator('[data-row="next"]').getByLabel("Next step")).toHaveValue("b");
+    await expect(page.getByText("Refuses a save").first()).toBeVisible();
+    await page.locator('[data-row="next"]').getByLabel("Next step").selectOption("a");
+    await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByText("Unsaved changes")).toHaveCount(0);
+    const saved = await stored<{ steps: Record<string, { next?: string }> }>(request, bot, "orderValuation");
+    expect(Object.keys(saved.steps)).toEqual(["a", "c"]);
+    expect(saved.steps["a"]?.next).toBe("c");
+    expect(saved.steps["c"]?.next).toBe("a");
 });
 
-test("AC-procedure-creator-7: a save on an old revision is refused, the drawing stays on screen, and Reload brings the stored procedure", async ({
+test("AC-procedure-creator-7: a save on an old revision is refused, the page stays as it was, and Reload brings the stored procedure", async ({
     page,
     request,
 }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
-    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
     await page.getByLabel("Description").fill("Marta's description");
     await agentSaves(request, bot, "orderValuation", { ...AGENT_WROTE, description: "The agent's description" }, 1);
 
-    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    await expect(page.getByRole("alert")).toContainText("it is now revision 2");
+    await expect(page.getByRole("alert").first()).toContainText("it is now revision 2");
     await expect(page.getByLabel("Description")).toHaveValue("Marta's description");
-    await page.getByRole("button", { name: "Reload" }).click();
+    await page.getByRole("button", { name: "Reload" }).first().click();
     await expect(page.getByLabel("Description")).toHaveValue("The agent's description");
     await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
-test("AC-procedure-creator-6: a save with only a Version mistake succeeds, and a save with a Save mistake is refused and the drawing stays", async ({
+test("AC-procedure-creator-6: a save with only a Version mistake succeeds, and a save with a Save mistake is refused and the page stays", async ({
     page,
     request,
 }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
-    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
     await page.getByLabel("When stalled").fill("");
-    await expect(page.getByRole("button", { name: /whenStalled/ })).toContainText("Stops a version");
+    await expect(page.getByText("Stops a version").first()).toBeVisible();
 
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("unsaved changes")).toBeHidden();
-    const versionOnly = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { revision: number };
-    expect(versionOnly.revision).toBe(2);
+    await expect(page.getByText("Unsaved changes")).toBeHidden();
+    expect((await stored<{ revision: number }>(request, bot, "orderValuation")).revision).toBe(2);
 
-    await node(page, "mark").click();
+    await open(page, "mark");
     await page.getByLabel("Value of system.flag").fill("far too long");
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
-    await expect(page.getByRole("alert")).toContainText("Your drawing is unchanged");
+    await expect(page.getByRole("alert")).toContainText("Your page is unchanged");
     await expect(page.getByLabel("Value of system.flag")).toHaveValue("far too long");
-    await expect(page.getByText("unsaved changes")).toBeVisible();
-    const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
-        revision: number;
-        steps: { mark: { assign: Record<string, string> } };
-    };
-    expect(stored.revision).toBe(2);
-    expect(stored.steps.mark.assign).toEqual({ "system.flag": "big" });
+    await expect(page.getByText("Unsaved changes")).toBeVisible();
+    const after = await stored<{ revision: number; steps: { mark: { assign: Record<string, string> } } }>(request, bot, "orderValuation");
+    expect(after.revision).toBe(2);
+    expect(after.steps.mark.assign).toEqual({ "system.flag": "big" });
 });
 
-test("AC-procedure-creator-17: leaving the creator with unsaved changes asks first", async ({ page, request }) => {
+test("AC-procedure-creator-17: leaving the page with unsaved changes asks first", async ({ page, request }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
-    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
     await page.getByLabel("Description").fill("changed");
     const asked: string[] = [];
     page.once("dialog", (dialog) => {
@@ -294,7 +367,7 @@ test("AC-procedure-creator-17: leaving the creator with unsaved changes asks fir
 
     await expect.poll(() => asked.length).toBe(1);
     expect(asked[0]).toContain("unsaved changes");
-    await expect(page.getByRole("heading", { name: /Creator: orderValuation/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Procedure orderValuation" })).toBeVisible();
     page.once("dialog", (dialog) => void dialog.accept());
     await page.getByRole("navigation", { name: "Bots" }).getByRole("link", { name: "Procedures" }).click();
     await expect(page.getByRole("heading", { name: /Procedures of/ })).toBeVisible();
@@ -315,22 +388,18 @@ test("AC-procedure-creator-21: a start step is built with its form, which leaves
     await agentSaves(request, bot, "orderValuation", { description: "The customer orders a valuation", firstStep: null, steps: {} }, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
 
-    await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "start" }).click();
-    await node(page, "start").click();
+    await addStep(page, "start");
     const target = page.getByLabel("Start this procedure");
     await expect(target.getByRole("option")).toHaveText(["(choose)", "documentsList"]);
     await target.selectOption("documentsList");
-    await expect(node(page, "start")).toContainText("start: documentsList");
+    await expect(row(page, "start")).toContainText("documentsList");
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await expect(async () => {
-        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
-            steps: Record<string, { start?: string }>;
-        };
-        expect(stored.steps["start"]?.start).toBe("documentsList");
+        const saved = await stored<{ steps: Record<string, { start?: string }> }>(request, bot, "orderValuation");
+        expect(saved.steps["start"]?.start).toBe("documentsList");
     }).toPass();
     await page.reload();
-    await node(page, "start").click();
     await expect(page.getByLabel("Start this procedure")).toHaveValue("documentsList");
 });
 
@@ -342,8 +411,7 @@ test("AC-procedure-creator-22: an inform step is built with its form and reads b
     await agentSaves(request, bot, "orderValuation", { description: "The customer orders a valuation", firstStep: null, steps: {} }, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
 
-    await page.getByRole("complementary", { name: "Blocks" }).getByRole("button", { name: "inform" }).click();
-    await node(page, "inform").click();
+    await addStep(page, "inform");
     await page.getByLabel("Instruction").fill("Tell the customer what happens next.");
     await page.getByRole("button", { name: "Add point" }).click();
     await page.getByLabel("Name of point 1").fill("turnaround");
@@ -351,39 +419,45 @@ test("AC-procedure-creator-22: an inform step is built with its form and reads b
     await page.getByRole("button", { name: "Add point" }).click();
     await page.getByLabel("Name of point 2").fill("a");
     await page.getByLabel("Text of point 2").fill("Sent by e-mail.");
-    await expect(node(page, "inform")).toContainText("inform: turnaround, a");
+    await expect(row(page, "inform")).toContainText("2 points");
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await expect(async () => {
         const raw = await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).text();
-        const stored = JSON.parse(raw) as {
+        const saved = JSON.parse(raw) as {
             steps: Record<string, { inform?: { instruction: string; points: Record<string, string> } }>;
         };
-        expect(stored.steps["inform"]?.inform?.instruction).toBe("Tell the customer what happens next.");
-        expect(Object.entries(stored.steps["inform"]?.inform?.points ?? {})).toEqual([
+        expect(saved.steps["inform"]?.inform?.instruction).toBe("Tell the customer what happens next.");
+        expect(Object.entries(saved.steps["inform"]?.inform?.points ?? {})).toEqual([
             ["turnaround", "Ready within 7 working days."],
             ["a", "Sent by e-mail."],
         ]);
     }).toPass();
     await page.reload();
-    await node(page, "inform").click();
     await expect(page.getByLabel("Name of point 1")).toHaveValue("turnaround");
     await expect(page.getByLabel("Text of point 2")).toHaveValue("Sent by e-mail.");
 });
 
-test("AC-procedure-creator-20: a context is edited on whenStalled and on an inform, with articles and queries, and reads back from the server", async ({
+test("AC-procedure-creator-20: knowledge is edited on whenStalled and on an inform, by base, with articles and queries, and reads back from the server", async ({
     page,
     request,
 }) => {
     const bot = await newBot(request);
-    expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, { data: { title: "Offer" } })).status()).toBe(200);
-    expect(
-        (
-            await request.put(`/api/bots/${bot}/articles/officeContact?ifRevision=0`, {
-                data: { knowledgeBase: "offer", title: "The office", content: "c", llmGuide: "g", description: "d" },
-            })
-        ).status(),
-    ).toBe(200);
+    for (const base of ["offer", "reports"]) {
+        expect((await request.put(`/api/bots/${bot}/knowledge-bases/${base}?ifRevision=0`, { data: { title: base } })).status()).toBe(200);
+    }
+    for (const [id, knowledgeBase] of [
+        ["officeContact", "offer"],
+        ["reportContents", "reports"],
+    ] as const) {
+        expect(
+            (
+                await request.put(`/api/bots/${bot}/articles/${id}?ifRevision=0`, {
+                    data: { knowledgeBase, title: id, content: "c", llmGuide: "g", description: "d" },
+                })
+            ).status(),
+        ).toBe(200);
+    }
     await agentSaves(
         request,
         bot,
@@ -398,25 +472,35 @@ test("AC-procedure-creator-20: a context is edited on whenStalled and on an info
     );
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
 
-    await page.getByRole("group", { name: "Articles to read" }).getByLabel("The office (officeContact)").check();
-    await page.getByRole("button", { name: "Add search query" }).click();
-    await page.getByLabel("Search query 1", { exact: true }).fill("how long a valuation takes");
-    await node(page, "tell").click();
-    await page.getByRole("button", { name: "Add search query" }).click();
-    await page.getByLabel("Search query 1", { exact: true }).fill("opening hours");
+    const add = page.getByLabel("Add knowledge");
+    await add.selectOption("offer");
+    const stalled = page.locator('[data-place="knowledge:whenStalled:0"]');
+    await expect(stalled.getByRole("checkbox")).toHaveCount(1);
+    await stalled.getByLabel("officeContact (officeContact)").check();
+    await stalled.getByRole("button", { name: "+ Add query" }).click();
+    await stalled.getByLabel("Search query 1", { exact: true }).fill("how long a valuation takes");
+    await expect(add.getByRole("option")).toHaveText(["+ Add knowledge…", "reports"]);
+
+    await open(page, "tell");
+    await page.locator('section[aria-label="Step tell"]').getByLabel("Add knowledge").selectOption("reports");
+    const told = page.locator('[data-place="knowledge:tell:0"]');
+    await told.getByRole("button", { name: "+ Add query" }).click();
+    await told.getByLabel("Search query 1", { exact: true }).fill("opening hours");
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await expect(async () => {
-        const stored = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
-            whenStalled: { context: unknown };
-            steps: Record<string, { inform?: { context: unknown } }>;
-        };
-        expect(stored.whenStalled.context).toEqual({ articles: ["officeContact"], searchQueries: ["how long a valuation takes"] });
-        expect(stored.steps["tell"]?.inform?.context).toMatchObject({ searchQueries: ["opening hours"] });
+        const saved = await stored<{
+            whenStalled: { knowledge: unknown };
+            steps: Record<string, { inform?: { knowledge: unknown } }>;
+        }>(request, bot, "orderValuation");
+        expect(saved.whenStalled.knowledge).toEqual([
+            { knowledgeBase: "offer", articles: ["officeContact"], searchQueries: ["how long a valuation takes"] },
+        ]);
+        expect(saved.steps["tell"]?.inform?.knowledge).toMatchObject([{ knowledgeBase: "reports", searchQueries: ["opening hours"] }]);
     }).toPass();
 });
 
-test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers it, the save stores it, and the panel removes it again", async ({
+test("AC-procedure-creator-18: the form adds a local fact, a step's form offers it, the save stores it, and the form removes it again", async ({
     page,
     request,
 }) => {
@@ -432,38 +516,35 @@ test("AC-procedure-creator-18: the panel adds a local fact, a step's form offers
     await panel.getByRole("button", { name: "Keep" }).click();
     await expect(panel).toContainText("text, up to 20 · set");
 
-    await node(page, "ask").click();
+    await open(page, "ask");
     await page.getByRole("checkbox", { name: "visitDate" }).check();
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("unsaved changes")).toBeHidden();
+    await expect(page.getByText("Unsaved changes")).toBeHidden();
 
-    const saved = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
+    const saved = await stored<{
         localFacts: Record<string, { maxLength: number; description: string }>;
         steps: Record<string, { collect?: string[] }>;
-    };
+    }>(request, bot, "orderValuation");
     expect(saved.localFacts["visitDate"]).toMatchObject({ maxLength: 20, description: "When to visit" });
     expect(saved.steps["ask"]?.collect).toEqual(["visitDate"]);
     const listed = (await (await request.get(`/api/bots/${bot}/facts`)).json()) as { name: string }[];
     expect(listed.map((fact) => fact.name)).not.toContain("visitDate");
 
     await page.getByRole("checkbox", { name: "visitDate" }).uncheck();
-    await page.locator(".react-flow__pane").click({ position: { x: 5, y: 5 } });
     await panel.getByRole("button", { name: "Edit visitDate" }).click();
     await panel.getByLabel("Maximum length").fill("30");
     await panel.getByRole("button", { name: "Keep" }).click();
     await expect(panel).toContainText("text, up to 30");
     await panel.getByRole("button", { name: "Remove visitDate" }).click();
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("unsaved changes")).toBeHidden();
-    const after = (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as { localFacts: unknown };
+    await expect(page.getByText("Unsaved changes")).toBeHidden();
+    const after = await stored<{ localFacts: unknown }>(request, bot, "orderValuation");
     expect(after.localFacts ?? {}).toEqual({});
 });
 
-test("AC-resource-rename-2: Change id in the creator lands on the new address, and the node positions stay", async ({ page, request }) => {
+test("AC-resource-rename-2: Change id on the page lands on the new address", async ({ page, request }) => {
     const bot = await newBot(request);
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
-    const positions = { ask: { x: 11, y: 22 }, mark: { x: 33, y: 44 }, confirm: { x: 55, y: 66 }, goodbye: { x: 77, y: 88 } };
-    expect((await request.put(`/api/bots/${bot}/procedures/orderValuation/layout`, { data: { positions } })).status()).toBe(200);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
     await expect(page.locator("[data-step]")).toHaveCount(4);
 
@@ -474,12 +555,10 @@ test("AC-resource-rename-2: Change id in the creator lands on the new address, a
     await dialog.getByRole("button", { name: "Change id" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/valuation/edit$`));
-    await expect(page.getByRole("heading", { name: /Creator: valuation/ })).toBeVisible();
-    const layout = (await (await request.get(`/api/bots/${bot}/procedures/valuation/layout`)).json()) as { positions: unknown };
-    expect(layout.positions).toEqual(positions);
+    await expect(page.getByRole("heading", { name: "Procedure valuation" })).toBeVisible();
 });
 
-test("AC-procedure-creator-19: the creator offers only the blocks the bot last declared, and every block when it has declared none", async ({
+test("AC-procedure-creator-19: the page offers only the blocks the bot last declared, and every block when it has declared none", async ({
     page,
     request,
 }) => {
@@ -487,30 +566,30 @@ test("AC-procedure-creator-19: the creator offers only the blocks the bot last d
     const server = createServer((_, response) => {
         response
             .writeHead(200, { "content-type": "application/json" })
-            .end(JSON.stringify({ bot: id, formatVersion: 1, blocks: ["listen", "say"] }));
+            .end(JSON.stringify({ bot: id, formatVersion: 2, blocks: ["listen", "say"] }));
     });
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     try {
         const address = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
         expect((await request.post("/api/bots", { data: { id, name: `Name of ${id}`, address } })).status()).toBe(201);
         await agentSaves(request, id, "conversation", CONVERSATION, 0);
-        const blocks = page.getByRole("complementary", { name: "Blocks" });
+        const blocks = page.getByLabel("Add step", { exact: true });
 
         await page.goto(`/bots/${id}/procedures/conversation`);
-        await expect(blocks.getByRole("button", { name: "collect" })).toBeVisible();
-        await expect(blocks.getByText("nothing is being checked")).toBeVisible();
+        await expect(blocks.getByRole("option", { name: "Ask" })).toHaveCount(1);
+        await expect(page.getByText("nothing is being checked")).toBeVisible();
 
         expect((await request.get(`/api/bots/${id}/declaration`)).status()).toBe(200);
         await page.goto(`/bots/${id}/procedures/conversation`);
-        await expect(blocks.getByRole("button", { name: "say" })).toBeVisible();
-        await expect(blocks.getByRole("button", { name: "collect" })).toHaveCount(0);
-        await expect(blocks.getByText("nothing is being checked")).toHaveCount(0);
+        await expect(blocks.getByRole("option", { name: "Say" })).toHaveCount(1);
+        await expect(blocks.getByRole("option", { name: "Ask" })).toHaveCount(0);
+        await expect(page.getByText("nothing is being checked")).toHaveCount(0);
     } finally {
         server.close();
     }
 });
 
-test("AC-action-block-16: an action step's form offers the bot's actions, then a row per parameter and result with only the facts that fit, and a failure edge; the mistakes show in the live list", async ({
+test("AC-action-block-16: an action step's form offers the bot's actions, then a row per parameter and result with only the facts that fit, and On failure as a branch; the mistakes show beside it", async ({
     page,
     request,
 }) => {
@@ -523,15 +602,9 @@ test("AC-action-block-16: an action step's form offers the bot's actions, then a
             implementation: { http: { method: "POST", url: "https://x.internal", headers: null, timeoutSeconds: null } },
         },
     });
-    await agentSaves(
-        request,
-        bot,
-        "withAction",
-        { description: "Runs an action", firstStep: "run", steps: { run: { action: "" }, failed: { say: "Sorry" } } },
-        0,
-    );
+    await agentSaves(request, bot, "withAction", { description: "Runs an action", firstStep: "run", steps: { run: { action: "" } } }, 0);
     await page.goto(`/bots/${bot}/procedures/withAction`);
-    await page.locator('[data-step="run"]').click();
+    await open(page, "run");
 
     await page.getByLabel("Action", { exact: true }).selectOption("checkKind");
 
@@ -539,22 +612,19 @@ test("AC-action-block-16: an action step's form offers the bot's actions, then a
     await expect(parameter.getByRole("option")).toHaveText(["(choose a fact)", "customer.city", "system.flag"]);
     const result = page.getByLabel("Results: kind");
     await expect(result.getByRole("option")).toHaveText(["(ignored)", "order.kind"]);
-    await expect(page.getByText("Step 'run' has no onFailure.")).toBeVisible();
-    await expect(page.getByText("Step 'run' does not map parameter 'place'.")).toBeVisible();
+    await expect(page.getByText("Step 'run' has no onFailure.").first()).toBeVisible();
+    await expect(page.getByText("Step 'run' does not map parameter 'place'.").first()).toBeVisible();
 
     await parameter.selectOption("customer.city");
     await result.selectOption("order.kind");
-    await page.getByLabel("On failure, go to").selectOption("failed");
+    await page.getByRole("button", { name: "Set what happens" }).click();
+    await addStep(page, "say", "Add step to On failure of run");
 
     await expect(page.getByText("Step 'run' has no onFailure.")).toHaveCount(0);
-    await expect(page.locator(".react-flow__edge")).toHaveCount(1);
-    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect
-        .poll(
-            async () =>
-                ((await (await request.get(`/api/bots/${bot}/procedures/withAction`)).json()) as { steps: { run: unknown } }).steps.run,
-        )
-        .toMatchObject({ action: "checkKind", with: { place: "customer.city" }, results: { kind: "order.kind" }, onFailure: "failed" });
+        .poll(async () => (await stored<{ steps: { run: unknown } }>(request, bot, "withAction")).steps.run)
+        .toMatchObject({ action: "checkKind", with: { place: "customer.city" }, results: { kind: "order.kind" }, onFailure: "say" });
 });
 
 test("AC-action-block-17: the Uses panel of a procedure lists the action and each fact a step maps, with the field holding each", async ({
@@ -616,7 +686,7 @@ test("AC-fact-pattern-11: the local fact form sets a pattern, the list of mistak
     await panel.getByRole("button", { name: "Keep" }).click();
     await expect(panel).toContainText("text, up to 20, pattern [A-Z]{2}");
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("unsaved changes")).toBeHidden();
+    await expect(page.getByText("Unsaved changes")).toBeHidden();
     const read = async () =>
         (await (await request.get(`/api/bots/${bot}/procedures/orderValuation`)).json()) as {
             localFacts: Record<string, { pattern?: unknown }>;
@@ -634,7 +704,7 @@ test("AC-fact-pattern-11: the local fact form sets a pattern, the list of mistak
     await panel.getByLabel("Pattern: example").fill("");
     await panel.getByRole("button", { name: "Keep" }).click();
     await page.getByRole("button", { name: "Save", exact: true }).click();
-    await expect(page.getByText("unsaved changes")).toBeHidden();
+    await expect(page.getByText("Unsaved changes")).toBeHidden();
     expect((await read()).localFacts["visitCode"]?.pattern ?? null).toBeNull();
 });
 
