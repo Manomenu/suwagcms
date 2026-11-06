@@ -106,6 +106,54 @@ public sealed class ValidateCommandTests : IDisposable
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-15")]
+    public async Task An_actions_timeout_reads_as_the_number_an_actions_file_gives_it()
+    {
+        var path = File(
+            "definition.yaml",
+            """
+            formatVersion: 1
+            actions:
+              - id: priceLookup
+                description: Looks up a price.
+                implementation:
+                  http: { method: GET, url: "http://x.internal/a", timeoutSeconds: 20 }
+            """
+        );
+
+        await TestCli.Run(["validate", "--file", path, .. Common], Answering(""));
+
+        Assert.Equal(20, sent[0]["definition"]?["actions"]?[0]?["implementation"]?["http"]?["timeoutSeconds"]?.GetValue<int>());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-15")]
+    [Trait("criterion", "AC-start-block-5")]
+    public async Task A_start_or_an_instruction_left_empty_reads_as_blank_as_in_a_procedures_file()
+    {
+        var path = File(
+            "definition.yaml",
+            """
+            formatVersion: 1
+            procedures:
+              - id: conversation
+                steps:
+                  go:
+                    start:
+                    next: go
+                whenStalled:
+                  instruction:
+            """
+        );
+
+        await TestCli.Run(["validate", "--file", path, .. Common], Answering(""));
+
+        var procedure = sent[0]["definition"]?["procedures"]?[0];
+        Assert.Equal("", procedure?["steps"]?["go"]?["start"]?.GetValue<string>());
+        Assert.Equal("", procedure?["whenStalled"]?["instruction"]?.GetValue<string>());
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-15")]
     public async Task Mistakes_are_listed_with_exit_1_and_json_returns_them()
     {
         var path = File("definition.json", """{"formatVersion":1}""");

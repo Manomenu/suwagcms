@@ -62,6 +62,34 @@ public sealed class EditGuardTests
         Assert.Contains("Used by:", result.Error, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [Trait("criterion", "AC-edit-guard-9")]
+    [Trait("criterion", "AC-edit-guard-18")]
+    [InlineData("reference.missing", "Used by:")]
+    [InlineData("fact.enum.valueInUse", "Used by:")]
+    [InlineData("fact.type.inUse", "Used by:")]
+    [InlineData("fact.range.inUse", "Used by:")]
+    [InlineData("fact.pattern.inUse", "Used by:")]
+    [InlineData("fact.writableBy.inUse", "Used by:")]
+    [InlineData("action.field.inUse", "Used by:")]
+    [InlineData("reference.loop", "Related:")]
+    public async Task A_refusal_heads_its_related_list_by_what_the_code_means(string code, string heading)
+    {
+        var refusal = Refusal.Replace("fact.enum.valueInUse", code, StringComparison.Ordinal);
+        var server = new StubServer(request =>
+            request.Method == HttpMethod.Get
+                ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Kind, Encoding.UTF8, "application/json") }
+                : new HttpResponseMessage(HttpStatusCode.UnprocessableEntity)
+                {
+                    Content = new StringContent(refusal, Encoding.UTF8, "application/problem+json"),
+                }
+        );
+
+        var result = await TestCli.Run(Edit, server);
+
+        Assert.Contains($"  {heading}{Environment.NewLine}", result.Error, StringComparison.Ordinal);
+    }
+
     [Fact]
     [Trait("criterion", "AC-edit-guard-10")]
     public async Task With_json_the_referrers_are_data()

@@ -92,6 +92,22 @@ test("AC-knowledge-bases-3: a base deleted in the web is gone from the list and 
     expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(404);
 });
 
+test("AC-knowledge-bases-3: deleting the base being edited closes its form, so a Save cannot bring it back", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addBase(request, bot, "oferta", "Offer");
+    await addBase(request, bot, "druga", "Second");
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+
+    const row = page.getByRole("row").filter({ hasText: "oferta" });
+    await row.getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByLabel("Title")).toHaveValue("Offer");
+    await row.getByRole("button", { name: "Delete" }).click();
+
+    await expect(row).toHaveCount(0);
+    await expect(page.getByLabel("Title")).toHaveCount(0);
+    expect((await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).status()).toBe(404);
+});
+
 test("AC-knowledge-bases-9: a base with articles is not deleted, and the screen lists the articles", async ({ page, request }) => {
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "Offer");

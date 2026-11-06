@@ -66,6 +66,7 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
         setDeleteFailure(null);
         deleteKnowledgeBase(bot, base.id, revisionOf(base))
             .then(() => {
+                setOpen(null);
                 load();
             })
             .catch((error: unknown) => {

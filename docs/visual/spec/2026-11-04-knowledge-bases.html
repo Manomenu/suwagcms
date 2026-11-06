@@ -470,7 +470,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <ul class="checks">
     <li><code>AC-knowledge-bases-1</code> A base created in the web or with <code>suwagcms kb add</code> appears in both the web list and <code>suwagcms kb list</code>.</li>
     <li><code>AC-knowledge-bases-2</code> A base's title changes in the web and with <code>suwagcms kb edit</code>, and its <code>id</code> stays the same.</li>
-    <li><code>AC-knowledge-bases-3</code> An empty base can be deleted in the web and with <code>suwagcms kb delete</code>, and is gone from both.</li>
+    <li><code>AC-knowledge-bases-3</code> An empty base can be deleted in the web and with <code>suwagcms kb delete</code>, and is gone from both; a form open on it closes.</li>
     <li><code>AC-knowledge-bases-4</code> A missing or non-camelCase <code>id</code>, an <code>id</code> the bot already has, a blank title, and a title another base of the bot has (ignoring case and surrounding spaces) are each refused with a mistake and a fix.</li>
     <li><code>AC-knowledge-bases-5</code> The same <code>id</code> and title can exist in two bots, and a base of one bot is not listed for the other.</li>
     <li><code>AC-knowledge-bases-6</code> An edit or delete based on an old revision is refused, and <code>--dry-run</code> on an add, edit or delete changes nothing.</li>

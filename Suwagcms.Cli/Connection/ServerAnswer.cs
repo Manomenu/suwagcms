@@ -39,15 +39,7 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
         {
             yield break;
         }
-        yield return code
-            is "reference.missing"
-                or "fact.enum.valueInUse"
-                or "fact.type.inUse"
-                or "fact.range.inUse"
-                or "fact.pattern.inUse"
-                or "fact.writableBy.inUse"
-            ? "  Used by:"
-            : "  Related:";
+        yield return ListsUsers(code) ? "  Used by:" : "  Related:";
         foreach (var item in related.EnumerateArray())
         {
             if (
@@ -63,6 +55,10 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
             yield return $"    {Noun(kind)} {id}{Where(at)}{(page is null ? "" : $"  {page}")}";
         }
     }
+
+    // Why: a code ending in inUse (fact.type.inUse, fact.enum.valueInUse) names what its related list uses, so a new one needs no change here; reference.missing names what still refers to the thing deleted.
+    private static bool ListsUsers(string? code) =>
+        code == "reference.missing" || (code?.EndsWith("inUse", StringComparison.OrdinalIgnoreCase) ?? false);
 
     // Why: inside a procedure a place is a step and a block, which is how an author finds it; any other place is shown as the server names it.
     private static string Where(string? location)

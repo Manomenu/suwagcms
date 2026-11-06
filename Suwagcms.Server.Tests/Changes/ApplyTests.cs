@@ -616,6 +616,48 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
         Assert.DoesNotContain("flat", await scene.ReadAsync("facts", "order.type"), StringComparison.Ordinal);
     }
 
+    private const string WithLocalFacts = """
+        {"add":"procedure","id":"orderValuation","description":"Orders.","firstStep":"ask",
+         "steps":{"ask":{"collect":["visitDate"],"next":"confirm"},"confirm":{"say":"Thanks"}},
+         "localFacts":{"visitDate":{"type":"text","description":"When to visit","maxLength":20},
+                       "spare":{"type":"int","description":"Not used yet","min":1,"max":5}}}
+        """;
+
+    [Fact]
+    [Trait("criterion", "AC-batch-apply-9")]
+    public async Task Editing_a_procedure_without_local_facts_keeps_the_stored_ones_used_and_unused()
+    {
+        var scene = await NewScene();
+        Assert.Equal(HttpStatusCode.OK, (await scene.Post(ChangeScene.File(WithLocalFacts))).StatusCode);
+
+        var edited = await scene.Post(ChangeScene.File("""{"edit":"procedure","id":"orderValuation","description":"Changed"}"""));
+
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        var read = await scene.ReadAsync("procedures", "orderValuation");
+        Assert.Contains("Changed", read, StringComparison.Ordinal);
+        Assert.Contains("visitDate", read, StringComparison.Ordinal);
+        Assert.Contains("spare", read, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-batch-apply-9")]
+    public async Task Editing_a_procedure_with_local_facts_takes_the_ones_given()
+    {
+        var scene = await NewScene();
+        Assert.Equal(HttpStatusCode.OK, (await scene.Post(ChangeScene.File(WithLocalFacts))).StatusCode);
+
+        var edited = await scene.Post(
+            ChangeScene.File(
+                """{"edit":"procedure","id":"orderValuation","localFacts":{"visitDate":{"type":"text","description":"When to visit","maxLength":33}}}"""
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        var read = await scene.ReadAsync("procedures", "orderValuation");
+        Assert.Contains("33", read, StringComparison.Ordinal);
+        Assert.DoesNotContain("spare", read, StringComparison.Ordinal);
+    }
+
     [Fact]
     [Trait("criterion", "AC-batch-apply-16")]
     [Trait("criterion", "AC-batch-apply-1")]
