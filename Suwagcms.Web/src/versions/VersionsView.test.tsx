@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
+import { PageSizeContext } from "@/api/pagination";
 import type { Mistake } from "@/api/client";
 
 import type { BotStatus, PushPlan, PushResult, VersionComparison, VersionDetail, VersionSummary } from "./api";
@@ -77,6 +78,7 @@ const answering: BotStatus = {
 };
 
 function view(shown: {
+    search?: string;
     versions?: VersionSummary[];
     refused?: Mistake[] | null;
     shown?: VersionDetail | null;
@@ -86,26 +88,28 @@ function view(shown: {
     plan?: PushPlan | null;
 }): string {
     return renderToStaticMarkup(
-        <Router ssrPath="/bots/rzeczoznawca/versions">
-            <VersionsView
-                bot="rzeczoznawca"
-                versions={shown.versions ?? versions}
-                status={shown.status ?? null}
-                pushFailure={shown.pushFailure ?? null}
-                pushing={false}
-                onPush={() => undefined}
-                refused={shown.refused ?? null}
-                shown={shown.shown ?? null}
-                comparison={shown.comparison ?? null}
-                plan={shown.plan ?? null}
-                onPlan={() => undefined}
-                onCancelPlan={() => undefined}
-                onCompare={() => undefined}
-                onCloseComparison={() => undefined}
-                onCreate={() => undefined}
-                onOpen={() => undefined}
-                onClose={() => undefined}
-            />
+        <Router ssrPath={`/bots/rzeczoznawca/versions${shown.search ?? ""}`}>
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <VersionsView
+                    bot="rzeczoznawca"
+                    versions={shown.versions ?? versions}
+                    status={shown.status ?? null}
+                    pushFailure={shown.pushFailure ?? null}
+                    pushing={false}
+                    onPush={() => undefined}
+                    refused={shown.refused ?? null}
+                    shown={shown.shown ?? null}
+                    comparison={shown.comparison ?? null}
+                    plan={shown.plan ?? null}
+                    onPlan={() => undefined}
+                    onCancelPlan={() => undefined}
+                    onCompare={() => undefined}
+                    onCloseComparison={() => undefined}
+                    onCreate={() => undefined}
+                    onOpen={() => undefined}
+                    onClose={() => undefined}
+                />
+            </PageSizeContext>
         </Router>,
     );
 }
@@ -249,6 +253,23 @@ describe("VersionsView", () => {
         expect(html).toContain("+ Wycena domu: 1100 zł");
         expect(html).toContain("rabaty");
         expect(html).toContain("stary");
+    });
+
+    it("AC-pagination-10: the last row of a page still compares with the version before it, and other version offers every page", () => {
+        const kept = Array.from({ length: 25 }, (_, index) => ({ ...versions[0], number: 25 - index }) as VersionSummary);
+
+        const first = view({ versions: kept, status: { ...answering, has: 25, latest: 25, held: [] } });
+        const firstRows = first.split("<tr>");
+        expect(firstRows.filter((row) => row.includes(" · 2026"))).toHaveLength(20);
+        expect(firstRows.find((row) => row.includes("v6 · 2026"))).toContain(">Changes<");
+        expect(first).toContain(">v1</option>");
+        expect(first).toContain("Page 1 of 2");
+
+        const last = view({ search: "?page=2", versions: kept });
+        const lastRows = last.split("<tr>");
+        expect(lastRows.find((row) => row.includes("v2 · 2026"))).toContain(">Changes<");
+        expect(lastRows.find((row) => row.includes("v1 · 2026"))).toContain("Nothing before it");
+        expect(last).toContain("Page 2 of 2");
     });
 
     it("AC-version-diff-6: a comparison with no differences says so", () => {

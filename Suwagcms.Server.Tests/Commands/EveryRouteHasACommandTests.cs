@@ -25,6 +25,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
     private static readonly Dictionary<string, Coverage> Routes = new()
     {
         ["GET /api/health"] = Coverage.Cli("status"),
+        ["GET /api/settings"] = Coverage.NoCommand("the CLI has no pages: only the web app reads how many rows a page holds"),
         ["GET /api/bots"] = Coverage.Cli("bots list"),
         ["POST /api/bots"] = Coverage.Cli("bots add"),
         ["GET /api/bots/{bot}/declaration"] = Coverage.Cli("bots declaration"),

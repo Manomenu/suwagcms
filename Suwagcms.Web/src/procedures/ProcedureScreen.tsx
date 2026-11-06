@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useReducer, useState } from "react";
-import { useLocation, useSearchParams } from "wouter";
+import { useLocation, useSearch, useSearchParams } from "wouter";
 
 import { useAvailability } from "@/api/availability";
 import { ApiError } from "@/api/client";
@@ -7,7 +7,7 @@ import { fetchDeclaration } from "@/api/declaration";
 import { useResourceHistory } from "@/api/history";
 import { mayLeave, useLeaveGuard } from "@/api/leaveGuard";
 import { renamer } from "@/api/rename";
-import { editHref, listHref } from "@/api/resourceAddress";
+import { editHref, listHref, withListSearch } from "@/api/resourceAddress";
 import { usageHref, useUsage, type UsageLink } from "@/api/usage";
 import { Alert } from "@/design/alert";
 import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
@@ -53,7 +53,15 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
     // Why: the selected step is in the address, so a reload or a sent link opens the same step.
     const selected = params.get("step");
     const setSelected = (step: string | null) => {
-        setParams(step === null ? {} : { step }, { replace: true });
+        setParams(
+            (was) => {
+                const next = new URLSearchParams(was);
+                if (step === null) next.delete("step");
+                else next.set("step", step);
+                return next;
+            },
+            { replace: true },
+        );
     };
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
@@ -87,7 +95,7 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
         setDeleteFailure(null);
         deleteProcedure(bot, id, state.revision)
             .then(() => {
-                navigate(listHref(bot, "procedures"), { replace: true });
+                navigate(withListSearch(listHref(bot, "procedures"), params.toString()), { replace: true });
             })
             .catch((error: unknown) => {
                 setDeleteFailure(
@@ -132,7 +140,7 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
             apply={changer.apply}
             onChanged={(newId) => {
                 setChangingId(false);
-                navigate(editHref(bot, "procedures", newId), { replace: true });
+                navigate(withListSearch(editHref(bot, "procedures", newId), params.toString()), { replace: true });
             }}
             usage={{
                 usage: usage.usage,
@@ -211,6 +219,7 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
     const [failure, setFailure] = useState<string | null>(null);
     const [missing, setMissing] = useState(false);
     const [, navigate] = useLocation();
+    const search = useSearch();
 
     useEffect(() => {
         // StrictMode runs effects twice in development: abort the first request, ignore its result.
@@ -247,7 +256,7 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
     }, [bot, id]);
 
     const onBack = () => {
-        if (mayLeave()) navigate(listHref(bot, "procedures"));
+        if (mayLeave()) navigate(withListSearch(listHref(bot, "procedures"), search));
     };
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
     if (missing) {

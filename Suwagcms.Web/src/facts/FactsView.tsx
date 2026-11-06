@@ -1,3 +1,4 @@
+import { usePagedRows } from "@/api/pagination";
 import { ResourceList } from "@/design/resourceList";
 
 import type { Fact } from "./api";
@@ -5,12 +6,14 @@ import { constraintOf } from "./factForm";
 
 /** The list of a bot's facts. A fact's name is its id. */
 export function FactsView({ bot, facts, onAdd, onEdit }: { bot: string; facts: Fact[]; onAdd: () => void; onEdit: (fact: Fact) => void }) {
+    const paged = usePagedRows(facts);
     return (
         <ResourceList
             title={`Facts of ${bot}`}
             addLabel="Add a fact"
             onAdd={onAdd}
-            rows={facts}
+            rows={paged.rows}
+            paging={paged.paging}
             idOf={(fact) => fact.name}
             onOpen={onEdit}
             columns={[

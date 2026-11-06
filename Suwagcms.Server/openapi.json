@@ -24,6 +24,25 @@
         }
       }
     },
+    "/api/settings": {
+      "get": {
+        "tags": [
+          "Suwagcms.Server"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerSettings"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/bots": {
       "get": {
         "tags": [
@@ -2368,6 +2387,18 @@
               ],
               "format": "int64"
             }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
           }
         ],
         "responses": {
@@ -2448,6 +2479,18 @@
                 "string"
               ],
               "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
             }
           }
         ],
@@ -3893,9 +3936,18 @@
           "since": {
             "type": "string",
             "format": "date-time"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
           }
         },
-        "description": "A page of history, newest first. Next is the `before` that asks for the next page, empty on the last; Since is when history started, so an empty page can say no change has been recorded since then."
+        "description": "A page of history, newest first. Next is the `before` that asks for the next page, empty on the last; Since is when history started, so an empty page can say no change has been recorded since then; Total is how many entries there are in all, answered only when a numbered `page` was asked for."
       },
       "InformArguments": {
         "type": "object",
@@ -5061,6 +5113,23 @@
         },
         "description": "What saving a procedure takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once."
       },
+      "ServerSettings": {
+        "required": [
+          "pageSize"
+        ],
+        "type": "object",
+        "properties": {
+          "pageSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "What the server was started with and the web app must follow. PageSize is how many rows a page of a list holds."
+      },
       "StallInstruction": {
         "type": "object",
         "properties": {
@@ -5407,6 +5476,9 @@
   "tags": [
     {
       "name": "HealthEndpoints"
+    },
+    {
+      "name": "Suwagcms.Server"
     },
     {
       "name": "BotEndpoints"

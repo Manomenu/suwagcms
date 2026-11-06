@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
+import { useSearch } from "wouter";
 
 import type { Mistake } from "@/api/client";
-import { editHref } from "@/api/resourceAddress";
+import { usePagedRows } from "@/api/pagination";
+import { editHref, withListSearch } from "@/api/resourceAddress";
 import { Anchor } from "@/design/anchor";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Badge } from "@/design/badge";
@@ -37,6 +39,8 @@ export function ProceduresView({
     onOpen: (id: string) => void;
 }) {
     const botMistakes: Mistake[] = list.botNotReady;
+    const paged = usePagedRows(list.procedures);
+    const search = useSearch();
     return (
         <ResourceList
             title={`Procedures of ${bot}`}
@@ -58,7 +62,8 @@ export function ProceduresView({
                     )}
                 </>
             }
-            rows={list.procedures}
+            rows={paged.rows}
+            paging={paged.paging}
             idOf={(procedure) => procedure.id}
             onOpen={(procedure) => {
                 onOpen(procedure.id);
@@ -66,7 +71,9 @@ export function ProceduresView({
             columns={[
                 {
                     header: "Procedure",
-                    cell: (procedure) => <Anchor href={`~${editHref(bot, "procedures", procedure.id)}`}>{procedure.id}</Anchor>,
+                    cell: (procedure) => (
+                        <Anchor href={`~${withListSearch(editHref(bot, "procedures", procedure.id), search)}`}>{procedure.id}</Anchor>
+                    ),
                 },
                 { header: "Description", className: "text-muted-foreground", cell: (procedure) => procedure.description },
                 { header: "Readiness", cell: (procedure) => <Readiness count={mistakesOf(procedure)} /> },

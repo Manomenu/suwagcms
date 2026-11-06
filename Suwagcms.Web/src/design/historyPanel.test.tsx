@@ -30,12 +30,12 @@ const deleted: HistoryLine = {
     changes: [{ field: "content", old: "Ostatni tekst", new: null }],
 };
 
-const nothing = () => undefined;
+function paging(pages: number) {
+    return { page: 1, pages, asking: false, failure: null, onMove: () => undefined };
+}
 
-function panel(entries: HistoryLine[] | null, hasOlder = false): string {
-    return renderToStaticMarkup(
-        <HistoryPanel entries={entries} since="2026-11-01T08:00:00+00:00" hasOlder={hasOlder} failure={null} onOlder={nothing} />,
-    );
+function panel(entries: HistoryLine[] | null, pages = 1): string {
+    return renderToStaticMarkup(<HistoryPanel entries={entries} since="2026-11-01T08:00:00+00:00" failure={null} paging={paging(pages)} />);
 }
 
 describe("HistoryPanel", () => {
@@ -65,8 +65,9 @@ describe("HistoryPanel", () => {
     });
 
     it("AC-change-history-6: another page is offered only when there is one", () => {
-        expect(panel([edited], true)).toContain("Older changes");
-        expect(panel([edited], false)).not.toContain("Older changes");
+        expect(panel([edited], 2)).toContain("Page 1 of 2");
+        expect(panel([edited], 2)).not.toContain("invisible");
+        expect(panel([edited], 1)).toContain("invisible");
     });
 
     it("AC-change-history-6: the bot's list names each resource with a link to its own history", () => {
@@ -75,9 +76,8 @@ describe("HistoryPanel", () => {
                 <HistoryList
                     entries={[edited]}
                     since="2026-11-01T08:00:00+00:00"
-                    hasOlder={false}
                     failure={null}
-                    onOlder={nothing}
+                    paging={paging(1)}
                     hrefOf={(line) => `/bots/sklep/history?kind=articles&id=${line.resourceId}`}
                 />
             </Router>,

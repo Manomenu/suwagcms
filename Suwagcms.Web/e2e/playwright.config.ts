@@ -34,6 +34,8 @@ export default defineConfig({
             url: `http://127.0.0.1:${SERVER_PORT}/api/health`,
             env: {
                 ASPNETCORE_URLS: `http://127.0.0.1:${SERVER_PORT}`,
+                // Why: a short page lets a test reach a second page with few rows.
+                PAGINATION_PAGE_SIZE: "5",
                 ConnectionStrings__Default:
                     process.env["E2E_CONNECTION_STRING"] ??
                     `Host=127.0.0.1;Port=5563;Database=${DATABASE};Username=suwagcms;Password=suwagcms`,

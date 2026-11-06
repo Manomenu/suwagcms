@@ -172,6 +172,25 @@ test("AC-procedure-creator-23: the page has the shared edit screen's parts in th
     }
 });
 
+test("AC-pagination-6: going back from a procedure's page returns to the list's page, without the step that was open", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    for (let index = 0; index < 25; index++) {
+        await agentSaves(request, bot, `extra${index}`, { description: "D", firstStep: null, steps: {} }, 0);
+    }
+    await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation/edit?page=2&step=ask`);
+    await expect(page.locator('section[aria-label="Step ask"]')).toBeVisible();
+
+    await open(page, "ask");
+    await expect(page).toHaveURL(/\?page=2$/);
+    await page.getByRole("button", { name: "Back to procedures" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures\\?page=2$`));
+});
+
 test("AC-procedure-creator-45: on a long procedure Save stays in view and works while the page scrolls, and at the end covers neither the last row nor Delete", async ({
     page,
     request,

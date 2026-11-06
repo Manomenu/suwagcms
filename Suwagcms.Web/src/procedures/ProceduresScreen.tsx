@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 
 import { useAvailability } from "@/api/availability";
-import { addressOf, editHref, listHref, newHref } from "@/api/resourceAddress";
+import { addressOf, editHref, listHref, newHref, withListSearch } from "@/api/resourceAddress";
 import { Alert } from "@/design/alert";
 import { AvailabilityNotice } from "@/design/availabilityPanel";
 import { Page } from "@/design/page";
@@ -17,6 +17,7 @@ export function ProceduresScreen({ bot }: { bot: string }) {
     const [list, setList] = useState<ProcedureList | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
     const [location, navigate] = useLocation();
+    const search = useSearch();
     const availability = useAvailability(bot);
 
     useEffect(() => {
@@ -36,7 +37,7 @@ export function ProceduresScreen({ bot }: { bot: string }) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
     const backToList = () => {
-        navigate(listHref(bot, "procedures"), { replace: true });
+        navigate(withListSearch(listHref(bot, "procedures"), search), { replace: true });
     };
     if (addressOf(location, "procedures").screen === "new") {
         return (
@@ -56,10 +57,10 @@ export function ProceduresScreen({ bot }: { bot: string }) {
             isOff={(id) => availability.isOff("procedure", id)}
             notice={<AvailabilityNotice delivery={availability.delivery} failure={availability.failure} onSend={availability.send} />}
             onAdd={() => {
-                navigate(newHref(bot, "procedures"));
+                navigate(withListSearch(newHref(bot, "procedures"), search));
             }}
             onOpen={(id) => {
-                navigate(editHref(bot, "procedures", id));
+                navigate(withListSearch(editHref(bot, "procedures", id), search));
             }}
         />
     );

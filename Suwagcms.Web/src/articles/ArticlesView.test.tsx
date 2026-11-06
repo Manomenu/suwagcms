@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
+import { PageSizeContext } from "@/api/pagination";
 import type { Mistake } from "@/api/client";
 
 import type { Article, KnowledgeBase } from "./api";
@@ -30,16 +31,18 @@ const articles: Article[] = [
 function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase: "", language: "", text: "" }): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/articles">
-            <ArticlesView
-                bot="rzeczoznawca"
-                articles={list}
-                bases={knowledgeBases}
-                filters={filters}
-                onFilters={() => undefined}
-                onAdd={() => undefined}
-                onEdit={() => undefined}
-                onLeave={() => undefined}
-            />
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <ArticlesView
+                    bot="rzeczoznawca"
+                    articles={list}
+                    bases={knowledgeBases}
+                    filters={filters}
+                    onFilters={() => undefined}
+                    onAdd={() => undefined}
+                    onEdit={() => undefined}
+                    onLeave={() => undefined}
+                />
+            </PageSizeContext>
         </Router>,
     );
 }
@@ -81,17 +84,19 @@ describe("the list of articles and availability", () => {
         const shown = (isOff: (id: string) => boolean) =>
             renderToStaticMarkup(
                 <Router ssrPath="/bots/rzeczoznawca/articles">
-                    <ArticlesView
-                        bot="rzeczoznawca"
-                        articles={articles}
-                        bases={bases}
-                        isOff={isOff}
-                        filters={{ knowledgeBase: "", language: "", text: "" }}
-                        onFilters={() => undefined}
-                        onAdd={() => undefined}
-                        onEdit={() => undefined}
-                        onLeave={() => undefined}
-                    />
+                    <PageSizeContext value={{ size: 20, failure: null }}>
+                        <ArticlesView
+                            bot="rzeczoznawca"
+                            articles={articles}
+                            bases={bases}
+                            isOff={isOff}
+                            filters={{ knowledgeBase: "", language: "", text: "" }}
+                            onFilters={() => undefined}
+                            onAdd={() => undefined}
+                            onEdit={() => undefined}
+                            onLeave={() => undefined}
+                        />
+                    </PageSizeContext>
                 </Router>,
             );
 
@@ -284,5 +289,30 @@ describe("the language of an article", () => {
 
     it("AC-knowledge-base-language-9: an empty list under a language filter says that no article matches", () => {
         expect(view([], bases, { knowledgeBase: "", language: "en", text: "" })).toContain("No article matches the filters.");
+    });
+});
+
+describe("a long list", () => {
+    it("AC-pagination-9: page 2 of 45 at 20 a page shows 20 rows and the shared controls", () => {
+        const many = Array.from({ length: 45 }, (_, index) => ({ ...articles[0], id: `article${String(index)}` }) as Article);
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/b/articles?page=2">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ArticlesView
+                        bot="b"
+                        articles={many}
+                        bases={bases}
+                        filters={{ knowledgeBase: "", language: "", text: "" }}
+                        onFilters={() => undefined}
+                        onAdd={() => undefined}
+                        onEdit={() => undefined}
+                        onLeave={() => undefined}
+                    />
+                </PageSizeContext>
+            </Router>,
+        );
+
+        expect(/<tbody>[\s\S]*<\/tbody>/.exec(html)?.[0].match(/<tr>/g)).toHaveLength(20);
+        expect(html).toContain("Page 2 of 3");
     });
 });

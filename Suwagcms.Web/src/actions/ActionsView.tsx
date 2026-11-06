@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { usePagedRows } from "@/api/pagination";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Badge } from "@/design/badge";
 import { ResourceList } from "@/design/resourceList";
@@ -22,13 +23,15 @@ export function ActionsView({
     onAdd: () => void;
     onOpen: (action: ActionView) => void;
 }) {
+    const paged = usePagedRows(actions);
     return (
         <ResourceList
             title={`Actions of ${bot}`}
             addLabel="Add an action"
             onAdd={onAdd}
             above={notice}
-            rows={actions}
+            rows={paged.rows}
+            paging={paged.paging}
             idOf={(action) => action.id}
             openLabel="Open"
             onOpen={onOpen}

@@ -4,6 +4,7 @@ using Suwagcms.Contracts.History;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
+using Suwagcms.Server.Settings;
 
 namespace Suwagcms.Server.History;
 
@@ -13,7 +14,6 @@ internal static class HistoryEndpoints
     private const string Title = "The history was not shown.";
     private const string Problem = "application/problem+json";
     private const int DefaultLimit = 50;
-    private const int MostAtOnce = 500;
 
     // Why: the route accepts only these segments, so the lookup cannot miss; a deleted resource is found the same way, since nothing here asks whether it still exists.
     private static readonly Dictionary<string, string> Kinds = new(StringComparer.Ordinal)
@@ -43,8 +43,9 @@ internal static class HistoryEndpoints
         Pool pool,
         CancellationToken cancellationToken,
         int limit = DefaultLimit,
-        long? before = null
-    ) => PageAsync(bot, null, pool, limit, before, cancellationToken);
+        long? before = null,
+        int? page = null
+    ) => PageAsync(bot, null, pool, limit, before, page, cancellationToken);
 
     private static Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfResource(
         string bot,
@@ -53,8 +54,9 @@ internal static class HistoryEndpoints
         Pool pool,
         CancellationToken cancellationToken,
         int limit = DefaultLimit,
-        long? before = null
-    ) => PageAsync(bot, (Kinds[kind], id), pool, limit, before, cancellationToken);
+        long? before = null,
+        int? page = null
+    ) => PageAsync(bot, (Kinds[kind], id), pool, limit, before, page, cancellationToken);
 
     private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> PageAsync(
         string bot,
@@ -62,9 +64,11 @@ internal static class HistoryEndpoints
         Pool pool,
         int limit,
         long? before,
+        int? page,
         CancellationToken cancellationToken
     ) =>
-        await HistoryStore.ReadAsync(pool, bot, resource, Math.Clamp(limit, 1, MostAtOnce), before, cancellationToken) is { } page
-            ? TypedResults.Ok(page)
+        await HistoryStore.ReadAsync(pool, bot, resource, Math.Clamp(limit, 1, PageSize.Most), before, page, cancellationToken)
+            is { } answer
+            ? TypedResults.Ok(answer)
             : EditProblems.For(new EditResult.UnknownBot(), bot, Title);
 }

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Suwagcms.Server.Tests;
 
-internal sealed class TestApp : WebApplicationFactory<Program>
+internal sealed class TestApp(string? pageSize = null) : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -12,7 +12,11 @@ internal sealed class TestApp : WebApplicationFactory<Program>
         builder.ConfigureAppConfiguration(
             (_, configuration) =>
                 configuration.AddInMemoryCollection(
-                    new Dictionary<string, string?> { ["ConnectionStrings:Default"] = TestDatabase.ConnectionString }
+                    new Dictionary<string, string?>
+                    {
+                        ["ConnectionStrings:Default"] = TestDatabase.ConnectionString,
+                        ["PAGINATION_PAGE_SIZE"] = pageSize,
+                    }
                 )
         );
     }
