@@ -77,6 +77,14 @@ function empty(): Draft {
 }
 
 describe("the draft", () => {
+    it("AC-chatbot-contract-6: a save keeps a whenInterrupted it did not touch and writes none that nobody chose", () => {
+        const chosen = fromDetail({ ...detail, whenInterrupted: "discard" });
+        expect(toSave(chosen).whenInterrupted).toBe("discard");
+
+        const unchosen = fromDetail({ ...detail, whenInterrupted: null });
+        expect(toSave(unchosen)).not.toHaveProperty("whenInterrupted");
+    });
+
     it("AC-procedure-creator-2: keeps every step, block and rule as stored and sends them back unchanged", () => {
         const draft = fromDetail(detail);
 

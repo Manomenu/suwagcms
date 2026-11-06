@@ -636,3 +636,28 @@ test("AC-fact-pattern-11: the local fact form sets a pattern, the list of mistak
     await expect(page.getByText("unsaved changes")).toBeHidden();
     expect((await read()).localFacts["visitCode"]?.pattern ?? null).toBeNull();
 });
+
+test("AC-chatbot-contract-6: when interrupted is shown and set on a procedure, and offered on none for conversation", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", { ...AGENT_WROTE, whenInterrupted: "discard" }, 0);
+
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    await expect(page.getByLabel("When interrupted")).toHaveValue("discard");
+
+    await page.getByLabel("When interrupted").selectOption("keep");
+    await page.getByRole("button", { name: "Save" }).click();
+
+    await expect
+        .poll(async () => {
+            const read = await request.get(`/api/bots/${bot}/procedures/orderValuation`);
+            return ((await read.json()) as { whenInterrupted: string | null }).whenInterrupted;
+        })
+        .toBe("keep");
+
+    await page.goto(`/bots/${bot}/procedures/conversation`);
+    await expect(page.getByLabel("When stalled")).toBeVisible();
+    await expect(page.getByLabel("When interrupted")).toHaveCount(0);
+});

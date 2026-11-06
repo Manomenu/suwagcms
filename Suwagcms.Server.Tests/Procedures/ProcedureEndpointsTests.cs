@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.Procedures;
+using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Procedures;
@@ -38,6 +39,35 @@ public sealed class ProcedureEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal(["house"], rules[0].When?["order.kind"].OneOf);
         Assert.Equal("Tell the customer you could not finish.", read.WhenStalled?.Instruction);
         Assert.Equal(1, read.Revision);
+    }
+
+    private static string Interrupted(string value) => ProcedureApi.Valuation.Trim().Insert(1, $"\"whenInterrupted\":\"{value}\",");
+
+    [Fact]
+    [Trait("criterion", "AC-chatbot-contract-1")]
+    public async Task A_procedure_saves_and_reads_back_what_happens_when_it_is_interrupted_and_a_save_without_it_clears_it()
+    {
+        var api = await NewBot();
+
+        Assert.Equal(HttpStatusCode.OK, (await api.Add("orderValuation", Interrupted("discard"))).StatusCode);
+        var read = await ProcedureApi.DetailOf(await api.Get("orderValuation"));
+        Assert.Equal("discard", read.WhenInterrupted);
+
+        Assert.Equal(HttpStatusCode.OK, (await api.Put("orderValuation", ProcedureApi.Valuation, "?ifRevision=1")).StatusCode);
+        Assert.Null((await ProcedureApi.DetailOf(await api.Get("orderValuation"))).WhenInterrupted);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-chatbot-contract-2")]
+    public async Task Another_value_of_when_interrupted_is_refused_and_nothing_is_saved()
+    {
+        var api = await NewBot();
+
+        var answer = await api.Add("orderValuation", Interrupted("sometimes"));
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, answer.StatusCode);
+        Assert.Contains(MistakeCodes.ProcedureWhenInterruptedInvalid, await ProcedureApi.CodesOf(answer));
+        Assert.Equal(HttpStatusCode.NotFound, (await api.Get("orderValuation")).StatusCode);
     }
 
     [Fact]

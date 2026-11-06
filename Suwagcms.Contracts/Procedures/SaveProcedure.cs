@@ -9,5 +9,6 @@ public sealed record SaveProcedure(
     string? FirstStep,
     IReadOnlyDictionary<string, ProcedureStep>? Steps,
     StallInstruction? WhenStalled,
-    IReadOnlyDictionary<string, LocalFact>? LocalFacts = null
+    IReadOnlyDictionary<string, LocalFact>? LocalFacts = null,
+    string? WhenInterrupted = null
 );

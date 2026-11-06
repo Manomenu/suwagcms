@@ -2,11 +2,12 @@ using System.Text.Json.Nodes;
 using Suwagcms.Cli.Procedures;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Facts;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Tests.Procedures;
 
-// Why: this repository cannot read Suwchatbot's, so these are copies of its AppraiserBot/BotFiles/procedures at master 5579b3c; the facts are its facts.yaml without pattern, which this format does not hold yet.
+// Why: this repository cannot read Suwchatbot's, so these are copies of its AppraiserBot/BotFiles at master b80c000; its scope-policy.yaml lists become one text per part, one rule per line.
 public sealed class SuwchatbotFilesTests
 {
     private const int FormatVersion = 1;
@@ -26,28 +27,73 @@ public sealed class SuwchatbotFilesTests
     private const string ValuationReport = """
         id: valuationReport
         description: The customer orders a valuation report for a property; collects what the appraiser needs to prepare it.
+        localFacts:
+          reportDelivery:
+            type: enum
+            values: [email, phone]
+            description: How the report should reach the customer, by e-mail or by phone.
         firstStep: askDetails
         steps:
           askDetails:
-            collect: [customer.firstName, customer.lastName, customer.email, property.landRegisterNumber]
-            next: whatHappensNext
-          whatHappensNext:
+            collect: [customer.firstName, customer.lastName, property.landRegisterNumber]
+            next: askDelivery
+          askDelivery:
+            collect: [reportDelivery]
+            next:
+              - when: { reportDelivery: { oneOf: [phone] } }
+                to: askPhone
+              - to: askEmail
+          askEmail:
+            collect: [customer.email]
+            next: tellEmailDelivery
+          tellEmailDelivery:
             inform:
               instruction: Thank the customer and tell them what happens next with their valuation report.
               points:
                 turnaround: The report is ready within 7 working days of the inspection.
                 delivery: The report is sent by e-mail as a PDF.
+          askPhone:
+            collect: [customer.phone]
+            next: tellPhoneDelivery
+          tellPhoneDelivery:
+            inform:
+              instruction: Thank the customer and tell them what happens next with their valuation report.
+              points:
+                turnaround: The report is ready within 7 working days of the inspection.
+                phoneCall: The appraiser calls when the report is ready.
         whenStalled:
           instruction: Say that the report cannot be prepared without these details, and that the customer can come back to it at any time.
+        whenInterrupted: discard
         """;
 
     private const string QuoteRequest = """
         id: quoteRequest
         description: The customer wants to know what a valuation would cost, before ordering; collects what the appraiser needs to send a quote.
-        firstStep: askDetails
+        firstStep: askProperty
         steps:
-          askDetails:
-            collect: [property.type, valuation.purpose, property.area, customer.firstName, customer.lastName, customer.email]
+          askProperty:
+            collect: [property.type, valuation.purpose, property.area]
+            next:
+              - when: { property.type: { oneOf: [land] } }
+                to: askContact
+              - to: askAge
+          askAge:
+            collect: [property.age]
+            next:
+              - when: { property.age: { range: { min: 50 } } }
+                to: askRenovation
+              - to: askContact
+          askRenovation:
+            collect: [property.lastRenovationYear]
+            next: tellConditionReview
+          tellConditionReview:
+            inform:
+              instruction: Tell the customer how the age of the building affects this task. Name no price.
+              points:
+                conditionReview: The quote follows a review of the building's condition.
+            next: askContact
+          askContact:
+            collect: [customer.firstName, customer.lastName, customer.email]
             next: whatHappensNext
           whatHappensNext:
             inform:
@@ -57,6 +103,26 @@ public sealed class SuwchatbotFilesTests
                 quoteDelivery: The quote is sent by e-mail.
         whenStalled:
           instruction: Say that the appraiser cannot prepare a quote without these details, and that the customer can come back to it at any time.
+        whenInterrupted: discard
+        """;
+
+    private const string InspectionVisit = """
+        id: inspectionVisit
+        description: The customer wants to arrange the appraiser's visit to see the property; collects what the appraiser needs to confirm a time.
+        firstStep: askDetails
+        steps:
+          askDetails:
+            collect: [customer.firstName, customer.lastName, customer.email, property.address, inspection.preferredTime]
+            next: whatHappensNext
+          whatHappensNext:
+            inform:
+              instruction: Thank the customer and tell them what happens next with the visit. Do not confirm any time yourself.
+              points:
+                confirmation: The appraiser confirms the time of the visit by e-mail within 1 working day.
+                documents: Have the land register number and any floor plans ready for the visit.
+        whenStalled:
+          instruction: Say that the visit cannot be arranged without these details, and that the customer can come back to it at any time.
+        whenInterrupted: discard
         """;
 
     private const string WithContext = """
@@ -81,12 +147,31 @@ public sealed class SuwchatbotFilesTests
         [
           {"name":"customer.firstName","type":"text","maxLength":100,"writableBy":"correct","description":"The customer's first name."},
           {"name":"customer.lastName","type":"text","maxLength":100,"writableBy":"correct","description":"The customer's last name."},
-          {"name":"customer.email","type":"text","maxLength":254,"writableBy":"correct","description":"The customer's e-mail address."},
-          {"name":"property.landRegisterNumber","type":"text","maxLength":30,"writableBy":"correct","description":"The land register number."},
-          {"name":"property.type","type":"enum","values":["flat","house","land","commercial","otherType"],"writableBy":"correct","description":"What kind of property it is."},
-          {"name":"property.area","type":"int","min":1,"max":10000000,"writableBy":"correct","description":"The area, in square metres."},
-          {"name":"valuation.purpose","type":"enum","values":["sale","mortgage","inheritance","court","otherPurpose"],"writableBy":"correct","description":"What the valuation is for."}
+          {"name":"customer.email","type":"text","maxLength":254,"writableBy":"correct","description":"The customer's e-mail address.",
+           "pattern":{"regex":"[^@\\s]+@[^@\\s]+\\.[^@\\s]+","means":"a name, the @ sign and a domain with a dot","example":"anna@example.com","tellCustomer":"afterRefusal"}},
+          {"name":"customer.phone","type":"text","maxLength":30,"writableBy":"correct","description":"The customer's phone number.",
+           "pattern":{"regex":"\\+?[0-9]( *[0-9]){8,14}","means":"9 to 15 digits, which may start with a + and may have spaces between them","example":"+48 600 700 800","tellCustomer":"afterRefusal"}},
+          {"name":"property.landRegisterNumber","type":"text","maxLength":30,"writableBy":"correct","description":"The land register number of the property.",
+           "pattern":{"regex":"[A-Z0-9]{4}/[0-9]{8}/[0-9]","means":"4 letters or digits, a slash, 8 digits, a slash and 1 digit, as on the land register's first page","example":"WA1M/00012345/6"}},
+          {"name":"property.type","type":"enum","values":["flat","house","land","commercial","another"],"writableBy":"correct","description":"What kind of property it is."},
+          {"name":"property.area","type":"int","min":1,"max":10000000,"writableBy":"correct","description":"The area of the property, in square metres."},
+          {"name":"property.age","type":"int","min":0,"max":1000,"writableBy":"correct","description":"How old the building is, in years."},
+          {"name":"property.lastRenovationYear","type":"int","min":1800,"max":2100,"writableBy":"correct","description":"The year of the last renovation of the building."},
+          {"name":"property.address","type":"text","maxLength":200,"writableBy":"correct","description":"The address of the property."},
+          {"name":"valuation.purpose","type":"enum","values":["sale","mortgage","inheritance","court","another"],"writableBy":"correct","description":"What the valuation is for."},
+          {"name":"inspection.preferredTime","type":"text","maxLength":200,"writableBy":"correct","description":"When the customer would like the appraiser to come, in their own words."}
         ]
+        """;
+
+    private const string Persona = """
+        {
+          "personality": "You are the customer service of a property appraiser. You talk with the appraiser's customers.\nAnswer in the language the customer writes in.",
+          "scope": {
+            "inScope": "Property valuations by this appraiser: what a valuation needs, how it goes, and the customer's request.\nStarting the tasks you are given.",
+            "outOfScope": "Anything unrelated to property valuations.\nSmalltalk beyond a greeting.",
+            "whenOutOfScope": "Decline in one short sentence, without lecturing, and say what you can help with instead."
+          }
+        }
         """;
 
     private const string Articles = """
@@ -108,7 +193,72 @@ public sealed class SuwchatbotFilesTests
             ["knowledgeBases"] = JsonNode.Parse("""[{"id":"faq","title":"Questions"}]"""),
             ["articles"] = JsonNode.Parse(Articles),
             ["procedures"] = procedures,
+            ["persona"] = JsonNode.Parse(Persona),
         }.ToJsonString();
+    }
+
+    private static readonly BotDeclaration ShippedDeclaration = new()
+    {
+        Bot = "appraiser",
+        FormatVersion = FormatVersion,
+        Blocks = ["listen", "collect", "say", "assign", "inform"],
+        Persona = BotDeclaration.PersonaComplete,
+    };
+
+    [Fact]
+    [Trait("criterion", "AC-chatbot-contract-4")]
+    public void The_shipped_definition_passes_at_version_stage_against_what_the_bot_declares()
+    {
+        var mistakes = DefinitionValidator.ValidateJson(
+            Definition(Conversation, ValuationReport, QuoteRequest, InspectionVisit),
+            ValidationStage.Version,
+            ShippedDeclaration
+        );
+
+        Assert.Empty(mistakes);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-chatbot-contract-4")]
+    public void The_shipped_definition_reads_back_with_everything_the_engine_needs()
+    {
+        var definition = BotDefinition.Read(Definition(Conversation, ValuationReport, QuoteRequest, InspectionVisit));
+        var report = definition.Procedures.Single(procedure => procedure.Id == "valuationReport");
+        var quote = definition.Procedures.Single(procedure => procedure.Id == "quoteRequest");
+
+        Assert.True(report.IsDiscardedWhenInterrupted);
+        Assert.False(definition.Procedures.Single(procedure => procedure.Id == "conversation").IsDiscardedWhenInterrupted);
+        Assert.Equal(["email", "phone"], report.Locals["reportDelivery"].Values);
+        Assert.Equal(["phone"], report.Steps["askDelivery"].Next?.Rules?[0].When?["reportDelivery"].OneOf);
+        Assert.Equal(50, quote.Steps["askAge"].Next?.Rules?[0].When?["property.age"].Range?.Min);
+        Assert.Equal(["quoteTime", "quoteDelivery"], quote.Steps["whatHappensNext"].Inform?.Points?.Keys);
+        var phone = definition.Facts.Single(fact => fact.Name == "customer.phone");
+        Assert.Equal(TellCustomers.AfterRefusal, phone.Pattern?.TellCustomer);
+        Assert.True(FactValues.Accepts(phone, "+48 600 700 800"));
+        Assert.False(FactValues.Accepts(phone, "12345678"));
+        Assert.Contains("\n", definition.Persona?.Scope?.InScope, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-chatbot-contract-4")]
+    public void What_the_shipped_bot_does_not_run_is_refused_for_it()
+    {
+        var withStart = """
+            id: starting
+            description: Starts another task.
+            firstStep: go
+            steps:
+              go:
+                start: quoteRequest
+            """;
+
+        var mistakes = DefinitionValidator.ValidateJson(
+            Definition(Conversation, QuoteRequest, withStart),
+            ValidationStage.Version,
+            ShippedDeclaration
+        );
+
+        Assert.Equal([MistakeCodes.DeclarationBlock], mistakes.Select(mistake => mistake.Code));
     }
 
     [Fact]
@@ -123,7 +273,7 @@ public sealed class SuwchatbotFilesTests
         };
 
         var mistakes = DefinitionValidator.ValidateJson(
-            Definition(Conversation, ValuationReport, QuoteRequest, WithContext),
+            Definition(Conversation, ValuationReport, QuoteRequest, InspectionVisit, WithContext),
             ValidationStage.Version,
             declaration
         );
@@ -139,7 +289,7 @@ public sealed class SuwchatbotFilesTests
             System.Text.Json.JsonSerializer.Deserialize<BotDefinition>(Definition(Conversation, ValuationReport), Wire)
             ?? throw new InvalidOperationException("no definition");
 
-        var inform = definition.Procedures.Single(procedure => procedure.Id == "valuationReport").Steps["whatHappensNext"].Inform;
+        var inform = definition.Procedures.Single(procedure => procedure.Id == "valuationReport").Steps["tellEmailDelivery"].Inform;
 
         Assert.NotNull(inform);
         Assert.Equal(["turnaround", "delivery"], inform.Points?.Keys);
@@ -151,7 +301,7 @@ public sealed class SuwchatbotFilesTests
     [Trait("criterion", "AC-inform-block-12")]
     public void The_same_file_with_a_point_taken_out_of_its_shape_is_not_accepted()
     {
-        var broken = ValuationReport.Replace("turnaround:", "turn_around:", StringComparison.Ordinal);
+        var broken = InspectionVisit.Replace("documents:", "the_documents:", StringComparison.Ordinal);
 
         var mistakes = DefinitionValidator.ValidateJson(Definition(Conversation, broken), ValidationStage.Version);
 

@@ -616,6 +616,26 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
         Assert.DoesNotContain("flat", await scene.ReadAsync("facts", "order.type"), StringComparison.Ordinal);
     }
 
+    [Fact]
+    [Trait("criterion", "AC-chatbot-contract-5")]
+    public async Task A_batch_carries_when_interrupted_and_an_edit_without_it_keeps_it()
+    {
+        var scene = await NewScene();
+        var added = await scene.Post(
+            ChangeScene.File(
+                """{"add":"procedure","id":"orderValuation","description":"Orders.","whenInterrupted":"discard","firstStep":"bye","steps":{"bye":{"say":"Thanks"}}}"""
+            )
+        );
+
+        Assert.Equal(HttpStatusCode.OK, added.StatusCode);
+        Assert.Contains("\"whenInterrupted\":\"discard\"", await scene.ReadAsync("procedures", "orderValuation"), StringComparison.Ordinal);
+
+        var edited = await scene.Post(ChangeScene.File("""{"edit":"procedure","id":"orderValuation","description":"Changed"}"""));
+
+        Assert.Equal(HttpStatusCode.OK, edited.StatusCode);
+        Assert.Contains("\"whenInterrupted\":\"discard\"", await scene.ReadAsync("procedures", "orderValuation"), StringComparison.Ordinal);
+    }
+
     private const string WithLocalFacts = """
         {"add":"procedure","id":"orderValuation","description":"Orders.","firstStep":"ask",
          "steps":{"ask":{"collect":["visitDate"],"next":"confirm"},"confirm":{"say":"Thanks"}},

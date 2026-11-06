@@ -129,6 +129,7 @@ internal static class ProcedureSamples
                     ["id"] = "Bad Id",
                     ["description"] = " ",
                     ["firstStep"] = "ghost",
+                    ["whenInterrupted"] = "sometimes",
                     ["steps"] = new JsonObject
                     {
                         ["Bad Name"] = new JsonObject { ["say"] = "x", ["extra"] = 1 },

@@ -146,6 +146,33 @@ public sealed class ProceduresTests : IDisposable
         };
 
     [Fact]
+    [Trait("criterion", "AC-chatbot-contract-5")]
+    public async Task A_file_with_when_interrupted_is_added_and_edited_with_it_and_shown_with_it()
+    {
+        var file = FileWith("p.yaml", Yaml + "\nwhenInterrupted: discard\n");
+        var recorder = new Recorder();
+        var (_, stored) = Echo(Wire(Yaml).ToJsonString(), "orderValuation", 3);
+        var server = recorder.Serving(
+            (request, body) => request.Method == HttpMethod.Get ? (HttpStatusCode.OK, stored) : Echo(body, "orderValuation", 4)
+        );
+
+        var added = await TestCli.Run(Args("procedures", "add", "--file", file), server);
+        var edited = await TestCli.Run(Args("procedures", "edit", "orderValuation", "--file", file), server);
+        var shown = await TestCli.Run(
+            Args("procedures", "show", "orderValuation"),
+            new Recorder().Serving((_, _) => Echo(Wire(Yaml + "\nwhenInterrupted: discard\n").ToJsonString(), "orderValuation", 4))
+        );
+
+        Assert.Equal(0, added.ExitCode);
+        Assert.Equal(0, edited.ExitCode);
+        Assert.Equal(0, shown.ExitCode);
+        var writes = recorder.Calls.Where(call => call.Method == "PUT").ToList();
+        Assert.Equal(2, writes.Count);
+        Assert.All(writes, write => Assert.Equal("discard", At(JsonNode.Parse(write.Body), "whenInterrupted").GetValue<string>()));
+        Assert.Contains("whenInterrupted: discard", shown.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-procedure-model-1")]
     public async Task A_procedure_added_from_yaml_or_json_is_sent_with_its_steps_blocks_and_transitions_as_written()
     {

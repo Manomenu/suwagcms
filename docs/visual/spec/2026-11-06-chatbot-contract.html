@@ -379,7 +379,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="tldr"><p>A chatbot is one universal program: it knows only its id, and everything domain-specific reaches it in a version the CMS pushes. This page is the one place that says who owns what between the CMS and such a bot: the format, the routes, what each side validates, a version's life, the errors and compatibility. The format lacked one thing a shipped bot already relies on, <code>whenInterrupted</code>; it gains it here, and a bot's saved conversation holds the version number it started on.</p></div>
   <div class="stats">
     <div><b>1</b><span>field missing from the format</span></div>
-    <div><b>1</b><span>runtime hole closed: a version removed under a new conversation</span></div>
+    <div><b>1</b><span>rule a bot must keep: report a number before saving it</span></div>
     <div><b>1</b><span>open question</span></div>
   </div>
 </section>
@@ -389,7 +389,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <p>The first bot reads its domain from files built into it: facts, procedures, its persona and its agents' texts. The CMS can already deliver almost all of that, but three things stood between the two:</p>
   <ul>
     <li><b>A field lost on the way.</b> Each customer procedure of the first bot says <code>whenInterrupted: discard</code>. The format had no such field and a reader skips what it does not know, so a pushed procedure would silently keep what a customer left.</li>
-    <li><b>A version removed too early.</b> A bot reports the versions its conversations use, and anything neither current nor reported was removed at the next push. A conversation that started on v12 after the last report lost v12 as soon as v13 arrived.</li>
+    <li><b>A version that can go too early.</b> A bot reports the versions its conversations use, and anything neither current nor reported goes at the next push. A conversation saved on v12 before any report named v12 loses it as soon as v13 arrives, unless the bot reports first, which nothing said.</li>
     <li><b>No single statement of the arrangement.</b> What each side validates, what an empty bot does, and who owns the agents' texts were spread over a dozen specs or written nowhere.</li>
   </ul>
 </section>
@@ -423,7 +423,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><p>Marek's conversation started on v12, and the bot saved <code>12</code> with it. He is answering <code>quoteRequest</code>.</p></li>
     <li><p>Anna edits the quote's description in the CMS, creates v13 and pushes it. The CMS validates it against what the bot declares now, then sends it; the bot validates it again and makes it current without a restart.</p></li>
     <li><p>Marek's next turn still reads v12, so nothing changes under him. A conversation that starts now is saved with <code>13</code>.</p></li>
-    <li><p>v12 stays held because it was current when v13 replaced it. The bot's next report names it, as Marek uses it, and it stays until a report no longer does.</p></li>
+    <li><p>v12 stays held because the bot reported it before it saved Marek's conversation on it, and it stays until a report no longer names it.</p></li>
   </ol>
   <h3>2. A bot starts with nothing</h3>
   <p>A freshly deployed bot has id <code>appraiser</code> and no version. Its routes answer and report <code>current: null</code>, and it tells a customer it is not ready rather than improvising. The CMS asks for its declaration and pushes v1: the bot serves from that moment, with no restart. After a restart it reads v1 back from its store and serves at once, with no push.</p>
@@ -512,11 +512,11 @@ sequenceDiagram
 
   <h3>A conversation stays on its version</h3>
   <ol class="steps">
-    <li><p>On a conversation's first turn the bot reads the current number and saves it in the conversation's saved state, beside its facts and its stack. It is never overwritten. This number is not any lock counter the bot may also keep on that state.</p></li>
+    <li><p>On a conversation's first turn the bot reads the current number. If it has not reported that number yet, it reports it first, with the numbers of all its open conversations across all its instances, and only then saves it in the conversation's saved state, beside its facts and its stack. It is never overwritten. This number is not any lock counter the bot may also keep on that state.</p></li>
     <li><p>Every turn asks the SDK for the definition of that number, and for what is off for that number.</p></li>
-    <li><p>The bot reports the numbers of all its open conversations, across all its instances: when one starts on a number not yet reported, when one ends, and at start. Until the first report nothing is removed.</p></li>
-    <li><p>A version stays while it is current, reported, or was current when another replaced it and no report has come since. So a conversation that started just before a push keeps its version even if the last report could not name it.</p></li>
-    <li><p>If the version of a conversation is nevertheless gone, which only a report made in the same moment can cause, the bot moves that conversation to the current version and logs it. A customer is not left without an answer.</p></li>
+    <li><p>The bot also reports when a conversation ends and at its own start. Each report is the whole set, and until the first one nothing is removed.</p></li>
+    <li><p>A version stays while it is current or reported. A push or a rollback removes the one it replaced unless the last report named it, so the order of the first step is what keeps a conversation's version.</p></li>
+    <li><p>If the version of a conversation is nevertheless gone, which only instances reporting in the same moment can cause, the bot moves that conversation to the current version and logs it. A customer is not left without an answer.</p></li>
     <li><p>A conversation saved before the bot saved numbers has none, and the same rule moves it to the current version.</p></li>
   </ol>
 
@@ -583,7 +583,7 @@ sequenceDiagram
   <h2>Decisions <span class="tag">optional</span></h2>
   <ul>
     <li><code>whenInterrupted</code> is an optional text on the procedure, as <code>writableBy</code> is on a fact, so a wrong value reaches the rules and is refused with a fix instead of failing to read. It is left out of a version when an author did not set it, so existing versions stay byte for byte.</li>
-    <li>The version that was current when another replaced it stays until the next report. Asking each bot to report before every first use would only move the same hole into each bot, and keeping a version a little longer costs next to nothing.</li>
+    <li>A bot reports a number before it saves the first conversation on it, and the runtime keeps removing what the last report did not name. Keeping a replaced version until the next report would make the mistake impossible in every bot, but it changes what a rollback promises today, so it stays the owner's to choose.</li>
     <li>A held version is not validated again at a restart. It was valid when it arrived, a refusal would leave a running bot with nothing, and the next push is validated in any case.</li>
     <li>A bot that ignores an instruction's <code>context</code>, as one with no search yet does, still takes a version holding one: the context is carried and unused. A declaration of that was left out until a second bot shows the need.</li>
     <li>The persona keeps one text per part and a bot splits it by lines, since an author reads and edits plain text, and a list in the format would change every client for no gain.</li>
@@ -602,7 +602,7 @@ sequenceDiagram
     <li><code>AC-chatbot-contract-7</code> Before its first version a bot has no current number and its state says <code>current: null</code>; the first push makes a version current with no restart.</li>
     <li><code>AC-chatbot-contract-8</code> A bot restarted over the same store has the same current version and the same held versions with no push.</li>
     <li><code>AC-chatbot-contract-9</code> A conversation's number still gives the definition it started on, unchanged, after a newer version is pushed and after a rollback, while new conversations get the current number.</li>
-    <li><code>AC-chatbot-contract-10</code> A version that was current when another replaced it stays held though the last report does not name it; the next report that does not name it removes it, and one that does keeps it.</li>
+    <li><code>AC-chatbot-contract-10</code> A number reported before a push or a rollback stays held after it, and goes at the first report that no longer names it.</li>
     <li><code>AC-chatbot-contract-11</code> A version for another bot, of another format or with a wrong digest is refused with its code and every mistake; a failing store answers 503; in each case the bot's current version stays as it was.</li>
     <li><code>AC-chatbot-contract-12</code> A filter a bot puts on what the mapping of the routes returns applies to every route, so a bot can close them.</li>
     <li><code>AC-chatbot-contract-13</code> A version with a field this SDK does not know loads, and its digest still holds.</li>
@@ -612,7 +612,7 @@ sequenceDiagram
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p>A conversation that never ends keeps its version forever, and a bot that has not decided when one ends holds every version it ever ran. Nothing breaks and nothing is removed; only the store grows.</p></div>
-  <div class="callout risk"><p>Removing a version is decided from a report that may be a moment old, so a conversation saved in that moment can lose it. It is moved to the current version, which is the one case where a conversation changes version.</p></div>
+  <div class="callout risk"><p>The first step above is a rule no CMS test can see in a bot: a bot that saves first and reports later can lose a version under a conversation, and two instances reporting at the same moment can too. Such a conversation moves to the current version, the one case where a conversation changes version.</p></div>
   <div class="callout assumption"><p>A bot's id, like its address, is not secret, and the private network is what protects the routes until <code>cms-identity</code>.</p></div>
 </section>
 

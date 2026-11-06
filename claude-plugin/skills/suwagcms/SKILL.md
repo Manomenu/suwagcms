@@ -261,6 +261,7 @@ steps:
 - `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)
   or `known: true|false` (any fact).
 - `whenStalled: { instruction: text }` is required when a step collects.
+- `whenInterrupted: keep|discard` (optional, `keep` when left out) says what happens to this procedure when another one is started on top of it: it waits below, or it is removed with its local facts. Any other value (`procedure.whenInterrupted.invalid`) and the field on `conversation` (`procedure.whenInterrupted.onConversation`) are refused.
 - An instruction (of `whenStalled` or of an `inform`) can carry `context: { articles: [id, ...], searchQueries: [text, ...] }`: what the model
   should read before following it. Name an article when you know which one holds the fact: it cannot miss, a wrong id is refused
   (`reference.missing`) and the article is protected. Write a query when you want what the articles say on a subject without knowing

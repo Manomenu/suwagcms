@@ -15,6 +15,8 @@ internal static class ProcedureShapeRules
         Save(MistakeCodes.StepMissing, MissingSteps),
         Save(MistakeCodes.StartTargetConversation, StartsConversation),
         Save(MistakeCodes.StepInformPointName, PointNames),
+        Save(MistakeCodes.ProcedureWhenInterruptedInvalid, WhenInterruptedValue),
+        Save(MistakeCodes.ProcedureWhenInterruptedOnConversation, WhenInterruptedOnConversation),
     ];
 
     private static Rule Save(string code, Func<Procedure, IEnumerable<Mistake>> check) =>
@@ -146,6 +148,35 @@ internal static class ProcedureShapeRules
                     )
                 )
         );
+
+    private static IEnumerable<Mistake> WhenInterruptedValue(Procedure procedure)
+    {
+        if (procedure.WhenInterrupted is { } value && !ProcedureInterruptions.All.Contains(value, StringComparer.Ordinal))
+        {
+            yield return Make(
+                procedure,
+                MistakeCodes.ProcedureWhenInterruptedInvalid,
+                "whenInterrupted",
+                $"'{procedure.Id}' has the unknown whenInterrupted '{value}'.",
+                $"Use one of: {string.Join(", ", ProcedureInterruptions.All)}."
+            );
+        }
+    }
+
+    // Why: the base of every conversation cannot be interrupted away, so a value here would promise what never happens.
+    private static IEnumerable<Mistake> WhenInterruptedOnConversation(Procedure procedure)
+    {
+        if (procedure.Id == Procedure.ConversationId && procedure.WhenInterrupted is not null)
+        {
+            yield return Make(
+                procedure,
+                MistakeCodes.ProcedureWhenInterruptedOnConversation,
+                "whenInterrupted",
+                $"'{Procedure.ConversationId}' has whenInterrupted, but it is the base of every conversation and nothing can interrupt it away.",
+                "Remove whenInterrupted from it."
+            );
+        }
+    }
 
     private static Mistake Missing(Procedure procedure, string path, string what) =>
         Make(procedure, MistakeCodes.StepMissing, path, $"{what} names no step of '{procedure.Id}'.", ProcedureMistake.StepList(procedure));

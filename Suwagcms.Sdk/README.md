@@ -6,6 +6,9 @@ The SDK of a .NET bot (.NET 9 or later) built on Suwagcms.
 dotnet add package Suwagcms.Sdk
 ```
 
+The package is not published for now: until it is, a bot imports this project by a local path, a temporary arrangement.
+Who owns what between the CMS and a bot is settled in the spec `chatbot-contract`.
+
 It holds the definition format (`Suwagcms.Sdk.Format`, JSON schema in `definition-format.schema.json`), the validator
 (`Suwagcms.Sdk.Validation`) and the bot runtime (`Suwagcms.Sdk.BotRuntime`). Each has a namespace per concept under it, such as
 `Suwagcms.Sdk.Format.Facts` or `Suwagcms.Sdk.BotRuntime.Versions`.
@@ -47,6 +50,8 @@ The CMS then builds and pushes only versions that fit it. Without `declares` the
 is checked against the bot, so a bot that is not ready to say still works. The answer's shape is in `bot-runtime.schema.json`.
 A bot outside .NET serves the same route and validates a definition through the CMS with `POST /api/validate` (`suwagcms validate`).
 
+A procedure may hold `whenInterrupted`, `keep` or `discard`: what happens to it when another one is started on top of it. `Procedure.IsDiscardedWhenInterrupted` is false when it is left out; what keeping and discarding do is your engine's to carry out.
+
 A version may hold a `persona`: `personality`, and `scope` with `inScope`, `outOfScope` and `whenOutOfScope`, each one text with its line
 breaks. `GetAsync` gives it as `BotDefinition.Persona`, null when the version has none; what the bot does with it is its own concern.
 `PersonaRequired` is satisfied by any text; `BotDeclaration.PersonaComplete` only by all four parts.
@@ -63,7 +68,7 @@ The bot's code uses `IBotDefinitions`:
 - `OnAvailabilityChanged((number, cancellationToken) => …)`: tells your code each time what is off changes, with the message's number, and once at start when a set is held, the same way, so a search can drop an article at once.
 - `IsOff(number, kind, id)`: whether a resource is turned off, for a conversation on that version. Off is a live setting outside versions: `GetAsync` still gives the resource, and what off means is your engine's to carry out; a step running a turned-off action has its `OnFailure` step to take.
 - `ReportInUseAsync(numbers)`: the versions your open conversations use, **across all instances of the bot**. Versions neither
-  current nor reported are removed; until the first report nothing is. When a conversation expires is your decision.
+  current nor reported are removed; until the first report nothing is. A push or a rollback removes the version it replaced unless your last report named it, so report a number before you save the first conversation on it. When a conversation expires is your decision.
 
 **What is off.** The CMS sends `PUT /suwagcms/availability` with `number` and `off`, the whole set: each item has `kind` (`Article`, `Procedure` or `Action`), `id`, and for a former id of a renamed resource `upToVersion`, the last version it counts in. A lower number changes nothing and the same message twice changes nothing, so a late message cannot undo a newer one. The answer is the state, which reports the setting under `availability`; a refusal has the same shape as for a version (422, or 503 when the store failed).
 

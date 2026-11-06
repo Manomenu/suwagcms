@@ -13,5 +13,6 @@ public sealed record ProcedureDetail(
     StallInstruction? WhenStalled,
     int Revision,
     IReadOnlyList<Mistake> NotReady,
-    IReadOnlyDictionary<string, LocalFact>? LocalFacts = null
+    IReadOnlyDictionary<string, LocalFact>? LocalFacts = null,
+    string? WhenInterrupted = null
 );
