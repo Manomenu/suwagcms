@@ -48,6 +48,7 @@ export function ResourceEdit({
     apply,
     onChanged,
     usage,
+    showUses = true,
     onDelete,
     history,
     notice,
@@ -71,6 +72,7 @@ export function ResourceEdit({
     apply: ComponentProps<typeof ChangeIdDialog>["apply"];
     onChanged: (newId: string) => void;
     usage: Pick<ComponentProps<typeof UsagePanel>, "usage" | "failure" | "hrefOf" | "onFollow"> | null;
+    showUses?: boolean;
     onDelete: () => void;
     history: ComponentProps<typeof HistoryPanel>;
     notice?: ReactNode;
@@ -140,7 +142,7 @@ export function ResourceEdit({
                         }}
                     />
                 )}
-                {editedId !== null && usage !== null && <UsagePanel {...usage} />}
+                {editedId !== null && usage !== null && <UsagePanel {...usage} showUses={showUses} />}
                 {children}
                 {canChange && usedBy !== null && (
                     <DeleteAction noun={noun} id={editedId} usedBy={usedBy} failure={deleteFailure} onDelete={onDelete} />

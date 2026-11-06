@@ -68,6 +68,14 @@ describe("the rules of every screen", () => {
         expect(filesWith(/(navigate\(|href=\{?|href = )[^\n]*\/(procedures|facts|articles|actions|knowledge-bases)\b/)).toEqual([]);
     });
 
+    it("AC-delete-guard-7: a fact, a knowledge base and an action refer to nothing, so their edit screens turn Uses off", () => {
+        expect(filesWith(/showUses=\{false\}/, (path) => path.endsWith(".test.tsx")).sort()).toEqual([
+            "/src/actions/ActionsScreen.tsx",
+            "/src/facts/FactsScreen.tsx",
+            "/src/knowledge-bases/KnowledgeBasesScreen.tsx",
+        ]);
+    });
+
     it("AC-web-shell-16: nothing uses browser storage: what says where a person is goes in the address", () => {
         const self = "localStorage|sessionStorage";
         expect(filesWith(new RegExp(self))).toEqual([]);

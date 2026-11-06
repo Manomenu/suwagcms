@@ -15,7 +15,7 @@ export function FactsScreen({ bot }: { bot: string }) {
     if (!editor.isOpen) return <FactsView bot={bot} facts={editor.items} onAdd={editor.add} onEdit={editor.edit} />;
 
     return (
-        <ResourceEdit noun="fact" plural="facts" addTitle="Add a fact" idWord="name" {...editor.panels}>
+        <ResourceEdit showUses={false} noun="fact" plural="facts" addTitle="Add a fact" idWord="name" {...editor.panels}>
             <FactForm
                 key={editor.item?.name ?? "add"}
                 bot={bot}
