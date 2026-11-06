@@ -21,11 +21,11 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `compose.yaml` — the whole stack on a laptop from the same Dockerfiles: db (profile `db`), server, web; everything configured from `.env` (`.env.example`) with ASP.NET names (`Section__Key`); only web publishes a port (8220).
 - `Suwagcms.Server/Dockerfile`, `Suwagcms.Web/Dockerfile` — the two images (pinned bases, locked restore, build context is the repo root); the web image is nginx serving the build and proxying `/api` to the server.
 - `.dockerignore` — keeps `node_modules`, `bin`, `obj` and `.env` out of the build context.
-- `.github/` — `workflows/ci.yml`: the gate (`test`), the browser tests (`e2e`), and the images built and smoke-tested (`build`); nothing is published, the registry is project-specific.
+- `.github/` — `workflows/ci.yml`: the gate (`test`), the browser tests (`e2e`), and the images built and smoke-tested (`build`); no image is published, the registry is project-specific. A second workflow, started by hand, releases the SDK to nuget.org.
 - `.vscode/` — the editor's glue, shared: recommended extensions, formatter per language, file nesting, debug launch, tasks that call `scripts/.internal`. No style rules (they live in `.editorconfig` and the formatters' configs, so Rider agrees).
 - `.githooks/` — `pre-commit` runs gitleaks on what is being committed; `just sync` enables it.
-- `docs/` — documentation for people working on the repo: this map, `development.md`, the specs in `visual/spec/` (their acceptance criteria live as guardrails, see AGENTS.md), decisions above one feature in `adr/`.
-- `scripts/` — `scripts/.internal/` holds the everyday tools the gate and `just` run: `db.sh`, `checkout-env.sh`, `api-types.sh`, `api-diff.sh`, `sdk-schema.sh`, `contracts.sh`, `e2e.sh`, `smoke.sh`, `logs.sh`, `tmux-dev.sh`.
+- `docs/` — documentation for people working on the repo: this map, `development.md`, `release.md`, the specs in `visual/spec/` (their acceptance criteria live as guardrails, see AGENTS.md), decisions above one feature in `adr/`.
+- `scripts/` — `scripts/.internal/` holds the everyday tools the gate and `just` run: `db.sh`, `checkout-env.sh`, `api-types.sh`, `api-diff.sh`, `sdk-schema.sh`, `contracts.sh`, `e2e.sh`, `smoke.sh`, `logs.sh`, `tmux-dev.sh`, `sdk-version.sh`, `sdk-publish.sh`, `sdk-publish-local.sh`.
 - `.claude/` — the committed Claude Code settings: a Stop hook that runs the quick gate, a PreToolUse hook that protects migrations, generated files, and the gate with the lint configs (`ALLOW_GATE_EDIT=1 claude` lifts the last).
 - `.config/` — `dotnet-tools.json`: the pinned CSharpier.
 - `.just/` — modules of the `justfile` (`just db`).

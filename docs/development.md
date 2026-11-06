@@ -22,6 +22,7 @@ just logs                 # why did it fail? last warnings/errors of the newest 
 just api-types            # regenerate Suwagcms.Web/src/api/openapi.d.ts after changing a record the API exposes
 just mutate               # Stryker.NET (MTP runner, preview) on the server code changed since master; needs a master with commits
 just pack-template        # the dotnet new template as a NuGet package in .artifacts/nupkg
+just sdk-publish 0.1.0    # the owner releases the SDK to nuget.org through CI (docs/release.md)
 just up / just down      # the container stack on http://127.0.0.1:8220, then the smoke test
 just check-quick          # repository guards, and build, lint and types only for what changed
 just check                # the whole gate

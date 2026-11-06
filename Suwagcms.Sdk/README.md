@@ -6,9 +6,6 @@ The SDK of a .NET bot (.NET 9 or later) built on Suwagcms.
 dotnet add package Suwagcms.Sdk
 ```
 
-The package is not published for now: until it is, a bot imports this project by a local path, a temporary arrangement.
-Who owns what between the CMS and a bot is settled in the spec `chatbot-contract`.
-
 It holds the definition format (`Suwagcms.Sdk.Format`, JSON schema in `definition-format.schema.json`), the validator
 (`Suwagcms.Sdk.Validation`) and the bot runtime (`Suwagcms.Sdk.BotRuntime`). Each has a namespace per concept under it, such as
 `Suwagcms.Sdk.Format.Facts` or `Suwagcms.Sdk.BotRuntime.Versions`.

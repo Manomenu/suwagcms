@@ -9,8 +9,8 @@
     <PackageId>Suwagcms.Sdk</PackageId>
     <Authors>Piotr Gugnowski</Authors>
     <Copyright>Copyright (c) 2026 Piotr Gugnowski</Copyright>
-    <Description>The SDK of a .NET bot built on Suwagcms.</Description>
-    <PackageTags>suwagcms aspnetcore</PackageTags>
+    <Description>The SDK of a .NET bot built on Suwagcms: the definition format, its validator and the bot runtime that receives, checks and serves the versions the CMS pushes.</Description>
+    <PackageTags>suwagcms cms chatbot bot validation aspnetcore</PackageTags>
     <!-- An expression, not the LICENSE file: nuget.org shows an SPDX identifier most clearly, and MIT has one. -->
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
