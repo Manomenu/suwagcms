@@ -17,6 +17,18 @@ export function editHref(bot: string, collection: AddressedCollection, id: strin
     return `${listHref(bot, collection)}/${encodeURIComponent(id)}/edit`;
 }
 
+/** Under what name an edit screen's History panel keeps its page, apart from the `page` of the list it came from. */
+export const HISTORY_PAGE = "historyPage";
+
+/** What the list left in the address travels with the screens it opens, so coming back finds it; what belongs to one edit screen stays behind. */
+export function withListSearch(href: string, search: string): string {
+    const kept = new URLSearchParams(search);
+    kept.delete(HISTORY_PAGE);
+    kept.delete("step");
+    const text = kept.toString();
+    return text === "" ? href : `${href}?${text}`;
+}
+
 function decoded(part: string): string {
     // Why: a malformed % in the address must show the "not found" of that id, not crash the page.
     try {

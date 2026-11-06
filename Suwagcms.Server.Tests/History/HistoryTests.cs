@@ -218,6 +218,55 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-pagination-11")]
+    public async Task A_numbered_page_of_a_bot_or_a_resource_holds_its_entries_newest_first_with_none_missing_or_repeated()
+    {
+        _ = database.Pool;
+        var client = app.CreateClient();
+        var facts = await FactApi.NewBotAsync(client);
+        var history = new HistoryScene(client, facts.Bot);
+        await facts.Add("customer.city", FactApi.Text("The city"));
+        for (var change = 1; change <= 11; change++)
+        {
+            await facts.Put("customer.city", FactApi.Text($"The city {change}"));
+        }
+        var all = (await history.OfBot("?limit=500")).Entries.Select(entry => entry.Id).ToList();
+        Assert.Equal(12, all.Count);
+
+        foreach (
+            var read in new Func<string, Task<Contracts.History.HistoryPage>>[]
+            {
+                history.OfBot,
+                query => history.Of("facts", "customer.city", query),
+            }
+        )
+        {
+            var pages = new[] { await read("?limit=5&page=1"), await read("?limit=5&page=2"), await read("?limit=5&page=3") };
+
+            Assert.Equal([5, 5, 2], pages.Select(page => page.Entries.Count));
+            Assert.All(pages, page => Assert.Equal(12, page.Total));
+            Assert.Equal(all, pages.SelectMany(page => page.Entries).Select(entry => entry.Id));
+            var pastTheEnd = await read("?limit=5&page=99");
+            Assert.Empty(pastTheEnd.Entries);
+            Assert.Equal(12, pastTheEnd.Total);
+        }
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-pagination-11")]
+    public async Task What_the_command_reads_stays_as_it_was_with_no_total_in_its_json()
+    {
+        var (articles, history) = await NewBot();
+        await articles.Add("cennik", ArticleApi.Body());
+
+        var run = await history.CliAsync("history", "--json");
+
+        Assert.Equal(0, run.ExitCode);
+        Assert.Null((await history.OfBot()).Total);
+        Assert.DoesNotContain("total", run.Output, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-change-history-7")]
     public async Task An_entry_of_one_bot_is_not_listed_for_another_also_when_two_resources_share_an_id()
     {

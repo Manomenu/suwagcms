@@ -16,7 +16,7 @@ import { useLocation, useSearchParams } from "wouter";
 
 import { renamer } from "@/api/rename";
 import { ApiError } from "@/api/client";
-import { editHref, listHref } from "@/api/resourceAddress";
+import { editHref, listHref, withListSearch } from "@/api/resourceAddress";
 import { useAvailability } from "@/api/availability";
 import { useResourceHistory } from "@/api/history";
 import { useUsage } from "@/api/usage";
@@ -131,7 +131,15 @@ function CreatorBody({
     // Why: the selected step is in the address, so a reload or a sent link opens the same step.
     const selected = params.get("step");
     const setSelected = (step: string | null) => {
-        setParams(step === null ? {} : { step }, { replace: true });
+        setParams(
+            (was) => {
+                const next = new URLSearchParams(was);
+                if (step === null) next.delete("step");
+                else next.set("step", step);
+                return next;
+            },
+            { replace: true },
+        );
     };
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
     const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
@@ -242,7 +250,7 @@ function CreatorBody({
         setDeleteFailure(null);
         deleteProcedure(bot, id, state.revision)
             .then(() => {
-                navigate(listHref(bot, "procedures"), { replace: true });
+                navigate(withListSearch(listHref(bot, "procedures"), params.toString()), { replace: true });
             })
             .catch((error: unknown) => {
                 setDeleteFailure(
@@ -268,7 +276,7 @@ function CreatorBody({
                     variant="link"
                     className="h-auto px-0"
                     onClick={() => {
-                        leave(listHref(bot, "procedures"));
+                        leave(withListSearch(listHref(bot, "procedures"), params.toString()));
                     }}
                 >
                     ← Back to procedures
@@ -310,7 +318,7 @@ function CreatorBody({
                     preview={changer.preview}
                     apply={changer.apply}
                     onChanged={(newId) => {
-                        navigate(editHref(bot, "procedures", newId), { replace: true });
+                        navigate(withListSearch(editHref(bot, "procedures", newId), params.toString()), { replace: true });
                     }}
                     onCancel={() => {
                         setChangingId(false);

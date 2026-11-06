@@ -16,6 +16,7 @@ using Suwagcms.Server.Personas;
 using Suwagcms.Server.ProcedureLayouts;
 using Suwagcms.Server.Procedures;
 using Suwagcms.Server.Renames;
+using Suwagcms.Server.Settings;
 using Suwagcms.Server.Usage;
 using Suwagcms.Server.Validation;
 using Suwagcms.Server.Versions;
@@ -54,6 +55,7 @@ internal static class ServerApp
 
         var api = app.MapGroup("/api");
         api.MapHealth();
+        api.MapSettings(PageSize.Read(app.Configuration[PageSize.Variable]));
         api.MapBots();
         api.MapValidation();
         api.MapArticles();

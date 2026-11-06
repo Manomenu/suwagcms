@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { LANGUAGES } from "@/api/languages";
+import { usePagedRows } from "@/api/pagination";
 import { listHref } from "@/api/resourceAddress";
 import { Anchor } from "@/design/anchor";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
@@ -34,6 +35,7 @@ export function ArticlesView({
     onEdit: (article: Article) => void;
     onLeave: (event: React.MouseEvent) => void;
 }) {
+    const paged = usePagedRows(articles);
     const filtered = filters.knowledgeBase !== "" || filters.language !== "" || filters.text.trim() !== "";
     return (
         <ResourceList
@@ -95,7 +97,8 @@ export function ArticlesView({
                     </div>
                 </>
             }
-            rows={articles}
+            rows={paged.rows}
+            paging={paged.paging}
             idOf={(article) => article.id}
             onOpen={onEdit}
             columns={[

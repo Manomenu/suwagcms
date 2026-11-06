@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { addressOf, editHref, listHref, newHref } from "./resourceAddress";
+import { addressOf, editHref, listHref, newHref, withListSearch } from "./resourceAddress";
 
 describe("the address of a resource", () => {
     it("AC-web-shell-7: the list, new and edit have one form on every collection", () => {
@@ -28,5 +28,14 @@ describe("the address of a resource", () => {
         expect(addressOf("/bots/sklep/facts/offer", "facts")).toEqual({ screen: "list" });
         expect(addressOf("/bots/sklep/facts/offer/edit/more", "facts")).toEqual({ screen: "list" });
         expect(addressOf("/bots/sklep/facts/new/more", "facts")).toEqual({ screen: "list" });
+    });
+});
+
+describe("withListSearch", () => {
+    it("AC-pagination-12: the list's page and filters travel, and what belongs to one edit screen stays behind", () => {
+        expect(withListSearch("/bots/b/facts", "")).toBe("/bots/b/facts");
+        expect(withListSearch("/bots/b/facts", "page=3&language=pl")).toBe("/bots/b/facts?page=3&language=pl");
+        expect(withListSearch("/bots/b/facts", "page=3&historyPage=2")).toBe("/bots/b/facts?page=3");
+        expect(withListSearch("/bots/b/procedures", "step=hello&historyPage=2")).toBe("/bots/b/procedures");
     });
 });

@@ -5,7 +5,7 @@ import { ApiError } from "./client";
 import { useResourceHistory } from "./history";
 import { DISCARD_QUESTION, mayLeave, useLeaveGuard } from "./leaveGuard";
 import { renamer } from "./rename";
-import { addressOf, editHref, listHref, newHref } from "./resourceAddress";
+import { addressOf, editHref, listHref, newHref, withListSearch } from "./resourceAddress";
 import { revisionOf, type ResourceApi } from "./resourceApi";
 import { usageHref, useUsage, type UsageCollection, type UsageLink } from "./usage";
 
@@ -61,8 +61,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     const history = useResourceHistory(bot, api.collection, id, revision);
     const changer = useMemo(() => renamer(bot, api.collection, id ?? "", revision), [bot, api.collection, id, revision]);
 
-    // Why: what narrows the list travels with the screens it opens, so coming back finds the list as it was left.
-    const withSearch = (href: string) => (search === "" || openParam !== null ? href : `${href}?${search}`);
+    const withSearch = (href: string) => (openParam !== null ? href : withListSearch(href, search));
 
     const fetchList = useCallback((signal: AbortSignal) => list?.(signal) ?? api.list(bot, signal), [list, api, bot]);
 

@@ -59,6 +59,33 @@ describe("the rules of every screen", () => {
         }
     });
 
+    it("AC-pagination-9: every list draws its controls with the one module, and nothing else moves between pages", () => {
+        // Why: a step of a procedure has a heading "Next", which is where it goes and not a way between pages.
+        const moves = /(?<!<h3[^>]*)>\s*(Previous|Next)( page)?\s*<|["'`](Previous|Next)( page)?["'`]/;
+        expect(filesWith(moves)).toEqual(["/src/design/pagination.tsx"]);
+        expect(filesWith(/older changes|load more|show more/i)).toEqual([]);
+        expect(filesWith(/<Paginated\b/).sort()).toEqual([
+            "/src/design/historyPanel.tsx",
+            "/src/design/resourceList.tsx",
+            "/src/versions/VersionsView.tsx",
+        ]);
+        expect(filesWith(/usePagedRows\(/).sort()).toEqual([
+            "/src/actions/ActionsView.tsx",
+            "/src/articles/ArticlesView.tsx",
+            "/src/facts/FactsView.tsx",
+            "/src/knowledge-bases/KnowledgeBasesView.tsx",
+            "/src/procedures/ProceduresView.tsx",
+            "/src/versions/VersionsView.tsx",
+        ]);
+        expect(sources["/src/design/pagination.tsx"]).not.toMatch(/history/i);
+        expect(sources["/src/api/pagination.ts"]).not.toMatch(/history/i);
+    });
+
+    it("AC-pagination-12: the panel asks for as many entries as the server's page size, never a number of its own", () => {
+        expect(filesWith(/[?&]limit=\d/)).toEqual([]);
+        expect(sources["/src/api/history.ts"]).toContain("?limit=${size}&page=${page}");
+    });
+
     it("AC-delete-guard-20: Delete has one place: DeleteAction, which only the edit screens use", () => {
         expect(filesWith(/>\s*Delete\s*</)).toEqual(["/src/design/deleteAction.tsx"]);
         expect(filesWith(/<DeleteAction\b/).sort()).toEqual(["/src/design/resourceEdit.tsx", "/src/procedures/ProcedurePanel.tsx"]);

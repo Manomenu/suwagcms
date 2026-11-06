@@ -11,6 +11,14 @@ internal static class HistoryStore
 {
     public const string VersionKind = "version";
 
+    private const string Listed = """
+        FROM change_entry
+        WHERE bot_id = @bot
+          AND (@kind::text IS NULL OR (kind = @kind AND (public_id = @id OR resource_id IN (
+              SELECT resource_id FROM change_entry WHERE bot_id = @bot AND kind = @kind AND public_id = @id
+          ))))
+        """;
+
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     internal sealed record Recorded(
@@ -65,13 +73,14 @@ internal static class HistoryStore
             )
         );
 
-    // Why: one row more than the page says whether another page exists without a second query; null means the bot is unknown.
+    // Why: one row more than the page says whether another page exists without a second query, and only a numbered page pays for a count; null means the bot is unknown.
     public static async Task<HistoryPage?> ReadAsync(
         Pool pool,
         string bot,
         (string Kind, string Id)? resource,
         int limit,
         long? before,
+        int? page,
         CancellationToken cancellationToken
     )
     {
@@ -83,16 +92,12 @@ internal static class HistoryStore
         var rows = (
             await connection.QueryAsync<EntryRow>(
                 new CommandDefinition(
-                    """
+                    $"""
                     SELECT id AS Id, at AS At, kind AS Kind, public_id AS PublicId, action AS Action, revision AS Revision, changes::text AS Changes, batch AS Batch
-                    FROM change_entry
-                    WHERE bot_id = @bot
-                      AND (@kind::text IS NULL OR (kind = @kind AND (public_id = @id OR resource_id IN (
-                          SELECT resource_id FROM change_entry WHERE bot_id = @bot AND kind = @kind AND public_id = @id
-                      ))))
+                    {Listed}
                       AND (@before::bigint IS NULL OR id < @before)
                     ORDER BY id DESC
-                    LIMIT @size
+                    LIMIT @size OFFSET @skip
                     """,
                     new
                     {
@@ -101,19 +106,35 @@ internal static class HistoryStore
                         id = resource?.Id,
                         before,
                         size = limit + 1,
+                        skip = (Math.Max(page ?? 1, 1) - 1L) * limit,
                     },
                     cancellationToken: cancellationToken
                 )
             )
         ).ToList();
+        long? total = page is null
+            ? null
+            : await connection.ExecuteScalarAsync<long>(
+                new CommandDefinition(
+                    $"SELECT count(*) {Listed}",
+                    new
+                    {
+                        bot,
+                        kind = resource?.Kind,
+                        id = resource?.Id,
+                    },
+                    cancellationToken: cancellationToken
+                )
+            );
         var since = await connection.ExecuteScalarAsync<DateTime>(
             new CommandDefinition("SELECT min(started_at) FROM history_start", cancellationToken: cancellationToken)
         );
-        var page = rows.Take(limit).ToList();
+        var shown = rows.Take(limit).ToList();
         return new HistoryPage(
-            [.. page.Select(Shown)],
-            rows.Count > limit ? page[^1].Id : null,
-            new DateTimeOffset(DateTime.SpecifyKind(since, DateTimeKind.Utc))
+            [.. shown.Select(Shown)],
+            rows.Count > limit ? shown[^1].Id : null,
+            new DateTimeOffset(DateTime.SpecifyKind(since, DateTimeKind.Utc)),
+            total
         );
     }
 

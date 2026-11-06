@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
 import type { Mistake } from "@/api/client";
+import { PageSizeContext } from "@/api/pagination";
 
 import type { KnowledgeBase } from "./api";
 import { HINTS, emptyForm, fieldOf, mistakesFor } from "./knowledgeBaseForm";
@@ -17,7 +18,9 @@ const bases: KnowledgeBase[] = [
 function view(list: KnowledgeBase[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/knowledge-bases">
-            <KnowledgeBasesView bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <KnowledgeBasesView bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
+            </PageSizeContext>
         </Router>,
     );
 }
@@ -112,5 +115,26 @@ describe("the knowledge base form's mistakes", () => {
         ];
 
         expect(mistakesFor(both, "second")).toEqual([both[1]]);
+    });
+});
+
+describe("a long list", () => {
+    it("AC-pagination-9: page 2 of 45 at 20 a page shows 20 rows and the shared controls", () => {
+        const many = Array.from({ length: 45 }, (_, index) => ({
+            id: `base${String(index)}`,
+            title: "A base",
+            language: "pl",
+            revision: 1,
+        }));
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/b/knowledge-bases?page=2">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <KnowledgeBasesView bot="b" bases={many} onAdd={() => undefined} onEdit={() => undefined} />
+                </PageSizeContext>
+            </Router>,
+        );
+
+        expect(/<tbody>[\s\S]*<\/tbody>/.exec(html)?.[0].match(/<tr>/g)).toHaveLength(20);
+        expect(html).toContain("Page 2 of 3");
     });
 });

@@ -17,7 +17,7 @@ function BotHistory({ bot }: { bot: string }) {
 }
 
 function ResourceHistory({ bot, collection, id }: { bot: string; collection: HistoryCollection; id: string }) {
-    const history = useResourceHistory(bot, collection, id);
+    const history = useResourceHistory(bot, collection, id, 0, "page");
     return (
         <Page title={`History of ${id}`} actions={<Anchor href={`~/bots/${encodeURIComponent(bot)}/history`}>All changes</Anchor>}>
             <Paper>

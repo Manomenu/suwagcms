@@ -1,10 +1,12 @@
 import { useState } from "react";
 
 import type { Mistake } from "@/api/client";
+import { usePagedRows } from "@/api/pagination";
 import { Alert } from "@/design/alert";
 import { Anchor } from "@/design/anchor";
 import { Button } from "@/design/button";
 import { Page, Paper } from "@/design/page";
+import { Paginated } from "@/design/pagination";
 import { Select } from "@/design/select";
 import { Table } from "@/design/table";
 
@@ -150,6 +152,7 @@ export function VersionsView({
 }) {
     const base = `~/bots/${encodeURIComponent(bot)}`;
     const bots = status === null ? null : statusView(status);
+    const paged = usePagedRows(versions);
     return (
         <Page
             title={`Versions of ${bot}`}
@@ -251,62 +254,68 @@ export function VersionsView({
             {versions.length === 0 ? (
                 <p className="text-muted-foreground">No versions yet. Create one: the whole working state is checked and frozen.</p>
             ) : (
-                <Paper>
-                    <Table>
-                        <thead>
-                            <tr>
-                                <th>Version</th>
-                                <th>Content</th>
-                                <th>Digest</th>
-                                <th />
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {versions.map((version, index) => (
-                                <tr key={numberOf(version)}>
-                                    <td className="font-medium">
-                                        v{numberOf(version)} · {dateOf(version)}
-                                    </td>
-                                    <td className="text-muted-foreground">
-                                        {version.facts} facts, {version.knowledgeBases} knowledge bases, {version.articles} articles,{" "}
-                                        {version.procedures} procedures, {version.actions} actions
-                                    </td>
-                                    <td>
-                                        <code className="text-muted-foreground" title={version.sha256}>
-                                            {digestOf(version.sha256)}
-                                        </code>
-                                    </td>
-                                    <td>
-                                        <div className="flex items-center justify-end gap-2">
-                                            {versions[index + 1] === undefined ? (
-                                                <span className="text-sm text-muted-foreground">Nothing before it</span>
-                                            ) : (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        onCompare(numberOf(versions[index + 1] ?? version), numberOf(version));
-                                                    }}
-                                                >
-                                                    Changes
-                                                </Button>
-                                            )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    onOpen(version);
-                                                }}
-                                            >
-                                                Open
-                                            </Button>
-                                        </div>
-                                    </td>
+                <Paginated paging={paged.paging}>
+                    <Paper>
+                        <Table>
+                            <thead>
+                                <tr>
+                                    <th>Version</th>
+                                    <th>Content</th>
+                                    <th>Digest</th>
+                                    <th />
                                 </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                </Paper>
+                            </thead>
+                            <tbody>
+                                {paged.rows.map((version) => {
+                                    // Why: the version before the last row of a page sits on the next page, so it is looked up in the whole list.
+                                    const before = versions[versions.indexOf(version) + 1];
+                                    return (
+                                        <tr key={numberOf(version)}>
+                                            <td className="font-medium">
+                                                v{numberOf(version)} · {dateOf(version)}
+                                            </td>
+                                            <td className="text-muted-foreground">
+                                                {version.facts} facts, {version.knowledgeBases} knowledge bases, {version.articles}{" "}
+                                                articles, {version.procedures} procedures, {version.actions} actions
+                                            </td>
+                                            <td>
+                                                <code className="text-muted-foreground" title={version.sha256}>
+                                                    {digestOf(version.sha256)}
+                                                </code>
+                                            </td>
+                                            <td>
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {before === undefined ? (
+                                                        <span className="text-sm text-muted-foreground">Nothing before it</span>
+                                                    ) : (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                onCompare(numberOf(before), numberOf(version));
+                                                            }}
+                                                        >
+                                                            Changes
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            onOpen(version);
+                                                        }}
+                                                    >
+                                                        Open
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </Table>
+                    </Paper>
+                </Paginated>
             )}
             {comparison !== null && (
                 <ComparisonPanel comparison={comparison} versions={versions} onCompare={onCompare} onClose={onCloseComparison} />

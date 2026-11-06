@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 
 import { ApiError } from "@/api/client";
-import { editHref } from "@/api/resourceAddress";
+import { editHref, withListSearch } from "@/api/resourceAddress";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Field } from "@/design/field";
@@ -18,6 +18,7 @@ export function NewProcedureForm({ bot, onCancel }: { bot: string; onCancel: () 
     const [description, setDescription] = useState("");
     const [refusal, setRefusal] = useState<ApiError | null>(null);
     const [, navigate] = useLocation();
+    const search = useSearch();
     return (
         <Paper className="max-w-2xl">
             <form
@@ -27,7 +28,7 @@ export function NewProcedureForm({ bot, onCancel }: { bot: string; onCancel: () 
                     event.preventDefault();
                     saveProcedure(bot, id, { description, firstStep: null, steps: {}, whenStalled: null }, 0, false)
                         .then(() => {
-                            navigate(editHref(bot, "procedures", id), { replace: true });
+                            navigate(withListSearch(editHref(bot, "procedures", id), search), { replace: true });
                         })
                         .catch((error: unknown) => {
                             setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));

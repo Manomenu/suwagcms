@@ -2,6 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
+import { PageSizeContext } from "@/api/pagination";
+
 import type { ProcedureList } from "./api";
 import { ProceduresView } from "./ProceduresView";
 
@@ -17,7 +19,9 @@ const list: ProcedureList = {
 function view(shown: ProcedureList): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/procedures">
-            <ProceduresView onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
+            <PageSizeContext value={{ size: 20, failure: null }}>
+                <ProceduresView onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
+            </PageSizeContext>
         </Router>,
     );
 }
@@ -26,13 +30,15 @@ describe("ProceduresView", () => {
     it("AC-availability-22: the list says which procedure is off", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/rzeczoznawca/procedures">
-                <ProceduresView
-                    onAdd={() => undefined}
-                    onOpen={() => undefined}
-                    bot="rzeczoznawca"
-                    list={list}
-                    isOff={(id) => id === "goodbye"}
-                />
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ProceduresView
+                        onAdd={() => undefined}
+                        onOpen={() => undefined}
+                        bot="rzeczoznawca"
+                        list={list}
+                        isOff={(id) => id === "goodbye"}
+                    />
+                </PageSizeContext>
             </Router>,
         );
 
@@ -69,5 +75,29 @@ describe("ProceduresView", () => {
 
         expect(html).toContain("This bot has no &#x27;conversation&#x27; procedure.");
         expect(html).toContain("No procedures yet");
+    });
+});
+
+describe("a long list", () => {
+    it("AC-pagination-9: page 2 of 45 at 20 a page shows 20 rows and the shared controls", () => {
+        const many: ProcedureList = {
+            procedures: Array.from({ length: 45 }, (_, index) => ({
+                id: `procedure${String(index)}`,
+                description: "One",
+                revision: 1,
+                notReady: 0,
+            })),
+            botNotReady: [],
+        };
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/b/procedures?page=2">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ProceduresView bot="b" list={many} onAdd={() => undefined} onOpen={() => undefined} />
+                </PageSizeContext>
+            </Router>,
+        );
+
+        expect(/<tbody>[\s\S]*<\/tbody>/.exec(html)?.[0].match(/<tr>/g)).toHaveLength(20);
+        expect(html).toContain("Page 2 of 3");
     });
 });

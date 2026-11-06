@@ -1,5 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { Router } from "wouter";
+
+import { PageSizeContext } from "@/api/pagination";
 
 import type { ActionView } from "./api";
 import { ActionsView } from "./ActionsView";
@@ -15,18 +18,38 @@ const action = (id: string): ActionView =>
 describe("ActionsView", () => {
     it("AC-availability-26: the list says which action is off", () => {
         const html = renderToStaticMarkup(
-            <ActionsView
-                bot="rzeczoznawca"
-                actions={[action("check"), action("send")]}
+            <Router ssrPath="/bots/rzeczoznawca/actions">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ActionsView
+                        bot="rzeczoznawca"
+                        actions={[action("check"), action("send")]}
 
-                isOff={(id) => id === "send"}
-                onAdd={() => undefined}
-                onOpen={() => undefined}
-            />,
+                        isOff={(id) => id === "send"}
+                        onAdd={() => undefined}
+                        onOpen={() => undefined}
+                    />
+                </PageSizeContext>
+            </Router>,
         );
 
         const rows = html.split("<tr>");
         expect(rows.find((row) => row.includes("What send does"))).toContain(">off<");
         expect(rows.find((row) => row.includes("What check does"))).toContain(">on<");
+    });
+});
+
+describe("a long list", () => {
+    it("AC-pagination-9: page 2 of 45 at 20 a page shows 20 rows and the shared controls", () => {
+        const many = Array.from({ length: 45 }, (_, index) => action(`action${String(index)}`));
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/b/actions?page=2">
+                <PageSizeContext value={{ size: 20, failure: null }}>
+                    <ActionsView bot="b" actions={many} onAdd={() => undefined} onOpen={() => undefined} />
+                </PageSizeContext>
+            </Router>,
+        );
+
+        expect(/<tbody>[\s\S]*<\/tbody>/.exec(html)?.[0].match(/<tr>/g)).toHaveLength(20);
+        expect(html).toContain("Page 2 of 3");
     });
 });
