@@ -389,7 +389,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A list alone cannot show a loop or a jump, so a <b>Next:</b> row names any step, and an <b>End</b> row closes a branch. Every graph the format allows can therefore be shown, and the SDK gains no rule on a graph's shape.</p>
   </div>
   <div class="stats">
-    <div><b>45</b><span>criteria: 28 carried over, 17 new</span></div>
+    <div><b>48</b><span>criteria: 28 carried over, 20 new</span></div>
     <div><b>4 of 4</b><span>shipped procedures read as lists</span></div>
     <div><b>0</b><span>graphs refused for their shape</span></div>
   </div>
@@ -405,12 +405,12 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       </div>
       <div class="wf-card"><b>Steps</b>
         <div class="wf-row"><span class="wf-muted">1.</span><b>askProperty</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.type</code> <code>valuation.purpose</code> <code>property.area</code></span></div>
-        <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.type ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">land</span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.type</code> is one of <code>land</code></span></div>
         <div style="margin-left:26px"><div class="wf-row"><span class="wf-muted">no steps: goes on to 2. askContact</span><span class="wf-grow"></span><span class="wf-btn">+ Add step</span></div></div>
         <div class="wf-row"><span class="tag">Else</span></div>
         <div style="margin-left:26px">
           <div class="wf-row"><span class="wf-muted">1.</span><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
-          <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.age ▾</span><span class="wf-input">range ▾</span><span class="wf-muted">from</span><span class="wf-input">50</span></div>
+          <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.age</code> is at least <code>50</code></span></div>
           <div style="margin-left:26px">
             <div class="wf-row"><span class="wf-muted">1.</span><b>askRenovation</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.lastRenovationYear</code></span></div>
             <div class="wf-row"><span class="wf-muted">2.</span><b>tellConditionReview</b><span class="tag ok">Tell</span><span class="wf-grow">Tell the customer how the age of the building affects this task. <span class="wf-muted">1 point</span></span></div>
@@ -543,7 +543,7 @@ askAge:
     <div><h4>Shown</h4>
       <div class="wire"><div class="wf-body">
         <div class="wf-row"><b>askAge</b><span class="tag accent">Ask</span><span class="wf-grow"><code>property.age</code></span></div>
-        <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.age ▾</span><span class="wf-input">range ▾</span><span class="wf-muted">from</span><span class="wf-input">50</span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.age</code> is at least <code>50</code></span></div>
         <div style="margin-left:26px"><div class="wf-row"><b>askRenovation</b><span class="tag accent">Ask</span></div></div>
         <div class="wf-row"><span class="tag">Else</span><span class="wf-muted">goes on to askContact</span></div>
       </div></div>
@@ -613,7 +613,7 @@ askAge:
       <div class="wire after"><div class="wf-body">
         <div class="wf-row"><span class="wf-muted">1.</span><b>askDetails</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.firstName</code> <code>customer.lastName</code> <code>property.landRegisterNumber</code></span></div>
         <div class="wf-row"><span class="wf-muted">2.</span><b>askDelivery</b><span class="tag accent">Ask</span><span class="wf-grow"><code>reportDelivery</code></span></div>
-        <div class="wf-row"><span class="tag">If</span><span class="wf-input">reportDelivery ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">phone</span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>reportDelivery</code> is one of <code>phone</code></span></div>
         <div style="margin-left:26px">
           <div class="wf-row"><span class="wf-muted">1.</span><b>askPhone</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.phone</code></span></div>
           <div class="wf-row"><span class="wf-muted">2.</span><b>tellPhoneDelivery</b><span class="tag ok">Tell</span><span class="wf-grow">Thank the customer… <span class="wf-muted">2 points</span></span></div>
@@ -698,7 +698,7 @@ askAge:
       <div class="wf-card wf-row"><b>2 mistakes</b><span class="wf-muted">1 refuses a save, 1 stops a version. Click one to go to it.</span></div>
       <div class="wf-row"><span class="wf-muted">2.</span><b>askDelivery</b><span class="tag accent">Ask</span><span class="wf-grow wf-muted">no facts yet</span></div>
       <div class="wf-card" style="margin-left:26px"><span class="tag warn">Stops a version</span> In step 'askDelivery', collect lists no facts. <span class="wf-muted">List at least one fact.</span></div>
-      <div class="wf-row"><span class="tag">If</span><span class="wf-input">reportDelivery ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">phone</span></div>
+      <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>reportDelivery</code> is one of <code>phone</code></span></div>
       <div style="margin-left:26px">
         <div class="wf-row"><span class="wf-muted">1.</span><b>askPhone</b><span class="tag accent">Ask</span><span class="wf-grow"><code>customer.phone</code></span></div>
       </div>
@@ -740,7 +740,7 @@ askAge:
     <div class="wire after"><span class="wf-label">A branch that ends, a branch with a jump</span>
       <div class="wf-body">
         <div class="wf-row"><span class="wf-muted">1.</span><b>ask</b><span class="tag accent">Ask</span><code>property.type</code></div>
-        <div class="wf-row"><span class="tag">If</span><span class="wf-input">property.type ▾</span><span class="wf-input">oneOf ▾</span><span class="wf-muted">another</span></div>
+        <div class="wf-row"><span class="tag">If</span><span class="wf-grow"><code>property.type</code> is one of <code>another</code></span></div>
         <div style="margin-left:26px">
           <div class="wf-row"><span class="wf-muted">1.</span><b>sorry</b><span class="tag note">Say</span>Sorry, we do not value this.</div>
           <div class="wf-row"><span class="tag">End</span></div>
