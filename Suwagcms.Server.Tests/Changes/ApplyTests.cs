@@ -485,6 +485,28 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-batch-apply-22")]
+    public async Task Apply_adds_a_knowledge_base_with_its_results_written_as_a_plain_yaml_number()
+    {
+        var scene = await NewScene();
+
+        var run = await scene.CliAsync(
+            """
+            changes:
+              - add: knowledgeBase
+                id: oferta
+                title: Oferta
+                embedding: default
+                results: 7
+            """
+        );
+
+        Assert.Equal("", run.Error);
+        Assert.Equal(0, run.ExitCode);
+        Assert.Contains("\"results\":7", await scene.ReadAsync("knowledge-bases", "oferta"), StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-batch-apply-12")]
     public async Task A_file_and_a_save_at_the_same_moment_run_one_after_the_other_and_a_refused_file_leaves_no_trace()
     {
