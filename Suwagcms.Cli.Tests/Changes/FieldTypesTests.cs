@@ -72,7 +72,7 @@ public sealed class FieldTypesTests
 
     [Theory]
     [MemberData(nameof(ChangeLeaves))]
-    [Trait("criterion", "AC-batch-apply-1")]
+    [Trait("criterion", "AC-batch-apply-22")]
     public async Task A_file_of_changes_reads_every_numeric_and_boolean_field_of_a_save_as_that_type(
         string kind,
         string path,
@@ -91,7 +91,7 @@ public sealed class FieldTypesTests
 
     [Theory]
     [MemberData(nameof(DefinitionLeaves))]
-    [Trait("criterion", "AC-bot-declaration-15")]
+    [Trait("criterion", "AC-batch-apply-22")]
     public async Task A_definition_or_declaration_reads_every_numeric_and_boolean_field_as_that_type(
         string root,
         string path,
