@@ -9,7 +9,7 @@ namespace Suwagcms.Cli.Changes;
 // Why: the YAML is only the CLI's form of the request, so the file becomes the JSON the server takes and every rule about its contents stays on the server.
 internal static class ChangeFile
 {
-    private static readonly HashSet<string> TopNumbers = new(["ifRevision", "min", "max", "maxLength"], StringComparer.Ordinal);
+    private static readonly HashSet<string> TopNumbers = new(["ifRevision", "min", "max", "maxLength", "results"], StringComparer.Ordinal);
 
     public static async Task<(JsonObject? Document, string Problem)> ReadAsync(string path, CancellationToken cancellationToken)
     {
