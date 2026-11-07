@@ -485,7 +485,7 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
-    [Trait("criterion", "AC-batch-apply-1")]
+    [Trait("criterion", "AC-batch-apply-22")]
     public async Task Apply_adds_a_knowledge_base_with_its_results_written_as_a_plain_yaml_number()
     {
         var scene = await NewScene();
