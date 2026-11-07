@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Availability is a live setting outside versions. The CMS sends it to one instance of the bot at once, with no push, the others pick it up at their next poll, and it applies to every conversation, also those on an older version. If the bot cannot be reached, the page says the change is saved and not delivered, because “off” is often an emergency and nobody should believe it too early.</p>
   </div>
   <div class="stats">
-    <div><b>28</b><span>criteria</span></div>
+    <div><b>29</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
@@ -463,7 +463,7 @@ sequenceDiagram
   B-->>C: what it now has
   C-->>A: confirmed, or saved and not delivered
 </script>
-  <p>Each message holds everything that is off, never a single change, so a missed one repairs itself with the next. The number goes up with each change, so a slow older message arriving late cannot undo a newer one. The bot reports what it has in its state, and the page shows that, as it does with a version.</p>
+  <p>Each message holds everything that is off, never a single change, so a missed one repairs itself with the next, and whenever the CMS reads the bot's status (the Versions screen, <code>suwagcms versions status</code>) and the bot reports a lower number, the CMS sends the whole set again, so a bot that was down or restarting catches up without anyone sending. The number goes up with each change, so a slow older message arriving late cannot undo a newer one. The bot reports what it has in its state, and the page shows that, as it does with a version.</p>
   <h3>Situations</h3>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
@@ -475,6 +475,7 @@ sequenceDiagram
     <tr><td>a resource or kind that does not exist; a fact or a knowledge base</td><td>refused, naming the kinds that have availability</td></tr>
     <tr><td>the bot cannot be reached, or does not answer within the time limit</td><td>the change stays saved; the page and the CLI say it is not delivered, with the reason; the CLI exits 1; a person sends again</td></tr>
     <tr><td>the bot reports a lower number than the CMS's</td><td>shown as not delivered, with a way to send again; this also covers a bot whose store was replaced</td></tr>
+    <tr><td>the bot was down when a change was made, and later answers a read of its status</td><td>the CMS sends it the whole set with the latest number, so it has the CMS's full setting again; the availability screens show how that went</td></tr>
     <tr><td>a bot on an SDK without this route</td><td>not delivered, saying to update its SDK</td></tr>
     <tr><td>a resource the bot's version does not hold</td><td>the bot keeps the setting and it does nothing until a version holds that resource</td></tr>
     <tr><td>creating a version with something off</td><td>unaffected: a referrer stays valid, and a version says nothing about availability</td></tr>
@@ -526,7 +527,7 @@ sequenceDiagram
     <li>Availability is not an edit of the resource and is not part of the working state, so it does not create a reason for a new version, while it shares the same per-bot ordering as saves.</li>
     <li><code>conversation</code> cannot be turned off, because the format requires it as the base of every conversation, in the same spirit as the rule that it cannot be deleted.</li>
     <li>The bot's routes have no key until <code>cms-identity</code> (owner's decision), and this request carries none.</li>
-    <li>The CMS does not retry an undelivered change by itself: a person or an agent sends again, and each later change or push repairs it. That is the same as a push, needs no background work in the CMS, and a sick bot stays visible.</li>
+    <li>The CMS keeps no timer or queue for an undelivered change: a person or an agent sends again, and each later change, push or read of the bot's status repairs it. Reading the status already reaches the bot and learns that it answers and which number it has, so it carries the whole set again when the bot is behind, at no cost of background work; the ask for the declaration could not, because it sits below availability in the server's layers, and a sick bot stays visible until then. The time a message last reached the bot is not shown, since no status of the CMS has a place for it.</li>
     <li>What is off is chosen from the working state, so a resource deleted from it cannot be turned off for conversations on an older version that still hold it: its setting goes with it, and it is on again for those conversations after the next send. An emergency switch stays undeleted and off until no version in use holds it.</li>
     <li>The setting is kept under the resource's stable uuid, as a row only while it is off, so a rename cannot lose it and no row means on.</li>
     <li>A change of <code>id</code> is remembered with the latest version at that moment, whether the resource is off or not. A message names a resource that is off under its current <code>id</code> on every version, and under each former <code>id</code> only up to that version, because a new resource may take the old <code>id</code> afterwards.</li>
@@ -566,6 +567,7 @@ sequenceDiagram
     <li><code>AC-availability-29</code> The SDK gives an article a procedure names explicitly even while it is off: the version still holds it and the answer says it is off.</li>
     <li><code>AC-availability-30</code> A delete and a change of one resource at the same moment run one after the other.</li>
     <li><code>AC-availability-31</code> After an article or an action changes its <code>id</code>, the screen still says whether it is off, under the new <code>id</code>.</li>
+    <li><code>AC-availability-32</code> A bot that missed a change while it was down receives the CMS's whole setting with the latest number when it next answers a read of its status (the Versions screen or <code>suwagcms versions status</code>), with no send, change or push in between.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">

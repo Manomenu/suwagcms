@@ -206,8 +206,7 @@ internal sealed class VersionPusher(Pool pool, BotLine line, DeclarationAsker as
 
     // Why: the whole set goes first, which repairs a missed change, and a new version never runs without it.
     private async Task<PushResult?> AvailabilityMissedAsync(string bot, string address, int number, CancellationToken cancellationToken) =>
-        await availability.SendBeforePushAsync(bot, address, cancellationToken)
-            is { State: not AvailabilityDeliveryState.Confirmed } delivery
+        await availability.CatchUpAsync(bot, address, cancellationToken) is { State: not AvailabilityDeliveryState.Confirmed } delivery
             ? Failed(
                 number,
                 null,

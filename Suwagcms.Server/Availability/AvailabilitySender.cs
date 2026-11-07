@@ -7,7 +7,7 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Availability;
 
-// Why: whether a bot has the setting comes only from the bot's own answer; this holds no lock or transaction while it waits, so a slow bot holds up nobody's editing, and it retries nothing: a person sends again, and each later change or push repairs it.
+// Why: whether a bot has the setting comes only from the bot's own answer; this holds no lock or transaction while it waits, so a slow bot holds up nobody's editing, and it keeps no timer or queue: a person sends again, and each later change, push or read of the bot's status repairs it.
 internal sealed class AvailabilitySender(Pool pool, BotLine line)
 {
     private const string SendAgain = "Check that the bot is running, then send again.";
@@ -19,7 +19,7 @@ internal sealed class AvailabilitySender(Pool pool, BotLine line)
     }
 
     // Why: a bot never told anything has nothing to catch up on, and a bot on an older SDK can still take a version.
-    public async Task<AvailabilityDelivery?> SendBeforePushAsync(string bot, string address, CancellationToken cancellationToken)
+    public async Task<AvailabilityDelivery?> CatchUpAsync(string bot, string address, CancellationToken cancellationToken)
     {
         var message = await AvailabilityStore.ReadMessageAsync(pool, bot, cancellationToken);
         return message.Number == 0 ? null : await DeliverAsync(bot, address, message, cancellationToken);

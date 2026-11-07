@@ -1,11 +1,12 @@
 using Suwagcms.Contracts.Bots;
+using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Versions;
 
 // Why: what a bot "has" comes only from the bot's own answer, so this is the single place that turns an answer, or its absence, into a status.
-internal sealed class BotStatusReader(Pool pool, BotLine line, TimeProvider time)
+internal sealed class BotStatusReader(Pool pool, BotLine line, TimeProvider time, AvailabilitySender availability)
 {
     private const int Recent = 10;
 
@@ -41,6 +42,11 @@ internal sealed class BotStatusReader(Pool pool, BotLine line, TimeProvider time
                     return known with { Reach = BotReach.WrongAddress, OtherBot = state.Bot };
                 }
                 await PushStore.ReportAsync(pool, bot, state.Current, time.GetUtcNow(), cancellationToken);
+                // Why: a bot that was down or restarting when something was turned off answers here with a lower number; the whole set with the latest number is safe to send again, and the availability screens show how it went.
+                if (state.Availability.Number < await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken))
+                {
+                    await availability.CatchUpAsync(bot, registered.Address, cancellationToken);
+                }
                 return known with
                 {
                     Reach = BotReach.Answered,
