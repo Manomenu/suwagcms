@@ -7,8 +7,8 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Availability;
 
-// Why: whether a bot has the setting comes only from the bot's own answer; this holds no lock or transaction while it waits, so a slow bot holds up nobody's editing, and it keeps no timer or queue: a person sends again, and each later change, push or read of the bot's status repairs it.
-internal sealed class AvailabilitySender(Pool pool, BotLine line)
+// Why: whether a bot has the setting comes only from the bot's own answer; this holds no lock or transaction while it waits, so a slow bot holds up nobody's editing, and what was not delivered is retried by AvailabilityRetrier, besides a person sending again and each later change, push or read of the bot's status.
+internal sealed class AvailabilitySender(Pool pool, BotLine line, AvailabilityRetries retries)
 {
     private const string SendAgain = "Check that the bot is running, then send again.";
 
@@ -43,7 +43,16 @@ internal sealed class AvailabilitySender(Pool pool, BotLine line)
     {
         var reply = await line.PutAvailabilityAsync(address, message, cancellationToken);
         // Why: a newer change may have been made while this one travelled, and the bot's number is judged against what the CMS holds now.
-        return Judge(bot, address, await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken), reply);
+        var delivery = Judge(bot, address, await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken), reply);
+        if (delivery.State == AvailabilityDeliveryState.Confirmed)
+        {
+            retries.Cancel(bot);
+        }
+        else
+        {
+            retries.Schedule(bot);
+        }
+        return delivery;
     }
 
     private static AvailabilityDelivery Judge(string bot, string address, int number, BotLine.Reply reply) =>

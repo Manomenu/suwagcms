@@ -43,6 +43,11 @@ internal static class ServerApp
         builder.Services.AddHttpClient<BotLine>(client => client.Timeout = Timeout.InfiniteTimeSpan);
         builder.Services.AddTransient<DeclarationAsker>();
         builder.Services.AddTransient<AvailabilitySender>();
+        builder.Services.AddSingleton<AvailabilityRetries>();
+        if (!WritingOpenApiDocument)
+        {
+            builder.Services.AddHostedService<AvailabilityRetrier>();
+        }
         builder.Services.AddTransient<VersionPusher>();
         builder.Services.AddTransient<ActionTester>();
         builder.Services.AddTransient<BotStatusReader>();
