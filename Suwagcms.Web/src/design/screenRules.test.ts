@@ -70,6 +70,13 @@ describe("the rules of every screen", () => {
         expect(filesWith(page, (path) => !path.startsWith("/src/procedures/") || path.endsWith("/ProceduresScreen.tsx"))).toEqual([]);
     });
 
+    it("AC-procedure-creator-49: every row of the steps list is a ListRow: no other procedure source draws a row, its fold toggle, ↑ ↓ or ✕", () => {
+        const notProcedures = (path: string) => !path.startsWith("/src/procedures/");
+        expect(filesWith(/data-row=|aria-expanded|[↑↓]/, notProcedures)).toEqual(["/src/procedures/ListRow.tsx"]);
+        expect(sources["/src/procedures/StepsEditor.tsx"]).not.toMatch(/✕|<button\b|Remove them/);
+        expect(sources["/src/procedures/StepsEditor.tsx"]).toContain("<ListRow");
+    });
+
     it("AC-procedure-creator-45: every edit screen's Save sits in the shared actions that stay in view", () => {
         expect(sources["/src/design/formFooter.tsx"]).toContain("<StickyActions");
         expect(sources["/src/procedures/ProcedureForm.tsx"]).toContain("<StickyActions");

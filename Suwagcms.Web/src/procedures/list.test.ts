@@ -134,7 +134,7 @@ describe("the canonical list of a stored graph", () => {
         ).toEqual(["1. s", "If", "  1. p", "  If", "  Else", "    Next: r", "  2. t", "  End", "Else", "  1. q", "2. r", "Next: t"]);
     });
 
-    it("AC-procedure-creator-44: a branch that ends while the others come together shows End, and the end of the main list shows none", () => {
+    it("AC-procedure-creator-44: a branch that ends while the others come together shows End, and the main list stores none: the editor draws its End", () => {
         expect(
             read("s", {
                 s: { say: "s", next: [{ when: when("a", "1"), to: "sorry" }, { when: when("b", "1"), to: "x" }, { to: "j" }] },

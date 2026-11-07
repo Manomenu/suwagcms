@@ -216,8 +216,10 @@ describe("the form of a procedure", () => {
             ).toBe("property.area is at least 500 and order.kind is one of house, flat and city is not known yet");
         });
 
-        it("has one Remove this If, on the If row, and an Else if keeps its own", () => {
+        it("the If row alone has the ✕ named Remove this If, and an Else if has its own ✕", () => {
             const html = closed();
+            expect(html).toMatch(/aria-label="Remove this If"[^>]*>✕</);
+            expect(html).toMatch(/aria-label="Remove this Else if"[^>]*>✕</);
             expect(html.split("Remove this If")).toHaveLength(2);
             expect(html.indexOf("Remove this If")).toBeLessThan(html.indexOf('data-branch="Else if"'));
             expect(html.split("Remove this Else if")).toHaveLength(2);
@@ -245,28 +247,72 @@ describe("the form of a procedure", () => {
         const menu = (of: ProcedureDetail, label: string) => {
             const html = form({ draft: fromDetail(of), offered: ["say"] });
             const select = new RegExp(`<select[^>]*aria-label="${label}"[^>]*>(.*?)</select>`).exec(html)?.[1] ?? "";
-            return [...select.matchAll(/<option[^>]*>([^<]*)<\/option>/g)].map((option) => option[1]);
+            return [...select.matchAll(/<option(?![^>]*hidden)[^>]*>([^<]*)<\/option>/g)].map((option) => option[1]);
         };
 
         it("an If below a step, and Next: at the end of the main list, but never End there", () => {
-            expect(menu(STRAIGHT, "Add step")).toEqual(["+ Add step", "Say", "If", "Next:"]);
+            expect(menu(STRAIGHT, "Add step")).toEqual(["Say", "If", "Next:"]);
         });
 
         it("no If with no step above it, and no Next: with no step to name", () => {
-            expect(menu(EMPTY, "Add step")).toEqual(["+ Add step", "Say"]);
+            expect(menu(EMPTY, "Add step")).toEqual(["Say"]);
         });
 
         it("no second If on a step that has one", () => {
-            expect(menu(detail, "Add step")).toEqual(["+ Add step", "Say", "Next:"]);
+            expect(menu(detail, "Add step")).toEqual(["Say", "Next:"]);
         });
 
         it("End in a branch with a row after it, and not in one with nothing after it", () => {
-            expect(menu(THEN_MORE, "Add step to If of ask")).toEqual(["+ Add step", "Say", "If", "Next:", "End"]);
-            expect(menu(detail, "Add step to If of ask")).toEqual(["+ Add step", "Say", "If", "Next:"]);
+            expect(menu(THEN_MORE, "Add step to If of ask")).toEqual(["Say", "If", "Next:", "End"]);
+            expect(menu(detail, "Add step to If of ask")).toEqual(["Say", "If", "Next:"]);
         });
 
         it("neither Next: nor End in a list that already ends", () => {
-            expect(menu(detail, "Add step to Else of ask")).toEqual(["+ Add step", "Say", "If"]);
+            expect(menu(detail, "Add step to Else of ask")).toEqual(["Say", "If"]);
+        });
+
+        it("AC-procedure-creator-24: + Add step is the menu's label, disabled and hidden, never an option to pick", () => {
+            const html = form({ draft: fromDetail(STRAIGHT), offered: ["say"] });
+            const select = /<select[^>]*aria-label="Add step"[^>]*>(.*?)<\/select>/.exec(html)?.[1] ?? "";
+            expect(select).toMatch(/^<option value="" disabled="" hidden=""[^>]*>\+ Add step<\/option>/);
+            expect(select.split("+ Add step")).toHaveLength(2);
+        });
+
+        it("AC-procedure-creator-44: the main list ends in an End with no ✕ and no arrows, and its + Add step sits above it", () => {
+            const html = form({ draft: fromDetail(STRAIGHT) });
+            const end = /<div[^>]*data-row="end"[^>]*>(.*?)<\/div>/.exec(html)?.[1] ?? "";
+            expect(end).toContain("End");
+            expect(end).not.toMatch(/✕|↑|↓|aria-label/);
+            expect(html.indexOf('aria-label="Add step"')).toBeLessThan(html.indexOf('data-row="end"'));
+            const loop = {
+                ...detail,
+                steps: { ask: { say: "A", next: "tell" }, tell: { say: "T", next: "ask" } },
+            } as unknown as ProcedureDetail;
+            const endsInNext = form({ draft: fromDetail(loop) });
+            expect(endsInNext.slice(endsInNext.indexOf('aria-label="Add step"'))).not.toContain('data-row="end"');
+        });
+
+        it("AC-procedure-creator-44: in a branch ending in End, its + Add step sits above the End and nothing below it", () => {
+            const ending = {
+                ...detail,
+                steps: {
+                    ask: {
+                        say: "A",
+                        next: [
+                            { when: { "property.type": { oneOf: ["land"] } }, to: "sorry" },
+                            { when: { "property.type": { oneOf: ["flat"] } }, to: "x" },
+                            { to: "after" },
+                        ],
+                    },
+                    sorry: { say: "S" },
+                    x: { say: "X", next: "after" },
+                    after: { say: "Z" },
+                },
+            } as unknown as ProcedureDetail;
+            const html = form({ draft: fromDetail(ending), offered: ["say"] });
+            const branch = html.slice(html.indexOf('data-branch="If"'), html.indexOf('data-branch="Else"'));
+            expect(branch).toContain('data-row="end"');
+            expect(branch.indexOf('aria-label="Add step to If of ask"')).toBeLessThan(branch.indexOf('data-row="end"'));
         });
 
         it("the menu is the only way to add an If", () => {
