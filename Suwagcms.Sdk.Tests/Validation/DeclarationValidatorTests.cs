@@ -218,7 +218,6 @@ public sealed class DeclarationValidatorTests
         );
     }
 
-    // Why: each base holds an article, as a base with none has nothing to embed and its profile is never judged.
     private static BotDefinition WithBases(params (string Id, string Embedding)[] bases) =>
         Definition with
         {
@@ -278,7 +277,7 @@ public sealed class DeclarationValidatorTests
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-20")]
-    public void Profiles_match_ignoring_case_none_are_served_when_left_out_and_a_base_without_articles_or_a_bot_declaring_nothing_is_not_checked()
+    public void Profiles_match_ignoring_case_none_are_served_when_left_out_a_base_without_articles_is_checked_too_and_a_bot_declaring_nothing_is_not()
     {
         var definition = WithBases(("legal", "legalText"));
         static IEnumerable<Mistake> Profiles(BotDefinition definition, BotDeclaration declaration)
@@ -291,7 +290,7 @@ public sealed class DeclarationValidatorTests
         Assert.Empty(Profiles(definition, Good() with { EmbeddingProfiles = ["LEGALTEXT"] }));
         Assert.Contains("It serves: none.", Assert.Single(Profiles(definition, Good())).Message, StringComparison.Ordinal);
         Assert.Empty(Profiles(definition, new BotDeclaration { Bot = "rzeczoznawca", DeclaresNothing = true }));
-        Assert.Empty(Profiles(definition with { Articles = [] }, Good()));
+        Assert.Single(Profiles(definition with { Articles = [] }, Good()));
     }
 
     private static BotDefinition WithNamedArticles(int contentLength, int guideLength, params string[] named)

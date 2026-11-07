@@ -79,14 +79,12 @@ internal static class KnowledgeBaseRules
         }
     }
 
-    // Why: the bot's environment decides which profiles it serves, so this is the declaration's check at Version, never a rule at Save; a base with no articles has nothing to embed, so its profile cannot fail.
+    // Why: the bot's environment decides which profiles it serves, so this is the declaration's check at Version, never a rule at Save.
     public static IEnumerable<Mistake> UndeclaredProfiles(BotDefinition definition, IReadOnlyList<string> profiles)
     {
         var served = profiles.Count == 0 ? "none" : string.Join(", ", profiles);
-        var withArticles = definition.Articles.Select(article => article.KnowledgeBase).ToHashSet(StringComparer.Ordinal);
         return definition
-            .KnowledgeBases.Where(knowledgeBase => withArticles.Contains(knowledgeBase.Id))
-            .Where(knowledgeBase => !profiles.Contains(knowledgeBase.Embedding, StringComparer.OrdinalIgnoreCase))
+            .KnowledgeBases.Where(knowledgeBase => !profiles.Contains(knowledgeBase.Embedding, StringComparer.OrdinalIgnoreCase))
             .OrderBy(knowledgeBase => knowledgeBase.Id, StringComparer.Ordinal)
             .Select(knowledgeBase => new Mistake(
                 MistakeCodes.DeclarationEmbeddingProfile,
