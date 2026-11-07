@@ -43,7 +43,7 @@ internal static class FormatYaml
         }
     }
 
-    // Why: YAML writes 42 and true unquoted, and only the bounds of a range, of a local fact or of an action's parameter or result, a timeout, known and what the top of a file names mean a number or a boolean; every other plain scalar is the text it spells.
+    // Why: YAML writes 42 and true unquoted, and only the bounds of a range, of a local fact or of an action's parameter or result, a timeout, known, what the top of a file names, and a declaration's declaresNothing and knowledge mean a number or a boolean; every other plain scalar is the text it spells. Where a field stands decides it, since a key of a mapping can be any name an author chose; FieldTypesTests walks the contracts and fails for a field this misses.
     private static JsonNode? Scalar(YamlScalarNode scalar, string key, string parent, string grandparent, IReadOnlySet<string> topNumbers)
     {
         var value = scalar.Value ?? "";
@@ -61,7 +61,8 @@ internal static class FormatYaml
                 _ => parent == "points" ? "" : null,
             };
         }
-        var isBoolean = (key == "known" && parent is not ("assign" or "points")) || (key == "declaresNothing" && parent.Length == 0);
+        var isBoolean =
+            (key == "known" && parent is not ("assign" or "points")) || (key is "declaresNothing" or "knowledge" && parent.Length == 0);
         if (isBoolean && value is "true" or "false")
         {
             return value == "true";

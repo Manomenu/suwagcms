@@ -8,7 +8,7 @@ namespace Suwagcms.Cli.Validation;
 internal static class DefinitionFile
 {
     private static readonly HashSet<string> TopNumbers = new(
-        ["formatVersion", "number", "min", "max", "maxLength"],
+        ["formatVersion", "number", "min", "max", "maxLength", "results", "namedArticlesLimit"],
         StringComparer.Ordinal
     );
 
