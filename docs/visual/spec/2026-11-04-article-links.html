@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>An agent writes the same Markdown as text. A link to an article this bot does not have is refused on save, so an article of another bot can never be linked. This is the first real reference: the delete and loop guards are built on it.</p>
   </div>
   <div class="stats">
-    <div><b>12</b><span>criteria</span></div>
+    <div><b>13</b><span>criteria</span></div>
     
   </div>
 </section>
@@ -452,6 +452,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>a link to an article in another base of this bot</td><td>allowed: references work across a bot's bases</td></tr>
     <tr><td>two articles that link to each other</td><td>a loop, which <code>loop-guard</code> refuses, also when both arrive in one file of changes</td></tr>
   </table>
+  <h3>For a model</h3>
+  <p>No <code>cms://</code> address may reach a model, as it is the system's word and a customer must never read it. The SDK's <code>ArticleText.ForModel</code> gives a bot the text it hands a model: a link to an article becomes its label, and a link to a procedure becomes that procedure's description, since a label there is an id. A link in code is left as written, as it is no link. The bot reads links through it, so there is one reader of them.</p>
   <h3>The picker</h3>
   <p>It lists this bot's articles, whichever base they are in, and narrows as the author types a title or an <code>id</code>. It leaves out the article being edited. Clicking a chip's link opens the target. Deleting a chip removes the link from the text.</p>
   <p>The CLI and plugin have the same ability without a picker: <code>suwagcms articles list --text</code> finds the target, and the plugin's main skill gives the link form.</p>
@@ -495,6 +497,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-article-links-11</code> A link to an article in another knowledge base of the same bot is accepted.</li>
     <li><code>AC-article-links-12</code> The plugin's main skill gives the link form and how to find a target.</li>
     <li><code>AC-article-links-13</code> In a version, the label of a link to an article is the target's title at that moment.</li>
+    <li><code>AC-article-links-14</code> <code>ArticleText.ForModel</code> returns the text with each link to an article replaced by its label and each link to a procedure by that procedure's description (its label when the description is not given), leaves a <code>cms://</code> address in code and an ordinary link as written, and changes nothing else.</li>
   </ul>
 </section>
 

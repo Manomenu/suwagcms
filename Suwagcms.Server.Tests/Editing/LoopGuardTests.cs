@@ -33,7 +33,13 @@ public sealed class LoopGuardTests(TestDatabase database)
         var editor = new DefinitionEditor(database.Pool, TimeProvider.System);
         var knowledgeBase = new Put(
             new ResourceRef(ResourceKind.KnowledgeBase, "faq"),
-            new KnowledgeBase { Id = "faq", Title = "Questions" },
+            new KnowledgeBase
+            {
+                Id = "faq",
+                Title = "Questions",
+                Embedding = "default",
+                Results = 5,
+            },
             0
         );
         Assert.IsType<EditResult.Saved>(

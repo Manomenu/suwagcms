@@ -111,7 +111,7 @@ public sealed class KnowledgeBaseEndpointsTests(TestDatabase database) : IDispos
         var api = await NewBot();
 
         var blank = await api.Add("offer", title);
-        var missing = await api.Put("offer", "{}", "?ifRevision=0");
+        var missing = await api.Put("offer", $$"""{{{KnowledgeBaseApi.SearchFields}}}""", "?ifRevision=0");
 
         foreach (var response in new[] { blank, missing })
         {

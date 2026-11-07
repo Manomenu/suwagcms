@@ -10,14 +10,18 @@ async function newBot(request: APIRequestContext): Promise<string> {
         ["offer", "Offer"],
         ["forValuers", "For valuers"],
     ]) {
-        const created = await request.put(`/api/bots/${id}/knowledge-bases/${base}?ifRevision=0`, { data: { title } });
+        const created = await request.put(`/api/bots/${id}/knowledge-bases/${base}?ifRevision=0`, {
+            data: { title, embedding: "default", results: 5 },
+        });
         expect(created.status()).toBe(200);
     }
     return id;
 }
 
 async function addBase(request: APIRequestContext, bot: string, id: string, title: string, language: string): Promise<void> {
-    const response = await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, { data: { title, language } });
+    const response = await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, {
+        data: { title, language, embedding: "default", results: 5 },
+    });
     expect(response.status()).toBe(200);
 }
 

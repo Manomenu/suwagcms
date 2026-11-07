@@ -378,10 +378,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h2>TL;DR</h2>
   <div class="tldr">
     <p>A knowledge base is a named group of articles within one bot. People and agents create one, edit it and delete it, in the web, the CLI and the plugin.</p>
-    <p>A base has an <code>id</code>, a <code>title</code> and a <code>language</code> and nothing else: it groups, and its language is the language of its articles. References work across all the knowledge bases of a bot, so moving an article between bases breaks nothing.</p>
+    <p>A base has an <code>id</code>, a <code>title</code>, a <code>language</code>, an <code>embedding</code> profile and a number of <code>results</code>: it groups, its language is the language of its articles, and the last two tell the bot how to search it. References work across all the knowledge bases of a bot, so moving an article between bases breaks nothing.</p>
   </div>
   <div class="stats">
-    <div><b>8</b><span>criteria</span></div>
+    <div><b>17</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
@@ -402,7 +402,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>Articles: <code>articles</code>.</li>
       <li>Changing a base's <code>id</code>: <code>resource-rename</code>. “Edit” here changes the title and the language.</li>
       <li>What the language means and how it is checked: <code>knowledge-base-language</code>.</li>
-      <li>A base that bots search separately, or settings per base: nothing asks for them.</li>
+      <li>How the bot embeds and searches a base: Suwchatbot's <code>knowledge-answers</code>. The CMS keeps two values and checks them, nothing more.</li>
+      <li>The model, address and key of an embedding profile: they live in the bot's environment, and the CMS has none of them.</li>
       <li>Availability: articles have it; a base has none.</li>
     </ul></div>
   </div>
@@ -433,7 +434,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td><code>id</code></td><td>required; camelCase; unique within the bot; changed only by <code>resource-rename</code></td></tr>
     <tr><td><code>title</code></td><td>required, not blank; unique within the bot, ignoring case and surrounding spaces</td></tr>
     <tr><td><code>language</code></td><td><code>pl</code> or <code>en</code>; <code>en</code> when none is given; the language of every article in the base</td></tr>
+    <tr><td><code>embedding</code></td><td>required; any text that is not blank: the name of the profile the bot embeds the base's articles with, <code>default</code> for a new base in the web and in <code>suwagcms kb add</code>; a name the bot does not serve is refused when a version is created, with <code>declaration.embeddingProfile</code> (<code>bot-declaration</code>), never at a save</td></tr>
+    <tr><td><code>results</code></td><td>required; a whole number from 1 to 20: how many results one search gives from the base; 5 for a new base in the web and in <code>suwagcms kb add</code></td></tr>
   </table>
+  <p>Both are carried in a version, and a file of changes (<code>apply</code>) sets them like any other field. Bases saved before they existed were given <code>default</code> and 5 by a data migration. Making them required is a new format version, 3: <code>chatbot-contract</code> says what that means for a bot.</p>
   <p>A save of a base behaves as the “How every save behaves” section of the <code>global-facts</code> spec describes: all mistakes at once, a refused save leaves no trace, <code>--dry-run</code> answers without changing anything, and an edit based on an old revision is refused.</p>
   <table>
     <tr><th>Situation</th><th>Result</th></tr>
@@ -446,6 +450,15 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 
 <section data-role="ui">
   <h2>Screen</h2>
+  <div class="wire after"><span class="wf-label">Edit knowledge base</span>
+    <div class="wf-body">
+      <div class="wf-row"><span class="wf-grow">Title</span><b>Legal notes</b></div>
+      <div class="wf-row"><span class="wf-grow">Language</span><b>en</b></div>
+      <div class="wf-row"><span class="wf-grow">Embedding profile</span><b>default</b></div>
+      <div class="wf-row"><span class="wf-grow">Results per search (1–20)</span><b>5</b></div>
+      <div class="wf-row"><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
+    </div>
+  </div>
   <div class="wire after"><span class="wf-label">Knowledge bases of rzeczoznawca</span>
     <div class="wf-bar"><b>Knowledge bases</b><span class="wf-grow"></span><span class="wf-btn primary">Add a knowledge base</span></div>
     <div class="wf-body">
@@ -461,6 +474,9 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li>Titles are unique within a bot: two bases with one title would be impossible to tell apart in a filter or a picker, and the refusal costs one rename.</li>
     <li>README's resource table has no row for a knowledge base, so its fields come from the format sketch in the architecture plan and the language feature: <code>id</code>, <code>title</code> and <code>language</code>.</li>
     <li>Editing a base is <code>suwagcms kb edit</code>, like the other resources: a base has two editable fields, the title and the language, and only the options given change. Like every edit, it applies to the revision it just read, and <code>--if-revision</code> overrides that.</li>
+    <li>A base names a profile and never a model, an address or a key: a version is frozen, exported and read by anyone, and a CMS editor must not be able to send the bot's questions to a server of their choice.</li>
+    <li>The profile is free text, not a list from the bot's declaration: a save never asks the bot, so a base can name a profile before the bot serves it, and the version says what is missing.</li>
+    <li>Both fields are required rather than defaulted in the format, so no reader guesses a profile; the CLI and the web start a new base on <code>default</code> and 5, and the API refuses a base without them.</li>
     <li>A repeated title is reported for every base that has it, each naming the others: a saved definition never holds one, so the base being saved is always among them.</li>
   </ul>
 </section>
@@ -478,6 +494,13 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-knowledge-bases-9</code> A base with articles cannot be deleted, and the refusal lists them.</li>
     <li><code>AC-knowledge-bases-10</code> Leaving the form with unsaved changes asks before discarding them: on Cancel, on opening another form and on leaving the screen.</li>
     <li><code>AC-knowledge-bases-11</code> The address <code>?open=&lt;id&gt;</code> opens the form of that base, and <code>suwagcms kb show --open</code> and <code>suwagcms rename kb --open</code> go there.</li>
+    <li><code>AC-knowledge-bases-12</code> <code>suwagcms kb add</code> without <code>--embedding</code> and <code>--results</code> saves the profile <code>default</code> and 5 results, and with them the values given; <code>suwagcms kb edit</code> changes either one alone and keeps the other fields; <code>kb show</code> prints both.</li>
+    <li><code>AC-knowledge-bases-13</code> The form of a new base starts on the profile <code>default</code> and 5 results, each field with a tooltip saying what it is for.</li>
+    <li><code>AC-knowledge-bases-14</code> A profile and a number of results typed in the web form are saved, listed by the API and shown when the form opens again.</li>
+    <li><code>AC-knowledge-bases-15</code> A missing or blank profile is refused with <code>knowledgeBase.embedding.missing</code>, and missing results or results outside 1 to 20 with <code>knowledgeBase.results.outOfRange</code>, each with its fix; any other profile name saves.</li>
+    <li><code>AC-knowledge-bases-16</code> The data migration gives every base stored before it the profile <code>default</code> and 5 results, and keeps its other fields.</li>
+    <li><code>AC-knowledge-bases-17</code> A version carries the profile and results of each base, and a file of changes adds and edits a base with both.</li>
+    <li><code>AC-knowledge-bases-18</code> Each article in the bot runtime's feed carries the profile of its base, beside its language.</li>
   </ul>
 </section>
 

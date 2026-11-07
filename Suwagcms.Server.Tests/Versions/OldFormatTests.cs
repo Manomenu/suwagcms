@@ -19,7 +19,12 @@ public sealed class OldFormatTests(TestDatabase database) : IDisposable
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(
             id,
-            declares: new BotCapabilities { FormatVersion = BotDefinition.CurrentFormatVersion, Blocks = Block.Names }
+            declares: new BotCapabilities
+            {
+                FormatVersion = BotDefinition.CurrentFormatVersion,
+                Blocks = Block.Names,
+                EmbeddingProfiles = ["default"],
+            }
         );
         var scene = await PushScene.RegisterAsync(app.CreateClient(), id, bot.Address);
         await scene.FillAsync();
@@ -33,8 +38,8 @@ public sealed class OldFormatTests(TestDatabase database) : IDisposable
         var changed = await connection.ExecuteAsync(
             """
             UPDATE bot_version
-            SET format_version = 1, document = replace(document, '"formatVersion":2', '"formatVersion":1')
-            WHERE bot_id = @bot AND number = @number AND document LIKE '%"formatVersion":2%'
+            SET format_version = 1, document = replace(document, '"formatVersion":3', '"formatVersion":1')
+            WHERE bot_id = @bot AND number = @number AND document LIKE '%"formatVersion":3%'
             """,
             new { bot, number }
         );

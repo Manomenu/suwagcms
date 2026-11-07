@@ -10,8 +10,10 @@ test("AC-change-history-6: the bot's History page lists every change newest firs
 }) => {
     const bot = await newBot(request);
     const base = `/api/bots/${bot}/knowledge-bases/oferta`;
-    expect((await request.put(`${base}?ifRevision=0`, { data: { title: "Oferta" } })).status()).toBe(200);
-    expect((await request.put(`${base}?ifRevision=1`, { data: { title: "Nowa oferta" } })).status()).toBe(200);
+    expect((await request.put(`${base}?ifRevision=0`, { data: { title: "Oferta", embedding: "default", results: 5 } })).status()).toBe(200);
+    expect((await request.put(`${base}?ifRevision=1`, { data: { title: "Nowa oferta", embedding: "default", results: 5 } })).status()).toBe(
+        200,
+    );
     expect((await request.delete(`${base}?ifRevision=2`)).status()).toBe(204);
 
     await page.goto(`/bots/${bot}`);
@@ -36,8 +38,10 @@ test("AC-change-history-1: a resource's History panel shows a change with its ol
     await expect(page.getByText(/No change has been recorded since \d{4}-\d{2}-\d{2}/)).toBeVisible();
 
     const base = `/api/bots/${bot}/knowledge-bases/oferta`;
-    expect((await request.put(`${base}?ifRevision=0`, { data: { title: "Oferta" } })).status()).toBe(200);
-    expect((await request.put(`${base}?ifRevision=1`, { data: { title: "Nowa oferta" } })).status()).toBe(200);
+    expect((await request.put(`${base}?ifRevision=0`, { data: { title: "Oferta", embedding: "default", results: 5 } })).status()).toBe(200);
+    expect((await request.put(`${base}?ifRevision=1`, { data: { title: "Nowa oferta", embedding: "default", results: 5 } })).status()).toBe(
+        200,
+    );
     await page.goto(`/bots/${bot}/knowledge-bases`);
     await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
 

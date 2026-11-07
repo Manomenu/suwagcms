@@ -1,5 +1,6 @@
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Format.Knowledge;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.Procedures.Blocks;
 using Suwagcms.Sdk.Format.References;
@@ -13,14 +14,14 @@ public sealed class DeclarationValidatorTests
         new()
         {
             Bot = "rzeczoznawca",
-            FormatVersion = 2,
+            FormatVersion = 3,
             Blocks = blocks.Length == 0 ? Block.Names : blocks,
         };
 
     private static BotDefinition Definition =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Facts = ProcedureSamples.Facts,
             Procedures =
             [
@@ -58,7 +59,7 @@ public sealed class DeclarationValidatorTests
         var answer = new BotDeclaration
         {
             Bot = "another",
-            FormatVersion = 2,
+            FormatVersion = 3,
             Blocks = ["listen", "fly"],
             CodeActions =
             [
@@ -134,7 +135,7 @@ public sealed class DeclarationValidatorTests
         var answer = new BotDeclaration
         {
             Bot = "rzeczoznawca",
-            FormatVersion = 3,
+            FormatVersion = 4,
             Blocks = ["fly"],
         };
 
@@ -156,14 +157,14 @@ public sealed class DeclarationValidatorTests
     [Trait("criterion", "AC-bot-declaration-12")]
     public void Another_format_version_is_a_version_mistake_naming_both_with_its_fix_and_nothing_at_save()
     {
-        var declaration = Good() with { FormatVersion = 3 };
+        var declaration = Good() with { FormatVersion = 4 };
 
         var mistake = Assert.Single(DefinitionValidator.Validate(Definition, ValidationStage.Version, declaration));
 
         Assert.Equal(MistakeCodes.DeclarationFormatVersion, mistake.Code);
         Assert.Equal(ValidationStage.Version, mistake.Stage);
-        Assert.Equal("This definition is format 2 and the bot wants format 3.", mistake.Message);
-        Assert.Contains("declare format 2 in the bot", mistake.Fix, StringComparison.Ordinal);
+        Assert.Equal("This definition is format 3 and the bot wants format 4.", mistake.Message);
+        Assert.Contains("declare format 3 in the bot", mistake.Fix, StringComparison.Ordinal);
         Assert.Empty(DefinitionValidator.Validate(Definition, ValidationStage.Save, declaration));
     }
 
@@ -215,5 +216,158 @@ public sealed class DeclarationValidatorTests
             [MistakeCodes.FormatInvalid],
             Codes(DefinitionValidator.ValidateJson("{ not json", ValidationStage.Version, declaration))
         );
+    }
+
+    private static BotDefinition WithBases(params (string Id, string Embedding)[] bases) =>
+        Definition with
+        {
+            KnowledgeBases =
+            [
+                .. bases.Select(item => new KnowledgeBase
+                {
+                    Id = item.Id,
+                    Title = item.Id,
+                    Embedding = item.Embedding,
+                    Results = 5,
+                }),
+            ],
+            Articles =
+            [
+                .. bases.Select(item => new Article
+                {
+                    Id = $"about{item.Id}",
+                    KnowledgeBase = item.Id,
+                    Title = item.Id,
+                    Description = "d",
+                    Content = "c",
+                    LlmGuide = "g",
+                }),
+            ],
+        };
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-20")]
+    public void A_base_naming_a_profile_the_bot_does_not_serve_is_a_version_mistake_naming_the_base_and_the_profiles_served()
+    {
+        var definition = WithBases(("legal", "legalText"), ("offer", "default"), ("rules", "LEGALTEXT"));
+        var declaration = Good() with { EmbeddingProfiles = ["default"] };
+
+        var mistakes = DefinitionValidator
+            .Validate(definition, ValidationStage.Version, declaration)
+            .Where(found => found.Code == MistakeCodes.DeclarationEmbeddingProfile)
+            .ToList();
+
+        Assert.Equal(["legal", "rules"], mistakes.Select(found => found.Resource.Id));
+        var mistake = mistakes[0];
+        Assert.Equal(ResourceKind.KnowledgeBase, mistake.Resource.Kind);
+        Assert.Equal("embedding", mistake.Path);
+        Assert.Equal(
+            "Knowledge base 'legal' names the embedding profile 'legalText', which this bot does not serve. It serves: default.",
+            mistake.Message
+        );
+        Assert.Equal(
+            "Type one of the profiles the bot serves on the knowledge base, or set the variables of 'legalText' on the bot and deploy.",
+            mistake.Fix
+        );
+        Assert.DoesNotContain(
+            DefinitionValidator.Validate(definition, ValidationStage.Save, declaration),
+            found => found.Code == MistakeCodes.DeclarationEmbeddingProfile
+        );
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-20")]
+    public void Profiles_match_ignoring_case_none_are_served_when_left_out_a_base_without_articles_is_checked_too_and_a_bot_declaring_nothing_is_not()
+    {
+        var definition = WithBases(("legal", "legalText"));
+        static IEnumerable<Mistake> Profiles(BotDefinition definition, BotDeclaration declaration)
+        {
+            return DefinitionValidator
+                .Validate(definition, ValidationStage.Version, declaration)
+                .Where(found => found.Code == MistakeCodes.DeclarationEmbeddingProfile);
+        }
+
+        Assert.Empty(Profiles(definition, Good() with { EmbeddingProfiles = ["LEGALTEXT"] }));
+        Assert.Contains("It serves: none.", Assert.Single(Profiles(definition, Good())).Message, StringComparison.Ordinal);
+        Assert.Empty(Profiles(definition, new BotDeclaration { Bot = "rzeczoznawca", DeclaresNothing = true }));
+        Assert.Single(Profiles(definition with { Articles = [] }, Good()));
+    }
+
+    private static BotDefinition WithNamedArticles(int contentLength, int guideLength, params string[] named)
+    {
+        var definition = WithBases(("faq", "default"));
+        return definition with
+        {
+            Articles =
+            [
+                .. definition.Articles,
+                new Article
+                {
+                    Id = "long",
+                    KnowledgeBase = "faq",
+                    Title = "Long",
+                    Description = "d",
+                    Content = new string('c', contentLength),
+                    LlmGuide = new string('g', guideLength),
+                },
+                new Article
+                {
+                    Id = "short",
+                    KnowledgeBase = "faq",
+                    Title = "Short",
+                    Description = "d",
+                    Content = "12345",
+                    LlmGuide = "12345",
+                },
+            ],
+            Procedures =
+            [
+                .. definition.Procedures,
+                new Procedure
+                {
+                    Id = "tell",
+                    Description = "Tells",
+                    FirstStep = "inform",
+                    Steps = new Dictionary<string, ProcedureStep>
+                    {
+                        ["inform"] = new()
+                        {
+                            Inform = new InformArguments
+                            {
+                                Instruction = "Tell it.",
+                                Points = new Dictionary<string, string?> { ["fee"] = "The fee." },
+                                Knowledge = [new KnowledgeEntry { KnowledgeBase = "faq", Articles = named }],
+                            },
+                        },
+                    },
+                },
+            ],
+        };
+    }
+
+    private static IEnumerable<Mistake> TooLong(BotDefinition definition, int? limit) =>
+        DefinitionValidator
+            .Validate(definition, ValidationStage.Version, Good() with { Knowledge = true, NamedArticlesLimit = limit })
+            .Where(found => found.Code == MistakeCodes.DeclarationNamedArticlesTooLong);
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-21")]
+    public void Named_articles_over_the_limit_together_are_a_version_mistake_with_the_fix_to_search()
+    {
+        var mistake = Assert.Single(TooLong(WithNamedArticles(60, 31, "long", "short", "long"), 100));
+
+        Assert.Equal(new ResourceRef(ResourceKind.Procedure, "tell"), mistake.Resource);
+        Assert.Equal("steps.inform.inform.knowledge", mistake.Path);
+        Assert.Contains("hold 101 characters", mistake.Message, StringComparison.Ordinal);
+        Assert.Contains("at most 100", mistake.Message, StringComparison.Ordinal);
+        Assert.Contains("search query", mistake.Fix, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-21")]
+    public void Named_articles_at_the_limit_or_without_one_pass()
+    {
+        Assert.Empty(TooLong(WithNamedArticles(60, 30, "long", "short"), 100));
+        Assert.Empty(TooLong(WithNamedArticles(6000, 6000, "long"), null));
     }
 }

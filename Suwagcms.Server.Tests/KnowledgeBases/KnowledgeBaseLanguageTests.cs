@@ -41,7 +41,7 @@ public sealed class KnowledgeBaseLanguageTests(TestDatabase database) : IDisposa
             {
                 id = Guid.NewGuid(),
                 bot = api.Bot,
-                body = """{"id":"old","title":"Old"}""",
+                body = """{"id":"old","title":"Old","embedding":"default","results":5}""",
             }
         );
 

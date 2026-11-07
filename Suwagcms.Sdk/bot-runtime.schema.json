@@ -399,6 +399,21 @@
       },
       "knowledge": {
         "type": "boolean"
+      },
+      "embeddingProfiles": {
+        "type": "array",
+        "items": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "namedArticlesLimit": {
+        "type": [
+          "integer",
+          "null"
+        ]
       }
     }
   },

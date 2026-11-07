@@ -24,7 +24,7 @@ public sealed class ArticleProcedureLinkRulesTests
     private static BotDefinition Bot(Article article, params Procedure[] procedures) =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             KnowledgeBases = [Samples.Faq],
             Articles = [article],
             Procedures = [Samples.Procedure(Procedure.ConversationId), Samples.Procedure("orderValuation"), .. procedures],

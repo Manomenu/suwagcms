@@ -43,17 +43,13 @@ internal sealed partial class VersionRuntime(
     public async Task<IReadOnlyList<FeedArticle>> GetArticlesAsync(int number, CancellationToken cancellationToken = default)
     {
         var definition = await GetAsync(number, cancellationToken);
-        var languages = definition.KnowledgeBases.ToDictionary(knowledgeBase => knowledgeBase.Id, knowledgeBase => knowledgeBase.Language);
+        var bases = definition.KnowledgeBases.ToDictionary(knowledgeBase => knowledgeBase.Id, StringComparer.Ordinal);
         return
         [
             .. definition
                 .Articles.OrderBy(article => article.Id, StringComparer.Ordinal)
                 // Why: a version is held only after validation, which refuses an article whose base it does not have.
-                .Select(article => new FeedArticle(
-                    article,
-                    languages[article.KnowledgeBase],
-                    IsOff(number, ResourceKind.Article, article.Id)
-                )),
+                .Select(article => new FeedArticle(article, bases[article.KnowledgeBase], IsOff(number, ResourceKind.Article, article.Id))),
         ];
     }
 

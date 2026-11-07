@@ -52,7 +52,7 @@ public sealed class CodeActionTests(TestDatabase database) : IDisposable
     private static BotCapabilities Declaring(params CodeAction[] actions) =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Blocks = Block.Names,
             CodeActions = actions,
         };
@@ -186,7 +186,7 @@ public sealed class CodeActionTests(TestDatabase database) : IDisposable
         else
         {
             scene.Bot.OnDeclaration = context =>
-                context.Response.WriteAsync("""{"bot":"another","formatVersion":2,"blocks":["say"],"codeActions":[]}""");
+                context.Response.WriteAsync("""{"bot":"another","formatVersion":3,"blocks":["say"],"codeActions":[]}""");
         }
         await scene.AskAsync();
 

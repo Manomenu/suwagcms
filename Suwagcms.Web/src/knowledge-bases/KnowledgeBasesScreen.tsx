@@ -3,7 +3,7 @@ import { Alert } from "@/design/alert";
 import { ResourceEdit } from "@/design/resourceEdit";
 
 import { knowledgeBasesApi } from "./api";
-import { emptyForm } from "./knowledgeBaseForm";
+import { emptyForm, formOf } from "./knowledgeBaseForm";
 import { KnowledgeBaseForm } from "./KnowledgeBaseForm";
 import { KnowledgeBasesView } from "./KnowledgeBasesView";
 
@@ -19,9 +19,7 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
             <KnowledgeBaseForm
                 key={editor.item?.id ?? "add"}
                 bot={bot}
-                initial={
-                    editor.item === null ? emptyForm() : { id: editor.item.id, title: editor.item.title, language: editor.item.language }
-                }
+                initial={editor.item === null ? emptyForm() : formOf(editor.item)}
                 {...editor.formProps}
             />
         </ResourceEdit>

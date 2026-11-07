@@ -25,6 +25,11 @@ public sealed record BotDeclaration
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool Knowledge { get; init; }
 
+    public IReadOnlyList<string> EmbeddingProfiles { get; init; } = [];
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? NamedArticlesLimit { get; init; }
+
     public static BotDeclaration Of(string bot, BotCapabilities? capabilities) =>
         capabilities is null
             ? new BotDeclaration { Bot = bot, DeclaresNothing = true }
@@ -36,5 +41,7 @@ public sealed record BotDeclaration
                 CodeActions = capabilities.CodeActions,
                 Persona = capabilities.Persona,
                 Knowledge = capabilities.Knowledge,
+                EmbeddingProfiles = capabilities.EmbeddingProfiles,
+                NamedArticlesLimit = capabilities.NamedArticlesLimit,
             };
 }

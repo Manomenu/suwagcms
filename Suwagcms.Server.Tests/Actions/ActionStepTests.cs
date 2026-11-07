@@ -151,7 +151,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
         });
         var action = await scene.Actions.Show("checkServiceability");
         var document = $$"""
-            {"formatVersion":2,"facts":{{JsonSerializer.Serialize(facts, JsonSerializerOptions.Web)}},
+            {"formatVersion":3,"facts":{{JsonSerializer.Serialize(facts, JsonSerializerOptions.Web)}},
              "actions":[{"id":"checkServiceability","description":"Checks.","parameters":{{action.GetProperty(
                 "parameters"
             ).GetRawText()}},"results":{{action.GetProperty("results").GetRawText()}},"implementation":{{action.GetProperty(
@@ -353,7 +353,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
     private static BotCapabilities Declaring(params CodeAction[] actions) =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Blocks = Block.Names,
             CodeActions = actions,
         };

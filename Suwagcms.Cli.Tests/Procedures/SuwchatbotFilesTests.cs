@@ -10,7 +10,7 @@ namespace Suwagcms.Cli.Tests.Procedures;
 // Why: this repository cannot read Suwchatbot's, so these are copies of its AppraiserBot/BotFiles at master b80c000; its scope-policy.yaml lists become one text per part, one rule per line.
 public sealed class SuwchatbotFilesTests
 {
-    private const int FormatVersion = 2;
+    private const int FormatVersion = 3;
 
     private static readonly System.Text.Json.JsonSerializerOptions Wire = new(System.Text.Json.JsonSerializerDefaults.Web);
 
@@ -191,7 +191,7 @@ public sealed class SuwchatbotFilesTests
         {
             ["formatVersion"] = FormatVersion,
             ["facts"] = JsonNode.Parse(Facts),
-            ["knowledgeBases"] = JsonNode.Parse("""[{"id":"faq","title":"Questions"}]"""),
+            ["knowledgeBases"] = JsonNode.Parse("""[{"id":"faq","title":"Questions","embedding":"default","results":5}]"""),
             ["articles"] = JsonNode.Parse(Articles),
             ["procedures"] = procedures,
             ["persona"] = JsonNode.Parse(Persona),
@@ -204,6 +204,7 @@ public sealed class SuwchatbotFilesTests
         FormatVersion = FormatVersion,
         Blocks = ["listen", "collect", "say", "assign", "inform"],
         Persona = BotDeclaration.PersonaComplete,
+        EmbeddingProfiles = ["default"],
     };
 
     [Fact]
@@ -272,6 +273,7 @@ public sealed class SuwchatbotFilesTests
             FormatVersion = FormatVersion,
             Blocks = ["listen", "collect", "say", "assign", "inform"],
             Knowledge = true,
+            EmbeddingProfiles = ["default"],
         };
 
         var mistakes = DefinitionValidator.ValidateJson(

@@ -28,6 +28,8 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
         return (versions, new PersonaApi(client, versions.Bot));
     }
 
+    private static readonly string[] Profiles = ["default"];
+
     private async Task<(PushScene Scene, TestBot Bot, PersonaApi Persona)> DeclaringBot(string? persona)
     {
         _ = database.Pool;
@@ -37,9 +39,10 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
             id,
             declares: new BotCapabilities
             {
-                FormatVersion = 2,
+                FormatVersion = 3,
                 Blocks = Block.Names,
                 Persona = persona,
+                EmbeddingProfiles = ["default"],
             }
         );
         var scene = await PushScene.RegisterAsync(client, id, bot.Address);
@@ -75,7 +78,7 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
         var held = (await versions.DocumentOf(created.Version.Number)).GetProperty("persona");
 
         Assert.Equal("""{"personality":"One\nTwo\n","scope":{"inScope":"In\nscope"}}""", held.GetRawText());
-        Assert.Equal(2, (await versions.DocumentOf(created.Version.Number)).GetProperty("formatVersion").GetInt32());
+        Assert.Equal(3, (await versions.DocumentOf(created.Version.Number)).GetProperty("formatVersion").GetInt32());
     }
 
     [Theory]
@@ -266,9 +269,10 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
                     new
                     {
                         bot = scene.Bot,
-                        formatVersion = 2,
+                        formatVersion = 3,
                         blocks = Block.Names,
                         persona = BotDeclaration.PersonaRequired,
+                        embeddingProfiles = Profiles,
                     }
                 ),
                 TestContext.Current.CancellationToken

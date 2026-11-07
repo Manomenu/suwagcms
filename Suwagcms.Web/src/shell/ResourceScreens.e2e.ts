@@ -11,7 +11,13 @@ async function addFact(request: APIRequestContext, bot: string, name: string): P
 }
 
 async function addBase(request: APIRequestContext, bot: string, id: string): Promise<void> {
-    expect((await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, { data: { title: id } })).status()).toBe(200);
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, {
+                data: { title: id, embedding: "default", results: 5 },
+            })
+        ).status(),
+    ).toBe(200);
 }
 
 async function addArticle(request: APIRequestContext, bot: string, id: string, knowledgeBase: string): Promise<void> {

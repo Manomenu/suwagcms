@@ -25,7 +25,7 @@ public sealed class FactRulesTests
     };
 
     private static IReadOnlyList<Mistake> Check(params GlobalFact[] facts) =>
-        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 2, Facts = facts }, ValidationStage.Save);
+        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 3, Facts = facts }, ValidationStage.Save);
 
     private static string[] Codes(params GlobalFact[] facts) => [.. Check(facts).Select(mistake => mistake.Code)];
 

@@ -28,7 +28,7 @@ public sealed class FactPatternTests
     private static (string Code, string Path)[] Mistakes(GlobalFact fact) =>
         [
             .. DefinitionValidator
-                .Validate(new BotDefinition { FormatVersion = 2, Facts = [fact] }, ValidationStage.Save)
+                .Validate(new BotDefinition { FormatVersion = 3, Facts = [fact] }, ValidationStage.Save)
                 .Select(mistake => (mistake.Code, mistake.Path)),
         ];
 
@@ -37,7 +37,7 @@ public sealed class FactPatternTests
     private static BotDefinition Assigning(string value, TextPattern pattern) =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Facts = [Code(pattern)],
             Procedures =
             [
@@ -57,7 +57,7 @@ public sealed class FactPatternTests
     private static BotDefinition Testing(string value, TextPattern pattern) =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Facts = [Code(pattern)],
             Procedures =
             [
@@ -96,7 +96,7 @@ public sealed class FactPatternTests
     {
         var definition = BotDefinition.Read(
             """
-            {"formatVersion":2,
+            {"formatVersion":3,
              "facts":[{"name":"customer.email","type":"text","description":"D","maxLength":254,
                "pattern":{"regex":"[a-z]+","means":"letters","example":"abc","tellCustomer":"afterRefusal"}}],
              "procedures":[{"id":"p","description":"D",
@@ -140,7 +140,7 @@ public sealed class FactPatternTests
         Assert.Equal(
             "upfront",
             BotDefinition
-                .Read("""{"formatVersion":2,"facts":[{"name":"a","type":"text","description":"d","pattern":{}}]}""")
+                .Read("""{"formatVersion":3,"facts":[{"name":"a","type":"text","description":"d","pattern":{}}]}""")
                 .Facts[0]
                 .Pattern?.TellCustomer
         );
@@ -155,7 +155,7 @@ public sealed class FactPatternTests
             );
         }
         var mistake = Assert.Single(
-            Check(new BotDefinition { FormatVersion = 2, Facts = [Code(TwoCapitals with { TellCustomer = "never" })] })
+            Check(new BotDefinition { FormatVersion = 3, Facts = [Code(TwoCapitals with { TellCustomer = "never" })] })
         );
         Assert.Contains("upfront, afterRefusal", mistake.Fix, StringComparison.Ordinal);
     }
@@ -252,7 +252,7 @@ public sealed class FactPatternTests
             MaxLength = maxLength,
         };
 
-        var mistakes = DefinitionValidator.Validate(new BotDefinition { FormatVersion = 2, Facts = [fact] }, ValidationStage.Save);
+        var mistakes = DefinitionValidator.Validate(new BotDefinition { FormatVersion = 3, Facts = [fact] }, ValidationStage.Save);
 
         if (refused)
         {
@@ -284,7 +284,7 @@ public sealed class FactPatternTests
         };
         var definition = new BotDefinition
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Procedures =
             [
                 new Procedure
@@ -350,7 +350,7 @@ public sealed class FactPatternTests
         Assert.Equal([(MistakeCodes.FactConstraintForeign, "pattern")], Mistakes(onEnum));
         Assert.Contains(
             "change the type to text",
-            Assert.Single(Check(new BotDefinition { FormatVersion = 2, Facts = [onEnum] })).Fix,
+            Assert.Single(Check(new BotDefinition { FormatVersion = 3, Facts = [onEnum] })).Fix,
             StringComparison.Ordinal
         );
     }
@@ -395,7 +395,7 @@ public sealed class FactPatternTests
         };
         var definition = new BotDefinition
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Procedures =
             [
                 new Procedure

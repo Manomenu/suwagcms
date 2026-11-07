@@ -23,7 +23,7 @@ public sealed class DeleteGuardTests
     private static BotDefinition Bot(params Article[] articles) =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             KnowledgeBases = [Samples.Faq],
             Articles = articles,
         };

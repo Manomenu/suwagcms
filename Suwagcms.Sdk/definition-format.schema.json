@@ -92,10 +92,18 @@
           },
           "language": {
             "type": "string"
+          },
+          "embedding": {
+            "type": "string"
+          },
+          "results": {
+            "type": "integer"
           }
         },
         "required": [
-          "id"
+          "id",
+          "embedding",
+          "results"
         ]
       }
     },

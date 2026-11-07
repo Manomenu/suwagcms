@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The validator can check a definition against a declaration, and a bot outside .NET can validate through an endpoint of the CMS. Registering a bot still contacts nothing: the CMS asks afterwards.</p>
   </div>
   <div class="stats">
-    <div><b>16</b><span>criteria</span></div>
+    <div><b>20</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -475,13 +475,15 @@ Mistakes, 1:
   <p>This adds a route to the public contract between the CMS and any bot. Its shape is published with the bot runtime's JSON schema.</p>
   <table>
     <tr><th>Route</th><th>Answers</th></tr>
-    <tr><td><code>GET /suwagcms/declaration</code></td><td>bot id, <code>formatVersion</code>, <code>blocks</code> and <code>codeActions</code>; or that the bot declares nothing</td></tr>
+    <tr><td><code>GET /suwagcms/declaration</code></td><td>bot id, <code>formatVersion</code>, <code>blocks</code>, <code>codeActions</code>, <code>persona</code>, <code>knowledge</code>, <code>embeddingProfiles</code> and <code>namedArticlesLimit</code>; or that the bot declares nothing</td></tr>
   </table>
   <table>
     <tr><th>Field</th><th>Meaning</th></tr>
     <tr><td><code>formatVersion</code></td><td>the one format the bot wants its versions in</td></tr>
     <tr><td><code>blocks</code></td><td>names of the blocks it can run, at least one</td></tr>
     <tr><td><code>codeActions</code></td><td>for each: <code>id</code>, <code>description</code>, and its <code>parameters</code> and <code>results</code>, typed like facts</td></tr>
+    <tr><td><code>embeddingProfiles</code></td><td>the names of the embedding profiles the bot serves, as its environment sets them; left out, it serves none. A version whose knowledge base names another, ignoring case, is refused with <code>declaration.embeddingProfile</code>, naming the base and the profiles served</td></tr>
+    <tr><td><code>namedArticlesLimit</code></td><td>the characters the articles one instruction names may hold together, counting each article's content and guide once; left out, there is no limit. A version over it is refused with <code>declaration.namedArticlesTooLong</code>, whose fix says to name fewer and search for the rest</td></tr>
   </table>
 </section>
 <section data-role="decisions">
@@ -519,6 +521,10 @@ Mistakes, 1:
     <li><code>AC-bot-declaration-15</code> <code>suwagcms validate</code> reads YAML and JSON, checks the <code>Version</code> stage unless told otherwise, and exits 0 for no mistakes and 1 otherwise, with <code>--json</code> returning the mistakes.</li>
     <li><code>AC-bot-declaration-17</code> Given a declaration, the validator returns at the <code>Version</code> stage a mistake for each step whose block the bot does not declare, naming the procedure, the step and the blocks it does declare.</li>
     <li><code>AC-bot-declaration-18</code> A change of declaration that leaves out a block in use lists the affected procedures on the profile and in <code>suwagcms bots declaration</code>.</li>
+    <li><code>AC-bot-declaration-19</code> A test bot whose setup states embedding profiles and a limit for named articles answers <code>GET /suwagcms/declaration</code> with both; one that leaves them out answers no profiles and no limit.</li>
+    <li><code>AC-bot-declaration-20</code> Given a declaration, the validator returns at the <code>Version</code> stage <code>declaration.embeddingProfile</code> for each knowledge base whose profile the bot does not list, ignoring case, naming the base and the profiles it serves, with the fix to type one of them or to set that profile on the bot; nothing at the <code>Save</code> stage, and nothing for a bot that declares nothing.</li>
+    <li><code>AC-bot-declaration-21</code> Given a declaration with a limit, the validator returns at the <code>Version</code> stage <code>declaration.namedArticlesTooLong</code> for each instruction whose named articles hold more characters together than the limit, counting content and guide and an article named twice once, with the fix to use a search query; at the limit or without one it returns nothing.</li>
+    <li><code>AC-bot-declaration-22</code> Creating a version for a bot whose stored declaration does not serve a knowledge base's profile is refused with <code>declaration.embeddingProfile</code>, and nothing is stored.</li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">

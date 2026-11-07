@@ -9,9 +9,10 @@ public sealed class KnowledgeBasesTests
 {
     private static readonly string[] OnBot = ["--server", "http://cms.internal", "--bot", "rzeczoznawca"];
 
-    private const string Offer = """{"id":"offer","title":"Offer","language":"pl","revision":3}""";
+    private const string Offer = """{"id":"offer","title":"Offer","language":"pl","embedding":"legalText","results":8,"revision":3}""";
 
-    private const string ForValuers = """{"id":"forValuers","title":"For valuers","language":"en","revision":1}""";
+    private const string ForValuers =
+        """{"id":"forValuers","title":"For valuers","language":"en","embedding":"default","results":5,"revision":1}""";
 
     private sealed class Recorder
     {
@@ -41,7 +42,7 @@ public sealed class KnowledgeBasesTests
         Assert.Equal(0, result.ExitCode);
         Assert.Equal("GET /api/bots/rzeczoznawca/knowledge-bases", $"{recorder.Calls[0].Method} {recorder.Calls[0].Url}");
         var lines = result.Output.ReplaceLineEndings("\n").TrimEnd().Split('\n');
-        Assert.Equal(["forValuers  en  For valuers", "offer       pl  Offer"], lines);
+        Assert.Equal(["forValuers  en  default     5  For valuers", "offer       pl  legalText   8  Offer"], lines);
     }
 
     [Fact]
@@ -56,10 +57,14 @@ public sealed class KnowledgeBasesTests
         Assert.Equal(0, result.ExitCode);
         var (method, url, body) = Assert.Single(recorder.Calls);
         Assert.Equal(
-            ("PUT", "/api/bots/rzeczoznawca/knowledge-bases/offer?ifRevision=0", """{"title":"Offer","language":null}"""),
+            (
+                "PUT",
+                "/api/bots/rzeczoznawca/knowledge-bases/offer?ifRevision=0",
+                """{"title":"Offer","language":null,"embedding":"default","results":5}"""
+            ),
             (method, url, body)
         );
-        Assert.Contains("Added 'offer' (Offer, pl), revision 3.", result.Output, StringComparison.Ordinal);
+        Assert.Contains("Added 'offer' (Offer, pl, legalText, 8 results), revision 3.", result.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -71,8 +76,8 @@ public sealed class KnowledgeBasesTests
         var text = await TestCli.Run(Args("kb", "show", "offer"), server);
         var json = await TestCli.Run([.. Args("kb", "show", "offer"), "--json"], server);
 
-        Assert.Contains("title:    Offer", text.Output, StringComparison.Ordinal);
-        Assert.Contains("language: pl", text.Output, StringComparison.Ordinal);
+        Assert.Contains("title:     Offer", text.Output, StringComparison.Ordinal);
+        Assert.Contains("language:  pl", text.Output, StringComparison.Ordinal);
         using var document = JsonDocument.Parse(json.Output);
         Assert.Equal(
             ("offer", "Offer", 3),
@@ -96,7 +101,11 @@ public sealed class KnowledgeBasesTests
         Assert.Equal(0, result.ExitCode);
         Assert.Equal("GET", recorder.Calls[0].Method);
         Assert.Equal(
-            ("PUT", "/api/bots/rzeczoznawca/knowledge-bases/offer?ifRevision=3", """{"title":"Our offer","language":"pl"}"""),
+            (
+                "PUT",
+                "/api/bots/rzeczoznawca/knowledge-bases/offer?ifRevision=3",
+                """{"title":"Our offer","language":"pl","embedding":"legalText","results":8}"""
+            ),
             (recorder.Calls[1].Method, recorder.Calls[1].Url, recorder.Calls[1].Body)
         );
         Assert.Contains("Saved 'offer'", result.Output, StringComparison.Ordinal);
@@ -133,6 +142,45 @@ public sealed class KnowledgeBasesTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-knowledge-bases-12")]
+    public async Task Kb_add_sends_the_profile_and_results_it_is_given_and_default_and_5_when_they_are_left_out()
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Offer));
+
+        await TestCli.Run(Args("kb", "add", "offer", "--title", "Offer", "--embedding", "legalText", "--results", "8"), server);
+        await TestCli.Run(Args("kb", "add", "offer", "--title", "Offer"), server);
+
+        Assert.Equal("""{"title":"Offer","language":null,"embedding":"legalText","results":8}""", recorder.Calls[0].Body);
+        Assert.Equal("""{"title":"Offer","language":null,"embedding":"default","results":5}""", recorder.Calls[1].Body);
+    }
+
+    [Theory]
+    [Trait("criterion", "AC-knowledge-bases-12")]
+    [InlineData("--embedding", "default", """{"title":"Offer","language":"pl","embedding":"default","results":8}""")]
+    [InlineData("--results", "12", """{"title":"Offer","language":"pl","embedding":"legalText","results":12}""")]
+    public async Task Kb_edit_changes_the_profile_or_the_results_alone_and_keeps_the_other_fields(string option, string value, string sent)
+    {
+        var recorder = new Recorder();
+        var server = recorder.Serving(_ => (HttpStatusCode.OK, Offer));
+
+        var result = await TestCli.Run(Args("kb", "edit", "offer", option, value), server);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(sent, recorder.Calls[1].Body);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-knowledge-bases-12")]
+    public async Task Kb_show_prints_the_profile_and_the_results()
+    {
+        var text = await TestCli.Run(Args("kb", "show", "offer"), new Recorder().Serving(_ => (HttpStatusCode.OK, Offer)));
+
+        Assert.Contains("embedding: legalText", text.Output, StringComparison.Ordinal);
+        Assert.Contains("results:   8", text.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-knowledge-base-language-3")]
     public async Task Kb_add_sends_the_language_it_is_given_and_none_when_it_is_left_out()
     {
@@ -142,8 +190,8 @@ public sealed class KnowledgeBasesTests
         await TestCli.Run(Args("kb", "add", "oferta", "--title", "Oferta", "--language", "pl"), server);
         await TestCli.Run(Args("kb", "add", "offer", "--title", "Offer"), server);
 
-        Assert.Equal("""{"title":"Oferta","language":"pl"}""", recorder.Calls[0].Body);
-        Assert.Equal("""{"title":"Offer","language":null}""", recorder.Calls[1].Body);
+        Assert.Equal("""{"title":"Oferta","language":"pl","embedding":"default","results":5}""", recorder.Calls[0].Body);
+        Assert.Equal("""{"title":"Offer","language":null,"embedding":"default","results":5}""", recorder.Calls[1].Body);
     }
 
     [Fact]
@@ -157,7 +205,11 @@ public sealed class KnowledgeBasesTests
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(
-            ("PUT", "/api/bots/rzeczoznawca/knowledge-bases/offer?ifRevision=3", """{"title":"Offer","language":"en"}"""),
+            (
+                "PUT",
+                "/api/bots/rzeczoznawca/knowledge-bases/offer?ifRevision=3",
+                """{"title":"Offer","language":"en","embedding":"legalText","results":8}"""
+            ),
             (recorder.Calls[1].Method, recorder.Calls[1].Url, recorder.Calls[1].Body)
         );
     }

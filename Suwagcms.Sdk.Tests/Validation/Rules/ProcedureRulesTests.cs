@@ -215,7 +215,7 @@ public sealed class ProcedureRulesTests
     public void A_bot_with_no_facts_says_to_add_one_first()
     {
         var mistakes = DefinitionValidator.Validate(
-            new BotDefinition { FormatVersion = 2, Procedures = [ProcedureSamples.All] },
+            new BotDefinition { FormatVersion = 3, Procedures = [ProcedureSamples.All] },
             ValidationStage.Save
         );
 
