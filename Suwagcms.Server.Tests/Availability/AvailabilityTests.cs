@@ -388,6 +388,26 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-availability-32")]
+    public async Task A_bot_that_missed_a_change_receives_the_whole_setting_when_it_next_answers_a_read_of_its_status()
+    {
+        await using var scene = await SceneAsync();
+        await scene.Turn("off");
+        await scene.Bot.StopAsync();
+        Assert.Equal(AvailabilityDeliveryState.NotDelivered, (await scene.Turn("off", id: AvailabilityScene.Unused)).Delivery.State);
+        await scene.Bot.StartAsync();
+        Assert.Equal(1, (await scene.OnBot()).Number);
+
+        var asked = await scene.Push.Client.GetAsync($"/api/bots/{scene.Id}/versions/status", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, asked.StatusCode);
+        var onBot = await scene.OnBot();
+        Assert.Equal(2, onBot.Number);
+        Assert.Equal([AvailabilityScene.Used, AvailabilityScene.Unused], onBot.Off.Select(item => item.Id).Order(StringComparer.Ordinal));
+        Assert.Equal(AvailabilityDeliveryState.Confirmed, (await scene.View()).Delivery.State);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-availability-16")]
     public async Task With_a_bot_too_slow_the_change_stays_saved_and_the_reason_says_so()
     {
