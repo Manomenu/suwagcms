@@ -27,6 +27,12 @@ changes:
     description: Discounts on a valuation.
     llmGuide: Ask about the kind of property first.
     content: Zobacz [Cennik](cms://article/cennik).
+  - add: knowledgeBase
+    id: oferta
+    title: Oferta
+    language: pl
+    embedding: default       # the bot's embedding profile; results: how many one search gives, 1 to 20
+    results: 5
   - edit: fact
     name: customer.city      # a fact has a name, the others an id
     ifRevision: 7            # optional: refuse the whole file if it is no longer this revision

@@ -177,6 +177,42 @@ internal static class KnowledgeRules
                     )
             );
 
+    // Why: a named article reaches the model whole, with no query to cut it by, so the bot says how much one instruction may hold; its content and guide are what it delivers, and an article named twice counts once.
+    public static IEnumerable<Mistake> NamedArticlesTooLong(BotDefinition definition, int limit)
+    {
+        var lengths = definition
+            .Articles.DistinctBy(article => article.Id, StringComparer.Ordinal)
+            .ToDictionary(article => article.Id, article => article.Content.Length + article.LlmGuide.Length, StringComparer.Ordinal);
+        return definition
+            .Procedures.OrderBy(procedure => procedure.Id, StringComparer.Ordinal)
+            .SelectMany(procedure =>
+                Instructions(procedure)
+                    .Select(found =>
+                        (
+                            found,
+                            total: found
+                                .Entries.SelectMany(entry => entry.Articles ?? [])
+                                .Distinct(StringComparer.Ordinal)
+                                .Sum(id => lengths.GetValueOrDefault(id))
+                        )
+                    )
+                    .Where(item => item.total > limit)
+                    .Select(item =>
+                        Make(
+                            procedure,
+                            MistakeCodes.DeclarationNamedArticlesTooLong,
+                            ValidationStage.Version,
+                            item.found.Path,
+                            string.Create(
+                                CultureInfo.InvariantCulture,
+                                $"The articles named in {item.found.Where} hold {item.total} characters, and this bot takes at most {limit} in one instruction."
+                            ),
+                            "Name fewer or shorter articles, and put a search query on their base for the rest: it finds the parts that answer."
+                        )
+                    )
+            );
+    }
+
     private static Mistake Make(Procedure procedure, string code, ValidationStage stage, string path, string message, string fix) =>
         ProcedureMistake.Make(procedure, code, stage, path, message, fix);
 }

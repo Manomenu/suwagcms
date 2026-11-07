@@ -37,6 +37,8 @@ public static class MistakeCodes
     public const string KnowledgeBaseTitleMissing = "knowledgeBase.title.missing";
     public const string KnowledgeBaseTitleRepeated = "knowledgeBase.title.repeated";
     public const string KnowledgeBaseLanguageUnknown = "knowledgeBase.language.unknown";
+    public const string KnowledgeBaseEmbeddingMissing = "knowledgeBase.embedding.missing";
+    public const string KnowledgeBaseResultsOutOfRange = "knowledgeBase.results.outOfRange";
     public const string ArticleIdInvalid = "article.id.invalid";
     public const string ArticleKnowledgeBaseUnknown = "article.knowledgeBase.unknown";
     public const string ArticleTitleMissing = "article.title.missing";
@@ -97,6 +99,8 @@ public static class MistakeCodes
     public const string DeclarationFormatVersion = "declaration.formatVersion";
     public const string DeclarationBlock = "declaration.block";
     public const string DeclarationKnowledge = "declaration.knowledge";
+    public const string DeclarationEmbeddingProfile = "declaration.embeddingProfile";
+    public const string DeclarationNamedArticlesTooLong = "declaration.namedArticlesTooLong";
     public const string ActionIdInvalid = "action.id.invalid";
     public const string ActionDescriptionMissing = "action.description.missing";
     public const string ActionImplementationMissing = "action.implementation.missing";

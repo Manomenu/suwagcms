@@ -5,7 +5,9 @@ import { testBots } from "../../e2e/bots";
 const { newBot } = testBots("kb");
 
 async function addBase(request: APIRequestContext, bot: string, id: string, title: string): Promise<void> {
-    const response = await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, { data: { title } });
+    const response = await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, {
+        data: { title, embedding: "default", results: 5 },
+    });
     expect(response.status()).toBe(200);
 }
 
@@ -64,7 +66,9 @@ test("AC-knowledge-bases-6: editing a base that changed meanwhile is refused wit
     await page.goto(`/bots/${bot}/knowledge-bases`);
     await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
     await page.getByLabel("Title").fill("Marta's title");
-    const other = await request.put(`/api/bots/${bot}/knowledge-bases/oferta?ifRevision=1`, { data: { title: "The agent's title" } });
+    const other = await request.put(`/api/bots/${bot}/knowledge-bases/oferta?ifRevision=1`, {
+        data: { title: "The agent's title", embedding: "default", results: 5 },
+    });
     expect(other.status()).toBe(200);
 
     await page.getByRole("button", { name: "Save" }).click();
@@ -133,6 +137,30 @@ test("AC-knowledge-base-language-2: a new base starts on en, the language chosen
     expect(await (await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).json()).toMatchObject({ language: "pl" });
     await row.getByRole("button", { name: "Edit" }).click();
     await expect(page.locator('[data-field="language"] select')).toHaveValue("pl");
+});
+
+test("AC-knowledge-bases-14: a profile and results typed in the form are saved, listed by the API and shown when the form opens again", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await page.goto(`/bots/${bot}/knowledge-bases`);
+    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByLabel("Id").fill("legal");
+    await page.getByLabel("Title").fill("Legal notes");
+
+    await page.getByLabel("Embedding profile").fill("legalText");
+    await page.getByLabel("Results per search (1–20)").fill("12");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+
+    const row = page.getByRole("row").filter({ hasText: "legal" });
+    await expect(row).toContainText("Legal notes");
+    expect(await (await request.get(`/api/bots/${bot}/knowledge-bases`)).json()).toMatchObject([
+        { id: "legal", embedding: "legalText", results: 12 },
+    ]);
+    await row.getByRole("button", { name: "Edit" }).click();
+    await expect(page.getByLabel("Embedding profile")).toHaveValue("legalText");
+    await expect(page.getByLabel("Results per search (1–20)")).toHaveValue("12");
 });
 
 test("AC-resource-rename-4: Change id on a base keeps its articles in it and leaves the author on the base", async ({ page, request }) => {

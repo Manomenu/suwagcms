@@ -24,6 +24,7 @@ public sealed class PackedBotTests
                 FormatVersion = BotDefinition.CurrentFormatVersion,
                 Blocks = ["listen", "say"],
                 CodeActions = [new CodeAction { Id = "lookupPolicy", Description = "Finds a policy" }],
+                EmbeddingProfiles = ["legalText"],
             }
         );
         var app = builder.Build();
@@ -126,7 +127,7 @@ public sealed class PackedBotTests
                     await client.GetStringAsync(new Uri("/suwagcms/declaration", UriKind.Relative), TestContext.Current.CancellationToken)
                 ) ?? throw new InvalidOperationException("empty declaration");
             Assert.Equal("packed-bot", declared.Member("bot").Text());
-            Assert.Equal(2, declared.Member("formatVersion").GetValue<int>());
+            Assert.Equal(3, declared.Member("formatVersion").GetValue<int>());
             Assert.Equal("""["listen","say"]""", declared.Member("blocks").ToJsonString());
             Assert.Equal("lookupPolicy", declared.Member("codeActions").AsArray()[0]?.Member("id").Text());
 

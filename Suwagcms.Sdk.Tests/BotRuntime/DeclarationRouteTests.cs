@@ -22,18 +22,46 @@ public sealed class DeclarationRouteTests
             new InMemoryVersionStore(),
             declares: new BotCapabilities
             {
-                FormatVersion = 2,
+                FormatVersion = 3,
                 Blocks = ["listen"],
                 Knowledge = true,
             }
         );
         await using var silent = await BotHost.StartAsync(
             new InMemoryVersionStore(),
-            declares: new BotCapabilities { FormatVersion = 2, Blocks = ["listen"] }
+            declares: new BotCapabilities { FormatVersion = 3, Blocks = ["listen"] }
         );
 
         Assert.True((await DeclarationAsync(reads))["knowledge"]?.GetValue<bool>());
         Assert.Null((await DeclarationAsync(silent))["knowledge"]);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-bot-declaration-19")]
+    public async Task A_setup_stating_embedding_profiles_and_a_limit_answers_them_and_one_that_leaves_them_out_answers_none()
+    {
+        await using var searches = await BotHost.StartAsync(
+            new InMemoryVersionStore(),
+            declares: new BotCapabilities
+            {
+                FormatVersion = 3,
+                Blocks = ["listen"],
+                EmbeddingProfiles = ["default", "legalText"],
+                NamedArticlesLimit = 8000,
+            }
+        );
+        await using var silent = await BotHost.StartAsync(
+            new InMemoryVersionStore(),
+            declares: new BotCapabilities { FormatVersion = 3, Blocks = ["listen"] }
+        );
+
+        var answer = await DeclarationAsync(searches);
+        var none = await DeclarationAsync(silent);
+
+        Assert.Equal(["default", "legalText"], answer.Member("embeddingProfiles").Items().Select(item => item.Text()));
+        Assert.Equal(8000, answer["namedArticlesLimit"]?.GetValue<int>());
+        Assert.Empty(none.Member("embeddingProfiles").Items());
+        Assert.Null(none["namedArticlesLimit"]);
     }
 
     [Fact]
@@ -44,7 +72,7 @@ public sealed class DeclarationRouteTests
             new InMemoryVersionStore(),
             declares: new BotCapabilities
             {
-                FormatVersion = 2,
+                FormatVersion = 3,
                 Blocks = ["listen", "say"],
                 CodeActions =
                 [
@@ -71,7 +99,7 @@ public sealed class DeclarationRouteTests
 
         Assert.Equal("rzeczoznawca", answer.Member("bot").Text());
         Assert.False(answer.Member("declaresNothing").GetValue<bool>());
-        Assert.Equal(2, answer.Member("formatVersion").GetValue<int>());
+        Assert.Equal(3, answer.Member("formatVersion").GetValue<int>());
         Assert.Equal(["listen", "say"], answer.Member("blocks").Items().Select(block => block.Text()));
         var action = Assert.Single(answer.Member("codeActions").Items());
         Assert.Equal("lookupPolicy", action.Member("id").Text());
@@ -101,7 +129,7 @@ public sealed class DeclarationRouteTests
     {
         await using var bot = await BotHost.StartAsync(
             new InMemoryVersionStore(),
-            declares: new BotCapabilities { FormatVersion = 2, Blocks = Block.Names }
+            declares: new BotCapabilities { FormatVersion = 3, Blocks = Block.Names }
         );
         var good = Documents.Make(1);
         var (accepted, _) = await bot.PutAsync(1, good);

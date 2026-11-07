@@ -3274,6 +3274,21 @@
           },
           "knowledge": {
             "type": "boolean"
+          },
+          "embeddingProfiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "namedArticlesLimit": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -4083,6 +4098,8 @@
           "id",
           "title",
           "language",
+          "embedding",
+          "results",
           "revision"
         ],
         "type": "object",
@@ -4096,6 +4113,17 @@
           "language": {
             "type": "string"
           },
+          "embedding": {
+            "type": "string"
+          },
+          "results": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
           "revision": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -4105,7 +4133,7 @@
             "format": "int32"
           }
         },
-        "description": "A knowledge base of a bot as the API shows it: its id, title and language, and the revision to send back to guard an edit."
+        "description": "A knowledge base of a bot as the API shows it: its id, title, language, embedding profile and results per search, and the revision to send back to guard an edit."
       },
       "KnowledgeEntry": {
         "type": "object",
@@ -5112,7 +5140,9 @@
       "SaveKnowledgeBase": {
         "required": [
           "title",
-          "language"
+          "language",
+          "embedding",
+          "results"
         ],
         "type": "object",
         "properties": {
@@ -5127,9 +5157,24 @@
               "null",
               "string"
             ]
+          },
+          "embedding": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "results": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         },
-        "description": "What saving a knowledge base takes: its title and its language; the id comes from the address. A title left out is refused by the server; a language left out is en."
+        "description": "What saving a knowledge base takes: its title, its language, the name of the embedding profile the bot embeds its articles with, and how many results one search gives from it (1 to 20); the id comes from the address. A title, profile or results left out is refused by the server; a language left out is en."
       },
       "SavePersona": {
         "required": [

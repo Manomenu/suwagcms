@@ -6,13 +6,13 @@ import type { Mistake } from "@/api/client";
 import { PageSizeContext } from "@/api/pagination";
 
 import type { KnowledgeBase } from "./api";
-import { HINTS, emptyForm, fieldOf, mistakesFor } from "./knowledgeBaseForm";
+import { HINTS, emptyForm, fieldOf, mistakesFor, saveOf } from "./knowledgeBaseForm";
 import { KnowledgeBaseForm } from "./KnowledgeBaseForm";
 import { KnowledgeBasesView } from "./KnowledgeBasesView";
 
 const bases: KnowledgeBase[] = [
-    { id: "oferta", title: "Our offer", language: "pl", revision: 2 },
-    { id: "dlaRzeczoznawcow", title: "For valuers", language: "en", revision: 1 },
+    { id: "oferta", title: "Our offer", language: "pl", embedding: "default", results: 5, revision: 2 },
+    { id: "dlaRzeczoznawcow", title: "For valuers", language: "en", embedding: "default", results: 5, revision: 1 },
 ];
 
 function view(list: KnowledgeBase[]): string {
@@ -100,6 +100,49 @@ describe("the language of a knowledge base", () => {
     });
 });
 
+describe("the embedding profile and results of a knowledge base", () => {
+    function form(): string {
+        return renderToStaticMarkup(
+            <KnowledgeBaseForm
+                bot="rzeczoznawca"
+                initial={emptyForm()}
+                editing={false}
+                revision={0}
+                onSaved={() => undefined}
+                onReload={() => undefined}
+                onCancel={() => undefined}
+                onDirtyChange={() => undefined}
+            />,
+        );
+    }
+
+    it("AC-knowledge-bases-13: a new base starts on the profile default and 5 results, each field with its tooltip", () => {
+        const html = form();
+        const embedding = html.slice(html.indexOf('data-field="embedding"'), html.indexOf('data-field="results"'));
+        const results = html.slice(html.indexOf('data-field="results"'));
+
+        expect(embedding).toContain('value="default"');
+        expect(embedding).toContain("Embedding profile");
+        expect(embedding).toContain(`>${HINTS.embedding}<`);
+        expect(results).toContain('value="5"');
+        expect(results).toContain("Results per search (1–20)");
+        expect(results).toContain(`>${HINTS.results}<`);
+        expect(HINTS.embedding).toMatch(/set on the bot, never here/);
+    });
+
+    it("AC-knowledge-bases-15: a refused profile or results is shown beside its field, and results that are no number are sent as none", () => {
+        expect(fieldOf(mistake("knowledgeBase.embedding.missing", "embedding", "a"))).toBe("embedding");
+        expect(fieldOf(mistake("knowledgeBase.results.outOfRange", "results", "a"))).toBe("results");
+        expect(saveOf({ ...emptyForm(), id: "a", title: "A", results: "x" }).results).toBeNull();
+        expect(saveOf({ ...emptyForm(), id: "a", title: "A", embedding: "legalText", results: " 12 " })).toEqual({
+            title: "A",
+            language: "en",
+            embedding: "legalText",
+            results: 12,
+        });
+    });
+});
+
 describe("the knowledge base form's mistakes", () => {
     it("AC-knowledge-bases-4: a mistake goes beside the field its path names, and a taken id beside the id", () => {
         expect(fieldOf(mistake("knowledgeBase.title.missing", "title", "a"))).toBe("title");
@@ -124,6 +167,8 @@ describe("a long list", () => {
             id: `base${String(index)}`,
             title: "A base",
             language: "pl",
+            embedding: "default",
+            results: 5,
             revision: 1,
         }));
         const html = renderToStaticMarkup(

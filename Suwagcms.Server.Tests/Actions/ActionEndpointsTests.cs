@@ -173,7 +173,7 @@ public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
         const string Body =
             """{"description":"d","implementation":{"http":{"method":"GRAB","url":"https://x.internal/{none}","headers":{"Cookie":"a"}}}}""";
         var offline = DefinitionValidator.ValidateJson(
-            """{"formatVersion":2,"actions":[{"id":"check","description":"d","implementation":{"http":{"method":"GRAB","url":"https://x.internal/{none}","headers":{"Cookie":"a"}}}}]}""",
+            """{"formatVersion":3,"actions":[{"id":"check","description":"d","implementation":{"http":{"method":"GRAB","url":"https://x.internal/{none}","headers":{"Cookie":"a"}}}}]}""",
             ValidationStage.Save
         );
 

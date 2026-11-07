@@ -16,7 +16,13 @@ public sealed class KnowledgeRulesTests
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly KnowledgeBase Offer = new() { Id = "offer", Title = "Offer" };
+    private static readonly KnowledgeBase Offer = new()
+    {
+        Id = "offer",
+        Title = "Offer",
+        Embedding = "default",
+        Results = 5,
+    };
 
     private static Article Office(string knowledgeBase = "faq") =>
         Samples.Pricing with
@@ -141,7 +147,7 @@ public sealed class KnowledgeRulesTests
     public void Knowledge_on_a_block_with_no_instruction_is_refused_saying_where_it_belongs()
     {
         const string json = """
-            {"formatVersion":2,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
+            {"formatVersion":3,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
               "a":{"say":"Hi","knowledge":[{"knowledgeBase":"faq","articles":["officeContact"]}]}}}]}
             """;
 
@@ -200,11 +206,11 @@ public sealed class KnowledgeRulesTests
     public void The_validator_on_its_own_reports_the_reference_and_version_mistakes_with_the_same_codes_from_json()
     {
         const string missing = """
-            {"formatVersion":2,"knowledgeBases":[{"id":"faq","title":"FAQ"}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{"a":{"say":"Hi"}},
+            {"formatVersion":3,"knowledgeBases":[{"id":"faq","title":"FAQ","embedding":"default","results":5}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{"a":{"say":"Hi"}},
               "whenStalled":{"instruction":"Say it.","knowledge":[{"knowledgeBase":"faq","articles":["ghost"]}]}}]}
             """;
         const string unfinished = """
-            {"formatVersion":2,"knowledgeBases":[{"id":"faq","title":"FAQ"}],"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{"a":{"say":"Hi"}},
+            {"formatVersion":3,"knowledgeBases":[{"id":"faq","title":"FAQ","embedding":"default","results":5}],"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{"a":{"say":"Hi"}},
               "whenStalled":{"instruction":"Say it.","knowledge":[{"knowledgeBase":"faq","searchQueries":["hours"," "]}]}}]}
             """;
 
@@ -273,6 +279,7 @@ public sealed class KnowledgeRulesTests
             Bot = "b",
             FormatVersion = BotDefinition.CurrentFormatVersion,
             Blocks = Block.Names,
+            EmbeddingProfiles = [KnowledgeBase.DefaultEmbedding],
         };
 
         var mistake = Assert.Single(DefinitionValidator.Validate(definition, ValidationStage.Version, declaration));

@@ -12,7 +12,13 @@ async function addFacts(request: APIRequestContext, bot: string, count: number):
 }
 
 async function addBase(request: APIRequestContext, bot: string): Promise<void> {
-    expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, { data: { title: "Offer" } })).status()).toBe(200);
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, {
+                data: { title: "Offer", embedding: "default", results: 5 },
+            })
+        ).status(),
+    ).toBe(200);
 }
 
 function next(page: Page) {
@@ -218,7 +224,7 @@ test("AC-pagination-10: on Versions, creating a version on a later page shows pa
 async function twelveEntries(request: APIRequestContext, bot: string): Promise<void> {
     await addBase(request, bot);
     for (let revision = 1; revision <= 11; revision++) {
-        const data = { title: `Offer ${String(revision)}` };
+        const data = { title: `Offer ${String(revision)}`, embedding: "default", results: 5 };
         expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=${String(revision)}`, { data })).status()).toBe(200);
     }
 }
@@ -262,7 +268,13 @@ test("AC-pagination-12: the History panel pages under historyPage: the list's pa
     const bot = await newBot(request);
     await twelveEntries(request, bot);
     for (const id of ["a1", "a2", "a3", "a4", "a5"]) {
-        expect((await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, { data: { title: id } })).status()).toBe(200);
+        expect(
+            (
+                await request.put(`/api/bots/${bot}/knowledge-bases/${id}?ifRevision=0`, {
+                    data: { title: id, embedding: "default", results: 5 },
+                })
+            ).status(),
+        ).toBe(200);
     }
     await page.goto(`/bots/${bot}/knowledge-bases/offer/edit?page=2`);
     let asked = false;

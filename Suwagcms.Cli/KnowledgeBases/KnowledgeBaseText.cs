@@ -14,7 +14,22 @@ internal static class KnowledgeBaseText
             return "";
         }
         var width = bases.Max(item => item.Id.Length);
-        return string.Join(Environment.NewLine, bases.Select(item => $"{item.Id.PadRight(width)}  {item.Language}  {item.Title}"));
+        var profileWidth = bases.Max(item => item.Embedding.Length);
+        return string.Join(
+            Environment.NewLine,
+            bases.Select(item =>
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"{item.Id.PadRight(width)}  {item.Language}  {item.Embedding.PadRight(profileWidth)}  {item.Results, 2}  {item.Title}"
+                )
+            )
+        );
+    }
+
+    public static string Summary(KnowledgeBaseView item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return string.Create(CultureInfo.InvariantCulture, $"{item.Title}, {item.Language}, {item.Embedding}, {item.Results} results");
     }
 
     public static string Detail(KnowledgeBaseView item)
@@ -23,9 +38,11 @@ internal static class KnowledgeBaseText
         return string.Join(
             Environment.NewLine,
             item.Id,
-            $"  title:    {item.Title}",
-            $"  language: {item.Language}",
-            string.Create(CultureInfo.InvariantCulture, $"  revision: {item.Revision}")
+            $"  title:     {item.Title}",
+            $"  language:  {item.Language}",
+            $"  embedding: {item.Embedding}",
+            string.Create(CultureInfo.InvariantCulture, $"  results:   {item.Results}"),
+            string.Create(CultureInfo.InvariantCulture, $"  revision:  {item.Revision}")
         );
     }
 }

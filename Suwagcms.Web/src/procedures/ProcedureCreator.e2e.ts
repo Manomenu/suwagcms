@@ -739,7 +739,13 @@ test("AC-procedure-creator-20: knowledge is edited on whenStalled and on an info
 }) => {
     const bot = await newBot(request);
     for (const base of ["offer", "reports"]) {
-        expect((await request.put(`/api/bots/${bot}/knowledge-bases/${base}?ifRevision=0`, { data: { title: base } })).status()).toBe(200);
+        expect(
+            (
+                await request.put(`/api/bots/${bot}/knowledge-bases/${base}?ifRevision=0`, {
+                    data: { title: base, embedding: "default", results: 5 },
+                })
+            ).status(),
+        ).toBe(200);
     }
     for (const [id, knowledgeBase] of [
         ["officeContact", "offer"],
@@ -798,7 +804,13 @@ test("AC-procedure-creator-20: knowledge is edited on whenStalled and on an info
 test("AC-procedure-creator-37: changing the base of an entry clears its articles and keeps its queries", async ({ page, request }) => {
     const bot = await newBot(request);
     for (const base of ["offer", "reports"]) {
-        expect((await request.put(`/api/bots/${bot}/knowledge-bases/${base}?ifRevision=0`, { data: { title: base } })).status()).toBe(200);
+        expect(
+            (
+                await request.put(`/api/bots/${bot}/knowledge-bases/${base}?ifRevision=0`, {
+                    data: { title: base, embedding: "default", results: 5 },
+                })
+            ).status(),
+        ).toBe(200);
     }
     for (const [id, knowledgeBase] of [
         ["officeContact", "offer"],
@@ -910,7 +922,7 @@ test("AC-procedure-creator-19: the page offers only the blocks the bot last decl
     const server = createServer((_, response) => {
         response
             .writeHead(200, { "content-type": "application/json" })
-            .end(JSON.stringify({ bot: id, formatVersion: 2, blocks: ["listen", "say"] }));
+            .end(JSON.stringify({ bot: id, formatVersion: 3, blocks: ["listen", "say"] }));
     });
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     try {
@@ -938,7 +950,7 @@ test("AC-procedure-creator-38: Knowledge shows on When stalled and on a Tell whi
     request,
 }) => {
     const id = freshId();
-    let declared: object = { bot: id, formatVersion: 2, blocks: ["listen", "say", "inform"] };
+    let declared: object = { bot: id, formatVersion: 3, blocks: ["listen", "say", "inform"] };
     const server = createServer((_, response) => {
         response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(declared));
     });

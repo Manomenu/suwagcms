@@ -11,8 +11,8 @@ import { emptyForm, fieldOf, HINTS, isDirty, bodyOf } from "./articleForm";
 import { ArticlesView } from "./ArticlesView";
 
 const bases: KnowledgeBase[] = [
-    { id: "offer", title: "Offer", language: "pl", revision: 1 },
-    { id: "forValuers", title: "For valuers", language: "en", revision: 1 },
+    { id: "offer", title: "Offer", language: "pl", embedding: "default", results: 5, revision: 1 },
+    { id: "forValuers", title: "For valuers", language: "en", embedding: "default", results: 5, revision: 1 },
 ];
 
 const articles: Article[] = [

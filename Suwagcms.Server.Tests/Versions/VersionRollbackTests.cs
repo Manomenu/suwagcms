@@ -346,7 +346,10 @@ public sealed class VersionRollbackTests(TestDatabase database) : IDisposable
         await using var _ = bot;
         await TwoHeldAsync(scene);
         var puts = CountPuts(bot);
-        bot.OnDeclaration = Answering(200, $$"""{"bot":"{{scene.Bot}}","formatVersion":2,"blocks":["listen","say","assign"]}""");
+        bot.OnDeclaration = Answering(
+            200,
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":3,"blocks":["listen","say","assign"],"embeddingProfiles":["default"]}"""
+        );
 
         var result = await scene.PushAsync(1);
 

@@ -12,11 +12,11 @@ namespace Suwagcms.Server.Tests.Validation;
 public sealed class ValidateEndpointTests(TestDatabase database) : IDisposable
 {
     private const string Unfinished = """
-        {"formatVersion":2,"facts":[{"name":"Bad Name","type":"blob","description":" "}],
+        {"formatVersion":3,"facts":[{"name":"Bad Name","type":"blob","description":" "}],
          "procedures":[{"id":"conversation","description":"Base","firstStep":"ask","steps":{"ask":{"say":"Hello"}}}]}
         """;
 
-    private const string Declares = """{"bot":"anything","formatVersion":2,"blocks":["listen"]}""";
+    private const string Declares = """{"bot":"anything","formatVersion":3,"blocks":["listen"]}""";
 
     private readonly TestApp app = new();
 
@@ -74,11 +74,11 @@ public sealed class ValidateEndpointTests(TestDatabase database) : IDisposable
     {
         var answer = await PostAsync(
             Client(),
-            """{"definition":{"formatVersion":2,"procedures":[{"id":"conversation","description":"Base","firstStep":"ask","steps":{"ask":{"say":"Hello"}}}]}}"""
+            """{"definition":{"formatVersion":3,"procedures":[{"id":"conversation","description":"Base","firstStep":"ask","steps":{"ask":{"say":"Hello"}}}]}}"""
         );
         Assert.Empty(answer.Mistakes);
 
-        var missing = await PostAsync(Client(), """{"definition":{"formatVersion":2}}""");
+        var missing = await PostAsync(Client(), """{"definition":{"formatVersion":3}}""");
         Assert.Equal(MistakeCodes.BotConversationMissing, Assert.Single(missing.Mistakes).Code);
     }
 
@@ -91,7 +91,7 @@ public sealed class ValidateEndpointTests(TestDatabase database) : IDisposable
         Assert.Equal(
             MistakeCodes.DeclarationInvalid,
             Assert
-                .Single((await PostAsync(client, """{"definition":{"formatVersion":2},"declaration":{"blocks":"listen"}}""")).Mistakes)
+                .Single((await PostAsync(client, """{"definition":{"formatVersion":3},"declaration":{"blocks":"listen"}}""")).Mistakes)
                 .Code
         );
 

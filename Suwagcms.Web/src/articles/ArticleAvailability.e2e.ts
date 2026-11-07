@@ -24,7 +24,13 @@ async function startBot(id: string): Promise<{ server: Server; address: string }
 
 async function fill(request: APIRequestContext, bot: string, address: string): Promise<void> {
     expect((await request.post("/api/bots", { data: { id: bot, name: `Name of ${bot}`, address } })).status()).toBe(201);
-    expect((await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, { data: { title: "Offer" } })).status()).toBe(200);
+    expect(
+        (
+            await request.put(`/api/bots/${bot}/knowledge-bases/offer?ifRevision=0`, {
+                data: { title: "Offer", embedding: "default", results: 5 },
+            })
+        ).status(),
+    ).toBe(200);
     for (const [id, content] of [
         ["cennik", "What a valuation costs."],
         ["rabaty", "See [the price list](cms://article/cennik)."],

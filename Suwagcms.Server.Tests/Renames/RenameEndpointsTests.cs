@@ -71,7 +71,12 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
         _ = database.Pool;
         var client = app.CreateClient();
         var scene = new Scene(client, await ProcedureApi.NewBotAsync(client));
-        Assert.Equal(HttpStatusCode.OK, (await scene.Put("knowledge-bases", "offer", """{"title":"Offer"}""", "?ifRevision=0")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            (
+                await scene.Put("knowledge-bases", "offer", """{"title":"Offer","embedding":"default","results":5}""", "?ifRevision=0")
+            ).StatusCode
+        );
         return scene;
     }
 

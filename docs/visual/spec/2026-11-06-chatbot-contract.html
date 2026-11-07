@@ -440,7 +440,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>Which version is current, which are held</td><td>Bot: the CMS shows what the bot reports</td><td>The CMS asks for a change, and shows a failure as a failure</td></tr>
     <tr><td>Which version a conversation is on</td><td>Bot, in its saved state</td><td>The CMS never sees a conversation</td></tr>
     <tr><td>When a conversation ends</td><td>Bot</td><td>The CMS sees only the numbers reported as in use</td></tr>
-    <tr><td>Format version, blocks it runs, code actions, whether a persona is required</td><td>Bot, in its setup: its declaration</td><td>The CMS offers and accepts only what is declared</td></tr>
+    <tr><td>Format version, blocks it runs, code actions, whether a persona is required, whether it reads knowledge, the embedding profiles it serves, how much named articles may hold</td><td>Bot, in its setup: its declaration</td><td>The CMS offers and accepts only what is declared</td></tr>
     <tr><td>Search over articles</td><td>Bot, or a search system it chooses</td><td>The CMS builds no index</td></tr>
     <tr><td>Agents' mechanics: how a message becomes commands, how a text is judged</td><td>Bot, in its code</td><td>Not in the format, below</td></tr>
   </table>
@@ -545,7 +545,7 @@ sequenceDiagram
   <table>
     <tr><th>Route on the bot</th><th>Purpose</th><th>Answers</th></tr>
     <tr><td><code>GET /suwagcms/state</code></td><td>What it has</td><td><code>bot</code>, <code>current</code>, <code>held</code>, <code>inUse</code>, <code>storeError</code>, <code>availability</code></td></tr>
-    <tr><td><code>GET /suwagcms/declaration</code></td><td>What it runs</td><td><code>bot</code>, <code>formatVersion</code>, <code>blocks</code>, <code>codeActions</code>, <code>persona</code>, <code>knowledge</code>, or <code>declaresNothing</code></td></tr>
+    <tr><td><code>GET /suwagcms/declaration</code></td><td>What it runs</td><td><code>bot</code>, <code>formatVersion</code>, <code>blocks</code>, <code>codeActions</code>, <code>persona</code>, <code>knowledge</code>, <code>embeddingProfiles</code>, <code>namedArticlesLimit</code>, or <code>declaresNothing</code></td></tr>
     <tr><td><code>PUT /suwagcms/versions/{number}</code></td><td>Take a document</td><td>The state, or a refusal</td></tr>
     <tr><td><code>PUT /suwagcms/current</code></td><td>Make a held version current: <code>number</code>, <code>digest</code></td><td>The state, or a refusal</td></tr>
     <tr><td><code>PUT /suwagcms/availability</code></td><td>What is off: <code>number</code>, <code>off</code></td><td>The state, or a refusal</td></tr>
@@ -569,7 +569,7 @@ sequenceDiagram
   <p>The name of the contract is <code>suwagcms-bot</code>. Its generated artifacts are the two JSON schemas the SDK carries, <code>definition-format.schema.json</code> and <code>bot-runtime.schema.json</code>; the CMS's own HTTP API has <code>Suwagcms.Server/openapi.json</code> and is no part of what a bot talks to.</p>
   <h3>Compatibility</h3>
   <ul>
-    <li><b>Format version is a whole number, and both sides must have the same.</b> It is <code>2</code>, since <code>context</code> became <code>knowledge</code>; <code>procedure-creator</code> says what happens to format 1. A reader refuses any other.</li>
+    <li><b>Format version is a whole number, and both sides must have the same.</b> It is <code>3</code>, since a knowledge base's <code>embedding</code> and <code>results</code> became required (<code>knowledge-bases</code>); it was <code>2</code> when <code>context</code> became <code>knowledge</code>, and <code>procedure-creator</code> says what happens to an older format. A reader refuses any other, so a version the CMS keeps in format 2 can be neither pushed nor rolled back to: a new one is created from the working state.</li>
     <li><b>An optional field whose absence means today's behaviour is added without a new format version.</b> A reader skips what it does not know, and the digest covers it all the same, so an older bot still loads such a version. It then runs without the field's meaning, so whoever needs the field takes the newer SDK first.</li>
     <li><b>Everything else is a new format version:</b> a new block, a renamed field, a field required, or a meaning changed.</li>
     <li><b>A version is never changed.</b> A stored version keeps its bytes and its digest under every later SDK.</li>
@@ -605,6 +605,7 @@ sequenceDiagram
     <li><code>AC-chatbot-contract-11</code> A version for another bot, of another format or with a wrong digest is refused with its code and every mistake; a failing store answers 503; in each case the bot's current version stays as it was.</li>
     <li><code>AC-chatbot-contract-12</code> A filter a bot puts on what the mapping of the routes returns applies to every route, so a bot can close them.</li>
     <li><code>AC-chatbot-contract-13</code> A version with a field this SDK does not know loads, and its digest still holds.</li>
+    <li><code>AC-chatbot-contract-14</code> The SDK reads and writes format 3: a document in format 2 is refused with <code>format.version</code>, whose fix says to create a new version from the working state, and a knowledge base without <code>embedding</code> or <code>results</code> cannot be read as format 3.</li>
   </ul>
 </section>
 

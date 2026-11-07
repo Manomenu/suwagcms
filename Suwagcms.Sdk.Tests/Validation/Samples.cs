@@ -17,7 +17,14 @@ internal static class Samples
             MaxLength = 80,
         };
 
-    public static KnowledgeBase Faq { get; } = new() { Id = "faq", Title = "Questions" };
+    public static KnowledgeBase Faq { get; } =
+        new()
+        {
+            Id = "faq",
+            Title = "Questions",
+            Embedding = "default",
+            Results = 5,
+        };
 
     public static Article Pricing { get; } =
         new()
@@ -39,12 +46,12 @@ internal static class Samples
             Steps = new Dictionary<string, ProcedureStep> { ["hello"] = new() { Say = "Hello" } },
         };
 
-    public static BotDefinition Empty { get; } = new() { FormatVersion = 2 };
+    public static BotDefinition Empty { get; } = new() { FormatVersion = 3 };
 
     public static BotDefinition Valid { get; } =
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Facts = [CityFact],
             KnowledgeBases = [Faq],
             Articles = [Pricing],
@@ -66,7 +73,7 @@ internal static class Samples
     public static BotDefinition WithDuplicatesInTwoKinds { get; } =
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Facts = [CityFact, CityFact],
             Procedures = [Procedure("conversation"), Procedure("quote"), Procedure("other"), Procedure("quote")],
         };

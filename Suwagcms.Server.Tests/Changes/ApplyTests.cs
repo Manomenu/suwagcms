@@ -472,7 +472,7 @@ public sealed class ApplyTests(TestDatabase database) : IDisposable
 
         var response = await scene.Post(
             ChangeScene.File(
-                """{"add":"knowledgeBase","id":"oferta","title":"Oferta","language":"pl"}""",
+                """{"add":"knowledgeBase","id":"oferta","title":"Oferta","language":"pl","embedding":"default","results":5}""",
                 ChangeScene.AddBase("offer", "Offer")
             )
         );

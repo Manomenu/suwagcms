@@ -10,7 +10,13 @@ public sealed class ArticleLinkRulesTests
     private static IEnumerable<Reference> Links(BotDefinition definition) =>
         ReferenceWalker.From(definition).Where(reference => reference.To.Kind == ResourceKind.Article);
 
-    private static readonly KnowledgeBase Offer = new() { Id = "offer", Title = "Offer" };
+    private static readonly KnowledgeBase Offer = new()
+    {
+        Id = "offer",
+        Title = "Offer",
+        Embedding = "default",
+        Results = 5,
+    };
 
     private static Article Target(string id, string knowledgeBase = "faq") =>
         Samples.Pricing with
@@ -22,7 +28,7 @@ public sealed class ArticleLinkRulesTests
     private static BotDefinition Bot(Article from, params Article[] others) =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             KnowledgeBases = [Samples.Faq, Offer],
             Articles = [from, .. others],
         };
@@ -60,7 +66,7 @@ public sealed class ArticleLinkRulesTests
     public void The_offline_validator_refuses_the_same_link_in_the_llm_guide_and_reports_every_bad_link_at_once()
     {
         const string json = """
-            {"formatVersion":2,"knowledgeBases":[{"id":"faq","title":"Questions"}],"articles":[
+            {"formatVersion":3,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}],"articles":[
             {"id":"wycena","knowledgeBase":"faq","title":"T","content":"[a](cms://article/one) [b](cms://article/one) [c](cms://article/two)","llmGuide":"[d](cms://article/three)","description":"D"}]}
             """;
 

@@ -43,7 +43,8 @@ internal sealed class ChangeScene(HttpClient client, string bot)
     public static string AddFact(string name, string description = "A fact") =>
         $$"""{"add":"fact","name":"{{name}}","type":"text","description":"{{description}}","maxLength":80}""";
 
-    public static string AddBase(string id, string title = "A base") => $$"""{"add":"knowledgeBase","id":"{{id}}","title":"{{title}}"}""";
+    public static string AddBase(string id, string title = "A base") =>
+        $$"""{"add":"knowledgeBase","id":"{{id}}","title":"{{title}}","embedding":"default","results":5}""";
 
     public static string AddArticle(string id, string knowledgeBase, string content = "What is true.") =>
         $$"""{"add":"article","id":"{{id}}","knowledgeBase":"{{knowledgeBase}}","title":"Title of {{id}}","content":"{{content}}","llmGuide":"Ask first.","description":"About {{id}}"}""";

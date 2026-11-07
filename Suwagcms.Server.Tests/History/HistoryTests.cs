@@ -9,6 +9,7 @@ using Suwagcms.Contracts.Versions;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Changes;
 using Suwagcms.Server.Tests.Facts;
+using Suwagcms.Server.Tests.KnowledgeBases;
 using Suwagcms.Server.Tests.Procedures;
 using Suwagcms.Server.Tests.Versions;
 
@@ -63,7 +64,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     {
         var (articles, history) = await NewBot();
         await articles.KnowledgeBases.Add("oferta", "Oferta");
-        await articles.KnowledgeBases.Put("oferta", """{"title":"Nowa oferta"}""", "?ifRevision=1");
+        await articles.KnowledgeBases.Put("oferta", KnowledgeBaseApi.Body("Nowa oferta"), "?ifRevision=1");
 
         var entries = (await history.Of("knowledge-bases", "oferta")).Entries;
         var run = await history.CliAsync("history", "kb", "oferta");

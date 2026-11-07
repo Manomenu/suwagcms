@@ -54,6 +54,19 @@ public sealed class ArticleFeedTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-knowledge-bases-18")]
+    public async Task Every_article_carries_the_embedding_profile_of_its_base_beside_its_language()
+    {
+        using var directory = new TempDirectory();
+        await using var bot = await BotHost.StartAsync(Stores.Create("file", directory));
+        await bot.PutAsync(1, Documents.WithArticles(1, Documents.Article("alfa")));
+
+        var article = Assert.Single(await bot.Definitions.GetArticlesAsync(1, Token));
+
+        Assert.Equal(("pl", "legalText"), (article.Language, article.Embedding));
+    }
+
+    [Fact]
     [Trait("criterion", "AC-article-search-feed-2")]
     public async Task Content_and_the_guide_are_byte_identical_to_the_document_with_their_links()
     {

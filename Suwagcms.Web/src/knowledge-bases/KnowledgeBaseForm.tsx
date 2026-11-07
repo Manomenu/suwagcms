@@ -7,7 +7,7 @@ import { Paper } from "@/design/page";
 import { Select } from "@/design/select";
 
 import { knowledgeBasesApi } from "./api";
-import { HINTS, fieldOf, mistakesFor, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";
+import { HINTS, fieldOf, mistakesFor, saveOf, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";
 
 /**
  * The form that adds a knowledge base or edits one. A refusal shows each mistake beside its field and keeps everything typed.
@@ -34,7 +34,7 @@ export function KnowledgeBaseForm({
 }) {
     const saving = useSaveForm({
         initial,
-        save: (form: FormState) => knowledgeBasesApi.save(bot, form.id, { title: form.title, language: form.language }, revision),
+        save: (form: FormState) => knowledgeBasesApi.save(bot, form.id, saveOf(form), revision),
         onSaved,
         onCancel,
         onDirtyChange,
@@ -88,6 +88,42 @@ export function KnowledgeBaseForm({
                                 </option>
                             ))}
                         </Select>
+                    )}
+                </Field>
+                <Field
+                    prefix="knowledge-base"
+                    name="embedding"
+                    label="Embedding profile"
+                    hint={HINTS.embedding}
+                    errors={errorsOf("embedding")}
+                >
+                    {(props) => (
+                        <Input
+                            {...props}
+                            value={form.embedding}
+                            placeholder="default"
+                            onChange={(event) => {
+                                change({ embedding: event.currentTarget.value });
+                            }}
+                        />
+                    )}
+                </Field>
+                <Field
+                    prefix="knowledge-base"
+                    name="results"
+                    label="Results per search (1–20)"
+                    hint={HINTS.results}
+                    errors={errorsOf("results")}
+                >
+                    {(props) => (
+                        <Input
+                            {...props}
+                            inputMode="numeric"
+                            value={form.results}
+                            onChange={(event) => {
+                                change({ results: event.currentTarget.value });
+                            }}
+                        />
                     )}
                 </Field>
                 <FormFooter saving={saving} loose={loose} editing={editing} reloadLabel="Reload the knowledge bases" onReload={onReload} />

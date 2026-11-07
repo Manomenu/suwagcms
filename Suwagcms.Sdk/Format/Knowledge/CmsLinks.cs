@@ -70,6 +70,31 @@ internal static partial class CmsLinks
         return result.Append(markdown, copied, markdown.Length - copied).ToString();
     }
 
+    // Why: a cms:// address is the system's word and must never reach a customer, so each link becomes text a model may repeat; code keeps what it shows, as it is no link.
+    public static string ForModel(string markdown, Func<string, string?> procedureDescription)
+    {
+        if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
+        {
+            return markdown;
+        }
+        var result = new StringBuilder();
+        var copied = 0;
+        foreach (Match match in LinkPattern().Matches(WithoutCode(markdown)))
+        {
+            var label = match.Groups["label"].Value;
+            var target = match.Groups["target"].Value;
+            if (!target.StartsWith("cms:", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            var link = Classify(label, target);
+            var text = link.Form == CmsLinkForm.Procedure && procedureDescription(link.Id) is { } description ? description : label;
+            result.Append(markdown, copied, match.Index - copied).Append(text);
+            copied = match.Index + match.Length;
+        }
+        return result.Append(markdown, copied, markdown.Length - copied).ToString();
+    }
+
     private static CmsLink Classify(string label, string target)
     {
         foreach (var (prefix, form) in new[] { (ArticlePrefix, CmsLinkForm.Article), (ProcedurePrefix, CmsLinkForm.Procedure) })

@@ -128,6 +128,7 @@ After registration the CMS asks the bot what it supports:
 | format version        | validates and builds versions for that format                   |
 | blocks it can run     | offers only those in the editor; refuses any others in a version |
 | actions in its code   | shows them as `code` actions, without anyone retyping them       |
+| embedding profiles    | refuses a version whose knowledge base names another profile     |
 
 </details>
 
@@ -136,7 +137,7 @@ After registration the CMS asks the bot what it supports:
 
 | Resource       | Fields                                                                                           | Required                                                 |
 | :------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
-| **Knowledge base** | `id`, `title`, `language`                                                                    | all; `language` is `pl` or `en` and defaults to `en` |
+| **Knowledge base** | `id`, `title`, `language`, `embedding`, `results`                                            | all; `language` is `pl` or `en` and defaults to `en`; `embedding` names a profile of the bot; `results` is 1 to 20 |
 | **Article**    | `id`, `knowledgeBase`, `title`, `content`, `llmGuide`, `description`                             | all                                                      |
 | **Procedure**  | `id`, `description`, `localFacts`, `firstStep`, `steps`, `whenStalled`, `whenInterrupted`         | all except `localFacts` and `whenInterrupted`; `whenStalled` if it collects |
 | **Action**     | `id`, `description`, `parameters`, `results`, implementation                                      | all except `parameters` and `results`                    |

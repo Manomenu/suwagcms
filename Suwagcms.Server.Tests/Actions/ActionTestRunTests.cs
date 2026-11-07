@@ -384,7 +384,7 @@ public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
     private static BotCapabilities Declaring() =>
         new()
         {
-            FormatVersion = 2,
+            FormatVersion = 3,
             Blocks = Block.Names,
             CodeActions = [Lookup],
         };
