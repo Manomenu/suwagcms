@@ -360,6 +360,115 @@ test("AC-procedure-creator-8: a fresh If takes its condition on its row, with no
     await expect(page.locator("[data-branch]")).toHaveCount(0);
 });
 
+async function above(upper: ReturnType<Page["locator"]>, lower: ReturnType<Page["locator"]>): Promise<boolean> {
+    const [one, other] = [await upper.boundingBox(), await lower.boundingBox()];
+    return one !== null && other !== null && one.y + one.height <= other.y;
+}
+
+test("AC-procedure-creator-49: the ✕ on an If asks and removes the whole If, and the ✕ on an Else if removes only it", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    const house = { "order.kind": { oneOf: ["house"] } };
+    const flat = { "order.kind": { oneOf: ["flat"] } };
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "D",
+            firstStep: "ask",
+            steps: {
+                ask: { say: "A", next: [{ when: house, to: "big" }, { when: flat, to: "small" }, { to: "none" }] },
+                big: { say: "B", next: "after" },
+                small: { say: "S", next: "after" },
+                none: { say: "N", next: "after" },
+                after: { say: "Z" },
+            },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    const removeElseIf = page.getByRole("button", { name: "Remove this Else if", exact: true });
+    const removeIf = page.getByRole("button", { name: "Remove this If", exact: true });
+    await expect(removeIf).toHaveText("✕");
+    await expect(removeElseIf).toHaveText("✕");
+
+    await removeElseIf.click();
+    await page.getByRole("button", { name: "Remove them" }).click();
+    await expect(page.locator("[data-branch]")).toHaveCount(2);
+    await expect(page.locator('[data-branch="If"]')).toBeVisible();
+    await expect(page.locator("[data-step]")).toHaveCount(4);
+
+    await removeIf.click();
+    await expect(page.getByText("2 steps go with it.")).toBeVisible();
+    await page.getByRole("button", { name: "Remove them" }).click();
+    await expect(page.locator("[data-branch]")).toHaveCount(0);
+    await expect(page.locator("[data-step]")).toHaveCount(2);
+});
+
+test("AC-procedure-creator-24: + Add step is only the menu's label: it cannot be picked and comes back after each choice", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(request, bot, "orderValuation", { description: "D", firstStep: "ask", steps: { ask: { say: "A" } } }, 0);
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    const menu = page.getByLabel("Add step", { exact: true });
+    await expect(menu.locator('option[value=""]')).toBeDisabled();
+    await expect(menu.locator('option[value=""]')).toHaveAttribute("hidden", "");
+
+    await addStep(page, "say");
+    await expect(menu).toHaveValue("");
+    await expect(menu.locator("option:checked")).toHaveText("+ Add step");
+    await expect(page.locator("[data-step]")).toHaveCount(2);
+});
+
+test("AC-procedure-creator-44: the main list ends in an End that cannot be removed or moved, with + Add step above it, and in a branch nothing follows End", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await agentSaves(
+        request,
+        bot,
+        "orderValuation",
+        {
+            description: "D",
+            firstStep: "ask",
+            steps: {
+                ask: {
+                    say: "A",
+                    next: [
+                        { when: { "order.kind": { oneOf: ["house"] } }, to: "sorry" },
+                        { when: { "order.kind": { oneOf: ["flat"] } }, to: "x" },
+                        { to: "after" },
+                    ],
+                },
+                sorry: { say: "S" },
+                x: { say: "X", next: "after" },
+                after: { say: "Z" },
+            },
+        },
+        0,
+    );
+    await page.goto(`/bots/${bot}/procedures/orderValuation`);
+    const ends = page.locator('[data-row="end"]');
+    await expect(ends).toHaveCount(2);
+
+    const last = ends.last();
+    await expect(last).toContainText("End");
+    await expect(last.getByRole("button")).toHaveCount(0);
+    expect(await above(page.getByLabel("Add step", { exact: true }), last)).toBe(true);
+
+    const branch = page.locator('[data-branch="If"]');
+    await expect(branch.locator('[data-row="end"]')).toBeVisible();
+    expect(await above(page.getByLabel("Add step to If of ask", { exact: true }), branch.locator('[data-row="end"]'))).toBe(true);
+    await expect(page.getByRole("button", { name: "Save", exact: true })).toBeDisabled();
+    expect((await stored<{ revision: number }>(request, bot, "orderValuation")).revision).toBe(1);
+});
+
 test("AC-procedure-creator-8: a fresh If is open; with a condition it folds to its text and unfolds to change it, and the save stores the change; a mistake beside it opens it", async ({
     page,
     request,

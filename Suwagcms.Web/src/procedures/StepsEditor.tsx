@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
 import { Button } from "@/design/button";
 import { Input } from "@/design/input";
@@ -35,6 +35,7 @@ import {
 import { PROCEDURE_HINTS } from "./hints";
 import type { Beside } from "./KnowledgeForm";
 import { canMoveIf, canSwapBranch, fallOf, findRow, listAt, type ListEnd, type ListRef, type StepList, type StepRow } from "./list";
+import { ListRow } from "./ListRow";
 import { ConditionsEditor, conditionsText } from "./RuleEditor";
 import { StepForm } from "./StepForm";
 
@@ -86,10 +87,6 @@ export function rowText(step: Step): string {
     if (step.start !== undefined) return step.start === "" ? "No procedure yet" : step.start;
     if (step.action !== undefined) return step.action === "" ? "No action yet" : step.action;
     return "No block yet";
-}
-
-function Tag({ tone, children }: { tone: string; children: ReactNode }) {
-    return <span className={`inline-flex shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${tone}`}>{children}</span>;
 }
 
 export interface StepsProps {
@@ -154,97 +151,65 @@ function StepName({
     );
 }
 
-/** Asks once before a control takes steps with it, in the place of the control itself, since the page has no other dialog. */
-function RemoveButton({ label, steps, onRemove }: { label: string; steps: number; onRemove: () => void }) {
-    const [asking, setAsking] = useState(false);
-    if (asking) {
-        return (
-            <span className="flex items-center gap-1 text-sm">
-                {steps} {steps === 1 ? "step goes" : "steps go"} with it.
-                <Button type="button" variant="destructive" size="xs" onClick={onRemove}>
-                    Remove them
-                </Button>
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => {
-                        setAsking(false);
-                    }}
-                >
-                    Keep
-                </Button>
-            </span>
-        );
-    }
-    return (
-        <Button
-            type="button"
-            variant="ghost"
-            size="xs"
-            onClick={() => {
-                if (steps === 0) onRemove();
-                else setAsking(true);
-            }}
-        >
-            {label}
-        </Button>
-    );
-}
+const PLAIN = "bg-secondary text-foreground";
+const BRANCH = "bg-warning/15 text-warning";
 
 function NextRow({ last, props, list: ref }: { last: { next: string }; props: StepsProps; list: ListRef }) {
     const { draft, edit } = props;
     const names = Object.keys(draft.steps);
     const options = names.includes(last.next) ? names : [last.next, ...names];
     return (
-        <div className="flex items-center gap-2 py-1 text-sm" data-row="next">
-            <Tag tone="bg-secondary text-foreground">Next:</Tag>
-            <Select
-                aria-label="Next step"
-                title={PROCEDURE_HINTS.next}
-                value={last.next}
-                onChange={(event) => {
-                    edit((current) => setListEnd(current, ref, { next: event.target.value }));
-                }}
-            >
-                {options.map((name) => (
-                    <option key={name} value={name}>
-                        {name}
-                    </option>
-                ))}
-            </Select>
-            <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                aria-label="Remove this Next: row"
-                onClick={() => {
+        <ListRow
+            kind="next"
+            tag="Next:"
+            tone={PLAIN}
+            name={
+                <Select
+                    aria-label="Next step"
+                    title={PROCEDURE_HINTS.next}
+                    value={last.next}
+                    onChange={(event) => {
+                        edit((current) => setListEnd(current, ref, { next: event.target.value }));
+                    }}
+                >
+                    {options.map((name) => (
+                        <option key={name} value={name}>
+                            {name}
+                        </option>
+                    ))}
+                </Select>
+            }
+            remove={{
+                label: "Remove this Next: row",
+                steps: 0,
+                onRemove: () => {
                     edit((current) => setListEnd(current, ref, null));
-                }}
-            >
-                ✕
-            </Button>
-        </div>
+                },
+            }}
+        />
     );
 }
 
+/** The end of the main list is the format's own end, so its End writes nothing and stays; a branch's End is the author's. */
 function EndRow({ props, list: ref }: { props: StepsProps; list: ListRef }) {
     return (
-        <div className="flex items-center gap-2 py-1 text-sm" data-row="end">
-            <Tag tone="bg-secondary text-foreground">End</Tag>
-            <span className="text-muted-foreground">The procedure ends here.</span>
-            <Button
-                type="button"
-                variant="ghost"
-                size="xs"
-                aria-label="Remove this End row"
-                onClick={() => {
-                    props.edit((current) => setListEnd(current, ref, null));
-                }}
-            >
-                ✕
-            </Button>
-        </div>
+        <ListRow
+            kind="end"
+            tag="End"
+            tone={PLAIN}
+            text={<span className="text-muted-foreground">The procedure ends here.</span>}
+            remove={
+                ref === null
+                    ? undefined
+                    : {
+                          label: "Remove this End row",
+                          steps: 0,
+                          onRemove: () => {
+                              props.edit((current) => setListEnd(current, ref, null));
+                          },
+                      }
+            }
+        />
     );
 }
 
@@ -275,7 +240,9 @@ function AddStep({ list: ref, props, label }: { list: ListRef; props: StepsProps
                 }
             }}
         >
-            <option value="">+ Add step</option>
+            <option value="" disabled hidden>
+                + Add step
+            </option>
             {offered.map((block) => (
                 <option key={block} value={block}>
                     {BLOCK_LABELS[block]}
@@ -291,14 +258,16 @@ function AddStep({ list: ref, props, label }: { list: ListRef; props: StepsProps
 function StepsOf({ list: ref, props, label }: { list: ListRef; props: StepsProps; label: string }) {
     const one: StepList = listAt(props.draft.list, ref);
     const last: ListEnd = one.last;
+    // Why: nothing after an End can run, so the list's menu sits above it.
+    const ends = last === "end" || (ref === null && last === null);
     return (
         <div className="flex flex-col gap-1">
             {one.rows.map((row, index) => (
                 <RowView key={row.name} row={row} number={index + 1} props={props} />
             ))}
             {last !== null && last !== "end" && <NextRow last={last} props={props} list={ref} />}
-            {last === "end" && <EndRow props={props} list={ref} />}
             <AddStep list={ref} props={props} label={label} />
+            {ends && <EndRow props={props} list={ref} />}
         </div>
     );
 }
@@ -306,36 +275,6 @@ function StepsOf({ list: ref, props, label }: { list: ListRef; props: StepsProps
 function goesOnText(draft: Draft, ref: ListRef): string {
     const fall = fallOf(draft.list, ref);
     return fall === null ? "no steps yet" : `no steps: goes on to ${fall}`;
-}
-
-function Arrows({
-    what,
-    can,
-    onMove,
-}: {
-    what: string;
-    can: (direction: "up" | "down") => boolean;
-    onMove: (direction: "up" | "down") => void;
-}) {
-    return (
-        <span className="flex shrink-0 items-center">
-            {(["up", "down"] as const).map((direction) => (
-                <Button
-                    key={direction}
-                    type="button"
-                    variant="ghost"
-                    size="xs"
-                    aria-label={`Move ${what} ${direction}`}
-                    disabled={!can(direction)}
-                    onClick={() => {
-                        onMove(direction);
-                    }}
-                >
-                    {direction === "up" ? "↑" : "↓"}
-                </Button>
-            ))}
-        </span>
-    );
 }
 
 function BranchView({ row, index, props }: { row: StepRow; index: number; props: StepsProps }) {
@@ -351,61 +290,69 @@ function BranchView({ row, index, props }: { row: StepRow; index: number; props:
     const open = branch.when !== undefined && (!hasCondition || openConditions.includes(key));
     return (
         <div className="flex flex-col gap-1" data-branch={label} data-place={`branch:${row.name}:${index}`}>
-            <div className={`flex flex-wrap items-center gap-2 rounded-md px-1 py-1 text-sm ${open ? "bg-secondary" : ""}`}>
-                <Tag tone="bg-warning/15 text-warning">{label}</Tag>
-                {branch.when !== undefined && (
-                    <button
-                        type="button"
-                        className="min-w-0 flex-1 cursor-pointer truncate text-left disabled:cursor-default"
-                        aria-expanded={open}
-                        aria-label={`Open ${label}${index === 0 ? "" : ` ${String(index)}`} of ${row.name}`}
-                        disabled={!hasCondition}
-                        onClick={() => {
-                            onConditionOpen(key, !open);
-                        }}
-                    >
-                        {conditionsText(branch.when)}
-                    </button>
-                )}
-                {empty && <span className="text-muted-foreground">{goesOnText(draft, { ...ref })}</span>}
-                {branch.when !== undefined &&
-                    (index === 0 ? (
-                        <Arrows
-                            what={`If of ${row.name}`}
-                            can={(direction) => canMoveIf(draft.list, row.name, direction)}
-                            onMove={(direction) => {
-                                edit((current) => moveIfBlock(current, row.name, direction));
-                            }}
-                        />
-                    ) : (
-                        <Arrows
-                            what={`Else if ${String(index)} of ${row.name}`}
-                            can={(direction) => canSwapBranch(row, index, direction)}
-                            onMove={(direction) => {
-                                edit((current) => moveBranch(current, row.name, index, direction));
-                            }}
-                        />
-                    ))}
-                {index === 0 ? (
-                    <RemoveButton
-                        label="Remove this If"
-                        steps={stepsInBranches(row)}
-                        onRemove={() => {
-                            edit((current) => removeIf(current, row.name));
-                        }}
-                    />
-                ) : (
-                    branch.when !== undefined && (
-                        <RemoveButton
-                            label={`Remove this ${label}`}
-                            steps={stepsInBranch(branch)}
-                            onRemove={() => {
-                                edit((current) => removeBranch(current, row.name, index));
-                            }}
-                        />
-                    )
-                )}
-            </div>
+            <ListRow
+                kind="branch"
+                tag={label}
+                tone={BRANCH}
+                text={
+                    branch.when === undefined
+                        ? empty && <span className="text-muted-foreground">{goesOnText(draft, ref)}</span>
+                        : conditionsText(branch.when)
+                }
+                fold={
+                    branch.when === undefined
+                        ? undefined
+                        : {
+                              label: `Open ${label}${index === 0 ? "" : ` ${String(index)}`} of ${row.name}`,
+                              open,
+                              canFold: hasCondition,
+                              onToggle: () => {
+                                  onConditionOpen(key, !open);
+                              },
+                          }
+                }
+                note={
+                    branch.when !== undefined && empty && <span className="shrink-0 text-muted-foreground">{goesOnText(draft, ref)}</span>
+                }
+                move={
+                    branch.when === undefined
+                        ? undefined
+                        : index === 0
+                          ? {
+                                what: `If of ${row.name}`,
+                                can: (direction) => canMoveIf(draft.list, row.name, direction),
+                                onMove: (direction) => {
+                                    edit((current) => moveIfBlock(current, row.name, direction));
+                                },
+                            }
+                          : {
+                                what: `Else if ${String(index)} of ${row.name}`,
+                                can: (direction) => canSwapBranch(row, index, direction),
+                                onMove: (direction) => {
+                                    edit((current) => moveBranch(current, row.name, index, direction));
+                                },
+                            }
+                }
+                remove={
+                    index === 0
+                        ? {
+                              label: "Remove this If",
+                              steps: stepsInBranches(row),
+                              onRemove: () => {
+                                  edit((current) => removeIf(current, row.name));
+                              },
+                          }
+                        : branch.when === undefined
+                          ? undefined
+                          : {
+                                label: `Remove this ${label}`,
+                                steps: stepsInBranch(branch),
+                                onRemove: () => {
+                                    edit((current) => removeBranch(current, row.name, index));
+                                },
+                            }
+                }
+            />
             {branch.when !== undefined && open && (
                 <div className="ml-6 rounded-md border border-border p-3">
                     <ConditionsEditor
@@ -435,26 +382,30 @@ function ArmsView({ row, props }: { row: StepRow; props: StepsProps }) {
         <>
             {isAction && (
                 <div className="flex flex-col gap-1" data-place={`failure:${row.name}`}>
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <Tag tone="bg-warning/15 text-warning">On failure</Tag>
-                        {row.failure === undefined ? (
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="xs"
-                                onClick={() => {
-                                    edit((current) => openFailure(current, row.name));
-                                }}
-                            >
-                                Set what happens
-                            </Button>
-                        ) : (
-                            row.failure.rows.length === 0 &&
-                            row.failure.last === null && (
-                                <span className="text-muted-foreground">{goesOnText(draft, { step: row.name, arm: "failure" })}</span>
+                    <ListRow
+                        kind="failure"
+                        tag="On failure"
+                        tone={BRANCH}
+                        text={
+                            row.failure === undefined ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="xs"
+                                    onClick={() => {
+                                        edit((current) => openFailure(current, row.name));
+                                    }}
+                                >
+                                    Set what happens
+                                </Button>
+                            ) : (
+                                row.failure.rows.length === 0 &&
+                                row.failure.last === null && (
+                                    <span className="text-muted-foreground">{goesOnText(draft, { step: row.name, arm: "failure" })}</span>
+                                )
                             )
-                        )}
-                    </div>
+                        }
+                    />
                     {beside(`failure:${row.name}`)}
                     {row.failure && (
                         <div className="ml-6 border-l border-border pl-3">
@@ -469,12 +420,17 @@ function ArmsView({ row, props }: { row: StepRow; props: StepsProps }) {
             )}
             {row.success && (
                 <div className="flex flex-col gap-1" data-place={`success:${row.name}`}>
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                        <Tag tone="bg-warning/15 text-warning">On success</Tag>
-                        {row.success.rows.length === 0 && row.success.last === null && (
-                            <span className="text-muted-foreground">{goesOnText(draft, { step: row.name, arm: "success" })}</span>
-                        )}
-                    </div>
+                    <ListRow
+                        kind="success"
+                        tag="On success"
+                        tone={BRANCH}
+                        text={
+                            row.success.rows.length === 0 &&
+                            row.success.last === null && (
+                                <span className="text-muted-foreground">{goesOnText(draft, { step: row.name, arm: "success" })}</span>
+                            )
+                        }
+                    />
                     <div className="ml-6 border-l border-border pl-3">
                         <StepsOf list={{ step: row.name, arm: "success" }} props={props} label={`Add step to On success of ${row.name}`} />
                     </div>
@@ -523,79 +479,52 @@ function RowView({ row, number, props }: { row: StepRow; number: number; props: 
     const open = selected === row.name;
     return (
         <div className="flex flex-col gap-1">
-            <div
-                className={`flex flex-wrap items-center gap-2 rounded-md px-1 py-1 text-sm ${open ? "bg-secondary" : ""}`}
-                data-row="step"
-                data-step={row.name}
-                data-place={`step:${row.name}`}
-            >
-                <span className="w-5 shrink-0 text-right text-xs text-muted-foreground">{number}.</span>
-                <StepName
-                    key={row.name}
-                    name={row.name}
-                    draft={draft}
-                    edit={edit}
-                    onRenamed={(to) => {
-                        if (open) onSelect(to);
-                    }}
-                />
-                {block === null ? (
-                    <Tag tone="bg-secondary text-muted-foreground">No block</Tag>
-                ) : (
-                    <Tag tone={TAG_TONES[block]}>{BLOCK_LABELS[block]}</Tag>
-                )}
-                <button
-                    type="button"
-                    className="min-w-0 flex-1 cursor-pointer truncate text-left"
-                    aria-expanded={open}
-                    aria-label={`Open step ${row.name}`}
-                    title={block === null ? undefined : `Format: ${block}`}
-                    onClick={() => {
+            <ListRow
+                kind="step"
+                data={{ "data-step": row.name, "data-place": `step:${row.name}` }}
+                number={number}
+                tag={block === null ? "No block" : BLOCK_LABELS[block]}
+                tone={block === null ? "bg-secondary text-muted-foreground" : TAG_TONES[block]}
+                name={
+                    <StepName
+                        key={row.name}
+                        name={row.name}
+                        draft={draft}
+                        edit={edit}
+                        onRenamed={(to) => {
+                            if (open) onSelect(to);
+                        }}
+                    />
+                }
+                text={rowText(step)}
+                fold={{
+                    label: `Open step ${row.name}`,
+                    open,
+                    canFold: true,
+                    title: block === null ? undefined : `Format: ${block}`,
+                    onToggle: () => {
                         onSelect(open ? null : row.name);
-                    }}
-                >
-                    {rowText(step)}
-                </button>
-                <span className="flex shrink-0 items-center">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        aria-label={`Move ${row.name} up`}
-                        onClick={() => {
-                            edit((current) => moveStep(current, row.name, "up"));
-                        }}
-                    >
-                        ↑
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        aria-label={`Move ${row.name} down`}
-                        onClick={() => {
-                            edit((current) => moveStep(current, row.name, "down"));
-                        }}
-                    >
-                        ↓
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="xs"
-                        aria-label={`Delete step ${row.name}`}
-                        onClick={() => {
-                            const why = whyNotDeletable(findRow(draft.list, row.name));
-                            setRefusal(why);
-                            if (why !== null) return;
-                            edit((current) => deleteStep(current, row.name));
-                            if (open) onSelect(null);
-                        }}
-                    >
-                        ✕
-                    </Button>
-                </span>
-            </div>
+                    },
+                }}
+                move={{
+                    what: row.name,
+                    can: () => true,
+                    onMove: (direction) => {
+                        edit((current) => moveStep(current, row.name, direction));
+                    },
+                }}
+                remove={{
+                    label: `Delete step ${row.name}`,
+                    steps: 0,
+                    onRemove: () => {
+                        const why = whyNotDeletable(findRow(draft.list, row.name));
+                        setRefusal(why);
+                        if (why !== null) return;
+                        edit((current) => deleteStep(current, row.name));
+                        if (open) onSelect(null);
+                    },
+                }}
+            />
             {refusal !== null && <p className="ml-6 text-sm text-destructive">{refusal}</p>}
             {beside(`step:${row.name}`)}
             {open && (
@@ -636,32 +565,32 @@ export function StepsEditor(props: StepsProps) {
                         const block = blockOf(step);
                         return (
                             <div key={name} className="flex flex-col gap-1" data-place={`step:${name}`}>
-                                <div className="flex flex-wrap items-center gap-2 text-sm" data-row="not-connected">
-                                    <span className="font-mono text-xs">{name}</span>
-                                    {block !== null && <Tag tone={TAG_TONES[block]}>{BLOCK_LABELS[block]}</Tag>}
-                                    <span className="min-w-0 flex-1 truncate">{rowText(step)}</span>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="xs"
-                                        onClick={() => {
-                                            edit((current) => connectStep(current, name));
-                                        }}
-                                    >
-                                        Move into the list
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="xs"
-                                        aria-label={`Delete step ${name}`}
-                                        onClick={() => {
+                                <ListRow
+                                    kind="not-connected"
+                                    tag={block === null ? "No block" : BLOCK_LABELS[block]}
+                                    tone={block === null ? "bg-secondary text-muted-foreground" : TAG_TONES[block]}
+                                    name={<span className="shrink-0 font-mono text-xs">{name}</span>}
+                                    text={rowText(step)}
+                                    note={
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="xs"
+                                            onClick={() => {
+                                                edit((current) => connectStep(current, name));
+                                            }}
+                                        >
+                                            Move into the list
+                                        </Button>
+                                    }
+                                    remove={{
+                                        label: `Delete step ${name}`,
+                                        steps: 0,
+                                        onRemove: () => {
                                             edit((current) => deleteStep(current, name));
-                                        }}
-                                    >
-                                        ✕
-                                    </Button>
-                                </div>
+                                        },
+                                    }}
+                                />
                                 {beside(`step:${name}`)}
                             </div>
                         );
