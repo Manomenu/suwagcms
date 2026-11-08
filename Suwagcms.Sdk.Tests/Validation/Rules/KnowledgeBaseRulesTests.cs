@@ -1,5 +1,5 @@
 using Suwagcms.Sdk.Format;
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.KnowledgeBases;
 using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.Validation.Rules;

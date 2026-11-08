@@ -8,7 +8,7 @@ import { BotsRoutes } from "./bots/BotsRoutes";
 import { FactsScreen } from "./facts/FactsScreen";
 import { HistoryScreen } from "./history/HistoryScreen";
 import { KnowledgeBasesScreen } from "./knowledge-bases/KnowledgeBasesScreen";
-import { PersonaScreen } from "./persona/PersonaScreen";
+import { PersonaScreen } from "./personas/PersonaScreen";
 import { ProcedureScreen } from "./procedures/ProcedureScreen";
 import { ProceduresScreen } from "./procedures/ProceduresScreen";
 import { AppShell } from "./shell/AppShell";

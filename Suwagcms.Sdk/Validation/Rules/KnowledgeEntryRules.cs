@@ -4,7 +4,7 @@ using Suwagcms.Sdk.Format.Procedures;
 
 namespace Suwagcms.Sdk.Validation.Rules;
 
-internal static class KnowledgeRules
+internal static class KnowledgeEntryRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [

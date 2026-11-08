@@ -1,6 +1,6 @@
 using System.Globalization;
 using Suwagcms.Sdk.Format;
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.Validation.Rules;

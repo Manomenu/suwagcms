@@ -10,7 +10,7 @@ using Suwagcms.Server.Editing;
 namespace Suwagcms.Server.Bots;
 
 // Why: the one place that turns a bot's answer, or its absence, into what the CMS holds; it holds no lock or transaction while it waits on the bot.
-internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider time, DefinitionEditor editor)
+internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider time, DefinitionEditor editor)
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
@@ -35,16 +35,16 @@ internal sealed class DeclarationAsker(Pool pool, BotLine line, TimeProvider tim
             return null;
         }
 
-        switch (await line.ReadDeclarationAsync(row.Address, cancellationToken))
+        switch (await client.ReadDeclarationAsync(row.Address, cancellationToken))
         {
-            case BotLine.Reply.Silent silent:
+            case BotClient.Reply.Silent silent:
                 return await StatusAsync(bot, row, DeclarationAsk.Unreachable, silent.Reason, [], listCannotRun, cancellationToken);
             // Why: a bot on an SDK older than this route has nothing to say, which is what declaring nothing means.
-            case BotLine.Reply.Answer { Status: StatusCodes.Status404NotFound }:
+            case BotClient.Reply.Answer { Status: StatusCodes.Status404NotFound }:
                 return await StoredAnswerAsync(bot, row.Address, null, listCannotRun, cancellationToken);
-            case BotLine.Reply.Answer { Status: StatusCodes.Status200OK } answer:
+            case BotClient.Reply.Answer { Status: StatusCodes.Status200OK } answer:
                 return await JudgeAsync(bot, row, answer.Body, listCannotRun, cancellationToken);
-            case BotLine.Reply.Answer answer:
+            case BotClient.Reply.Answer answer:
                 var reason = string.Create(
                     CultureInfo.InvariantCulture,
                     $"{row.Address} answered {answer.Status}, which is not the answer of a bot's declaration route"

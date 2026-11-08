@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Suwagcms.Sdk.Format;
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;

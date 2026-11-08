@@ -40,7 +40,7 @@ internal static class ServerApp
         builder.Services.AddSingleton<DefinitionEditor>();
         builder.Services.AddSingleton<VersionCreator>();
         builder.Services.AddOptions<PushOptions>().BindConfiguration("Push");
-        builder.Services.AddHttpClient<BotLine>(client => client.Timeout = Timeout.InfiniteTimeSpan);
+        builder.Services.AddHttpClient<BotClient>(client => client.Timeout = Timeout.InfiniteTimeSpan);
         builder.Services.AddTransient<DeclarationAsker>();
         builder.Services.AddTransient<AvailabilitySender>();
         builder.Services.AddSingleton<AvailabilityRetries>();
