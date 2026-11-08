@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Redirect, useLocation, useSearch, useSearchParams } from "wouter";
 
 import { ApiError } from "@/api/client";
+import { useKindHistory } from "@/api/history";
 import { useToFirstPage } from "@/api/pagination";
 import { versionHref, versionsHref, withListSearch } from "@/api/resourceAddress";
 import { Alert } from "@/design/alert";
@@ -54,6 +55,9 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const [, navigate] = useLocation();
     const toFirstPage = useToFirstPage();
     const earlier = earlierAddress(bot, params);
+    // Why: creating and pushing add a version event, which is on the panel's newest page; 0 would read as "not loaded yet".
+    const [events, setEvents] = useState(1);
+    const history = useKindHistory(bot, earlier === null ? "versions" : null, events);
 
     const load = useCallback(
         (signal?: AbortSignal) => {
@@ -88,6 +92,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
         <VersionsView
             bot={bot}
             versions={versions}
+            history={history}
             status={status}
             pushFailure={pushFailure}
             pushing={pushing}
@@ -119,6 +124,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
                     })
                     .finally(() => {
                         setPushing(false);
+                        setEvents((was) => was + 1);
                         load();
                     });
             }}
@@ -128,6 +134,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
                     .then(() => {
                         // Why: the new version is the first row, and it is what the person came for.
                         toFirstPage();
+                        setEvents((was) => was + 1);
                         load();
                     })
                     .catch((error: unknown) => {

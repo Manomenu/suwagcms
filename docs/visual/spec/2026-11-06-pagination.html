@@ -383,7 +383,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>10</b><span>places that page</span></div>
-    <div><b>12</b><span>criteria</span></div>
+    <div><b>10</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -599,6 +599,7 @@ flowchart TD
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
+  <p class="wf-muted"><code>AC-pagination-11</code> and <code>AC-pagination-12</code>, about change history, now live in <code>change-history</code> under the same id.</p>
   <ul class="checks">
     <li><code>AC-pagination-1</code> With <code>PAGINATION_PAGE_SIZE</code> unset or empty, <code>GET /api/settings</code> answers <code>pageSize</code> 20; set to 5, it answers 5, and with it set to 5 a resource's list route still returns all of its 25 resources. <span class="tag note">server test</span></li>
     <li><code>AC-pagination-2</code> With <code>PAGINATION_PAGE_SIZE</code> at <code>0</code>, <code>-5</code>, <code>abc</code>, <code>2.5</code> or <code>501</code> the server does not start, and the message names the variable, the value and the fix. <span class="tag note">server test</span></li>
@@ -610,8 +611,6 @@ flowchart TD
     <li><code>AC-pagination-8</code> When the rows fit on one page the controls are neither visible nor reachable, and the empty space they leave under the rows is as tall as the controls on a list of two pages. <span class="tag note">browser test</span></li>
     <li><code>AC-pagination-9</code> Facts, knowledge bases, articles, procedures, actions, Versions and History all draw their controls with the one shared module, and no other source draws Previous or Next or says "Older changes". <span class="tag note">web test, reads the source</span></li>
     <li><code>AC-pagination-10</code> On Versions, "other version" offers versions of every page; creating a version shows page 1. <span class="tag note">web test, browser test</span></li>
-    <li><code>AC-pagination-11</code> With 12 entries and a size of 5, the History page of a bot and that of a resource show the 5 newest, Next shows the next 5, newest first with no entry missing or repeated, a reload stays there, and there is no load-more. <span class="tag note">server test, browser test</span></li>
-    <li><code>AC-pagination-12</code> The History panel of an edit screen pages with the same controls and size under <code>historyPage</code>: the list's <code>page</code> in the address is untouched, typed text in the form stays with no question asked, and leaving for the list drops <code>historyPage</code>. <span class="tag note">browser test</span></li>
   </ul>
 </section>
 

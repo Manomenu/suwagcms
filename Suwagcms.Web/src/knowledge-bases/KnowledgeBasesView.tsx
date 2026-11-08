@@ -1,4 +1,5 @@
 import { usePagedRows } from "@/api/pagination";
+import type { HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
 
 import type { KnowledgeBase } from "./api";
@@ -6,11 +7,13 @@ import type { KnowledgeBase } from "./api";
 /** The list of a bot's knowledge bases. */
 export function KnowledgeBasesView({
     bot,
+    history,
     bases,
     onAdd,
     onEdit,
 }: {
     bot: string;
+    history: HistoryPanelProps;
     bases: KnowledgeBase[];
     onAdd: () => void;
     onEdit: (base: KnowledgeBase) => void;
@@ -18,6 +21,7 @@ export function KnowledgeBasesView({
     const paged = usePagedRows(bases);
     return (
         <ResourceList
+            history={history}
             title={`Knowledge bases of ${bot}`}
             addLabel="Add a knowledge base"
             onAdd={onAdd}

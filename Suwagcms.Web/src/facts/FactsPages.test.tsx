@@ -7,6 +7,13 @@ import { PageSizeContext } from "@/api/pagination";
 import type { Fact } from "./api";
 import { FactsView } from "./FactsView";
 
+const noHistory = {
+    entries: [],
+    since: "2026-11-04T08:00:00+00:00",
+    failure: null,
+    paging: { page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined },
+};
+
 const facts: Fact[] = Array.from({ length: 45 }, (_, index) => ({
     name: `customer.field${String(index + 1)}`,
     type: "text",
@@ -25,7 +32,7 @@ function view(search: string, size: number | null = 20, failure: string | null =
     return renderToStaticMarkup(
         <Router ssrPath={`/bots/b/facts${search}`}>
             <PageSizeContext value={{ size, failure }}>
-                <FactsView bot="b" facts={rows} onAdd={() => undefined} onEdit={() => undefined} />
+                <FactsView history={noHistory} bot="b" facts={rows} onAdd={() => undefined} onEdit={() => undefined} />
             </PageSizeContext>
         </Router>,
     );

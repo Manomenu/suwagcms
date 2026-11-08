@@ -21,6 +21,7 @@ internal static class HistoryStore
           AND (@kind::text IS NULL OR (kind = @kind AND (public_id = @id OR resource_id IN (
               SELECT resource_id FROM change_entry WHERE bot_id = @bot AND kind = @kind AND public_id = @id
           ))))
+          AND (@only::text IS NULL OR kind = @only)
           AND (@after::bigint IS NULL OR id > @after)
           AND (@through::bigint IS NULL OR id <= @through)
         """;
@@ -37,8 +38,8 @@ internal static class HistoryStore
         Guid? Resource = null
     );
 
-    // Why: what one read lists; After and Through are ids, since a window goes by the order entries were recorded and two can share a time.
-    private sealed record Listing(string Bot, string? Kind, string? Id, long? After, long? Through);
+    // Why: what one read lists; Only is one kind of resource, every id of it; After and Through are ids, since a window goes by the order entries were recorded and two can share a time.
+    private sealed record Listing(string Bot, string? Kind, string? Id, long? After, long? Through, string? Only = null);
 
     private sealed record CreatedRow(string Number, long Id);
 
@@ -92,7 +93,8 @@ internal static class HistoryStore
         int limit,
         long? before,
         int? page,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        string? only = null
     )
     {
         await using var connection = await pool.OpenAsync(cancellationToken);
@@ -102,7 +104,7 @@ internal static class HistoryStore
         }
         return await PageAsync(
             connection,
-            new Listing(bot, resource?.Kind, resource?.Id, null, null),
+            new Listing(bot, resource?.Kind, resource?.Id, null, null, only),
             limit,
             before,
             page,
@@ -197,6 +199,7 @@ internal static class HistoryStore
                         bot = listing.Bot,
                         kind = listing.Kind,
                         id = listing.Id,
+                        only = listing.Only,
                         after = listing.After,
                         through = listing.Through,
                         before,
@@ -217,6 +220,7 @@ internal static class HistoryStore
                         bot = listing.Bot,
                         kind = listing.Kind,
                         id = listing.Id,
+                        only = listing.Only,
                         after = listing.After,
                         through = listing.Through,
                     },

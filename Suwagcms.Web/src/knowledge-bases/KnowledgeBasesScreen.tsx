@@ -12,7 +12,8 @@ export function KnowledgeBasesScreen({ bot }: { bot: string }) {
 
     if (editor.failure !== null) return <Alert variant="destructive">{editor.failure}</Alert>;
     if (editor.items === null) return <p className="text-muted-foreground">Loading knowledge bases…</p>;
-    if (!editor.isOpen) return <KnowledgeBasesView bot={bot} bases={editor.items} onAdd={editor.add} onEdit={editor.edit} />;
+    if (!editor.isOpen)
+        return <KnowledgeBasesView bot={bot} history={editor.listHistory} bases={editor.items} onAdd={editor.add} onEdit={editor.edit} />;
 
     return (
         <ResourceEdit showUses={false} noun="knowledge base" plural="knowledge bases" addTitle="Add a knowledge base" {...editor.panels}>

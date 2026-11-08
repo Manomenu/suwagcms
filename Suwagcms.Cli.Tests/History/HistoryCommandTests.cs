@@ -47,6 +47,42 @@ public sealed class HistoryCommandTests
     }
 
     [Fact]
+    [Trait("criterion", "AC-change-history-38")]
+    public async Task Kind_asks_for_one_kind_of_resource_with_the_same_paging_and_opens_that_kind_s_screen()
+    {
+        var server = StubServer.Answering(HttpStatusCode.OK, Edited);
+        var opened = new List<Uri>();
+
+        var result = await TestCli.Run(["history", "--kind", "kb", "--limit", "2", "--page", "3", .. OnBot], server);
+        await TestCli.Run(["history", "--kind", "version", "--open", .. OnBot], StubServer.Healthy(), openBrowser: opened.Add);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(
+            "http://cms.internal/api/bots/rzeczoznawca/history?kind=knowledge-bases&limit=2&page=3",
+            server.Requests[0].AbsoluteUri
+        );
+        Assert.Contains("article cennik", result.Output, StringComparison.Ordinal);
+        Assert.Equal("http://cms.internal/bots/rzeczoznawca/versions", Assert.Single(opened).AbsoluteUri);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-38")]
+    public void The_plugin_s_main_skill_describes_kind()
+    {
+        var skill = File.ReadAllText(Path.Combine(RepositoryRoot.Path, "claude-plugin", "skills", "suwagcms", "SKILL.md"));
+
+        Assert.Contains("- `suwagcms history --kind <kind> [--limit n] [--before id | --page n]` - ", skill, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-change-history-38")]
+    public async Task Kind_with_one_resource_or_an_unknown_word_is_wrong_use()
+    {
+        Assert.Equal(2, (await TestCli.Run(["history", "kb", "oferta", "--kind", "kb", .. OnBot], StubServer.Healthy())).ExitCode);
+        Assert.Equal(2, (await TestCli.Run(["history", "--kind", "shoes", .. OnBot], StubServer.Healthy())).ExitCode);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-change-history-6")]
     public async Task A_kind_without_an_id_or_a_limit_below_one_is_wrong_use()
     {

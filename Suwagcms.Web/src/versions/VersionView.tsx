@@ -1,7 +1,6 @@
 import { historyHref, type HistoryState } from "@/api/history";
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
-import { HistoryPanel } from "@/design/historyPanel";
 import { Page, Paper } from "@/design/page";
 import { BackToList } from "@/design/resourceEdit";
 import { Select } from "@/design/select";
@@ -104,7 +103,17 @@ export function VersionView({
     return (
         <div className="flex flex-col gap-4">
             <BackToList plural="versions" onBack={onBack} />
-            <Page title={`Version ${number}`}>
+            <Page
+                title={`Version ${number}`}
+                history={{
+                    ...history,
+                    empty: "No change has been recorded for this version.",
+                    hrefOf: (line) => historyHref(bot, line),
+                    ...(history.incomplete
+                        ? { note: `Changes made before ${day} were not recorded, so this list may be incomplete.` }
+                        : {}),
+                }}
+            >
                 <Paper className="flex flex-col gap-2">
                     <p className="text-sm text-muted-foreground">{dateOf(detail.version)}</p>
                     <p className="text-sm wrap-anywhere text-muted-foreground">sha256 {detail.version.sha256}</p>
@@ -112,14 +121,6 @@ export function VersionView({
                     <pre className="max-h-96 overflow-auto text-xs whitespace-pre-wrap">{detail.document}</pre>
                 </Paper>
                 <Compare number={number} versions={versions} comparison={comparison} onCompare={onCompare} onClose={onCloseComparison} />
-                <HistoryPanel
-                    {...history}
-                    empty="No change has been recorded for this version."
-                    hrefOf={(line) => historyHref(bot, line)}
-                    {...(history.incomplete
-                        ? { note: `Changes made before ${day} were not recorded, so this list may be incomplete.` }
-                        : {})}
-                />
             </Page>
         </div>
     );

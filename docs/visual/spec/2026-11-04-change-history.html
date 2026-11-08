@@ -380,10 +380,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Every change to a resource records what changed and when, with the old and new values. The resource's <b>History</b> panel and <code>suwagcms history</code> show it, even after the resource is deleted.</p>
     <p>README lets agents change a bot by themselves, and history is part of what makes that safe. The record cannot be edited. It does not yet say who made a change: that waits for <code>cms-identity</code>, listed below as a criterion for later.</p>
     <p><b>One module everywhere.</b> The History page, Persona, every resource and every version draw the same rows, write a change the same way and page the same way. The module holds no name: the page that embeds it says “History”. A version gets its own address, <code>.../versions/14</code>, laid out like Persona: its number, digest and content, with a History panel beneath holding what happened between the previous version and this one. “Changes” and the separate comparison look go away, and <b>Compare with…</b> stays there as the one place with a net result between any two versions.</p>
+    <p><b>History at the bottom of every main screen (owner's request, 2026-11-08).</b> Facts, Knowledge bases, Articles, Procedures, Actions, Persona, Versions, each resource's edit screen and a version's page are one frame: the title and actions, the screen's own content, and the History panel at the bottom, filtered to what the screen is about. A list screen shows the changes of its kind of resource, Versions the versions created and pushed, an edit screen that resource, Persona the persona. The panel is one shared, configurable part of the page frame, never a copy. <code>GET .../history?kind=procedures</code> and <code>suwagcms history --kind procedure</code> give the same filter.</p>
     <p>A change is written as a comparison writes it, with kept and folded lines; a procedure's entries read as parts; a version's window holds every entry; and a version's own pushes are not on its page. <code>suwagcms history --json</code> stays as it is, and <code>suwagcms versions window</code> reads the window.</p>
   </div>
   <div class="stats">
-    <div><b>31</b><span>criteria</span></div>
+    <div><b>40</b><span>criteria</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
   </div>
 </section>
@@ -424,6 +425,8 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 </section>
 <section data-role="scenarios">
   <h2>Scenarios</h2>
+  <h3>0. Marta checks what happened to the procedures</h3>
+  <p>On Procedures, under the list, the History panel lists every change to a procedure, newest first: <code>askCity</code> added at 09:10, <code>quote</code> renamed to <code>valuation</code> at 08:40, <code>old</code> deleted yesterday. Articles' panel lists none of them. On Versions the panel lists v14 created and v14 pushed.</p>
   <h3>1. Marta finds out when a price changed</h3>
   <div class="term"><span class="dim">$</span> suwagcms history article cennik
 2026-11-04 21:40  edited   revision 8
@@ -467,12 +470,23 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><td>changes</td><td>each changed field, with its old and new values; an add holds all the fields, and a delete all the last ones</td></tr>
     <tr><td>revision</td><td>the revision the change produced, as a save returns it</td></tr>
   </table>
+  <h3>Every main screen: one frame, the History panel at its bottom</h3>
+  <p>A main screen is a tab of a bot (all but History, which is the history itself), each resource's edit screen and a version's page. Each is drawn by the one page frame: the title and its actions, the screen's own content, then the History panel, always last. The frame is configured with what the panel lists; no screen draws the panel, the list or the request itself. An add form and the Bots page have no panel: nothing has happened to what they show yet.</p>
+  <table>
+    <tr><th>Screen</th><th>The panel lists</th><th>Rows name their resource?</th></tr>
+    <tr><td>Facts, Knowledge bases, Articles, Procedures, Actions</td><td>every change of that kind of resource: added, edited, deleted, renamed, turned on or off, also of one deleted since</td><td>yes, linked to the resource's History page</td></tr>
+    <tr><td>Versions</td><td>the version events: created and pushed, a rollback being a push of an older version</td><td>yes, linked as above</td></tr>
+    <tr><td>a resource's edit screen, Persona</td><td>that resource, as before</td><td>no</td></tr>
+    <tr><td>a version's page</td><td>its window, as before</td><td>yes</td></tr>
+  </table>
+  <p>Newest first, paged with the shared controls under <code>historyPage</code>, so the list's own <code>page</code> never moves; opening a resource drops <code>historyPage</code>, as leaving an edit screen does. Creating or pushing a version shows the panel's first page again. The panel ignores the list's own filters (an article search): it answers what happened to the kind, not to what is shown.</p>
   <h3>The module and who names it</h3>
   <table>
     <tr><th>Where</th><th>What names it</th><th>Rows name their resource?</th></tr>
     <tr><td>a bot's History page, a resource's History page</td><td>the page title; no heading repeats it</td><td>on the bot's page, yes, linked to the resource's History page</td></tr>
     <tr><td>Persona, every resource's edit view</td><td>the thin <code>HistoryPanel</code> wrapper's “History” heading</td><td>no: every row is that resource</td></tr>
     <tr><td>a version's page</td><td>the same wrapper and heading</td><td>yes, linked as on the bot's page</td></tr>
+    <tr><td>a list screen, Versions</td><td>the same wrapper and heading, from the page frame</td><td>yes, linked as on the bot's page</td></tr>
   </table>
   <p>Inside the module no word says history, in any state: while loading it says “Loading…”, and with nothing to show it says “No change has been recorded since 2026-11-04.” Moving between pages is <code>pagination</code>'s, with “Older changes” gone and the panel's place under <code>historyPage</code>; nothing here repeats it. A failure shows what the server answered, as it does today.</p>
   <h3>One way of writing a change</h3>
@@ -578,6 +592,32 @@ flowchart LR
     </div>
   </div>
   <div class="wire-pair">
+    <div class="wire after"><span class="wf-label">Procedures, the list with its panel</span>
+      <div class="wf-bar"><b>Procedures of rzeczoznawca</b><span class="wf-grow"></span><span class="wf-btn">Add a procedure</span></div>
+      <div class="wf-body">
+        <div class="wf-card wf-row"><u>askCity</u><span class="wf-grow wf-muted">Asks where the property is</span><span class="tag ok">ready</span><span class="wf-btn">Edit</span></div>
+        <div class="wf-card wf-row"><u>valuation</u><span class="wf-grow wf-muted">Quotes a valuation</span><span class="tag ok">ready</span><span class="wf-btn">Edit</span></div>
+        <div class="wf-card wf-new"><b>History</b>
+          <div class="wf-card"><span class="tag ok">added</span> procedure <u>askCity</u> <span class="wf-muted">09:10 · revision 1</span><p class="wf-muted">▸ 4 fields</p></div>
+          <div class="wf-card"><span class="tag">renamed</span> procedure <u>valuation</u> <span class="wf-muted">08:40</span><p class="wf-muted">id: quote → valuation</p></div>
+          <div class="wf-card"><span class="tag danger">deleted</span> procedure <u>old</u> <span class="wf-muted">2026-11-07 17:02</span></div>
+          <div class="wf-row"><span class="wf-btn">Previous</span><span>Page 1 of 3</span><span class="wf-btn">Next</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="wire after"><span class="wf-label">Versions, the list with its panel</span>
+      <div class="wf-bar"><b>Versions of rzeczoznawca</b><span class="wf-grow"></span><span class="wf-btn">Create version</span></div>
+      <div class="wf-body">
+        <div class="wf-card"><span class="wf-muted">The bot runs v14.</span></div>
+        <div class="wf-card wf-row"><b>v14</b><span class="wf-grow wf-muted">2026-11-04 22:02</span><span class="wf-btn">Open</span></div>
+        <div class="wf-card wf-new"><b>History</b>
+          <div class="wf-card"><span class="tag">pushed</span> version <u>14</u> <span class="wf-muted">22:05</span><p class="wf-muted">result: Succeeded · botVersion: 13 → 14</p></div>
+          <div class="wf-card"><span class="tag accent">created</span> version <u>14</u> <span class="wf-muted">22:02</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wire-pair">
     <div class="wire"><span class="wf-label">Versions, before</span>
       <div class="wf-bar"><b>Versions of rzeczoznawca</b></div>
       <div class="wf-body">
@@ -610,6 +650,7 @@ flowchart LR
     <tr><td>a version's window, a new route of the form <code>GET /api/bots/{bot}/versions/{number}/window</code></td><td>Answers the entries of the window, newest first, one page at a time as the History routes do (<code>limit</code>, <code>before</code>, and <code>page</code>, which adds <code>total</code>), with <code>since</code> and <code>incomplete</code>, which says the window opens before history started. A bot or number it does not know is refused, naming the latest. It only reads, so the guard of <code>AC-change-history-5</code> still holds.</td></tr>
     <tr><td>an entry's <code>written</code>, on the History routes and the window's</td><td>The same changes as a comparison writes them, from the same code, answered only when a numbered <code>page</code> is asked for, as <code>total</code> is. The CLI never asks for one, so what <code>suwagcms history --json</code> prints does not change.</td></tr>
     <tr><td><code>GET /api/bots/{bot}/versions/{id}/history</code></td><td>Stays as it is: the entries filed under that version, its creation and its pushes, which is what <code>suwagcms history version 14</code> prints. It is not the window.</td></tr>
+    <tr><td><code>?kind=</code> on <code>GET /api/bots/{bot}/history</code></td><td>Narrows the bot's history to one kind of resource, every id of it: <code>facts</code>, <code>knowledge-bases</code>, <code>articles</code>, <code>procedures</code>, <code>actions</code>, <code>persona</code> or <code>versions</code>, the words of the resource route. Same paging (<code>limit</code>, <code>before</code>, <code>page</code> with <code>total</code>). Any other word is refused with 400 naming the kinds. Without it the answer is as before, so <code>suwagcms history --json</code> does not change. <code>suwagcms history --kind &lt;kind&gt;</code> asks for it, with the words of <code>history &lt;kind&gt; &lt;id&gt;</code>; <code>--open</code> opens that kind's screen, whose panel lists the same.</td></tr>
     <tr><td>the guard that ties routes to commands</td><td>Names the window's route with its command, <code>suwagcms versions window</code>, which the Claude plugin's main skill describes: everything in the CMS can be done through them (owner's decision).</td></tr>
     <tr><td><code>/bots/{bot}/versions/{number}</code>, <code>?compare=</code></td><td>New web addresses, the second beside <code>historyPage</code> and the list's <code>page</code>. <code>?open=</code>, <code>?from=</code> and <code>?to=</code> remain as ways in, and lead there.</td></tr>
   </table>
@@ -632,6 +673,10 @@ flowchart LR
     <li>An entry's lines reach the screen as a field of their own, written by the comparison's code from the entry's old and new values, so there is no second aligner, and the entry as recorded stays what the CLI prints.</li>
     <li>A version's <code>created</code> entry ends its own window, so the page shows when it was made and two windows never share an entry.</li>
     <li>The net comparison stays beside the entries (owner's decision): a change made and restored is two entries and no difference, and only the comparison says what a push really changes.</li>
+    <li>The panel belongs to the page frame, not to each screen (owner's request): a screen hands the frame what to list, so a screen cannot leave the panel out, put it elsewhere or draw a copy, and a guard names every main screen.</li>
+    <li>The list screen's filter is the kind of resource, never the list's own search: the panel answers what happened, also to what the search hides or what was deleted.</li>
+    <li>The filter is a query parameter of the bot's History route rather than a new route, and the CLI's is an option rather than <code>history &lt;kind&gt;</code> without an id, which keeps its error for a forgotten id.</li>
+    <li>The bot's History page is not given a kind filter of its own: the list screens show it, and nothing has asked for it there.</li>
     <li>A row's link stays one rule, the resource's History page, also for a version's row: that page lists its creation and its pushes, which its window does not.</li>
   </ul>
 </section>
@@ -669,6 +714,15 @@ flowchart LR
     <li><code>AC-change-history-31</code> A window of 12 entries at a page size of 5 gives 3 pages, newest first, with no entry missing or repeated, and on a version's page they move with the same controls under <code>historyPage</code>. <span class="tag note">server test, web test</span></li>
     <li><code>AC-change-history-32</code> A price changed and restored between v13 and v14 shows as two entries in v14's panel, and comparing v14 with v13 on that page says there are no differences. <span class="tag note">server test</span></li>
     <li><code>AC-change-history-33</code> The window can be read through the CLI and the Claude plugin: <code>suwagcms versions window &lt;number&gt;</code> lists its entries with <code>--limit</code> and <code>--before</code>, says when it may be incomplete, <code>--json</code> gives the entries and <code>incomplete</code>, <code>--open</code> opens the version's page, a number the bot does not have is refused naming its latest with exit code 1, and the plugin's main skill describes the command. <span class="tag note">cli test, server test</span></li>
+    <li><code>AC-cli-foundation-19</code> <code>suwagcms history</code>, <code>history &lt;kind&gt; &lt;id&gt;</code> and <code>versions window</code> take <code>--page &lt;n&gt;</code>: the answer is that numbered page with the total and each change written out, as the web reads it, and says how to go on; <code>--page</code> below 1 or together with <code>--before</code> exits 2, a page past the end says so, and with <code>--open</code> the page lands on that page of the list. Without <code>--page</code> what they print does not change.</li>
+    <li><code>AC-pagination-11</code> With 12 entries and a size of 5, the History page of a bot and that of a resource show the 5 newest, Next shows the next 5, newest first with no entry missing or repeated, a reload stays there, and there is no load-more. <span class="tag note">server test, browser test</span></li>
+    <li><code>AC-pagination-12</code> The History panel of an edit screen pages with the same controls and size under <code>historyPage</code>: the list's <code>page</code> in the address is untouched, typed text in the form stays with no question asked, and leaving for the list drops <code>historyPage</code>. <span class="tag note">browser test</span></li>
+    <li><code>AC-bot-persona-10</code> Each saved change appears in the history of the persona and of the bot with what changed, and a save with no real change adds no entry.</li>
+    <li><code>AC-change-history-34</code> Facts, Knowledge bases, Articles, Procedures, Actions, Persona, Versions, each resource's edit screen and a version's page each end with the History panel, under everything else on the screen, from the one page frame; the bot's History page, an add form and the Bots page have none. <span class="tag note">web test, reads the source</span></li>
+    <li><code>AC-change-history-35</code> The panel is one shared, configurable part of the page frame: only the frame draws it, only the panel and the History page draw the shared list, and only the history module asks the server for history; no screen has a copy of its own. <span class="tag note">web test, reads the source</span></li>
+    <li><code>AC-change-history-36</code> <code>GET .../history?kind=&lt;collection&gt;</code> lists only the changes of that kind of resource, every id of it, also deleted and renamed ones, newest first, with the same paging, page number and total, and none of another bot; <code>kind=versions</code> lists the versions created and pushed, a rollback among them; an unknown kind is refused with 400 naming the kinds. <span class="tag note">server test</span></li>
+    <li><code>AC-change-history-37</code> Each screen's panel lists what the screen is about: a list screen the changes of its kind, Versions the version events, an edit screen its resource, Persona the persona, a version's page its window; a procedure added shows in the Procedures screen's panel and not in the Articles screen's, and the Versions panel shows a created and a pushed version. <span class="tag note">web test, reads the source, browser test</span></li>
+    <li><code>AC-change-history-38</code> <code>suwagcms history --kind &lt;kind&gt;</code> lists the same entries as the filtered route, with <code>--limit</code>, <code>--before</code> and <code>--page</code>; together with <code>&lt;kind&gt; &lt;id&gt;</code> it exits 2; <code>--open</code> opens that kind's screen; without it the command prints what it printed before; and the plugin's main skill describes the option. <span class="tag note">cli test</span></li>
   </ul>
 </section>
 <section data-role="deferred-acceptance">

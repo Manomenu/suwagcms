@@ -6,6 +6,7 @@ import { listHref } from "@/api/resourceAddress";
 import { Anchor } from "@/design/anchor";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Input } from "@/design/input";
+import type { HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
 import { Select } from "@/design/select";
 
@@ -14,6 +15,7 @@ import type { Article, Filters, KnowledgeBase } from "./api";
 /** The list of a bot's articles, with its filters. */
 export function ArticlesView({
     bot,
+    history,
     articles,
     bases,
     isOff,
@@ -25,6 +27,7 @@ export function ArticlesView({
     onLeave,
 }: {
     bot: string;
+    history: HistoryPanelProps;
     articles: Article[];
     bases: KnowledgeBase[];
     isOff?: (id: string) => boolean;
@@ -39,6 +42,7 @@ export function ArticlesView({
     const filtered = filters.knowledgeBase !== "" || filters.language !== "" || filters.text.trim() !== "";
     return (
         <ResourceList
+            history={history}
             title={`Articles of ${bot}`}
             addLabel="Add an article"
             addDisabled={bases.length === 0}

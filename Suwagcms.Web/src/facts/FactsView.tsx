@@ -1,14 +1,28 @@
 import { usePagedRows } from "@/api/pagination";
+import type { HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
 
 import type { Fact } from "./api";
 import { constraintOf } from "./factForm";
 
 /** The list of a bot's facts. A fact's name is its id. */
-export function FactsView({ bot, facts, onAdd, onEdit }: { bot: string; facts: Fact[]; onAdd: () => void; onEdit: (fact: Fact) => void }) {
+export function FactsView({
+    bot,
+    facts,
+    history,
+    onAdd,
+    onEdit,
+}: {
+    bot: string;
+    facts: Fact[];
+    history: HistoryPanelProps;
+    onAdd: () => void;
+    onEdit: (fact: Fact) => void;
+}) {
     const paged = usePagedRows(facts);
     return (
         <ResourceList
+            history={history}
             title={`Facts of ${bot}`}
             addLabel="Add a fact"
             onAdd={onAdd}

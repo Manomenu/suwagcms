@@ -4,9 +4,8 @@ import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { DeleteAction } from "@/design/deleteAction";
-import { HistoryPanel } from "@/design/historyPanel";
 import { InfoTip } from "@/design/infoTip";
-import { Page } from "@/design/page";
+import { Page, type HistoryPanelProps } from "@/design/page";
 import { UsagePanel } from "@/design/usagePanel";
 
 /** The way from a screen of one resource back to the list of them. */
@@ -74,7 +73,7 @@ export function ResourceEdit({
     usage: Pick<ComponentProps<typeof UsagePanel>, "usage" | "failure" | "hrefOf" | "onFollow"> | null;
     showUses?: boolean;
     onDelete: () => void;
-    history: ComponentProps<typeof HistoryPanel>;
+    history: HistoryPanelProps;
     notice?: ReactNode;
     panel?: ReactNode;
     children: ReactNode;
@@ -106,6 +105,7 @@ export function ResourceEdit({
             {back}
             <Page
                 title={editedId === null ? addTitle : `${capitalNoun} ${editedId}`}
+                {...(editedId === null ? {} : { history })}
                 {...(canChange
                     ? {
                           actions: (
@@ -147,7 +147,6 @@ export function ResourceEdit({
                 {canChange && usedBy !== null && (
                     <DeleteAction noun={noun} id={editedId} usedBy={usedBy} failure={deleteFailure} onDelete={onDelete} />
                 )}
-                {editedId !== null && <HistoryPanel {...history} />}
             </Page>
         </div>
     );

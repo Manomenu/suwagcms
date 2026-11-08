@@ -40,16 +40,23 @@ internal static class HistoryCommand
             Description = "The resource's id, a fact's name or a version's number; a persona, being one, has none.",
             Arity = ArgumentArity.ZeroOrOne,
         };
+        var only = new Option<string?>("--kind")
+        {
+            Description =
+                "Only the changes of this kind of resource, every one of it: fact, kb, article, procedure, action, persona or version.",
+        };
+        only.AcceptOnlyFromAmong([.. Collections.Keys]);
         var limit = LimitOption();
         var before = BeforeOption();
         var page = PageOption();
         var command = new Command(
             "history",
-            "Show what changed and when, newest first: every change to the bot, or to one resource, also after it is deleted (or --open the page)."
+            "Show what changed and when, newest first: every change to the bot, to one kind of resource, or to one resource, also after it is deleted (or --open the page)."
         )
         {
             kind,
             id,
+            only,
             limit,
             before,
             page,
@@ -62,6 +69,10 @@ internal static class HistoryCommand
             {
                 result.AddError("Give the id too: `suwagcms history <kind> <id>`, or neither for the whole bot.");
             }
+            if (result.GetValue(kind) is not null && result.GetValue(only) is not null)
+            {
+                result.AddError("--kind narrows the whole bot's history: leave out `<kind> <id>`, or leave out --kind for one resource.");
+            }
         });
         command.SetBotAction(
             options,
@@ -69,12 +80,13 @@ internal static class HistoryCommand
             async (target, parsed, cancellationToken) =>
             {
                 var word = parsed.GetValue(kind);
+                var narrowed = parsed.GetValue(only);
                 // Why: a bot has one persona, so its history is asked for by the kind alone.
                 var resource = word == PersonaWord ? PersonaWord : parsed.GetValue(id);
                 if (parsed.GetValue(options.Open))
                 {
                     return await WebPage.ShowAsync(
-                        PageOf(target, word, resource, parsed.GetValue(page)),
+                        narrowed is null ? PageOf(target, word, resource, parsed.GetValue(page)) : target.PageOf(Collections[narrowed]),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         target.Machine.OpenBrowser
@@ -86,7 +98,13 @@ internal static class HistoryCommand
                 var answer = await ServerCall.GetAsync(
                     environment,
                     target.Address,
-                    path + Query(parsed.GetValue(limit), parsed.GetValue(before), parsed.GetValue(page)),
+                    path
+                        + Query(
+                            parsed.GetValue(limit),
+                            parsed.GetValue(before),
+                            parsed.GetValue(page),
+                            narrowed is null ? null : Collections[narrowed]
+                        ),
                     cancellationToken
                 );
                 if (answer.ExitCode != ExitCodes.Done)
@@ -124,7 +142,7 @@ internal static class HistoryCommand
             }
         });
 
-    // Why: a resource's page is its history, filtered on the bot's History page, because a deleted resource has no screen of its own to open.
+    // Why: the changes of one kind are shown under that kind's own screen, so `--kind --open` opens it; a resource's page is its history, filtered on the bot's History page, because a deleted resource has no screen of its own to open.
     private static Uri PageOf(BotTarget target, string? word, string? resource, int? number)
     {
         var parts = new List<string>();
@@ -141,9 +159,13 @@ internal static class HistoryCommand
         return parts.Count == 0 ? page : new Uri(page, "?" + string.Join('&', parts));
     }
 
-    internal static string Query(int? limit, long? before, int? page)
+    internal static string Query(int? limit, long? before, int? page, string? collection = null)
     {
         var parts = new List<string>();
+        if (collection is not null)
+        {
+            parts.Add($"kind={collection}");
+        }
         if (limit is { } size)
         {
             parts.Add(string.Create(CultureInfo.InvariantCulture, $"limit={size}"));
