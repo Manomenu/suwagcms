@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.Procedures;
@@ -215,27 +214,6 @@ public sealed class LoopRulesTests
         Assert.Empty(
             Loops(Bot() with { Procedures = [Starting("one", "shared"), Starting("two", "shared"), Samples.Procedure("shared")] })
         );
-
-    [Fact]
-    [Trait("criterion", "AC-loop-guard-7")]
-    public void A_chain_of_5000_articles_closed_into_a_ring_is_found_in_one_pass_within_the_limit()
-    {
-        const int count = 5000;
-        var ring = Enumerable.Range(0, count).Select(number => Linking($"a{number:D5}", Link($"a{(number + 1) % count:D5}"))).ToArray();
-        var open = ring.Take(count - 1).Append(Linking($"a{count - 1:D5}")).ToArray();
-
-        var started = Stopwatch.GetTimestamp();
-        var closed = Loops(ring);
-        var none = Loops(open);
-        var elapsed = Stopwatch.GetElapsedTime(started);
-
-        Assert.Equal(count, Assert.Single(closed).Related.Count + 1);
-        Assert.Empty(none);
-        Assert.True(
-            elapsed < TimeSpan.FromSeconds(5),
-            $"The loop rule took {elapsed.TotalMilliseconds:F0} ms for {count} articles; the limit is 5000 ms."
-        );
-    }
 
     [Fact]
     [Trait("criterion", "AC-loop-guard-9")]

@@ -170,7 +170,7 @@ public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
         Assert.True(unfit.GetProperty("elapsedMs").GetInt64() >= 0);
 
         (await scene.Api.Put("check", ActionJson(scene.Service.Address, extra: ""","timeoutSeconds":1"""))).EnsureSuccessStatusCode();
-        scene.Service.Answer = context => Task.Delay(TimeSpan.FromSeconds(5), context.RequestAborted);
+        scene.Service.Answer = context => Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);
 
         var slow = await scene.Answer();
 
@@ -250,7 +250,7 @@ public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
         using var quick = app.WithWebHostBuilder(builder => builder.UseSetting("Push:ActionTestMarginSeconds", "0"));
         await using var scene = await SceneAsync(quick.CreateClient());
         (await scene.Api.Put("check", ActionJson(scene.Service.Address, extra: ""","timeoutSeconds":1"""))).EnsureSuccessStatusCode();
-        scene.Bot.OnActionTest = context => Task.Delay(TimeSpan.FromSeconds(20), context.RequestAborted);
+        scene.Bot.OnActionTest = context => Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);
 
         var answer = await scene.Answer();
 

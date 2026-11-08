@@ -417,7 +417,7 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
         {
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(30), release.Token);
+                await Task.Delay(Timeout.InfiniteTimeSpan, release.Token);
             }
             catch (OperationCanceledException)
             {

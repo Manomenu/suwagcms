@@ -153,7 +153,7 @@ public sealed partial class VersionPushTests(TestDatabase database) : IDisposabl
         {
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(30), context.RequestAborted);
+                await Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);
             }
             catch (OperationCanceledException)
             {

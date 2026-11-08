@@ -23,6 +23,18 @@ internal sealed class AvailabilityRetries(TimeProvider time)
         }
     }
 
+    // Why: a test moving a fake clock must know nothing is due, or the retrier could be between two steps when the clock jumps.
+    public bool Idle
+    {
+        get
+        {
+            lock (gate)
+            {
+                return due.Count == 0;
+            }
+        }
+    }
+
     public void Cancel(string bot)
     {
         lock (gate)

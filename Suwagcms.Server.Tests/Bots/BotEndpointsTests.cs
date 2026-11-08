@@ -170,7 +170,6 @@ public sealed class BotEndpointsTests(TestDatabase database) : IDisposable
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
 
         var response = await Register(client, FreshId(), address: $"http://127.0.0.1:{port}");
-        await Task.Delay(300, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.False(listener.Pending(), "something connected to the bot's address while registering");

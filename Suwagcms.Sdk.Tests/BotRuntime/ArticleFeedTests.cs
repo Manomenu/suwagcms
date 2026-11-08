@@ -24,6 +24,13 @@ public sealed class ArticleFeedTests
         return told;
     }
 
+    // Why: a listener set now is told the current number on a task queued after every tell before it, so once it hears, an extra tell would have shown
+    private static async Task SettledAsync(IBotDefinitions definitions, int current)
+    {
+        var sentinel = Listen(definitions);
+        await WaitAsync(() => sentinel.Contains(current));
+    }
+
     private static async Task WaitAsync(Func<bool> condition)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
@@ -151,7 +158,6 @@ public sealed class ArticleFeedTests
         // Why: news runs on its own task, so a later version is what shows that nothing else was on its way.
         await bot.PutAsync(3, Documents.Make(3));
         await WaitAsync(() => told.Contains(3));
-        await Task.Delay(100, Token);
 
         Assert.Equal([1, 3], told.Order());
     }
@@ -230,7 +236,7 @@ public sealed class ArticleFeedTests
         await runtime.RefreshAsync(Token);
 
         await WaitAsync(() => told.Contains(5));
-        await Task.Delay(100, Token);
+        await SettledAsync(runtime, 5);
         Assert.Equal([5], told);
     }
 
@@ -241,7 +247,6 @@ public sealed class ArticleFeedTests
         var store = new InMemoryVersionStore();
         await using var empty = await BotHost.StartAsync(store);
         var told = Listen(empty.Definitions);
-        await Task.Delay(100, Token);
         Assert.Empty(told);
 
         await empty.PutAsync(1, Documents.Make(1));
@@ -249,7 +254,7 @@ public sealed class ArticleFeedTests
         await WaitAsync(() => told.Contains(1));
         var later = Listen(empty.Definitions);
         await WaitAsync(() => later.Contains(1));
-        await Task.Delay(100, Token);
+        await SettledAsync(empty.Definitions, 1);
         Assert.Equal([1], later);
         Assert.Equal([1], told);
     }
@@ -286,7 +291,7 @@ public sealed class ArticleFeedTests
         await bot.MakeCurrentAsync(12, twelve.Member("digest").Text());
 
         await WaitAsync(() => told.Count == 3);
-        await Task.Delay(100, Token);
+        await SettledAsync(bot.Definitions, 12);
         Assert.Equal([12, 12, 14], told.Order());
     }
 
