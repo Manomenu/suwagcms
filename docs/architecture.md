@@ -86,6 +86,9 @@ terms, not by technical kind. Wiring is explicit, so grep finds every route.
 - Rules live in plain modules with a test beside them; screens only wire them.
 - The SDK is split by concept, not by spec feature: the format, the validator and the bot runtime, each with one folder
   per resource or mechanism, so a bot's author finds a type under what it is about. A spec feature cuts across them all.
+- Everywhere (server, contracts, CLI, SDK, web, tests) a resource kind has one folder named after it in the plural, flat, one level deep:
+  two kinds never share a folder under a common name (knowledge bases and articles are two folders, not `Knowledge`). A folder inside one
+  appears only when it groups more than a name, as a procedure's blocks do.
 - Records an endpoint sends or receives are a contract with the outside; a row from our own SQL is not. Keep them
   apart once they differ.
 - A problem the caller can fix is a ProblemDetails whose `detail` says what to do.

@@ -1,6 +1,7 @@
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Facts;
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.Articles;
+using Suwagcms.Sdk.Format.KnowledgeBases;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Bots;

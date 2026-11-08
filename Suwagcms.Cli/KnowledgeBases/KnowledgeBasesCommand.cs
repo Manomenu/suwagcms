@@ -6,7 +6,7 @@ using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.KnowledgeBases;
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.KnowledgeBases;
 
 namespace Suwagcms.Cli.KnowledgeBases;
 

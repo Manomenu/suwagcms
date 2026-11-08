@@ -116,9 +116,9 @@ public static class DeclarationValidator
         [
             .. DeclarationContract.Check(definition, declaration),
             .. MissingPersona(definition, declaration),
-            .. declaration.Knowledge ? [] : KnowledgeRules.Undeclared(definition),
+            .. declaration.Knowledge ? [] : KnowledgeEntryRules.Undeclared(definition),
             .. KnowledgeBaseRules.UndeclaredProfiles(definition, declaration.EmbeddingProfiles),
-            .. declaration.NamedArticlesLimit is { } limit ? KnowledgeRules.NamedArticlesTooLong(definition, limit) : [],
+            .. declaration.NamedArticlesLimit is { } limit ? KnowledgeEntryRules.NamedArticlesTooLong(definition, limit) : [],
             .. definition
                 .Procedures.OrderBy(procedure => procedure.Id, StringComparer.Ordinal)
                 .SelectMany(procedure =>

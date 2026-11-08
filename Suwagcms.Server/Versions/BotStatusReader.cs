@@ -6,7 +6,7 @@ using Suwagcms.Server.Database;
 namespace Suwagcms.Server.Versions;
 
 // Why: what a bot "has" comes only from the bot's own answer, so this is the single place that turns an answer, or its absence, into a status.
-internal sealed class BotStatusReader(Pool pool, BotLine line, TimeProvider time, AvailabilitySender availability)
+internal sealed class BotStatusReader(Pool pool, BotClient client, TimeProvider time, AvailabilitySender availability)
 {
     private const int Recent = 10;
 
@@ -34,9 +34,9 @@ internal sealed class BotStatusReader(Pool pool, BotLine line, TimeProvider time
             attempts
         );
 
-        switch (await line.ReadStateAsync(registered.Address, cancellationToken))
+        switch (await client.ReadStateAsync(registered.Address, cancellationToken))
         {
-            case BotLine.Reply.Answer { Status: 200 } answer when BotLine.StateIn(answer) is { } state:
+            case BotClient.Reply.Answer { Status: 200 } answer when BotClient.StateIn(answer) is { } state:
                 if (state.Bot != bot)
                 {
                     return known with { Reach = BotReach.WrongAddress, OtherBot = state.Bot };
@@ -59,12 +59,12 @@ internal sealed class BotStatusReader(Pool pool, BotLine line, TimeProvider time
                     HasUnknownVersion =
                         state.Current is { } current && !await VersionStore.ExistsAsync(pool, bot, current, cancellationToken),
                 };
-            case BotLine.Reply.Answer answer:
+            case BotClient.Reply.Answer answer:
                 return known with
                 {
                     Reason = $"{registered.Address} answered {answer.Status}, which is not the answer of a bot's state route",
                 };
-            case BotLine.Reply.Silent silent:
+            case BotClient.Reply.Silent silent:
                 return known with { Reason = silent.Reason };
             default:
                 throw new InvalidOperationException("a bot's reply is an answer or silence");

@@ -1,7 +1,8 @@
 using System.Text.Json;
 using Suwagcms.Sdk.Format;
+using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.Declaration;
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.KnowledgeBases;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.Procedures.Blocks;
 using Suwagcms.Sdk.Format.References;
@@ -9,7 +10,7 @@ using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.Validation.Rules;
 
-public sealed class KnowledgeRulesTests
+public sealed class KnowledgeEntryRulesTests
 {
     private static readonly JsonSerializerOptions Wire = new(JsonSerializerDefaults.Web)
     {
