@@ -167,7 +167,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         var (scene, bot) = await SceneAsync(shorter.CreateClient(), Everything);
         await using var stopping = bot;
         await AskAsync(scene);
-        bot.OnDeclaration = async context => await Task.Delay(TimeSpan.FromSeconds(10), context.RequestAborted);
+        bot.OnDeclaration = async context => await Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);
 
         var status = await AskAsync(scene);
 

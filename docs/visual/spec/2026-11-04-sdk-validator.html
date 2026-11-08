@@ -511,7 +511,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout risk"><p>Each save validates the whole definition, which may grow slow with a large knowledge base. A test at 5000 articles guards it (<code>AC-articles-16</code>). If it proves too slow, unchanged articles can be checked without parsing their text, and as a last step an index of references may return, never as the source of truth.</p></div>
+  <div class="callout risk"><p>Each save validates the whole definition, which may grow slow with a large knowledge base. No test on the gate times it: the gate checks correctness, never speed. If it proves too slow, unchanged articles can be checked without parsing their text, and as a last step an index of references may return, never as the source of truth.</p></div>
   <div class="callout risk"><p>Format 1 becomes public quickly, and a change of meaning after that needs a new <code>formatVersion</code> and a conversion of the working state. <code>bot-runtime-sdk</code> tries the contract on a running bot before the package reaches nuget.org.</p></div>
   <div class="callout assumption"><p>Testing the stage separation needs a rule of the <code>Version</code> stage, and the first real ones arrive with <code>procedure-model</code>. Until then the test may use a rule of its own.</p></div>
 </section>

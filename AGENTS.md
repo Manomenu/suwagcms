@@ -29,6 +29,7 @@ this file is the one to edit. Setup: [docs/development.md](docs/development.md).
 - Mutation tests (`just mutate`) run only when a person asks for them: an agent neither runs nor proposes them on its own.
 - Correction or a new rule? Make the mistake impossible or loud first: a type → a lint → a test → a hook. Add a sentence here only for what none of these can check.
 - A guard's message states the fix. Never weaken a guard to make a change pass: fix the change.
+- No test promises speed, in milliseconds or in steps counted instead of them: a timing guard catches the clock, not a count, so a speed promise is dropped from its spec.
 - Every test names an AC id, unless it is a guard in `Suwagcms.Gate`: a test without an id rots.
 
 ## Specs

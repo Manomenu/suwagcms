@@ -394,7 +394,6 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
         var api = await (await VersionApi.NewBotAsync(app.CreateClient(), address)).Ready();
 
         await api.Created();
-        await Task.Delay(200, TestContext.Current.CancellationToken);
 
         Assert.False(listener.Pending(), "a connection reached the address of the bot");
     }

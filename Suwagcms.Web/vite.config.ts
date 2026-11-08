@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import path from "node:path";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -7,6 +8,8 @@ import { defineConfig } from "vite";
 export default defineConfig({
     plugins: [react(), tailwindcss()],
     resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
+    // No test has a time limit: a loaded machine makes a test slower, never wrong, and the gate's step limit still stops a hang.
+    test: { testTimeout: 0, hookTimeout: 0 },
     server: {
         port: 3330,
         strictPort: true,

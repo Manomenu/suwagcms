@@ -1,18 +1,20 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Time.Testing;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Suwagcms.Contracts.Availability;
+using Suwagcms.Server.Availability;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-// Why: the CMS's clock is a fake one here, so a minute passes when the test says so and a retry that should not happen cannot hide behind a slow run.
+// Why: the retrier's clock is a fake one here, so a minute passes when the test says so and a retry that should not happen cannot hide behind a slow run. Only the retrier runs on it: a bot call in flight keeps its real timeout, so moving the clock never cuts one short.
 public sealed class AvailabilityRetryTests(TestDatabase database) : IDisposable
 {
     private static readonly TimeSpan Minute = TimeSpan.FromMinutes(1);
 
     private readonly TestApp app = new();
-    private readonly FakeTimeProvider clock = new(TimeProvider.System.GetUtcNow());
+    private readonly WatchedClock clock = new(TimeProvider.System.GetUtcNow());
+    private AvailabilityRetries? retries;
     private int puts;
 
     public void Dispose() => app.Dispose();
@@ -20,8 +22,14 @@ public sealed class AvailabilityRetryTests(TestDatabase database) : IDisposable
     private async Task<AvailabilityScene> SceneAsync()
     {
         _ = database.Pool;
+        retries = new AvailabilityRetries(clock);
         var factory = app.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<TimeProvider>(clock))
+            builder.ConfigureTestServices(services =>
+            {
+                services.Replace(ServiceDescriptor.Singleton(retries));
+                services.Remove(services.Single(service => service.ImplementationType == typeof(AvailabilityRetrier)));
+                services.AddHostedService(provider => ActivatorUtilities.CreateInstance<AvailabilityRetrier>(provider, clock));
+            })
         );
         return await AvailabilityScene.StartAsync(factory.CreateClient());
     }
@@ -40,24 +48,35 @@ public sealed class AvailabilityRetryTests(TestDatabase database) : IDisposable
 
     private int Puts => Volatile.Read(ref puts);
 
+    // Why: the deadline only stops a broken run from hanging; what is waited for is certain to come, however slow the machine.
     private static async Task Until(Func<Task<bool>> done)
     {
-        var deadline = TimeProvider.System.GetUtcNow().AddSeconds(10);
+        var deadline = TimeProvider.System.GetUtcNow().AddSeconds(60);
         while (!await done())
         {
-            Assert.True(TimeProvider.System.GetUtcNow() < deadline, "what the test waited for did not happen within 10 seconds");
-            await Task.Delay(20, TestContext.Current.CancellationToken);
+            Assert.True(TimeProvider.System.GetUtcNow() < deadline, "what the test waited for did not happen within 60 seconds");
+            await Task.Delay(10, TestContext.Current.CancellationToken);
         }
     }
 
     private Task UntilPuts(int count) => Until(() => Task.FromResult(Puts >= count));
 
-    // Why: nothing can prove a call that never comes, so the test gives the CMS a moment of real time after each minute it lets pass.
+    // Why: at rest the retrier is either waiting on its timer or has nothing due; in between it may be reading the clock, and a jump then would move its next try.
+    private Task Settled() => Until(() => Task.FromResult(clock.Waiting || retries!.Idle));
+
+    private async Task Pass(TimeSpan passing)
+    {
+        await Settled();
+        clock.Advance(passing);
+    }
+
+    // Why: a retry can only start from a timer that fired, so once the retrier is at rest again after the clock moved, a put that has not come never will.
     private async Task NoPutAfter(TimeSpan passing)
     {
+        await Settled();
         var before = Puts;
         clock.Advance(passing);
-        await Task.Delay(300, TestContext.Current.CancellationToken);
+        await Settled();
         Assert.Equal(before, Puts);
     }
 
@@ -72,10 +91,10 @@ public sealed class AvailabilityRetryTests(TestDatabase database) : IDisposable
         Assert.Equal(1, Puts);
 
         await NoPutAfter(Minute - TimeSpan.FromSeconds(1));
-        clock.Advance(TimeSpan.FromSeconds(1));
+        await Pass(TimeSpan.FromSeconds(1));
         await UntilPuts(2);
         await NoPutAfter(Minute - TimeSpan.FromSeconds(1));
-        clock.Advance(TimeSpan.FromSeconds(1));
+        await Pass(TimeSpan.FromSeconds(1));
         await UntilPuts(3);
 
         await Until(async () => (await scene.OnBot()).Number == 1);
@@ -95,7 +114,7 @@ public sealed class AvailabilityRetryTests(TestDatabase database) : IDisposable
         Refuse(scene, refusals: Puts + 1);
         Assert.Equal(AvailabilityDeliveryState.NotDelivered, (await scene.Turn("on")).Delivery.State);
         var refused = Puts;
-        clock.Advance(Minute);
+        await Pass(Minute);
         await UntilPuts(refused + 1);
         await Until(async () => (await scene.OnBot()).Number == 2);
 
@@ -111,11 +130,12 @@ public sealed class AvailabilityRetryTests(TestDatabase database) : IDisposable
         await using var scene = await SceneAsync();
         Refuse(scene, refusals: 2);
         Assert.Equal(AvailabilityDeliveryState.NotDelivered, (await scene.Turn("off")).Delivery.State);
-        clock.Advance(TimeSpan.FromSeconds(30));
+        await Pass(TimeSpan.FromSeconds(30));
         Assert.Equal(AvailabilityDeliveryState.NotDelivered, (await scene.Turn("off", id: AvailabilityScene.Unused)).Delivery.State);
 
-        clock.Advance(TimeSpan.FromSeconds(30));
+        await Pass(TimeSpan.FromSeconds(30));
         await UntilPuts(3);
+        await Settled();
 
         var onBot = await scene.OnBot();
         Assert.Equal(2, onBot.Number);

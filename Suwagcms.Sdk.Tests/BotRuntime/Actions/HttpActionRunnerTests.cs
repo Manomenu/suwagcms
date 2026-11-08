@@ -285,7 +285,7 @@ public sealed class HttpActionRunnerTests
     public async Task The_actions_own_timeout_ends_a_call_as_a_failure_saying_so()
     {
         await using var service = await TestService.StartAsync();
-        service.Answer = context => Task.Delay(TimeSpan.FromSeconds(30), context.RequestAborted);
+        service.Answer = context => Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);
         using var runner = Runner();
 
         var outcome = await runner.RunAsync(Action(service.Address, timeout: 1), Values(), Now);
@@ -299,7 +299,7 @@ public sealed class HttpActionRunnerTests
     public async Task Without_a_timeout_a_call_ends_after_ten_seconds()
     {
         await using var service = await TestService.StartAsync();
-        service.Answer = context => Task.Delay(TimeSpan.FromSeconds(30), context.RequestAborted);
+        service.Answer = context => Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);
         using var runner = Runner(time: new HundredTimesFaster());
 
         var outcome = await runner.RunAsync(Action(service.Address), Values(), Now);
