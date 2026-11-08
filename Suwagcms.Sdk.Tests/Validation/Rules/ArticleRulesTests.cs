@@ -10,7 +10,7 @@ public sealed class ArticleRulesTests
         DefinitionValidator.Validate(
             new BotDefinition
             {
-                FormatVersion = 3,
+                FormatVersion = 4,
                 KnowledgeBases =
                 [
                     Samples.Faq,
@@ -108,7 +108,7 @@ public sealed class ArticleRulesTests
     {
         Assert.Equal([MistakeCodes.ArticleKnowledgeBaseUnknown], Codes(Samples.Pricing with { KnowledgeBase = "" }));
         var mistake = Assert.Single(
-            DefinitionValidator.Validate(new BotDefinition { FormatVersion = 3, Articles = [Samples.Pricing] }, ValidationStage.Save)
+            DefinitionValidator.Validate(new BotDefinition { FormatVersion = 4, Articles = [Samples.Pricing] }, ValidationStage.Save)
         );
         Assert.Contains("create one first", mistake.Fix, StringComparison.Ordinal);
     }
@@ -161,7 +161,7 @@ public sealed class ArticleRulesTests
     public void A_json_article_holding_a_language_from_before_still_loads_and_the_field_is_ignored()
     {
         const string json =
-            """{"formatVersion":3,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}],"articles":[{"id":"cennik","knowledgeBase":"faq","title":"T","content":"c","llmGuide":"g","description":"d","language":"de"}]}""";
+            """{"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}],"articles":[{"id":"cennik","knowledgeBase":"faq","title":"T","content":"c","llmGuide":"g","description":"d","language":"de"}]}""";
 
         Assert.Empty(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
     }
@@ -184,7 +184,7 @@ public sealed class ArticleRulesTests
         var mistakes = DefinitionValidator.Validate(
             new BotDefinition
             {
-                FormatVersion = 3,
+                FormatVersion = 4,
                 KnowledgeBases = [Samples.Faq, polishBase],
                 Articles = [polish, english],
             },

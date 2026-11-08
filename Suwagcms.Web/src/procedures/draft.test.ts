@@ -247,22 +247,21 @@ describe("the draft", () => {
         expect(withStored(["a", "b"], ["c", "a"])).toEqual(["a", "b", "c"]);
     });
 
-    it("AC-procedure-creator-20: knowledge on whenStalled and on an inform goes back as stored, and emptying the text keeps it", () => {
+    it("AC-procedure-creator-20: knowledge on an inform goes back as stored, and a whenStalled is its text alone", () => {
         const knowledge = [{ knowledgeBase: "reports", articles: ["officeContact"], searchQueries: ["how long", " "] }];
         const draft = fromDetail({
             ...detail,
             firstStep: "tell",
-            whenStalled: { instruction: "Say it.", knowledge },
+            whenStalled: { instruction: "Say it." },
             steps: { tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." }, knowledge } } },
         });
 
-        expect(toSave(draft).whenStalled).toEqual({ instruction: "Say it.", knowledge });
+        expect(toSave(draft).whenStalled).toEqual({ instruction: "Say it." });
         expect(toSave(draft).steps).toEqual({
             tell: { inform: { instruction: "Tell it.", points: { office: "Where it is." }, knowledge } },
         });
-        expect(withStallText(draft.whenStalled, "")).toEqual({ instruction: "", knowledge });
-        expect(withStallText({ instruction: "Say it." }, "")).toBeNull();
-        expect(withStallText(null, "Say it.")).toEqual({ instruction: "Say it." });
+        expect(withStallText("")).toBeNull();
+        expect(withStallText("Say it.")).toEqual({ instruction: "Say it." });
     });
 
     it("AC-procedure-creator-37: only a base the instruction does not use is offered, a base shows only its articles, and changing it clears them and keeps the queries", () => {

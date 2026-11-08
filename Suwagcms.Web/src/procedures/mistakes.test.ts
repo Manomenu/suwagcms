@@ -57,7 +57,7 @@ describe("the live list of mistakes", () => {
         expect(stepOfPlace("branch:ask:1")).toBeNull();
         expect(conditionOfPlace("branch:ask:1")).toBe("ask:1");
         expect(conditionOfPlace("step:ask")).toBeNull();
-        expect(stepOfPlace("knowledge:whenStalled:0")).toBeNull();
+        expect(stepOfPlace("knowledge:tell:0")).toBe("tell");
         expect(stepOfPlace("field:description")).toBeNull();
     });
 
@@ -70,7 +70,6 @@ describe("the live list of mistakes", () => {
         expect(at("steps.ask.next[1].to")).toBe("branch:ask:1");
         expect(at("steps.ask.onFailure")).toBe("failure:ask");
         expect(at("steps.ask.inform.knowledge[2].articles[0]")).toBe("knowledge:ask:2");
-        expect(at("whenStalled.knowledge[0]")).toBe("knowledge:whenStalled:0");
         expect(at("whenStalled.instruction")).toBe("field:whenStalled");
         expect(at("description")).toBe("field:description");
         expect(at("whenInterrupted")).toBe("field:whenInterrupted");

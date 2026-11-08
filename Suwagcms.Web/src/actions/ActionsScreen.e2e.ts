@@ -15,7 +15,7 @@ async function declaringBot(id: string): Promise<{ address: string; close: () =>
             response.end(
                 JSON.stringify({
                     bot: id,
-                    formatVersion: 3,
+                    formatVersion: 4,
                     blocks: ["listen", "collect", "say", "assign"],
                     codeActions: [
                         {

@@ -52,10 +52,6 @@ public static class ReferenceWalker
     {
         ArgumentNullException.ThrowIfNull(procedure);
         var from = new ResourceRef(ResourceKind.Procedure, procedure.Id);
-        foreach (var target in KnowledgeEntry.TargetsAt("whenStalled.knowledge", procedure.WhenStalled?.Knowledge))
-        {
-            yield return new Reference(from, target.Path, target.To, null);
-        }
         foreach (var (stepName, step) in procedure.Steps)
         {
             foreach (var fact in step.Blocks.SelectMany(block => block.Facts))
@@ -173,27 +169,20 @@ public static class ReferenceWalker
     }
 
     // Why: a search query is text that names nothing, so a rename only ever rewrites an entry's base and articles.
-    private static Procedure RewriteKnowledge(Procedure procedure, Func<KnowledgeEntry, KnowledgeEntry> rewrite)
-    {
-        IReadOnlyList<KnowledgeEntry>? Rewritten(IReadOnlyList<KnowledgeEntry>? entries)
+    private static Procedure RewriteKnowledge(Procedure procedure, Func<KnowledgeEntry, KnowledgeEntry> rewrite) =>
+        procedure with
         {
-            return entries?.Select(rewrite).ToList();
-        }
-        return procedure with
-        {
-            WhenStalled = procedure.WhenStalled is { } stalled ? stalled with { Knowledge = Rewritten(stalled.Knowledge) } : null,
             Steps = procedure.Steps.ToDictionary(
                 step => step.Key,
                 step =>
                     step.Value.Inform is { } inform
                         ? step.Value with
                         {
-                            Inform = inform with { Knowledge = Rewritten(inform.Knowledge) },
+                            Inform = inform with { Knowledge = inform.Knowledge?.Select(rewrite).ToList() },
                         }
                         : step.Value
             ),
         };
-    }
 
     private static ResourceRef Fact(string name) => new(ResourceKind.GlobalFact, name);
 }

@@ -456,15 +456,6 @@
             "properties": {
               "instruction": {
                 "type": "string"
-              },
-              "knowledge": {
-                "type": [
-                  "array",
-                  "null"
-                ],
-                "items": {
-                  "$ref": "#/properties/procedures/items/properties/steps/additionalProperties/properties/inform/properties/knowledge/items"
-                }
               }
             }
           },

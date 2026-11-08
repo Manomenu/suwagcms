@@ -117,7 +117,7 @@ public sealed class ArticleProcedureLinksTests(TestDatabase database) : IDisposa
         var scene = await NewBot();
         Assert.True((await scene.Articles.Add("wycena", Guided("No link yet."))).IsSuccessStatusCode);
         var body =
-            """{"description":"Orders a valuation.","whenStalled":{"instruction":"Say so.","knowledge":[{"knowledgeBase":"offer","articles":["wycena"]}]}}""";
+            """{"description":"Orders a valuation.","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Say so.","knowledge":[{"knowledgeBase":"offer","articles":["wycena"]}]}}}}""";
         Assert.True((await scene.Procedures.Put("orderValuation", body)).IsSuccessStatusCode);
 
         var refused = await scene.Articles.Put("wycena", Guided($"Start {Link}."));

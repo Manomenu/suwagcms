@@ -348,7 +348,7 @@ public sealed class VersionRollbackTests(TestDatabase database) : IDisposable
         var puts = CountPuts(bot);
         bot.OnDeclaration = Answering(
             200,
-            $$"""{"bot":"{{scene.Bot}}","formatVersion":3,"blocks":["listen","say","assign"],"embeddingProfiles":["default"]}"""
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":4,"blocks":["listen","say","assign"],"embeddingProfiles":["default"]}"""
         );
 
         var result = await scene.PushAsync(1);

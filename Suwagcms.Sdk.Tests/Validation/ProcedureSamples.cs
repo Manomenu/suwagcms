@@ -98,7 +98,7 @@ internal static class ProcedureSamples
     public static BotDefinition Bot(params Procedure[] procedures) =>
         new()
         {
-            FormatVersion = 3,
+            FormatVersion = 4,
             Facts = Facts,
             Procedures = procedures,
         };
@@ -121,7 +121,7 @@ internal static class ProcedureSamples
     public static string EveryMistake { get; } =
         new JsonObject
         {
-            ["formatVersion"] = 3,
+            ["formatVersion"] = 4,
             ["facts"] = JsonNode.Parse(System.Text.Json.JsonSerializer.Serialize(Facts, Web)),
             ["procedures"] = new JsonArray(
                 new JsonObject
@@ -149,6 +149,9 @@ internal static class ProcedureSamples
                             {
                                 ["instruction"] = "Say it.",
                                 ["points"] = new JsonObject { ["Bad Name"] = " " },
+                                ["knowledge"] = new JsonArray(
+                                    new JsonObject { ["knowledgeBase"] = "nowhere", ["searchQueries"] = new JsonArray("how long", " ") }
+                                ),
                             },
                         },
                         ["defaultFirst"] = new JsonObject
@@ -193,13 +196,7 @@ internal static class ProcedureSamples
                     ["id"] = "noFirstStep",
                     ["description"] = "d",
                     ["steps"] = new JsonObject { ["ask"] = new JsonObject { ["collect"] = new JsonArray("order.kind") } },
-                    ["whenStalled"] = new JsonObject
-                    {
-                        ["instruction"] = " ",
-                        ["knowledge"] = new JsonArray(
-                            new JsonObject { ["knowledgeBase"] = "nowhere", ["searchQueries"] = new JsonArray("how long", " ") }
-                        ),
-                    },
+                    ["whenStalled"] = new JsonObject { ["instruction"] = " " },
                 },
                 new JsonObject
                 {

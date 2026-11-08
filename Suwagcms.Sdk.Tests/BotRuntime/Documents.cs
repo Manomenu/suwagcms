@@ -9,7 +9,7 @@ internal static class Documents
     {
         var document = new JsonObject
         {
-            ["formatVersion"] = 3,
+            ["formatVersion"] = 4,
             ["bot"] = bot,
             ["number"] = number,
             ["facts"] = new JsonArray(Fact(label)),

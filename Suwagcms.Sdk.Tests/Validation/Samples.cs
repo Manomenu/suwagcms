@@ -46,12 +46,12 @@ internal static class Samples
             Steps = new Dictionary<string, ProcedureStep> { ["hello"] = new() { Say = "Hello" } },
         };
 
-    public static BotDefinition Empty { get; } = new() { FormatVersion = 3 };
+    public static BotDefinition Empty { get; } = new() { FormatVersion = 4 };
 
     public static BotDefinition Valid { get; } =
         new()
         {
-            FormatVersion = 3,
+            FormatVersion = 4,
             Facts = [CityFact],
             KnowledgeBases = [Faq],
             Articles = [Pricing],
@@ -73,7 +73,7 @@ internal static class Samples
     public static BotDefinition WithDuplicatesInTwoKinds { get; } =
         new()
         {
-            FormatVersion = 3,
+            FormatVersion = 4,
             Facts = [CityFact, CityFact],
             Procedures = [Procedure("conversation"), Procedure("quote"), Procedure("other"), Procedure("quote")],
         };

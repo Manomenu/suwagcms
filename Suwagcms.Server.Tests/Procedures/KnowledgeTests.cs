@@ -28,10 +28,10 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
         return new Scene(articles, procedures);
     }
 
-    private static string Stalling(string knowledge) =>
+    private static string Informing(string knowledge) =>
         """
-            {"description":"Asks.","firstStep":"wait","steps":{"wait":{"listen":{}}},
-             "whenStalled":{"instruction":"Say how to reach the office.","knowledge":KNOWLEDGE}}
+            {"description":"Tells.","firstStep":"tell","steps":{"tell":{"inform":
+              {"instruction":"Say how to reach the office.","points":{"hours":"When it is open."},"knowledge":KNOWLEDGE}}}}
             """.Replace("KNOWLEDGE", knowledge, StringComparison.Ordinal);
 
     [Fact]
@@ -42,12 +42,12 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
 
         var saved = await scene.Procedures.Add(
             "orderValuation",
-            Stalling("""[{"knowledgeBase":"offer","articles":["officeContact"],"searchQueries":["how long a valuation takes"]}]""")
+            Informing("""[{"knowledgeBase":"offer","articles":["officeContact"],"searchQueries":["how long a valuation takes"]}]""")
         );
         var read = await ProcedureApi.DetailOf(await scene.Procedures.Get("orderValuation"));
 
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
-        var entry = Assert.Single(read.WhenStalled?.Knowledge ?? []);
+        var entry = Assert.Single(read.Steps["tell"].Inform?.Knowledge ?? []);
         Assert.Equal("offer", entry.KnowledgeBase);
         Assert.Equal(["officeContact"], entry.Articles);
         Assert.Equal(["how long a valuation takes"], entry.SearchQueries);
@@ -63,7 +63,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
     {
         var scene = await NewBot();
 
-        var saved = await ProcedureApi.DetailOf(await scene.Procedures.Add("orderValuation", Stalling(knowledge)));
+        var saved = await ProcedureApi.DetailOf(await scene.Procedures.Add("orderValuation", Informing(knowledge)));
 
         Assert.Empty(saved.NotReady);
     }
@@ -77,13 +77,13 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
 
         var response = await scene.Procedures.Add(
             "orderValuation",
-            Stalling("""[{"knowledgeBase":"offer","articles":["officeContact"]}]""")
+            Informing("""[{"knowledgeBase":"offer","articles":["officeContact"]}]""")
         );
         var mistake = Assert.Single(await FactApi.MistakesOf(response));
 
         Assert.NotEqual(scene.Articles.Bot, other.Articles.Bot);
         Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
-        Assert.Contains("whenStalled", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.Contains("step 'tell'", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -93,7 +93,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
     {
         var scene = await NewBot();
 
-        var mistake = Assert.Single(await FactApi.MistakesOf(await scene.Procedures.Add("orderValuation", Stalling(knowledge))));
+        var mistake = Assert.Single(await FactApi.MistakesOf(await scene.Procedures.Add("orderValuation", Informing(knowledge))));
 
         Assert.Equal("save.invalid", mistake.GetProperty("code").GetString());
         Assert.Contains(key, mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
@@ -117,6 +117,22 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
     }
 
     [Fact]
+    [Trait("criterion", "AC-procedure-creator-50")]
+    public async Task Knowledge_on_when_stalled_is_refused_as_any_key_it_does_not_have()
+    {
+        var scene = await NewBot();
+        const string body = """
+            {"description":"Asks.","firstStep":"wait","steps":{"wait":{"listen":{}}},
+             "whenStalled":{"instruction":"Say so.","knowledge":[{"knowledgeBase":"offer","articles":["officeContact"]}]}}
+            """;
+
+        var mistake = Assert.Single(await FactApi.MistakesOf(await scene.Procedures.Add("orderValuation", body)));
+
+        Assert.Equal("save.invalid", mistake.GetProperty("code").GetString());
+        Assert.Contains("knowledge", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-instruction-context-5")]
     [Trait("criterion", "AC-instruction-context-6")]
     public async Task A_blank_query_or_a_query_with_no_articles_is_saved_listed_and_reported_when_creating_a_version_until_it_is_mended()
@@ -126,7 +142,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
         var versions = $"/api/bots/{scene.Articles.Bot}/versions";
 
         var saved = await ProcedureApi.DetailOf(
-            await scene.Procedures.Add("orderValuation", Stalling("""[{"knowledgeBase":"offer","searchQueries":["hours"," "]}]"""))
+            await scene.Procedures.Add("orderValuation", Informing("""[{"knowledgeBase":"offer","searchQueries":["hours"," "]}]"""))
         );
         var refused = await client.PostAsync(versions, null, TestContext.Current.CancellationToken);
 
@@ -156,33 +172,12 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
         var procedures = new ProcedureApi(client, new FactApi(client, scene.Bot));
         const string query = "  zażółć “gęślą”  [x](cms://article/none) `jaźń` ";
 
-        var saved = await procedures.Add("orderValuation", Stalling($$"""[{"knowledgeBase":"offer","searchQueries":["{{query}}"]}]"""));
+        var saved = await procedures.Add("orderValuation", Informing($$"""[{"knowledgeBase":"offer","searchQueries":["{{query}}"]}]"""));
         var read = await ProcedureApi.DetailOf(await procedures.Get("orderValuation"));
 
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
         Assert.False(listening.Pending(), "A save of a query reached out to the bot's address.");
-        Assert.Equal(["  zażółć “gęślą”  [x](cms://article/none) `jaźń` "], read.WhenStalled?.Knowledge?[0].SearchQueries);
-    }
-
-    [Fact]
-    [Trait("criterion", "AC-instruction-context-10")]
-    public async Task The_instruction_of_an_inform_takes_knowledge_under_the_same_rules()
-    {
-        var scene = await NewBot();
-        const string inform = """
-            {"description":"Tells.","firstStep":"tell","steps":{"tell":{"inform":
-              {"instruction":"Tell it.","points":{"hours":"When it is open."},"knowledge":[{"knowledgeBase":"offer","articles":["ARTICLE"],"searchQueries":["hours"]}]}}}}
-            """;
-
-        var refused = await scene.Procedures.Add("orderValuation", inform.Replace("ARTICLE", "ghost", StringComparison.Ordinal));
-        var saved = await ProcedureApi.DetailOf(
-            await scene.Procedures.Add("orderValuation", inform.Replace("ARTICLE", "officeContact", StringComparison.Ordinal))
-        );
-        var read = await ProcedureApi.DetailOf(await scene.Procedures.Get("orderValuation"));
-
-        Assert.Equal(["reference.missing"], await ProcedureApi.CodesOf(refused));
-        Assert.Empty(saved.NotReady);
-        Assert.Equal(["hours"], read.Steps["tell"].Inform?.Knowledge?[0].SearchQueries);
+        Assert.Equal(["  zażółć “gęślą”  [x](cms://article/none) `jaźń` "], read.Steps["tell"].Inform?.Knowledge?[0].SearchQueries);
     }
 
     [Fact]
@@ -192,14 +187,14 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
         var scene = await NewBot();
         Assert.True(
             (
-                await scene.Procedures.Add("orderValuation", Stalling("""[{"knowledgeBase":"offer","articles":["officeContact"]}]"""))
+                await scene.Procedures.Add("orderValuation", Informing("""[{"knowledgeBase":"offer","articles":["officeContact"]}]"""))
             ).IsSuccessStatusCode
         );
 
         var refused = await scene.Articles.Delete("officeContact");
         var related = Assert.Single(Assert.Single(await FactApi.MistakesOf(refused)).GetProperty("related").EnumerateArray());
 
-        Assert.Equal("whenStalled.knowledge[0].articles[0]", related.GetProperty("location").GetString());
+        Assert.Equal("steps.tell.inform.knowledge[0].articles[0]", related.GetProperty("location").GetString());
         Assert.True((await scene.Procedures.Delete("orderValuation")).IsSuccessStatusCode);
         Assert.True((await scene.Articles.Delete("officeContact")).IsSuccessStatusCode);
     }
@@ -211,7 +206,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
         var scene = await NewBot();
         Assert.True(
             (
-                await scene.Procedures.Add("orderValuation", Stalling("""[{"knowledgeBase":"offer","articles":["officeContact"]}]"""))
+                await scene.Procedures.Add("orderValuation", Informing("""[{"knowledgeBase":"offer","articles":["officeContact"]}]"""))
             ).IsSuccessStatusCode
         );
 
@@ -230,7 +225,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
         var ask = TestContext.Current.CancellationToken;
         Assert.True(
             (
-                await scene.Procedures.Add("orderValuation", Stalling("""[{"knowledgeBase":"offer","searchQueries":["hours"]}]"""))
+                await scene.Procedures.Add("orderValuation", Informing("""[{"knowledgeBase":"offer","searchQueries":["hours"]}]"""))
             ).IsSuccessStatusCode
         );
 
@@ -241,9 +236,9 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
         var renamed = await client.PostAsync($"/api/bots/{bot}/knowledge-bases/offer/rename", newId, ask);
         var read = await ProcedureApi.DetailOf(await scene.Procedures.Get("orderValuation"));
 
-        Assert.Equal("whenStalled.knowledge[0].knowledgeBase", related.GetProperty("location").GetString());
+        Assert.Equal("steps.tell.inform.knowledge[0].knowledgeBase", related.GetProperty("location").GetString());
         Assert.Contains("\"offer\"", uses, StringComparison.Ordinal);
         Assert.Equal(HttpStatusCode.OK, renamed.StatusCode);
-        Assert.Equal("prices", read.WhenStalled?.Knowledge?[0].KnowledgeBase);
+        Assert.Equal("prices", read.Steps["tell"].Inform?.Knowledge?[0].KnowledgeBase);
     }
 }

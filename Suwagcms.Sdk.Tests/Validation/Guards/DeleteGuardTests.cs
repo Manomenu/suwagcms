@@ -23,7 +23,7 @@ public sealed class DeleteGuardTests
     private static BotDefinition Bot(params Article[] articles) =>
         new()
         {
-            FormatVersion = 3,
+            FormatVersion = 4,
             KnowledgeBases = [Samples.Faq],
             Articles = articles,
         };
@@ -129,16 +129,15 @@ public sealed class DeleteGuardTests
     public void An_article_a_knowledge_entry_names_is_refused_listing_each_instruction_that_names_it()
     {
         IReadOnlyList<KnowledgeEntry> knowledge = [new KnowledgeEntry { KnowledgeBase = "faq", Articles = ["cennik"] }];
-        var procedure = ProcedureSamples.WithStep("tell", new ProcedureStep { Inform = new InformArguments { Knowledge = knowledge } }) with
-        {
-            WhenStalled = new StallInstruction { Instruction = "Say it.", Knowledge = knowledge },
-        };
+        var tell = new ProcedureStep { Inform = new InformArguments { Knowledge = knowledge } };
+        var once = ProcedureSamples.WithStep("tell", tell);
+        var procedure = once with { Steps = new Dictionary<string, ProcedureStep>(once.Steps) { ["tellAgain"] = tell } };
 
         var mistake = Assert.Single(Deleting(ProcedureSamples.Bot(procedure) with { KnowledgeBases = [Samples.Faq] }, Cennik));
 
         Assert.Equal(Cennik, mistake.Resource);
         Assert.Equal(
-            ["steps.tell.inform.knowledge[0].articles[0]", "whenStalled.knowledge[0].articles[0]"],
+            ["steps.tell.inform.knowledge[0].articles[0]", "steps.tellAgain.inform.knowledge[0].articles[0]"],
             mistake.Related.Select(related => related.Location)
         );
     }

@@ -38,8 +38,8 @@ public sealed class OldFormatTests(TestDatabase database) : IDisposable
         var changed = await connection.ExecuteAsync(
             """
             UPDATE bot_version
-            SET format_version = 1, document = replace(document, '"formatVersion":3', '"formatVersion":1')
-            WHERE bot_id = @bot AND number = @number AND document LIKE '%"formatVersion":3%'
+            SET format_version = 1, document = replace(document, '"formatVersion":4', '"formatVersion":1')
+            WHERE bot_id = @bot AND number = @number AND document LIKE '%"formatVersion":4%'
             """,
             new { bot, number }
         );

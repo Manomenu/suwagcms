@@ -389,7 +389,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A list alone cannot show a loop or a jump, so a <b>Next:</b> row names any step, and an <b>End</b> row closes a branch. Every graph the format allows can therefore be shown, and the SDK gains no rule on a graph's shape.</p>
   </div>
   <div class="stats">
-    <div><b>49</b><span>criteria: 28 carried over, 21 new</span></div>
+    <div><b>49</b><span>criteria: 27 carried over, 22 new</span></div>
     <div><b>4 of 4</b><span>shipped procedures read as lists</span></div>
     <div><b>0</b><span>graphs refused for their shape</span></div>
   </div>
@@ -508,7 +508,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><th>Field</th><th>Rule</th></tr>
     <tr><td><b>Description</b></td><td><code>description</code>, which works as the trigger: the model reads it to decide whether to start the procedure</td></tr>
     <tr><td><b>Local facts</b></td><td>add, edit and remove, with the fields of a global fact; steps offer them by short name</td></tr>
-    <tr><td><b>When stalled</b></td><td><code>whenStalled</code>: its instruction, and its Knowledge section when the bot declares it</td></tr>
+    <tr><td><b>When stalled</b></td><td><code>whenStalled</code>: its instruction alone</td></tr>
     <tr><td><b>When interrupted</b></td><td><code>whenInterrupted</code>: <code>keep</code> or <code>discard</code>; a value nobody chose is not written</td></tr>
     <tr><td><b>Steps</b></td><td>the numbered list; each list, including each branch, has one <b>+ Add step</b> at its end, above its End when it has one; the main list always ends in End</td></tr>
     <tr><td><b>Save</b></td><td>stays at the bottom of the screen while the page scrolls; at the end of the form it rests below the last row and above Delete, covering neither. This belongs to the actions of every edit screen, not to this page alone</td></tr>
@@ -785,7 +785,8 @@ askAge:
 
 <section data-role="data">
   <h2>Format: knowledge</h2>
-  <p>On every instruction, <code>inform</code> and <code>whenStalled</code> alike, <code>knowledge</code> replaces <code>context</code>. The rest of the procedure's format is unchanged.</p>
+  <p>On the instruction of an <code>inform</code>, <code>knowledge</code> replaces <code>context</code>. The rest of the procedure's format is unchanged.</p>
+  <p><code>whenStalled</code> holds only its instruction. It also carried <code>knowledge</code> until format 4, which nobody asked for and no bot read, so format 4 removed it: a file or a save holding it is refused like any key it does not have, and a data migration took it out of stored procedures, changing nothing else in them.</p>
   <script type="text/x-code" data-file="in a procedure" data-lang="yaml" data-notes='[{"lines":"5","label":"Target","note":"a query now says which base it searches"},{"lines":"6","label":"Articles","note":"each must be in this entry&#39;s base"}]'>
 tellContents:
   inform:
@@ -836,7 +837,7 @@ tellContents:
   <p>The declaration gains an optional field: <code>knowledge: true</code>. Left out, it means the bot does not read knowledge.</p>
   <table>
     <tr><th>The bot's declaration</th><th>Knowledge section</th></tr>
-    <tr><td><code>knowledge: true</code></td><td>shown on Tell rows and on When stalled</td></tr>
+    <tr><td><code>knowledge: true</code></td><td>shown on Tell rows</td></tr>
     <tr><td>answers, without it</td><td>hidden, as an undeclared block is not offered</td></tr>
     <tr><td>answers nothing, or a format the CMS does not read</td><td>shown, under the same note as the blocks: nothing is being checked</td></tr>
     <tr><td>hidden, and the instruction holds entries from a file or an older declaration</td><td>shown with those entries, their mistake, and <b>Remove</b>, so nothing stored is hidden or lost by a save</td></tr>
@@ -944,7 +945,7 @@ tellContents:
   </ul>
   <h3>The knowledge format</h3>
   <ul class="checks">
-    <li><code>AC-instruction-context-1</code> A <code>whenStalled</code> with an instruction and a <code>knowledge</code> entry holding a base, articles and search queries, saved with <code>suwagcms procedures add --file</code>, reads back as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
+    <li><code>AC-instruction-context-1</code> An <code>inform</code> with an instruction and a <code>knowledge</code> entry holding a base, articles and search queries, saved with <code>suwagcms procedures add --file</code>, reads back as written, in YAML and in JSON, and the output of <code>suwagcms procedures show</code> is accepted back by <code>suwagcms procedures edit --file</code> without a change of meaning.</li>
     <li><code>AC-instruction-context-2</code> An instruction with no <code>knowledge</code> or with an empty list is accepted, and an entry holding only articles or only queries is accepted.</li>
     <li><code>AC-instruction-context-3</code> An article or a base this bot does not have, including one only another bot has, is refused with <code>reference.missing</code>, naming where the entry is.</li>
     <li><code>AC-instruction-context-4</code> An article <code>id</code> that is not camelCase, an entry with no <code>knowledgeBase</code>, a key <code>knowledge</code> does not have, and <code>knowledge</code> on a block with no instruction are each refused with a mistake and a fix.</li>
@@ -953,15 +954,15 @@ tellContents:
     <li><code>AC-instruction-context-7</code> A save holding a query succeeds with no bot reachable and no outside call made, and the query reads back byte for byte.</li>
     <li><code>AC-instruction-context-8</code> The validator on its own reports the reference and <code>Version</code> mistakes above with the same codes.</li>
     <li><code>AC-instruction-context-9</code> The plugin's main skill gives the form of <code>knowledge</code> and says when to name an article and when to write a query.</li>
-    <li><code>AC-instruction-context-10</code> The instruction of an <code>inform</code> takes <code>knowledge</code>, under the same rules as on <code>whenStalled</code>.</li>
     <li><code>AC-procedure-creator-34</code> An article outside its entry's base is refused with <code>knowledge.article.otherBase</code> and the fix, and so is moving an article to another base while an entry names it under the old one. <span class="tag">sdk test</span></li>
     <li><code>AC-procedure-creator-35</code> One base twice on an instruction is refused with <code>knowledge.base.repeated</code>, whose fix says to merge the entries. <span class="tag">sdk test</span></li>
     <li><code>AC-procedure-creator-36</code> A base an entry names cannot be deleted, the refusal lists each instruction, Used by and Uses show it, and changing the base's <code>id</code> rewrites each entry. <span class="tag">server test</span></li>
-    <li><code>AC-procedure-creator-46</code> A document in format 1 is refused with <code>format.version</code> and a fix that says to bring it to format 2, and a version the CMS keeps in format 1 can be neither pushed nor rolled back to: that is refused the same way, with nothing sent to the bot. <span class="tag">server test</span></li>
+    <li><code>AC-procedure-creator-46</code> A document in format 1 is refused with <code>format.version</code> and a fix that says to bring it to the current format, and a version the CMS keeps in format 1 can be neither pushed nor rolled back to: that is refused the same way, with nothing sent to the bot. <span class="tag">server test</span></li>
+    <li><code>AC-procedure-creator-50</code> <code>whenStalled</code> holds only its instruction: a save or a file with <code>knowledge</code> on it is refused like any key it does not have, and a data migration removes it from every stored procedure, leaving the rest of the procedure, the order of its keys and its revision as they were. <span class="tag">server test</span></li>
   </ul>
   <h3>The knowledge section and the declaration</h3>
   <ul class="checks">
-    <li><code>AC-procedure-creator-20</code> Knowledge has its form on <code>whenStalled</code> and on an <code>inform</code>: a base, its articles and search queries, and what is saved reads back.</li>
+    <li><code>AC-procedure-creator-20</code> Knowledge has its form on an <code>inform</code>: a base, its articles and search queries, and what is saved reads back.</li>
     <li><code>AC-procedure-creator-37</code> <b>+ Add knowledge</b> offers only bases the instruction does not use, a picked base shows only its articles, and changing the base clears the articles and keeps the queries. <span class="tag">web test</span></li>
     <li><code>AC-procedure-creator-38</code> The section is hidden when the bot's declaration answers without <code>knowledge: true</code> and shown when it says so or answers nothing; while hidden, an instruction holding entries shows them with their mistake and Remove, and a save keeps what it did not touch. <span class="tag">web test</span></li>
     <li><code>AC-procedure-creator-39</code> A bot's setup stating <code>knowledge: true</code> answers it in <code>GET /suwagcms/declaration</code>; the CMS stores and shows it on the profile and in <code>suwagcms bots declaration</code>, and a setup that leaves it out answers no such member. <span class="tag">server test</span></li>

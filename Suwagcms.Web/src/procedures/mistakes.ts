@@ -37,8 +37,6 @@ export function consequenceOf(mistake: Mistake): string {
 export function placeOf(mistake: Mistake, procedure: string, draft: Draft): string {
     if (mistake.resource.kind !== "Procedure" || mistake.resource.id !== procedure) return "top";
     const path = mistake.path;
-    const stalled = /^whenStalled\.knowledge\[(\d+)\]/.exec(path);
-    if (stalled) return `knowledge:whenStalled:${stalled[1]}`;
     const field = /^(description|whenStalled|whenInterrupted|localFacts)\b/.exec(path)?.[1];
     if (field !== undefined) return `field:${field}`;
     const name = /^steps\.([^.[]+)/.exec(path)?.[1];
@@ -54,7 +52,7 @@ export function placeOf(mistake: Mistake, procedure: string, draft: Draft): stri
 /** The step to select for a place, so clicking a mistake opens the row it is about. */
 export function stepOfPlace(place: string): string | null {
     const match = /^(?:step|failure|knowledge):([^:]+)/.exec(place);
-    return match?.[1] === undefined || match[1] === "whenStalled" ? null : match[1];
+    return match?.[1] ?? null;
 }
 
 /** The If or Else if row to unfold for a place, so clicking a mistake beside a branch opens that row and not its step. */

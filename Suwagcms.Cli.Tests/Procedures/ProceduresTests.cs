@@ -672,23 +672,24 @@ public sealed class ProceduresTests : IDisposable
     private const string KnowledgeYaml = """
         id: orderValuation
         description: The customer orders a valuation of a property.
-        firstStep: wait
+        firstStep: tell
         steps:
-          wait:
-            listen:
-        whenStalled:
-          instruction: Tell the customer you could not finish and how to reach the office.
-          knowledge:
-            - knowledgeBase: offer
-              articles: [officeContact]
-              searchQueries:
-                - how long a valuation takes
-                - "42"
+          tell:
+            inform:
+              instruction: Tell the customer how to reach the office.
+              points:
+                office: Where the office is.
+              knowledge:
+                - knowledgeBase: offer
+                  articles: [officeContact]
+                  searchQueries:
+                    - how long a valuation takes
+                    - "42"
         """;
 
     [Fact]
     [Trait("criterion", "AC-instruction-context-1")]
-    public async Task A_when_stalled_with_knowledge_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
+    public async Task An_inform_with_knowledge_from_yaml_or_json_is_sent_as_written_and_show_is_accepted_back_by_edit()
     {
         var recorder = new Recorder();
         var server = recorder.Serving(
@@ -705,7 +706,7 @@ public sealed class ProceduresTests : IDisposable
 
         Assert.Equal((0, 0, 0, 0), (yaml.ExitCode, json.ExitCode, shown.ExitCode, edited.ExitCode));
         var sent = JsonNode.Parse(recorder.Calls[0].Body);
-        var entry = At(sent, "whenStalled", "knowledge").AsArray()[0];
+        var entry = At(sent, "steps", "tell", "inform", "knowledge").AsArray()[0];
         Assert.Equal("offer", At(entry, "knowledgeBase").GetValue<string>());
         Assert.Equal(["officeContact"], At(entry, "articles").AsArray().Select(item => item?.GetValue<string>()));
         Assert.Equal(["how long a valuation takes", "42"], At(entry, "searchQueries").AsArray().Select(item => item?.GetValue<string>()));
@@ -718,8 +719,8 @@ public sealed class ProceduresTests : IDisposable
     public async Task A_blank_query_saved_with_the_cli_is_listed_as_a_version_mistake_with_exit_0()
     {
         const string notReady = """
-            [{"code":"knowledge.query.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"whenStalled.knowledge[0].searchQueries[0]",
-              "message":"'knowledge' of whenStalled in 'orderValuation' has a blank search query.","fix":"Write the query, or remove it.","related":[]}]
+            [{"code":"knowledge.query.blank","stage":"Version","resource":{"kind":"Procedure","id":"orderValuation"},"path":"steps.tell.inform.knowledge[0].searchQueries[0]",
+              "message":"'knowledge' of step 'tell' in 'orderValuation' has a blank search query.","fix":"Write the query, or remove it.","related":[]}]
             """;
         var server = new Recorder().Serving((_, body) => Echo(body, "orderValuation", 1, notReady));
 

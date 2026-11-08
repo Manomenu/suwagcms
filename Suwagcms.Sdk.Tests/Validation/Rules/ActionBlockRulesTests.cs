@@ -78,7 +78,7 @@ public sealed class ActionBlockRulesTests
     private static BotDefinition Bot(BotAction action, GlobalFact fact, ProcedureStep step) =>
         new()
         {
-            FormatVersion = 3,
+            FormatVersion = 4,
             Facts = [fact],
             Actions = [action],
             Procedures = [Procedure(step)],

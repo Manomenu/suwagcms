@@ -11,7 +11,6 @@ import { StickyActions } from "@/design/stickyActions";
 import { Textarea } from "@/design/textarea";
 
 import { factsSeen, withStallText } from "./draft";
-import { KnowledgeForm } from "./KnowledgeForm";
 import { LocalFactsPanel } from "./LocalFactsPanel";
 import { PROCEDURE_HINTS } from "./hints";
 import { conditionOfPlace, consequenceOf, placeOf, stepOfPlace, type Check } from "./mistakes";
@@ -95,7 +94,7 @@ export function ProcedureForm({
     note: string | null;
     allFacts: StepsProps["facts"];
 }) {
-    const { draft, edit, id, onSelect, onConditionOpen, showKnowledge, bases, articles } = steps;
+    const { draft, edit, id, onSelect, onConditionOpen } = steps;
     const placed = useMemo(
         () => (check.state === "done" ? check.mistakes.map((mistake) => ({ mistake, place: placeOf(mistake, id, draft) })) : []),
         [check, id, draft],
@@ -149,29 +148,12 @@ export function ProcedureForm({
                             {...props}
                             value={draft.whenStalled?.instruction ?? ""}
                             onChange={(event) => {
-                                edit((current) => ({ ...current, whenStalled: withStallText(current.whenStalled, event.target.value) }));
+                                edit((current) => ({ ...current, whenStalled: withStallText(event.target.value) }));
                             }}
                         />
                     )}
                 </Field>
                 {beside("field:whenStalled")}
-                {draft.whenStalled && (
-                    <KnowledgeForm
-                        owner="whenStalled"
-                        show={showKnowledge}
-                        knowledge={draft.whenStalled.knowledge ?? []}
-                        bases={bases}
-                        articles={articles}
-                        beside={beside}
-                        onChange={(knowledge) => {
-                            edit((current) => {
-                                if (!current.whenStalled) return current;
-                                const { knowledge: _, ...rest } = current.whenStalled;
-                                return { ...current, whenStalled: knowledge.length === 0 ? rest : { ...rest, knowledge } };
-                            });
-                        }}
-                    />
-                )}
             </div>
             {canBeInterrupted && (
                 <div className="flex flex-col gap-1" data-place="field:whenInterrupted">

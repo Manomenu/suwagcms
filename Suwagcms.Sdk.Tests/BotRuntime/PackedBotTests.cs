@@ -127,7 +127,7 @@ public sealed class PackedBotTests
                     await client.GetStringAsync(new Uri("/suwagcms/declaration", UriKind.Relative), TestContext.Current.CancellationToken)
                 ) ?? throw new InvalidOperationException("empty declaration");
             Assert.Equal("packed-bot", declared.Member("bot").Text());
-            Assert.Equal(3, declared.Member("formatVersion").GetValue<int>());
+            Assert.Equal(4, declared.Member("formatVersion").GetValue<int>());
             Assert.Equal("""["listen","say"]""", declared.Member("blocks").ToJsonString());
             Assert.Equal("lookupPolicy", declared.Member("codeActions").AsArray()[0]?.Member("id").Text());
 

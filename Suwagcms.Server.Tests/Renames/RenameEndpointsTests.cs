@@ -440,7 +440,7 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
         await scene.AddArticle("cennik");
         var knowledge = """[{"knowledgeBase":"offer","articles":["cennik"],"searchQueries":["cennik of the office"]}]""";
         var body =
-            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","points":{"prices":"The prices."},"knowledge":KNOWLEDGE}}},"whenStalled":{"instruction":"Say so.","knowledge":KNOWLEDGE}}""".Replace(
+            """{"description":"D","firstStep":"tell","steps":{"tell":{"inform":{"instruction":"Tell it.","points":{"prices":"The prices."},"knowledge":KNOWLEDGE}}}}""".Replace(
                 "KNOWLEDGE",
                 knowledge,
                 StringComparison.Ordinal
@@ -450,16 +450,8 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
         Assert.Equal(HttpStatusCode.OK, (await scene.Rename("articles", "cennik", "priceList")).StatusCode);
 
         var read = await scene.Read("procedures", "orderValuation");
-        foreach (
-            var found in new[]
-            {
-                read.GetProperty("whenStalled").GetProperty("knowledge")[0],
-                read.GetProperty("steps").GetProperty("tell").GetProperty("inform").GetProperty("knowledge")[0],
-            }
-        )
-        {
-            Assert.Equal("priceList", found.GetProperty("articles")[0].GetString());
-            Assert.Equal("cennik of the office", found.GetProperty("searchQueries")[0].GetString());
-        }
+        var found = read.GetProperty("steps").GetProperty("tell").GetProperty("inform").GetProperty("knowledge")[0];
+        Assert.Equal("priceList", found.GetProperty("articles")[0].GetString());
+        Assert.Equal("cennik of the office", found.GetProperty("searchQueries")[0].GetString());
     }
 }

@@ -18,7 +18,7 @@ export const PROCEDURE_HINTS = {
     start: "Starts this procedure on top of the current one. 'conversation' cannot be started.",
     instruction: "What the model is told to do with the points below, like how to open or what tone to take.",
     points: "Each one is a thing the customer must be told: a name and what must be said. The order is kept, and the bot can check each one was told.",
-    knowledge: "What the model reads before it follows the instruction, one entry per knowledge base.",
+    knowledge: "What the model reads before it follows this step's instruction, one entry per knowledge base.",
     articles: "Articles of this base the model reads. Name one when you know it holds what is needed.",
     searchQueries:
         "Plain text the bot searches this base with. The CMS stores it and never runs it; name an article when you know which one holds the fact.",

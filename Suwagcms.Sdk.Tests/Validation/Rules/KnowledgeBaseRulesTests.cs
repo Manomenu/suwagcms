@@ -15,7 +15,7 @@ public sealed class KnowledgeBaseRulesTests
     };
 
     private static IReadOnlyList<Mistake> Check(params KnowledgeBase[] bases) =>
-        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 3, KnowledgeBases = bases }, ValidationStage.Save);
+        DefinitionValidator.Validate(new BotDefinition { FormatVersion = 4, KnowledgeBases = bases }, ValidationStage.Save);
 
     [Fact]
     [Trait("criterion", "AC-knowledge-bases-4")]
@@ -113,7 +113,7 @@ public sealed class KnowledgeBaseRulesTests
     [Trait("criterion", "AC-knowledge-base-language-1")]
     public void A_base_without_a_language_has_en_and_a_json_base_without_one_reads_as_en_and_is_accepted()
     {
-        const string json = """{"formatVersion":3,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}]}""";
+        const string json = """{"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}]}""";
 
         Assert.Equal("en", Offer.Language);
         Assert.Equal(
@@ -158,7 +158,7 @@ public sealed class KnowledgeBaseRulesTests
     public void The_message_names_the_language_given_and_a_json_definition_with_another_language_fails_offline()
     {
         const string json =
-            """{"formatVersion":3,"knowledgeBases":[{"id":"oferta","title":"Oferta","language":"de","embedding":"default","results":5}]}""";
+            """{"formatVersion":4,"knowledgeBases":[{"id":"oferta","title":"Oferta","language":"de","embedding":"default","results":5}]}""";
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
 
@@ -205,24 +205,24 @@ public sealed class KnowledgeBaseRulesTests
     [Trait("criterion", "AC-chatbot-contract-14")]
     [InlineData("""{"id":"faq","title":"Questions","results":5}""")]
     [InlineData("""{"id":"faq","title":"Questions","embedding":"default"}""")]
-    public void A_base_without_its_profile_or_results_cannot_be_read_as_format_3(string knowledgeBase)
+    public void A_base_without_its_profile_or_results_cannot_be_read_as_format_4(string knowledgeBase)
     {
-        var json = $$"""{"formatVersion":3,"knowledgeBases":[{{knowledgeBase}}]}""";
+        var json = $$"""{"formatVersion":4,"knowledgeBases":[{{knowledgeBase}}]}""";
 
         Assert.Equal(MistakeCodes.FormatInvalid, Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save)).Code);
     }
 
     [Fact]
     [Trait("criterion", "AC-chatbot-contract-14")]
-    public void A_document_in_format_2_is_refused_with_the_way_to_format_3()
+    public void A_document_in_format_3_is_refused_with_the_way_to_format_4()
     {
-        const string json = """{"formatVersion":2,"knowledgeBases":[{"id":"faq","title":"Questions"}]}""";
+        const string json = """{"formatVersion":3,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}]}""";
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Version));
 
         Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
-        Assert.Equal(3, BotDefinition.CurrentFormatVersion);
-        Assert.Contains("Bring the document to format 3", mistake.Fix, StringComparison.Ordinal);
+        Assert.Equal(4, BotDefinition.CurrentFormatVersion);
+        Assert.Contains("Bring the document to format 4", mistake.Fix, StringComparison.Ordinal);
         Assert.Contains("create a new version from the working state", mistake.Fix, StringComparison.Ordinal);
     }
 }
