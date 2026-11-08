@@ -8,7 +8,7 @@ import "./articleEditor.css";
 import { extensionsOf } from "./articleEditor";
 import { openPicker, type LinkTarget } from "./articleLink";
 
-// Why: it reports Markdown only when the author changes the text, so a text that was opened and not touched is never rewritten.
+// Why: it grows with its text instead of scrolling inside, so an author sees the whole text; it reports Markdown only when the author changes the text, so a text that was opened and not touched is never rewritten.
 export function LinkedTextEditor({
     label,
     value,
@@ -56,7 +56,7 @@ export function LinkedTextEditor({
                 "aria-label": label,
                 ...(invalid ? { "aria-invalid": "true" } : {}),
                 ...(invalid ? { "aria-describedby": `article-${label}-mistakes` } : {}),
-                class: "article-editor h-48 w-full overflow-y-auto rounded-md border border-input bg-secondary p-3 text-sm text-foreground outline-none focus-visible:border-primary aria-invalid:border-destructive",
+                class: "article-editor min-h-48 w-full rounded-md border border-input bg-secondary p-3 text-sm text-foreground outline-none focus-visible:border-primary aria-invalid:border-destructive",
             },
         },
         onUpdate: ({ editor: changed }) => {

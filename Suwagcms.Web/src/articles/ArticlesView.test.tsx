@@ -148,13 +148,14 @@ describe("ArticleFields", () => {
         expect(HINTS.description).toMatch(/search reads this/);
     });
 
-    it("AC-articles-10: content, llmGuide and description are shown at the same time, in one row", () => {
+    it("AC-articles-10: content comes first, then llmGuide and description, before the other fields", () => {
         const html = fields();
+        const at = (field: string) => html.indexOf(`data-field="${field}"`);
 
-        expect(html).toContain('data-field="content"');
-        expect(html).toContain('data-field="llmGuide"');
-        expect(html).toContain('data-field="description"');
-        expect(html).toContain("md:grid-cols-3");
+        expect(at("content")).toBeGreaterThan(-1);
+        expect(at("content")).toBeLessThan(at("llmGuide"));
+        expect(at("llmGuide")).toBeLessThan(at("description"));
+        expect(at("description")).toBeLessThan(at("id"));
         expect(html.match(/<textarea/g)).toHaveLength(1);
         expect(html.match(/data-markdown-editor=/g)).toHaveLength(2);
     });

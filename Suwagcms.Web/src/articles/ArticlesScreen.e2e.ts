@@ -51,10 +51,7 @@ async function fill(page: Page, id: string, title: string): Promise<void> {
     await page.getByLabel(/^description/).fill("What a valuation costs and what affects the price");
 }
 
-test("AC-articles-1: an article created in the web is listed in its base and is in the API, and AC-articles-10: the editor shows the three texts at once", async ({
-    page,
-    request,
-}) => {
+test("AC-articles-1: an article created in the web is listed in its base and is in the API", async ({ page, request }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/articles`);
     await page.getByRole("button", { name: "Add an article" }).click();
@@ -72,6 +69,81 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
     await expect(row.getByRole("cell", { name: "forValuers", exact: true })).toBeVisible();
     const listed = await request.get(`/api/bots/${bot}/articles?knowledgeBase=forValuers`);
     expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs." }]);
+});
+
+// Why: the starting height of each text box (Tailwind's h-48, 12rem); a box grows from it and never shrinks below it.
+const STARTING_HEIGHT = 192;
+const TEXTS = ["#article-content", "#article-llmGuide", "#article-description"];
+
+function longText(lines: number, what: string): string {
+    return Array.from({ length: lines }, (_, line) => `Line ${String(line + 1)} of the ${what}.`).join("\n\n");
+}
+
+async function boxes(page: Page) {
+    return page.evaluate((selectors) => {
+        const form = document.querySelector("form");
+        if (form === null) throw new Error("no form");
+        const id = document.querySelector("#article-id");
+        return {
+            formWidth: form.getBoundingClientRect().width,
+            idTop: id?.getBoundingClientRect().top ?? Number.NaN,
+            texts: selectors.map((selector) => {
+                const box = document.querySelector(selector);
+                if (box === null) throw new Error(`no ${selector}`);
+                const rect = box.getBoundingClientRect();
+                return {
+                    selector,
+                    top: rect.top,
+                    width: rect.width,
+                    height: rect.height,
+                    scrollHeight: box.scrollHeight,
+                    clientHeight: box.clientHeight,
+                };
+            }),
+        };
+    }, TEXTS);
+}
+
+test("AC-articles-10: a long article's texts come first, as wide as the form, grown to their whole text with no scroll inside", async ({
+    page,
+    request,
+}) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "priceList", {
+        content: longText(60, "price list"),
+        llmGuide: longText(30, "guide"),
+        description: longText(30, "description"),
+    });
+
+    await openEditor(page, bot, "priceList");
+
+    const { formWidth, idTop, texts } = await boxes(page);
+    const tops = [...texts.map((box) => box.top), idTop];
+    expect(tops, "content, llmGuide and description come first, in that order").toEqual([...tops].sort((a, b) => a - b));
+    expect(new Set(tops).size).toBe(tops.length);
+    for (const box of texts) {
+        expect(box.width, `${box.selector} is as wide as the form`).toBeCloseTo(formWidth, 0);
+        expect(box.scrollHeight, `${box.selector} has no scroll inside`).toBe(box.clientHeight);
+        expect(box.height, `${box.selector} grew past its starting height`).toBeGreaterThan(STARTING_HEIGHT);
+    }
+});
+
+test("AC-articles-10: a short article's texts keep their starting height and grow when long text is pasted", async ({ page, request }) => {
+    const bot = await newBot(request);
+    await addArticle(request, bot, "priceList");
+
+    await openEditor(page, bot, "priceList");
+    for (const box of (await boxes(page)).texts) {
+        expect(box.height, `${box.selector} keeps its starting height`).toBe(STARTING_HEIGHT);
+    }
+
+    for (const selector of TEXTS) {
+        await page.locator(selector).fill(longText(40, selector));
+    }
+    for (const box of (await boxes(page)).texts) {
+        expect(box.scrollHeight, `${box.selector} has no scroll inside`).toBe(box.clientHeight);
+        expect(box.height, `${box.selector} grew with the pasted text`).toBeGreaterThan(STARTING_HEIGHT);
+    }
 });
 
 test("AC-articles-2: a bad article shows every mistake beside its field and keeps what was typed", async ({ page, request }) => {
@@ -530,7 +602,7 @@ test("AC-delete-guard-4: after the last link is removed in the web the article c
     expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
 });
 
-test("AC-knowledge-base-language-12: the language stands beside the base selector, and the controls of one row share their top and height", async ({
+test("AC-knowledge-base-language-12: the language stands beside the base selector, and the id, title and base share their top and height", async ({
     page,
     request,
 }) => {
@@ -544,14 +616,6 @@ test("AC-knowledge-base-language-12: the language stands beside the base selecto
         if (box === null) throw new Error(`${selector} has no box`);
         return { top: Math.round(box.y), height: Math.round(box.height) };
     };
-    const texts = [
-        await boxOf('[data-field="content"] [role="textbox"]'),
-        await boxOf('[data-field="llmGuide"] [role="textbox"]'),
-        await boxOf('[data-field="description"] textarea'),
-    ];
-    expect(texts[1]).toEqual(texts[0]);
-    expect(texts[2]).toEqual(texts[0]);
-
     const row = [await boxOf("#article-id"), await boxOf("#article-title"), await boxOf("#article-knowledgeBase")];
     expect(row[1]).toEqual(row[0]);
     expect(row[2]).toEqual(row[0]);

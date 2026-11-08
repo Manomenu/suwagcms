@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef, type ComponentProps } from "react";
+
 import type { Mistake } from "@/api/client";
 import { Field } from "@/design/field";
 import { Input } from "@/design/input";
@@ -10,7 +12,7 @@ import { HINTS, fieldOf, type ArticleForm, type FieldName } from "./articleForm"
 import { targetsFor } from "./articlePicker";
 import { LinkedTextEditor } from "./LinkedTextEditor";
 
-/** The fields of the article editor: content, llmGuide and description side by side, each with a tooltip saying who reads it. */
+/** The fields of the article editor: content, llmGuide and description first, one under another at full width, each with a tooltip saying who reads it. */
 export function ArticleFields({
     form,
     bases,
@@ -46,6 +48,21 @@ export function ArticleFields({
     );
     return (
         <>
+            <div className="flex flex-col gap-3">
+                {textEditor("content")}
+                {textEditor("llmGuide")}
+                <Field prefix="article" name="description" label="description" hint={HINTS.description} errors={errorsOf("description")}>
+                    {(props) => (
+                        <GrowingTextarea
+                            {...props}
+                            value={form.description}
+                            onChange={(event) => {
+                                onChange({ description: event.currentTarget.value });
+                            }}
+                        />
+                    )}
+                </Field>
+            </div>
             <div className="grid gap-3 md:grid-cols-4">
                 <Field prefix="article" name="id" label="Id" hint={HINTS.id} errors={errorsOf("id")}>
                     {(props) => (
@@ -107,28 +124,18 @@ export function ArticleFields({
                     )}
                 </Field>
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
-                {textEditor("content")}
-                {textEditor("llmGuide")}
-                <Field
-                    prefix="article"
-                    name="description"
-                    label="description"
-                    hint={HINTS.description}
-                    action={null}
-                    errors={errorsOf("description")}
-                >
-                    {(props) => (
-                        <Textarea
-                            {...props}
-                            value={form.description}
-                            onChange={(event) => {
-                                onChange({ description: event.currentTarget.value });
-                            }}
-                        />
-                    )}
-                </Field>
-            </div>
         </>
     );
+}
+
+// Why: an author reads the whole description without scrolling inside it, so the box grows with its text from its starting height.
+function GrowingTextarea(props: ComponentProps<"textarea"> & { value: string }) {
+    const ref = useRef<HTMLTextAreaElement>(null);
+    useLayoutEffect(() => {
+        const box = ref.current;
+        if (box === null) return;
+        box.style.height = "auto";
+        box.style.height = `${String(box.scrollHeight + box.offsetHeight - box.clientHeight)}px`;
+    }, [props.value]);
+    return <Textarea {...props} ref={ref} className="h-auto min-h-48" />;
 }

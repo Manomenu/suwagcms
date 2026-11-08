@@ -415,7 +415,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h3>1. Marta writes an article in the web</h3>
   <ol class="steps">
     <li><p>In the base <code>oferta</code> she creates <code>cennik</code>, title “Price list”.</p></li>
-    <li><p>The editor shows <code>content</code>, <code>llmGuide</code> and <code>description</code> side by side. Hovering a label explains the field: on <code>description</code>, <span class="wf-muted">“The bot's search reads this: say what the article answers. The customer never sees it.”</span></p></li>
+    <li><p>The editor shows <code>content</code> first, then <code>llmGuide</code> and <code>description</code>, one under another and as wide as the form. Each grows with its text, so she reads the whole of it and only the page scrolls. Hovering a label explains the field: on <code>description</code>, <span class="wf-muted">“The bot's search reads this: say what the article answers. The customer never sees it.”</span></p></li>
     <li><p>She saves and the article appears in the list.</p></li>
   </ol>
   <h3>2. An agent saves long content from a file</h3>
@@ -461,13 +461,13 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 <section data-role="ui">
   <h2>Screens</h2>
   <div class="wire after"><span class="wf-label">Article editor</span>
-    <div class="wf-bar"><b>cennik</b><span class="wf-input">Price list</span><span class="wf-input">oferta ▾</span><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
+    <div class="wf-bar"><b>cennik</b><span class="wf-grow"></span></div>
     <div class="wf-body">
-      <div class="wf-row">
-        <div class="wf-card wf-grow"><b>content ⓘ</b><p class="wf-muted">What is true. The customer reads it, through the model.</p><div class="wf-line"></div><div class="wf-line"></div></div>
-        <div class="wf-card wf-grow"><b>llmGuide ⓘ</b><p class="wf-muted">How to talk about it. Only the model reads it.</p><div class="wf-line"></div></div>
-        <div class="wf-card wf-grow"><b>description ⓘ</b><p class="wf-muted">What it answers. Only the search reads it.</p><div class="wf-line"></div></div>
-      </div>
+      <div class="wf-card"><b>content ⓘ</b><p class="wf-muted">What is true. The customer reads it, through the model. Grows with the text, no scrollbar of its own.</p><div class="wf-line"></div><div class="wf-line"></div><div class="wf-line"></div><div class="wf-line"></div><div class="wf-line"></div><div class="wf-line"></div></div>
+      <div class="wf-card"><b>llmGuide ⓘ</b><p class="wf-muted">How to talk about it. Only the model reads it.</p><div class="wf-line"></div><div class="wf-line"></div></div>
+      <div class="wf-card"><b>description ⓘ</b><p class="wf-muted">What it answers. Only the search reads it.</p><div class="wf-line"></div></div>
+      <div class="wf-row"><span class="wf-input">Id: cennik</span><span class="wf-input">Title: Price list</span><span class="wf-input">oferta ▾</span><span class="wf-muted">pl</span></div>
+      <div class="wf-row"><span class="wf-grow"></span><span class="wf-btn primary">Save</span></div>
     </div>
   </div>
 </section>
@@ -480,6 +480,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li>An article's <code>id</code> is unique across the bot and not per base, because references work across its knowledge bases and moving an article must not break them.</li>
     <li><code>content</code> and <code>llmGuide</code> may each be 200,000 characters at most (the recommended answer to the open question, accepted): every save validates the whole definition and every article travels in the version, so one enormous article slows every save and every push; 200,000 is far above any article a model should read at once and low enough to stop a pasted dump. The length is counted in UTF-16 code units, the way .NET counts a string.</li>
     <li>The list's text filter does not read <code>content</code>: it is a way to find an article you know, and scanning every article's text is not needed for that.</li>
+    <li><code>content</code> comes first and the three texts are stacked at full width, each growing with its text (owner's request, 2026-11-08): the text is the work, and a box that scrolls inside hides most of a long article. The id, title and base come after them; the save stays in the sticky footer.</li>
     <li>The limit of 5 s for a save with 5000 articles leaves room: the first measurement was about 200 ms on an idle machine and 2 s on a busy one.</li>
   </ul>
 </section>
@@ -496,7 +497,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-articles-7</code> An edit or delete based on an old revision is refused; in the web the typed text stays in the editor. <code>--dry-run</code> on an add, edit or delete changes nothing.</li>
     <li><code>AC-articles-8</code> An article with no references can be deleted in the web and with <code>suwagcms articles delete</code>, and is gone from both.</li>
     <li><code>AC-articles-9</code> The tooltip of <code>content</code>, <code>llmGuide</code> and <code>description</code> in the web says who reads the field and what it is for.</li>
-    <li><code>AC-articles-10</code> The editor shows <code>content</code>, <code>llmGuide</code> and <code>description</code> at the same time.</li>
+    <li><code>AC-articles-10</code> The editor shows <code>content</code> first, then <code>llmGuide</code> and <code>description</code>, each as wide as the form; each starts at the same height and grows with its text, typed, pasted or loaded, so it never scrolls inside.</li>
     <li><code>AC-articles-11</code> The list filters by knowledge base and by text in the title, <code>id</code> or <code>description</code>, ignoring case, with the same results in the web and the CLI; an empty list says whether the filters or the bot have no article, and a bot with no knowledge base is sent to create one.</li>
     <li><code>AC-articles-12</code> <code>content</code> or <code>llmGuide</code> over the limit is refused with a mistake giving the limit and the length.</li>
     <li><code>AC-articles-13</code> Leaving the editor with unsaved changes asks before discarding them.</li>
@@ -507,7 +508,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
-  <div class="callout assumption"><p>The side-by-side editor is for a desktop screen, like the rest of the CMS. On a narrow screen the three fields may stack; no criterion depends on it.</p></div>
+  <div class="callout assumption"><p>A very long article makes a very long page; the save stays reachable in the sticky footer, and only the page scrolls.</p></div>
 </section>
 
 <!-- CONTENT END -->
