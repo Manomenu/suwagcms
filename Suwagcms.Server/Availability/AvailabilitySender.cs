@@ -8,7 +8,7 @@ using Suwagcms.Server.Database;
 namespace Suwagcms.Server.Availability;
 
 // Why: whether a bot has the setting comes only from the bot's own answer; this holds no lock or transaction while it waits, so a slow bot holds up nobody's editing, and what was not delivered is retried by AvailabilityRetrier, besides a person sending again and each later change, push or read of the bot's status.
-internal sealed class AvailabilitySender(Pool pool, BotLine line, AvailabilityRetries retries)
+internal sealed class AvailabilitySender(Pool pool, BotClient client, AvailabilityRetries retries)
 {
     private const string SendAgain = "Check that the bot is running, then send again.";
 
@@ -31,7 +31,7 @@ internal sealed class AvailabilitySender(Pool pool, BotLine line, AvailabilityRe
         var number = await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken);
         return number == 0
             ? new AvailabilityDelivery(AvailabilityDeliveryState.NotAsked, number, null, null)
-            : Judge(bot, address, number, await line.ReadStateAsync(address, cancellationToken));
+            : Judge(bot, address, number, await client.ReadStateAsync(address, cancellationToken));
     }
 
     private async Task<AvailabilityDelivery> DeliverAsync(
@@ -41,7 +41,7 @@ internal sealed class AvailabilitySender(Pool pool, BotLine line, AvailabilityRe
         CancellationToken cancellationToken
     )
     {
-        var reply = await line.PutAvailabilityAsync(address, message, cancellationToken);
+        var reply = await client.PutAvailabilityAsync(address, message, cancellationToken);
         // Why: a newer change may have been made while this one travelled, and the bot's number is judged against what the CMS holds now.
         var delivery = Judge(bot, address, await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken), reply);
         if (delivery.State == AvailabilityDeliveryState.Confirmed)
@@ -55,27 +55,27 @@ internal sealed class AvailabilitySender(Pool pool, BotLine line, AvailabilityRe
         return delivery;
     }
 
-    private static AvailabilityDelivery Judge(string bot, string address, int number, BotLine.Reply reply) =>
+    private static AvailabilityDelivery Judge(string bot, string address, int number, BotClient.Reply reply) =>
         reply switch
         {
-            BotLine.Reply.Silent silent => NotDelivered(number, null, $"{silent.Reason}. {SendAgain}"),
-            BotLine.Reply.Answer { Status: StatusCodes.Status404NotFound } => NotDelivered(
+            BotClient.Reply.Silent silent => NotDelivered(number, null, $"{silent.Reason}. {SendAgain}"),
+            BotClient.Reply.Answer { Status: StatusCodes.Status404NotFound } => NotDelivered(
                 number,
                 null,
                 $"{address} has no availability route: update Suwagcms.Sdk in the bot, then send again."
             ),
-            BotLine.Reply.Answer { Status: >= 200 and < 300 } answer when BotLine.StateIn(answer) is { } state => Reported(
+            BotClient.Reply.Answer { Status: >= 200 and < 300 } answer when BotClient.StateIn(answer) is { } state => Reported(
                 bot,
                 address,
                 number,
                 state
             ),
-            BotLine.Reply.Answer answer when BotLine.RefusalIn(answer) is { } refusal => NotDelivered(
+            BotClient.Reply.Answer answer when BotClient.RefusalIn(answer) is { } refusal => NotDelivered(
                 number,
                 null,
                 $"the bot refused it: {refusal.Detail} {SendAgain}"
             ),
-            BotLine.Reply.Answer answer => NotDelivered(
+            BotClient.Reply.Answer answer => NotDelivered(
                 number,
                 null,
                 string.Create(CultureInfo.InvariantCulture, $"{address} answered {answer.Status}, which is not a bot's answer. {SendAgain}")

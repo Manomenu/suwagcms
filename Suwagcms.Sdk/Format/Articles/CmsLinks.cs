@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Suwagcms.Sdk.Format.Knowledge;
+namespace Suwagcms.Sdk.Format.Articles;
 
 // Why: the one reader of cms:// links in Markdown, so the walker, the rules and every later feature agree on what is a link and what is code.
 internal static partial class CmsLinks

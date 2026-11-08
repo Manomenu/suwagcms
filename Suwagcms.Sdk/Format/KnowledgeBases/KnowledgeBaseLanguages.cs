@@ -1,4 +1,4 @@
-namespace Suwagcms.Sdk.Format.Knowledge;
+namespace Suwagcms.Sdk.Format.KnowledgeBases;
 
 public static class KnowledgeBaseLanguages
 {

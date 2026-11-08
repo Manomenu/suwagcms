@@ -14,7 +14,7 @@ using Suwagcms.Server.Editing;
 namespace Suwagcms.Server.Actions;
 
 // Why: the bot makes the call, never the CMS, because only it has the secrets; this reads what it needs, lets go of the database and only then waits, so no save waits on a slow service, and it records nothing, because the answer is the whole value of a run.
-internal sealed class ActionTester(Pool pool, BotLine line, IOptions<PushOptions> options)
+internal sealed class ActionTester(Pool pool, BotClient client, IOptions<PushOptions> options)
 {
     public const string ValueUnfit = "action.test.value";
     public const string Unreachable = "unreachable";
@@ -68,25 +68,25 @@ internal sealed class ActionTester(Pool pool, BotLine line, IOptions<PushOptions
             ["action"] = JsonNode.Parse(ResourceKinds.Write(action)),
             ["values"] = new JsonObject(values.Select(value => KeyValuePair.Create<string, JsonNode?>(value.Key, value.Value))),
         };
-        var answer = Judged(bot, address, await line.TestActionAsync(address, request.ToJsonString(), seconds, cancellationToken));
+        var answer = Judged(bot, address, await client.TestActionAsync(address, request.ToJsonString(), seconds, cancellationToken));
         var off = (await AvailabilityStore.ListAsync(pool, bot, [ResourceKind.Action], cancellationToken)).Any(item =>
             item.Id == id && item.Off
         );
         return (off ? answer with { Note = OffNote } : answer, null);
     }
 
-    private static ActionTestAnswer Judged(string bot, string address, BotLine.Reply reply) =>
+    private static ActionTestAnswer Judged(string bot, string address, BotClient.Reply reply) =>
         reply switch
         {
-            BotLine.Reply.Silent silent => Unjudged(
+            BotClient.Reply.Silent silent => Unjudged(
                 Unreachable,
                 $"The bot could not be asked: {silent.Reason}. The action has not been judged. Check that bot {bot} is running and that the CMS can reach it."
             ),
-            BotLine.Reply.Answer { Status: StatusCodes.Status404NotFound } => Unjudged(
+            BotClient.Reply.Answer { Status: StatusCodes.Status404NotFound } => Unjudged(
                 NotOffered,
                 $"Bot {bot} does not offer test runs. Update its Suwagcms.Sdk and deploy; the action has not been judged."
             ),
-            BotLine.Reply.Answer answer when BotLine.OutcomeIn(answer) is { } outcome => new ActionTestAnswer(
+            BotClient.Reply.Answer answer when BotClient.OutcomeIn(answer) is { } outcome => new ActionTestAnswer(
                 outcome.Outcome,
                 outcome.Results,
                 outcome.Reason,
@@ -95,7 +95,7 @@ internal sealed class ActionTester(Pool pool, BotLine line, IOptions<PushOptions
                 outcome.AnswerStart,
                 outcome.AnswerCut
             ),
-            BotLine.Reply.Answer answer => Unjudged(
+            BotClient.Reply.Answer answer => Unjudged(
                 Unreachable,
                 string.Create(
                     CultureInfo.InvariantCulture,

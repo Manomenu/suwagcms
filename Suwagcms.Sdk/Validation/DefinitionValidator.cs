@@ -24,7 +24,7 @@ public static class DefinitionValidator
         .. ProcedureFactRules.All,
         .. ActionBlockRules.All,
         .. ProcedureVersionRules.All,
-        .. KnowledgeRules.All,
+        .. KnowledgeEntryRules.All,
         .. PersonaRules.All,
     ];
 

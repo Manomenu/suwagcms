@@ -1,4 +1,4 @@
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Tests.Repository;
 using Suwagcms.Sdk.Validation;
 

@@ -1,6 +1,6 @@
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.Articles;
 
-namespace Suwagcms.Sdk.Tests.Format.Knowledge;
+namespace Suwagcms.Sdk.Tests.Format.Articles;
 
 public sealed class ArticleTextTests
 {

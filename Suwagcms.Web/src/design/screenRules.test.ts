@@ -124,7 +124,7 @@ describe("the rules of every screen", () => {
             articles: "/src/articles/ArticlesView.tsx",
             procedures: "/src/procedures/ProceduresView.tsx",
             actions: "/src/actions/ActionsView.tsx",
-            persona: "/src/persona/PersonaView.tsx",
+            persona: "/src/personas/PersonaView.tsx",
             versions: "/src/versions/VersionsView.tsx",
         };
         expect(tabs.filter((tab) => tab !== "history")).toEqual(Object.keys(panelOf));
@@ -160,7 +160,7 @@ describe("the rules of every screen", () => {
         expect(sources["/src/procedures/ProcedureScreen.tsx"]).toContain('useResourceHistory(bot, "procedures", id,');
         expect(sources["/src/versions/VersionsScreen.tsx"]).toContain('useKindHistory(bot, earlier === null ? "versions" : null');
         expect(sources["/src/versions/VersionScreen.tsx"]).toContain("useVersionWindow(bot, number)");
-        expect(sources["/src/persona/PersonaScreen.tsx"]).toContain('useResourceHistory(bot, "persona", PERSONA_ID');
+        expect(sources["/src/personas/PersonaScreen.tsx"]).toContain('useResourceHistory(bot, "persona", PERSONA_ID');
     });
 
     it("AC-change-history-19: the shared module holds no word for what it lists", () => {

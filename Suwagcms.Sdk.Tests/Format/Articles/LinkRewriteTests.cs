@@ -1,9 +1,9 @@
+using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.Facts;
-using Suwagcms.Sdk.Format.Knowledge;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.References;
 
-namespace Suwagcms.Sdk.Tests.Format.Knowledge;
+namespace Suwagcms.Sdk.Tests.Format.Articles;
 
 public sealed class LinkRewriteTests
 {

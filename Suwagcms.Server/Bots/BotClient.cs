@@ -11,7 +11,7 @@ using Suwagcms.Sdk.BotRuntime.Versions;
 namespace Suwagcms.Server.Bots;
 
 // Why: the one place the CMS talks to a bot's routes; it holds no lock and no transaction, since a slow bot must never hold up anyone's editing.
-internal sealed class BotLine(HttpClient http, IOptions<PushOptions> options, TimeProvider time)
+internal sealed class BotClient(HttpClient http, IOptions<PushOptions> options, TimeProvider time)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
 

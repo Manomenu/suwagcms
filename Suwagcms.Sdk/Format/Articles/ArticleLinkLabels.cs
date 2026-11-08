@@ -1,4 +1,4 @@
-namespace Suwagcms.Sdk.Format.Knowledge;
+namespace Suwagcms.Sdk.Format.Articles;
 
 // Why: a stored label is the title when the link was written, and a version carries current titles, so a retitled article never reaches a customer under its old name.
 public static class ArticleLinkLabels

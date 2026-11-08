@@ -1,4 +1,4 @@
-namespace Suwagcms.Sdk.Format.Knowledge;
+namespace Suwagcms.Sdk.Format.Articles;
 
 // Why: a bot gives an article's text to a model, and only the SDK reads cms:// links, so a bot needs no second reader of them.
 public static class ArticleText

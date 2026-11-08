@@ -1,5 +1,5 @@
+using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.Facts;
-using Suwagcms.Sdk.Format.Knowledge;
 using Suwagcms.Sdk.Format.Procedures;
 
 namespace Suwagcms.Sdk.Format.References;

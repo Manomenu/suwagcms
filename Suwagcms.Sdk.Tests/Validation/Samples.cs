@@ -1,7 +1,8 @@
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Format.Actions;
+using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.Facts;
-using Suwagcms.Sdk.Format.Knowledge;
+using Suwagcms.Sdk.Format.KnowledgeBases;
 using Suwagcms.Sdk.Format.Procedures;
 
 namespace Suwagcms.Sdk.Tests.Validation;
