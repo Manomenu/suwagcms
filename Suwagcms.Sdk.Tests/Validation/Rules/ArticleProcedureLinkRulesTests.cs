@@ -24,7 +24,7 @@ public sealed class ArticleProcedureLinkRulesTests
     private static BotDefinition Bot(Article article, params Procedure[] procedures) =>
         new()
         {
-            FormatVersion = 3,
+            FormatVersion = 4,
             KnowledgeBases = [Samples.Faq],
             Articles = [article],
             Procedures = [Samples.Procedure(Procedure.ConversationId), Samples.Procedure("orderValuation"), .. procedures],
@@ -164,10 +164,17 @@ public sealed class ArticleProcedureLinkRulesTests
     {
         var back = Samples.Procedure("orderValuation") with
         {
-            WhenStalled = new StallInstruction
+            FirstStep = "tell",
+            Steps = new Dictionary<string, ProcedureStep>
             {
-                Instruction = "Say so.",
-                Knowledge = [new KnowledgeEntry { KnowledgeBase = "faq", Articles = ["wycena"] }],
+                ["tell"] = new()
+                {
+                    Inform = new InformArguments
+                    {
+                        Instruction = "Say so.",
+                        Knowledge = [new KnowledgeEntry { KnowledgeBase = "faq", Articles = ["wycena"] }],
+                    },
+                },
             },
         };
 

@@ -46,9 +46,14 @@ export interface KnowledgeEntry {
     searchQueries?: string[];
 }
 
-export interface Instruction {
+interface Instruction {
     instruction: string;
     knowledge?: KnowledgeEntry[];
+}
+
+/** A whenStalled is an instruction alone: knowledge belongs on an inform. */
+export interface StallInstruction {
+    instruction: string;
 }
 
 export interface Inform extends Instruction {
@@ -82,7 +87,7 @@ export interface Draft {
     list: StepList;
     /** Steps no path from the first step reaches, kept as stored until moved into the list. */
     notConnected: string[];
-    whenStalled: Instruction | null;
+    whenStalled: StallInstruction | null;
     /** Left out when the author chose nothing, so a save does not write a choice nobody made. */
     whenInterrupted?: string;
     steps: Record<string, Step>;
@@ -111,7 +116,7 @@ function ruleOf(raw: unknown): Rule {
     return rest;
 }
 
-function instructionOf(wire: NonNullable<ProcedureDetail["whenStalled"]>): Instruction {
+function informOf(wire: NonNullable<Wire["inform"]>): Inform {
     return {
         instruction: wire.instruction ?? "",
         ...(wire.knowledge
@@ -123,12 +128,6 @@ function instructionOf(wire: NonNullable<ProcedureDetail["whenStalled"]>): Instr
                   })),
               }
             : {}),
-    };
-}
-
-function informOf(wire: NonNullable<Wire["inform"]>): Inform {
-    return {
-        ...instructionOf({ instruction: wire.instruction ?? "", knowledge: wire.knowledge ?? null }),
         ...(wire.points ? { points: { ...wire.points } } : {}),
     };
 }
@@ -158,7 +157,7 @@ export function fromDetail(detail: ProcedureDetail): Draft {
         description: detail.description,
         list,
         notConnected,
-        whenStalled: detail.whenStalled ? instructionOf(detail.whenStalled) : null,
+        whenStalled: detail.whenStalled ? { instruction: detail.whenStalled.instruction ?? "" } : null,
         steps: Object.fromEntries(
             Object.entries(stored).map(([name, step]) => {
                 if (notConnected.includes(name)) return [name, step];
@@ -504,10 +503,9 @@ export interface LinkableBase {
     title: string;
 }
 
-/** The text of a whenStalled as typed: emptying it removes the instruction, unless knowledge would be lost with it. */
-export function withStallText(whenStalled: Instruction | null, text: string): Instruction | null {
-    if (text === "" && !whenStalled?.knowledge?.length) return null;
-    return { ...whenStalled, instruction: text };
+/** The text of a whenStalled as typed: emptying it removes the instruction. */
+export function withStallText(text: string): StallInstruction | null {
+    return text === "" ? null : { instruction: text };
 }
 
 /** The bases an instruction can still name, since a second entry for one is a mistake. */

@@ -103,7 +103,7 @@ public sealed class RoutesTests
 
         var (_, body) = await bot.PutAsync(1, document);
 
-        Assert.Contains("reads 3", body.Member("mistakes").Item(0).Member("message").Text(), StringComparison.Ordinal);
+        Assert.Contains("reads 4", body.Member("mistakes").Item(0).Member("message").Text(), StringComparison.Ordinal);
     }
 
     [Fact]

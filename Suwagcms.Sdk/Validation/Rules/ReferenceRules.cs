@@ -88,10 +88,6 @@ internal static class ReferenceRules
     private static string Holder(Reference reference)
     {
         var parts = reference.Path.Split('.');
-        if (parts[0] == "whenStalled")
-        {
-            return $"'knowledge' of whenStalled in '{reference.From.Id}'";
-        }
         return $"'{(parts.Length > 3 && parts[3].StartsWith("knowledge", StringComparison.Ordinal) ? "knowledge" : parts[2])}' of step '{parts[1]}' in '{reference.From.Id}'";
     }
 

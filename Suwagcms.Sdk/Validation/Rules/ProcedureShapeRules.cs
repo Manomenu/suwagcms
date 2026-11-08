@@ -74,7 +74,7 @@ internal static class ProcedureShapeRules
                         $"steps.{step.Key}.{key}",
                         $"Step '{step.Key}' has the unknown block '{key}'.",
                         key == "knowledge"
-                            ? "Knowledge belongs on an instruction: move it into whenStalled or into an inform."
+                            ? "Knowledge belongs on the instruction of an inform: move it there."
                             : $"Use one of the blocks: {string.Join(", ", Block.Names)}; next says where to go."
                     )
                 )

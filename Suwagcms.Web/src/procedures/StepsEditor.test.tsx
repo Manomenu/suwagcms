@@ -104,12 +104,23 @@ describe("the form of a procedure", () => {
     it("AC-procedure-creator-38: the Knowledge section hides when the bot does not read it, and shows entries an instruction holds even then", () => {
         const holding = {
             ...detail,
-            whenStalled: { instruction: "Say so.", knowledge: [{ knowledgeBase: "reports", searchQueries: ["hours"] }] },
+            steps: {
+                ...detail.steps,
+                tell: {
+                    inform: {
+                        instruction: "Tell it.",
+                        points: { one: "One." },
+                        knowledge: [{ knowledgeBase: "reports", searchQueries: ["hours"] }],
+                    },
+                    next: "ask",
+                },
+            },
         } as unknown as ProcedureDetail;
 
-        expect(form()).not.toContain("Knowledge");
-        expect(form({ showKnowledge: true })).toContain("Knowledge");
-        const shown = form({ draft: fromDetail(holding) });
+        expect(form({ selected: "tell" })).not.toContain("Knowledge");
+        expect(form({ selected: "tell", showKnowledge: true })).toContain("Knowledge");
+        expect(form({ showKnowledge: true })).not.toContain("Knowledge");
+        const shown = form({ draft: fromDetail(holding), selected: "tell" });
         expect(shown).toContain("Knowledge");
         expect(shown).toContain("Remove");
         expect(shown).toContain("hours");

@@ -10,13 +10,13 @@ public sealed class PersonaRulesTests
 {
     private static readonly string TooLong = new('x', 20_001);
 
-    private static BotDefinition With(Persona? persona) => new() { FormatVersion = 3, Persona = persona };
+    private static BotDefinition With(Persona? persona) => new() { FormatVersion = 4, Persona = persona };
 
     private static BotDeclaration Declaring(string? persona) =>
         new()
         {
             Bot = "rzeczoznawca",
-            FormatVersion = 3,
+            FormatVersion = 4,
             Blocks = Block.Names,
             Persona = persona,
         };

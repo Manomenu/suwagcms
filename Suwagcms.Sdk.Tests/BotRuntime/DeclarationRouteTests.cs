@@ -22,14 +22,14 @@ public sealed class DeclarationRouteTests
             new InMemoryVersionStore(),
             declares: new BotCapabilities
             {
-                FormatVersion = 3,
+                FormatVersion = 4,
                 Blocks = ["listen"],
                 Knowledge = true,
             }
         );
         await using var silent = await BotHost.StartAsync(
             new InMemoryVersionStore(),
-            declares: new BotCapabilities { FormatVersion = 3, Blocks = ["listen"] }
+            declares: new BotCapabilities { FormatVersion = 4, Blocks = ["listen"] }
         );
 
         Assert.True((await DeclarationAsync(reads))["knowledge"]?.GetValue<bool>());
@@ -44,7 +44,7 @@ public sealed class DeclarationRouteTests
             new InMemoryVersionStore(),
             declares: new BotCapabilities
             {
-                FormatVersion = 3,
+                FormatVersion = 4,
                 Blocks = ["listen"],
                 EmbeddingProfiles = ["default", "legalText"],
                 NamedArticlesLimit = 8000,
@@ -52,7 +52,7 @@ public sealed class DeclarationRouteTests
         );
         await using var silent = await BotHost.StartAsync(
             new InMemoryVersionStore(),
-            declares: new BotCapabilities { FormatVersion = 3, Blocks = ["listen"] }
+            declares: new BotCapabilities { FormatVersion = 4, Blocks = ["listen"] }
         );
 
         var answer = await DeclarationAsync(searches);
@@ -72,7 +72,7 @@ public sealed class DeclarationRouteTests
             new InMemoryVersionStore(),
             declares: new BotCapabilities
             {
-                FormatVersion = 3,
+                FormatVersion = 4,
                 Blocks = ["listen", "say"],
                 CodeActions =
                 [
@@ -99,7 +99,7 @@ public sealed class DeclarationRouteTests
 
         Assert.Equal("rzeczoznawca", answer.Member("bot").Text());
         Assert.False(answer.Member("declaresNothing").GetValue<bool>());
-        Assert.Equal(3, answer.Member("formatVersion").GetValue<int>());
+        Assert.Equal(4, answer.Member("formatVersion").GetValue<int>());
         Assert.Equal(["listen", "say"], answer.Member("blocks").Items().Select(block => block.Text()));
         var action = Assert.Single(answer.Member("codeActions").Items());
         Assert.Equal("lookupPolicy", action.Member("id").Text());
@@ -129,7 +129,7 @@ public sealed class DeclarationRouteTests
     {
         await using var bot = await BotHost.StartAsync(
             new InMemoryVersionStore(),
-            declares: new BotCapabilities { FormatVersion = 3, Blocks = Block.Names }
+            declares: new BotCapabilities { FormatVersion = 4, Blocks = Block.Names }
         );
         var good = Documents.Make(1);
         var (accepted, _) = await bot.PutAsync(1, good);

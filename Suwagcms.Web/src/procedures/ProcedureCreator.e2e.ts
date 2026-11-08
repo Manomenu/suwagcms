@@ -842,7 +842,7 @@ test("AC-procedure-creator-22: an inform step is built with its form and reads b
     await expect(page.getByLabel("Text of point 2")).toHaveValue("Sent by e-mail.");
 });
 
-test("AC-procedure-creator-20: knowledge is edited on whenStalled and on an inform, by base, with articles and queries, and reads back from the server", async ({
+test("AC-procedure-creator-20: knowledge is edited on an inform, by base, with articles and queries, and reads back from the server", async ({
     page,
     request,
 }) => {
@@ -881,32 +881,28 @@ test("AC-procedure-creator-20: knowledge is edited on whenStalled and on an info
         0,
     );
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
-
-    const add = page.getByLabel("Add knowledge");
-    await add.selectOption("offer");
-    const stalled = page.locator('[data-place="knowledge:whenStalled:0"]');
-    await expect(stalled.getByRole("checkbox")).toHaveCount(1);
-    await stalled.getByLabel("officeContact (officeContact)").check();
-    await stalled.getByRole("button", { name: "+ Add query" }).click();
-    await stalled.getByLabel("Search query 1", { exact: true }).fill("how long a valuation takes");
-    await expect(add.getByRole("option")).toHaveText(["+ Add knowledge…", "reports"]);
+    await expect(page.getByLabel("Add knowledge")).toHaveCount(0);
 
     await open(page, "tell");
-    await page.locator('section[aria-label="Step tell"]').getByLabel("Add knowledge").selectOption("reports");
+    const add = page.locator('section[aria-label="Step tell"]').getByLabel("Add knowledge");
+    await add.selectOption("offer");
     const told = page.locator('[data-place="knowledge:tell:0"]');
+    await expect(told.getByRole("checkbox")).toHaveCount(1);
+    await told.getByLabel("officeContact (officeContact)").check();
     await told.getByRole("button", { name: "+ Add query" }).click();
-    await told.getByLabel("Search query 1", { exact: true }).fill("opening hours");
+    await told.getByLabel("Search query 1", { exact: true }).fill("how long a valuation takes");
+    await expect(add.getByRole("option")).toHaveText(["+ Add knowledge…", "reports"]);
     await page.getByRole("button", { name: "Save", exact: true }).click();
 
     await expect(async () => {
         const saved = await stored<{
-            whenStalled: { knowledge: unknown };
+            whenStalled: Record<string, unknown>;
             steps: Record<string, { inform?: { knowledge: unknown } }>;
         }>(request, bot, "orderValuation");
-        expect(saved.whenStalled.knowledge).toEqual([
+        expect(saved.whenStalled).toEqual({ instruction: "Say you could not finish." });
+        expect(saved.steps["tell"]?.inform?.knowledge).toEqual([
             { knowledgeBase: "offer", articles: ["officeContact"], searchQueries: ["how long a valuation takes"] },
         ]);
-        expect(saved.steps["tell"]?.inform?.knowledge).toMatchObject([{ knowledgeBase: "reports", searchQueries: ["opening hours"] }]);
     }).toPass();
 });
 
@@ -938,16 +934,23 @@ test("AC-procedure-creator-37: changing the base of an entry clears its articles
         bot,
         "orderValuation",
         {
-            ...AGENT_WROTE,
-            whenStalled: {
-                instruction: "Say you could not finish.",
-                knowledge: [{ knowledgeBase: "offer", articles: ["officeContact"], searchQueries: ["opening hours"] }],
+            description: "The customer orders a valuation",
+            firstStep: "tell",
+            steps: {
+                tell: {
+                    inform: {
+                        instruction: "Tell it.",
+                        points: { office: "Where it is." },
+                        knowledge: [{ knowledgeBase: "offer", articles: ["officeContact"], searchQueries: ["opening hours"] }],
+                    },
+                },
             },
         },
         0,
     );
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
-    const entry = page.locator('[data-place="knowledge:whenStalled:0"]');
+    await open(page, "tell");
+    const entry = page.locator('[data-place="knowledge:tell:0"]');
     await expect(entry.getByRole("checkbox", { name: /officeContact/ })).toBeChecked();
 
     await entry.getByLabel("Knowledge base of entry 1").selectOption("reports");
@@ -958,8 +961,12 @@ test("AC-procedure-creator-37: changing the base of an entry clears its articles
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect
         .poll(async () => {
-            const saved = await stored<{ whenStalled: { knowledge: { articles?: string[] | null }[] } }>(request, bot, "orderValuation");
-            const first = saved.whenStalled.knowledge[0];
+            const saved = await stored<{ steps: Record<string, { inform: { knowledge: { articles?: string[] | null }[] } }> }>(
+                request,
+                bot,
+                "orderValuation",
+            );
+            const first = saved.steps["tell"]?.inform.knowledge[0];
             return { ...first, articles: first?.articles ?? [] };
         })
         .toEqual({ knowledgeBase: "reports", articles: [], searchQueries: ["opening hours"] });
@@ -1031,7 +1038,7 @@ test("AC-procedure-creator-19: the page offers only the blocks the bot last decl
     const server = createServer((_, response) => {
         response
             .writeHead(200, { "content-type": "application/json" })
-            .end(JSON.stringify({ bot: id, formatVersion: 3, blocks: ["listen", "say"] }));
+            .end(JSON.stringify({ bot: id, formatVersion: 4, blocks: ["listen", "say"] }));
     });
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     try {
@@ -1054,12 +1061,12 @@ test("AC-procedure-creator-19: the page offers only the blocks the bot last decl
     }
 });
 
-test("AC-procedure-creator-38: Knowledge shows on When stalled and on a Tell while the bot answers nothing, hides when it declares without knowledge, and shows when it declares knowledge", async ({
+test("AC-procedure-creator-38: Knowledge shows on a Tell and never on When stalled while the bot answers nothing, hides when it declares without knowledge, and shows when it declares knowledge", async ({
     page,
     request,
 }) => {
     const id = freshId();
-    let declared: object = { bot: id, formatVersion: 3, blocks: ["listen", "say", "inform"] };
+    let declared: object = { bot: id, formatVersion: 4, blocks: ["listen", "say", "inform"] };
     const server = createServer((_, response) => {
         response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(declared));
     });
@@ -1087,14 +1094,20 @@ test("AC-procedure-creator-38: Knowledge shows on When stalled and on a Tell whi
             await expect(page.getByRole("group", { name: "Knowledge", exact: true })).toHaveCount(count);
         };
 
-        await sectionsAre(2);
+        await sectionsAre(1);
+        await expect(page.locator('[data-place="field:whenStalled"]').getByRole("group", { name: "Knowledge", exact: true })).toHaveCount(
+            0,
+        );
 
         expect((await request.get(`/api/bots/${id}/declaration`)).status()).toBe(200);
         await sectionsAre(0);
 
         declared = { ...declared, knowledge: true };
         expect((await request.get(`/api/bots/${id}/declaration`)).status()).toBe(200);
-        await sectionsAre(2);
+        await sectionsAre(1);
+        await expect(page.locator('[data-place="field:whenStalled"]').getByRole("group", { name: "Knowledge", exact: true })).toHaveCount(
+            0,
+        );
     } finally {
         server.close();
     }

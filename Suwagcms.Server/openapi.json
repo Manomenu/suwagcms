@@ -5282,15 +5282,6 @@
         "properties": {
           "instruction": {
             "type": "string"
-          },
-          "knowledge": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "$ref": "#/components/schemas/KnowledgeEntry"
-            }
           }
         }
       },

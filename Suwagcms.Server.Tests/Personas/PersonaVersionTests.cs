@@ -39,7 +39,7 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
             id,
             declares: new BotCapabilities
             {
-                FormatVersion = 3,
+                FormatVersion = 4,
                 Blocks = Block.Names,
                 Persona = persona,
                 EmbeddingProfiles = ["default"],
@@ -78,7 +78,7 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
         var held = (await versions.DocumentOf(created.Version.Number)).GetProperty("persona");
 
         Assert.Equal("""{"personality":"One\nTwo\n","scope":{"inScope":"In\nscope"}}""", held.GetRawText());
-        Assert.Equal(3, (await versions.DocumentOf(created.Version.Number)).GetProperty("formatVersion").GetInt32());
+        Assert.Equal(4, (await versions.DocumentOf(created.Version.Number)).GetProperty("formatVersion").GetInt32());
     }
 
     [Theory]
@@ -269,7 +269,7 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
                     new
                     {
                         bot = scene.Bot,
-                        formatVersion = 3,
+                        formatVersion = 4,
                         blocks = Block.Names,
                         persona = BotDeclaration.PersonaRequired,
                         embeddingProfiles = Profiles,

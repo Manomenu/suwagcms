@@ -450,7 +450,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <tr><th>A bot needs</th><th>In a version</th><th>Meaning fixed by this contract</th></tr>
     <tr><td>Procedure</td><td><code>id</code>, <code>description</code>, <code>firstStep</code>, <code>steps</code></td><td><code>conversation</code> is required, cannot be started, and is the base of every conversation</td></tr>
     <tr><td>What an interruption does</td><td><code>whenInterrupted</code>: <code>keep</code> or <code>discard</code></td><td>Left out means <code>keep</code>, and <code>conversation</code> may not have it, as nothing can interrupt it away. What keeping and discarding do is the engine's</td></tr>
-    <tr><td>When a customer gets stuck</td><td><code>whenStalled</code>: <code>instruction</code>, <code>knowledge</code></td><td>Required when a step collects</td></tr>
+    <tr><td>When a customer gets stuck</td><td><code>whenStalled</code>: <code>instruction</code></td><td>Required when a step collects</td></tr>
     <tr><td>Local facts</td><td><code>localFacts</code>: a map of name to fact</td><td>One camelCase word, never a global fact's name, gone when the procedure ends</td></tr>
     <tr><td>Blocks</td><td><code>listen: {}</code>, <code>collect</code>, <code>say</code>, <code>assign</code>, <code>inform</code>, <code>start</code>, <code>action</code></td><td>Exactly one per step, and a bot declares which it runs. A step without <code>next</code> ends the procedure</td></tr>
     <tr><td>Telling the customer</td><td><code>inform</code>: <code>instruction</code>, <code>knowledge</code>, <code>points</code></td><td>A point is named, its name stays as written and the order of points is kept, so a bot can check each one was told</td></tr>
@@ -569,9 +569,9 @@ sequenceDiagram
   <p>The name of the contract is <code>suwagcms-bot</code>. Its generated artifacts are the two JSON schemas the SDK carries, <code>definition-format.schema.json</code> and <code>bot-runtime.schema.json</code>; the CMS's own HTTP API has <code>Suwagcms.Server/openapi.json</code> and is no part of what a bot talks to.</p>
   <h3>Compatibility</h3>
   <ul>
-    <li><b>Format version is a whole number, and both sides must have the same.</b> It is <code>3</code>, since a knowledge base's <code>embedding</code> and <code>results</code> became required (<code>knowledge-bases</code>); it was <code>2</code> when <code>context</code> became <code>knowledge</code>, and <code>procedure-creator</code> says what happens to an older format. A reader refuses any other, so a version the CMS keeps in format 2 can be neither pushed nor rolled back to: a new one is created from the working state.</li>
+    <li><b>Format version is a whole number, and both sides must have the same.</b> It is <code>4</code>, since <code>whenStalled</code> lost its <code>knowledge</code>, which nobody asked for and no bot read; it was <code>3</code> when a knowledge base's <code>embedding</code> and <code>results</code> became required (<code>knowledge-bases</code>), and <code>2</code> when <code>context</code> became <code>knowledge</code>, and <code>procedure-creator</code> says what happens to an older format. A reader refuses any other, so a version the CMS keeps in format 3 can be neither pushed nor rolled back to: a new one is created from the working state.</li>
     <li><b>An optional field whose absence means today's behaviour is added without a new format version.</b> A reader skips what it does not know, and the digest covers it all the same, so an older bot still loads such a version. It then runs without the field's meaning, so whoever needs the field takes the newer SDK first.</li>
-    <li><b>Everything else is a new format version:</b> a new block, a renamed field, a field required, or a meaning changed.</li>
+    <li><b>Everything else is a new format version:</b> a new block, a renamed or removed field, a field required, or a meaning changed.</li>
     <li><b>A version is never changed.</b> A stored version keeps its bytes and its digest under every later SDK.</li>
     <li><b>A bot outside .NET</b> implements the same routes from the schemas, and validates through the CMS.</li>
   </ul>
@@ -605,7 +605,7 @@ sequenceDiagram
     <li><code>AC-chatbot-contract-11</code> A version for another bot, of another format or with a wrong digest is refused with its code and every mistake; a failing store answers 503; in each case the bot's current version stays as it was.</li>
     <li><code>AC-chatbot-contract-12</code> A filter a bot puts on what the mapping of the routes returns applies to every route, so a bot can close them.</li>
     <li><code>AC-chatbot-contract-13</code> A version with a field this SDK does not know loads, and its digest still holds.</li>
-    <li><code>AC-chatbot-contract-14</code> The SDK reads and writes format 3: a document in format 2 is refused with <code>format.version</code>, whose fix says to create a new version from the working state, and a knowledge base without <code>embedding</code> or <code>results</code> cannot be read as format 3.</li>
+    <li><code>AC-chatbot-contract-14</code> The SDK reads and writes format 4: a document in format 3 is refused with <code>format.version</code>, whose fix says to create a new version from the working state, and a knowledge base without <code>embedding</code> or <code>results</code> cannot be read as format 4.</li>
   </ul>
 </section>
 

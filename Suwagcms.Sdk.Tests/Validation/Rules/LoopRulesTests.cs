@@ -22,7 +22,7 @@ public sealed class LoopRulesTests
     private static BotDefinition Bot(params Article[] articles) =>
         new()
         {
-            FormatVersion = 3,
+            FormatVersion = 4,
             KnowledgeBases = [Samples.Faq],
             Articles = articles,
         };
@@ -122,7 +122,7 @@ public sealed class LoopRulesTests
     public void The_offline_validator_reports_a_loop_in_a_json_definition_with_the_same_code_and_path()
     {
         const string json = """
-            {"formatVersion":3,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}],"articles":[
+            {"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}],"articles":[
             {"id":"pricing","knowledgeBase":"faq","title":"T","content":"[d](cms://article/discounts)","llmGuide":"G","description":"D"},
             {"id":"discounts","knowledgeBase":"faq","title":"T","content":"C","llmGuide":"[p](cms://article/pricing)","description":"D"}]}
             """;

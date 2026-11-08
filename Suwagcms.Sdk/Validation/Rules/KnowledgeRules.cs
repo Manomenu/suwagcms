@@ -22,10 +22,6 @@ internal static class KnowledgeRules
 
     private static IEnumerable<(string Path, string Where, IReadOnlyList<KnowledgeEntry> Entries)> Instructions(Procedure procedure)
     {
-        if (procedure.WhenStalled?.Knowledge is { } stalled)
-        {
-            yield return ("whenStalled.knowledge", $"'knowledge' of whenStalled in '{procedure.Id}'", stalled);
-        }
         foreach (var (name, step) in procedure.Steps)
         {
             if (step.Inform?.Knowledge is { } knowledge)

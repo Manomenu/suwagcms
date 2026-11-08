@@ -8,10 +8,10 @@ public sealed class VersionDigestTests
     [Trait("criterion", "AC-bot-runtime-sdk-4")]
     public void The_digest_ignores_member_order_white_space_and_its_own_member()
     {
-        var plain = VersionDigest.Of("""{"formatVersion":3,"bot":"b","number":1,"facts":[{"name":"x"}]}""");
+        var plain = VersionDigest.Of("""{"formatVersion":4,"bot":"b","number":1,"facts":[{"name":"x"}]}""");
         var shuffled = VersionDigest.Of(
             """
-            { "facts": [ { "name": "x" } ], "number": 1, "digest": "whatever", "bot": "b", "formatVersion": 3 }
+            { "facts": [ { "name": "x" } ], "number": 1, "digest": "whatever", "bot": "b", "formatVersion": 4 }
             """
         );
 
