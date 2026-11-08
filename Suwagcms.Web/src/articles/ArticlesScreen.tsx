@@ -65,6 +65,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
         return (
             <ArticlesView
                 bot={bot}
+                history={editor.listHistory}
                 articles={editor.items}
                 bases={bases}
                 isOff={(id) => availability.isOff("article", id)}

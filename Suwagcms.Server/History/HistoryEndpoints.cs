@@ -30,7 +30,10 @@ internal static class HistoryEndpoints
 
     public static void MapHistory(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/history", OfBot).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes
+            .MapGet("/bots/{bot}/history", OfBot)
+            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
+            .Produces<Refusal>(StatusCodes.Status400BadRequest, Problem);
         routes
             .MapGet(
                 "/bots/{bot}/{kind:regex(^(facts|knowledge-bases|articles|procedures|actions|persona|versions)$)}/{id}/history",
@@ -40,14 +43,31 @@ internal static class HistoryEndpoints
         routes.MapGet("/bots/{bot}/versions/{number:int}/window", OfWindow).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
     }
 
-    private static Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfBot(
+    // Why: `kind` narrows the bot's history to one kind of resource, every id of it, for the panel under that kind's list.
+    private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfBot(
         string bot,
         Pool pool,
         CancellationToken cancellationToken,
         int limit = DefaultLimit,
         long? before = null,
-        int? page = null
-    ) => PageAsync(bot, null, pool, limit, before, page, cancellationToken);
+        int? page = null,
+        string? kind = null
+    )
+    {
+        if (kind is null)
+        {
+            return await PageAsync(bot, null, pool, limit, before, page, cancellationToken);
+        }
+        if (!Kinds.TryGetValue(kind, out var only))
+        {
+            return TypedResults.Problem(
+                title: Title,
+                detail: $"There is no kind '{kind}'. Ask for one of: {string.Join(", ", Kinds.Keys)}, or leave `kind` out for every change.",
+                statusCode: StatusCodes.Status400BadRequest
+            );
+        }
+        return await PageAsync(bot, null, pool, limit, before, page, cancellationToken, only);
+    }
 
     private static Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfResource(
         string bot,
@@ -102,9 +122,10 @@ internal static class HistoryEndpoints
         int limit,
         long? before,
         int? page,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        string? only = null
     ) =>
-        await HistoryStore.ReadAsync(pool, bot, resource, Math.Clamp(limit, 1, PageSize.Most), before, page, cancellationToken)
+        await HistoryStore.ReadAsync(pool, bot, resource, Math.Clamp(limit, 1, PageSize.Most), before, page, cancellationToken, only)
             is { } answer
             ? TypedResults.Ok(WrittenWhenPaged(answer, page))
             : EditProblems.For(new EditResult.UnknownBot(), bot, Title);

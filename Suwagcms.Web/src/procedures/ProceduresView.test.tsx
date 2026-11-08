@@ -7,6 +7,13 @@ import { PageSizeContext } from "@/api/pagination";
 import type { ProcedureList } from "./api";
 import { ProceduresView } from "./ProceduresView";
 
+const noHistory = {
+    entries: [],
+    since: "2026-11-04T08:00:00+00:00",
+    failure: null,
+    paging: { page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined },
+};
+
 const list: ProcedureList = {
     procedures: [
         { id: "conversation", description: "The base of every conversation", revision: 1, notReady: 0 },
@@ -20,7 +27,7 @@ function view(shown: ProcedureList): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/procedures">
             <PageSizeContext value={{ size: 20, failure: null }}>
-                <ProceduresView onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
+                <ProceduresView history={noHistory} onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
             </PageSizeContext>
         </Router>,
     );
@@ -32,6 +39,7 @@ describe("ProceduresView", () => {
             <Router ssrPath="/bots/rzeczoznawca/procedures">
                 <PageSizeContext value={{ size: 20, failure: null }}>
                     <ProceduresView
+                        history={noHistory}
                         onAdd={() => undefined}
                         onOpen={() => undefined}
                         bot="rzeczoznawca"
@@ -92,7 +100,7 @@ describe("a long list", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/b/procedures?page=2">
                 <PageSizeContext value={{ size: 20, failure: null }}>
-                    <ProceduresView bot="b" list={many} onAdd={() => undefined} onOpen={() => undefined} />
+                    <ProceduresView history={noHistory} bot="b" list={many} onAdd={() => undefined} onOpen={() => undefined} />
                 </PageSizeContext>
             </Router>,
         );

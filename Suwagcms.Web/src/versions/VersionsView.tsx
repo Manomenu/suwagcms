@@ -5,7 +5,7 @@ import { usePagedRows } from "@/api/pagination";
 import { Alert } from "@/design/alert";
 import { Anchor } from "@/design/anchor";
 import { Button } from "@/design/button";
-import { Page, Paper } from "@/design/page";
+import { Page, Paper, type HistoryPanelProps } from "@/design/page";
 import { Paginated } from "@/design/pagination";
 import { Select } from "@/design/select";
 import { Table } from "@/design/table";
@@ -100,10 +100,11 @@ function PushQuestion({ plan, onPush, onCancel }: { plan: PushPlan; onPush: (num
     );
 }
 
-/** The Versions screen: create a version, the mistakes that stopped one with a link to each resource, and the versions, newest first. */
+/** The Versions screen: create a version, the mistakes that stopped one with a link to each resource, the versions, newest first, and the version events under them. */
 export function VersionsView({
     bot,
     versions,
+    history,
     status,
     pushFailure,
     pushing,
@@ -118,6 +119,7 @@ export function VersionsView({
 }: {
     bot: string;
     versions: VersionSummary[];
+    history: HistoryPanelProps;
     status: BotStatus | null;
     pushFailure: PushResult | null;
     pushing: boolean;
@@ -136,6 +138,7 @@ export function VersionsView({
     return (
         <Page
             title={`Versions of ${bot}`}
+            history={history}
             actions={
                 <Button variant={bots?.push ? "outline" : "default"} onClick={onCreate}>
                     Create version

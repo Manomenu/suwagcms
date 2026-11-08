@@ -7,6 +7,13 @@ import { PageSizeContext } from "@/api/pagination";
 import type { ActionView } from "./api";
 import { ActionsView } from "./ActionsView";
 
+const noHistory = {
+    entries: [],
+    since: "2026-11-04T08:00:00+00:00",
+    failure: null,
+    paging: { page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined },
+};
+
 const action = (id: string): ActionView =>
     ({
         id,
@@ -21,6 +28,7 @@ describe("ActionsView", () => {
             <Router ssrPath="/bots/rzeczoznawca/actions">
                 <PageSizeContext value={{ size: 20, failure: null }}>
                     <ActionsView
+                        history={noHistory}
                         bot="rzeczoznawca"
                         actions={[action("check"), action("send")]}
 
@@ -44,7 +52,7 @@ describe("a long list", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/b/actions?page=2">
                 <PageSizeContext value={{ size: 20, failure: null }}>
-                    <ActionsView bot="b" actions={many} onAdd={() => undefined} onOpen={() => undefined} />
+                    <ActionsView history={noHistory} bot="b" actions={many} onAdd={() => undefined} onOpen={() => undefined} />
                 </PageSizeContext>
             </Router>,
         );

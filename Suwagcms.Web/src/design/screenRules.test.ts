@@ -104,13 +104,8 @@ describe("the rules of every screen", () => {
     });
 
     it("AC-change-history-18: every list of changes uses the one module, and no other source draws a change's row or its lines", () => {
-        expect(filesWith(/<ChangeList\b/).sort()).toEqual(["/src/design/historyPanel.tsx", "/src/history/HistoryScreen.tsx"]);
+        expect(filesWith(/<ChangeList\b/).sort()).toEqual(["/src/design/page.tsx", "/src/history/HistoryScreen.tsx"]);
         expect(filesWith(/<ChangeRow\b/).sort()).toEqual(["/src/design/changeList.tsx", "/src/versions/comparison.tsx"]);
-        expect(filesWith(/<HistoryPanel\b/).sort()).toEqual([
-            "/src/design/resourceEdit.tsx",
-            "/src/persona/PersonaScreen.tsx",
-            "/src/versions/VersionView.tsx",
-        ]);
         expect(sources["/src/procedures/ProcedureScreen.tsx"]).toContain("<ResourceEdit");
         expect(sources["/src/procedures/ProcedureScreen.tsx"]).toContain("history={history}");
         expect(filesWith(/<ComparisonRows\b/).sort()).toEqual(["/src/versions/VersionView.tsx", "/src/versions/VersionsView.tsx"]);
@@ -118,6 +113,54 @@ describe("the rules of every screen", () => {
         // Why: a change-id preview lists its own rewritten lines, which are no lines of a change.
         expect(filesWith(/\.lines\b/).sort()).toEqual(["/src/design/changeIdDialog.tsx", "/src/design/changeList.tsx"]);
         expect(filesWith(/ComparisonPanel|ComparisonDetails|HistoryList/)).toEqual([]);
+    });
+
+    it("AC-change-history-34: every main screen hands the page frame its History panel, which the frame draws last", () => {
+        // Why: each tab of a bot but History, which is the history itself, is a main screen; a new tab must say where its panel comes from.
+        const tabs = [...(sources["/src/shell/navigation.ts"] ?? "").matchAll(/id: "([\w-]+)"/g)].map((match) => match[1]);
+        const panelOf: Record<string, string> = {
+            facts: "/src/facts/FactsView.tsx",
+            "knowledge-bases": "/src/knowledge-bases/KnowledgeBasesView.tsx",
+            articles: "/src/articles/ArticlesView.tsx",
+            procedures: "/src/procedures/ProceduresView.tsx",
+            actions: "/src/actions/ActionsView.tsx",
+            persona: "/src/persona/PersonaView.tsx",
+            versions: "/src/versions/VersionsView.tsx",
+        };
+        expect(tabs.filter((tab) => tab !== "history")).toEqual(Object.keys(panelOf));
+        for (const [tab, path] of Object.entries(panelOf)) {
+            expect(sources[path], `the ${tab} screen gives its frame no history: pass history={history} to Page or ResourceList`).toMatch(
+                /<(Page|ResourceList)\b[^>]*\bhistory=\{history\}/,
+            );
+        }
+        expect(sources["/src/design/resourceList.tsx"]).toMatch(/<Page\b[^>]*\bhistory=\{history\}/);
+        expect(sources["/src/design/resourceEdit.tsx"]).toContain("{...(editedId === null ? {} : { history })}");
+        expect(sources["/src/versions/VersionView.tsx"]).toMatch(/<Page\b[^>]*\bhistory=\{\{/);
+        expect(sources["/src/design/page.tsx"]).toMatch(
+            /\{children\}\s*\{history !== undefined && <HistoryPanel \{\.\.\.history\} \/>\}\s*<\/div>/,
+        );
+    });
+
+    it("AC-change-history-35: the History panel is one shared part of the page frame, never a copy", () => {
+        expect(filesWith(/<HistoryPanel\b|function HistoryPanel|aria-label="History"/)).toEqual(["/src/design/page.tsx"]);
+        expect(sources["/src/design/page.tsx"]).not.toMatch(/export function HistoryPanel/);
+        expect(filesWith(/<ChangeList\b/, (path) => path === "/src/history/HistoryScreen.tsx")).toEqual(["/src/design/page.tsx"]);
+        expect(filesWith(/(?<!~)\/bots\/[^`]*\/(history|window)`|\["HistoryPage"\]/)).toEqual(["/src/api/history.ts"]);
+    });
+
+    it("AC-change-history-37: each screen asks for the history of what it is about", () => {
+        expect(sources["/src/api/history.ts"]).toContain('collection === null ? "" : `&kind=${collection}`');
+        const editor = sources["/src/api/resourceEditor.ts"];
+        expect(editor).toContain('useKindHistory(bot, address.screen === "list" ? api.collection : null)');
+        expect(editor).toContain("useResourceHistory(bot, api.collection, id, revision)");
+        for (const screen of ["facts/Facts", "knowledge-bases/KnowledgeBases", "articles/Articles", "actions/Actions"]) {
+            expect(sources[`/src/${screen}Screen.tsx`]).toContain("history={editor.listHistory}");
+        }
+        expect(sources["/src/procedures/ProceduresScreen.tsx"]).toContain('useKindHistory(bot, listed ? "procedures" : null)');
+        expect(sources["/src/procedures/ProcedureScreen.tsx"]).toContain('useResourceHistory(bot, "procedures", id,');
+        expect(sources["/src/versions/VersionsScreen.tsx"]).toContain('useKindHistory(bot, earlier === null ? "versions" : null');
+        expect(sources["/src/versions/VersionScreen.tsx"]).toContain("useVersionWindow(bot, number)");
+        expect(sources["/src/persona/PersonaScreen.tsx"]).toContain('useResourceHistory(bot, "persona", PERSONA_ID');
     });
 
     it("AC-change-history-19: the shared module holds no word for what it lists", () => {

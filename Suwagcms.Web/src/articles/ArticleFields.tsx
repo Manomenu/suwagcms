@@ -137,5 +137,5 @@ function GrowingTextarea(props: ComponentProps<"textarea"> & { value: string }) 
         box.style.height = "auto";
         box.style.height = `${String(box.scrollHeight + box.offsetHeight - box.clientHeight)}px`;
     }, [props.value]);
-    return <Textarea {...props} ref={ref} className="h-auto min-h-48" />;
+    return <Textarea {...props} ref={ref} className="h-auto min-h-48 font-sans" />;
 }

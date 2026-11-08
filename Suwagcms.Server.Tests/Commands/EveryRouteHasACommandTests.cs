@@ -83,6 +83,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["before"] = "--before",
         ["dryRun"] = "--dry-run",
         ["ifRevision"] = "--if-revision",
+        ["kind"] = "--kind",
         ["knowledgeBase"] = "--kb",
         ["language"] = "--language",
         ["limit"] = "--limit",

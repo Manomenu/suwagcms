@@ -21,12 +21,17 @@ async function addBase(request: APIRequestContext, bot: string): Promise<void> {
     ).toBe(200);
 }
 
+// Why: a list screen also pages its History panel at the bottom, so the list's own controls are the ones outside it.
+function listPages(page: Page) {
+    return page.locator('[aria-label="Pages"]:not([aria-label="History"] *)');
+}
+
 function next(page: Page) {
-    return page.getByRole("button", { name: "Next", exact: true });
+    return listPages(page).getByRole("button", { name: "Next", exact: true });
 }
 
 function previous(page: Page) {
-    return page.getByRole("button", { name: "Previous", exact: true });
+    return listPages(page).getByRole("button", { name: "Previous", exact: true });
 }
 
 test("AC-pagination-5: Next writes the page to the address; a reload and a sent link show it, Back returns, and page 1 has no page", async ({
@@ -37,17 +42,17 @@ test("AC-pagination-5: Next writes the page to the address; a reload and a sent 
     const bot = await newBot(request);
     await addFacts(request, bot, 12);
     await page.goto(`/bots/${bot}/facts`);
-    await expect(page.getByText("Page 1 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 1 of 3")).toBeVisible();
     await expect(page).toHaveURL(`/bots/${bot}/facts`);
 
     await next(page).click();
     await expect(page).toHaveURL(`/bots/${bot}/facts?page=2`);
-    await expect(page.getByText("Page 2 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 2 of 3")).toBeVisible();
     await expect(page.getByRole("row").filter({ hasText: "customer.f15" })).toBeVisible();
     await expect(page.getByRole("row").filter({ hasText: "customer.f14" })).toHaveCount(0);
 
     await page.reload();
-    await expect(page.getByText("Page 2 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 2 of 3")).toBeVisible();
     const sent = await context.newPage();
     await sent.goto(`/bots/${bot}/facts?page=2`);
     await expect(sent.getByRole("row").filter({ hasText: "customer.f15" })).toBeVisible();
@@ -55,17 +60,17 @@ test("AC-pagination-5: Next writes the page to the address; a reload and a sent 
 
     await page.goBack();
     await expect(page).toHaveURL(`/bots/${bot}/facts`);
-    await expect(page.getByText("Page 1 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 1 of 3")).toBeVisible();
 
     await page.goto(`/bots/${bot}/facts?page=2`);
     await previous(page).click();
     await expect(page).toHaveURL(`/bots/${bot}/facts`);
 
     await page.goto(`/bots/${bot}/facts?page=99`);
-    await expect(page.getByText("Page 3 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 3 of 3")).toBeVisible();
     await expect(page).toHaveURL(`/bots/${bot}/facts?page=3`);
     await page.goto(`/bots/${bot}/facts?page=abc`);
-    await expect(page.getByText("Page 1 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 1 of 3")).toBeVisible();
     await expect(page).toHaveURL(`/bots/${bot}/facts`);
 });
 
@@ -79,7 +84,7 @@ test("AC-pagination-5: moving brings the top of the list back into view", async 
     await expect(page.getByRole("columnheader", { name: "Name" })).not.toBeInViewport();
     await next(page).click();
 
-    await expect(page.getByText("Page 2 of 2")).toBeAttached();
+    await expect(listPages(page).getByText("Page 2 of 2")).toBeAttached();
     await expect(page.getByRole("columnheader", { name: "Name" })).toBeInViewport();
 });
 
@@ -102,7 +107,7 @@ test("AC-pagination-6: opening a row on page 2 and saving, cancelling or going b
     await page.getByLabel("Description").fill("A changed field");
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page).toHaveURL(`/bots/${bot}/facts?page=2`);
-    await expect(page.getByText("Page 2 of 2")).toBeVisible();
+    await expect(listPages(page).getByText("Page 2 of 2")).toBeVisible();
 });
 
 test("AC-pagination-6: the creator of a procedure on page 2 returns to page 2 too", async ({ page, request }) => {
@@ -112,7 +117,7 @@ test("AC-pagination-6: the creator of a procedure on page 2 returns to page 2 to
         expect((await request.put(`/api/bots/${bot}/procedures/${id}?ifRevision=0`, { data })).status()).toBe(200);
     }
     await page.goto(`/bots/${bot}/procedures?page=2`);
-    await expect(page.getByText("Page 2 of 2")).toBeVisible();
+    await expect(listPages(page).getByText("Page 2 of 2")).toBeVisible();
 
     await page.getByRole("row").getByRole("button", { name: "Edit" }).first().click();
     await expect(page).toHaveURL(/\/edit\?page=2$/);
@@ -128,7 +133,7 @@ test("AC-pagination-6: deleting the only row of the last page shows the new last
     const bot = await newBot(request);
     await addFacts(request, bot, 11);
     await page.goto(`/bots/${bot}/facts?page=3`);
-    await expect(page.getByText("Page 3 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 3 of 3")).toBeVisible();
 
     await page.getByRole("row").filter({ hasText: "customer.f20" }).getByRole("button", { name: "Edit" }).click();
     await page.getByRole("button", { name: "Delete", exact: true }).click();
@@ -138,7 +143,7 @@ test("AC-pagination-6: deleting the only row of the last page shows the new last
         .click();
 
     await expect(page).toHaveURL(`/bots/${bot}/facts?page=2`);
-    await expect(page.getByText("Page 2 of 2")).toBeVisible();
+    await expect(listPages(page).getByText("Page 2 of 2")).toBeVisible();
     await expect(page.getByRole("row").filter({ hasText: "customer.f19" })).toBeVisible();
 });
 
@@ -153,14 +158,14 @@ test("AC-pagination-7: changing an article filter on page 2 shows page 1 of the 
         expect((await request.put(`/api/bots/${bot}/articles/a${String(number)}?ifRevision=0`, { data })).status()).toBe(200);
     }
     await page.goto(`/bots/${bot}/articles?text=Title&page=2`);
-    await expect(page.getByText("Page 2 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 2 of 3")).toBeVisible();
 
     await page.getByLabel("Knowledge base").selectOption("offer");
 
     await expect(page).toHaveURL(/[?&]text=Title/);
     await expect(page).toHaveURL(/[?&]knowledgeBase=offer/);
     await expect(page).not.toHaveURL(/[?&]page=/);
-    await expect(page.getByText("Page 1 of 3")).toBeVisible();
+    await expect(listPages(page).getByText("Page 1 of 3")).toBeVisible();
 });
 
 test("AC-pagination-8: rows that fit on one page have controls neither seen nor reached, whose space is as tall as on a list of two pages", async ({
@@ -172,7 +177,7 @@ test("AC-pagination-8: rows that fit on one page have controls neither seen nor 
     await page.goto(`/bots/${bot}/facts`);
     await expect(page.getByRole("row").filter({ hasText: "customer.f14" })).toBeVisible();
 
-    const controls = page.locator('[aria-label="Pages"]');
+    const controls = listPages(page);
     await expect(controls).toBeHidden();
     const buttons = controls.locator("button");
     await expect(buttons).toHaveCount(2);
@@ -208,7 +213,7 @@ test("AC-pagination-10: on Versions, creating a version on a later page shows pa
         expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
     }
     await page.goto(`/bots/${bot}/versions`);
-    await expect(page.getByText("Page 1 of 2")).toBeVisible();
+    await expect(listPages(page).getByText("Page 1 of 2")).toBeVisible();
 
     await next(page).click();
     await expect(page).toHaveURL(`/bots/${bot}/versions?page=2`);
@@ -242,7 +247,7 @@ for (const [name, address] of [
         await page.goto(address(bot));
         const revisions = page.getByText(/^revision \d+$/);
 
-        await expect(page.getByText("Page 1 of 3")).toBeVisible();
+        await expect(listPages(page).getByText("Page 1 of 3")).toBeVisible();
         await expect(revisions).toHaveText(["revision 12", "revision 11", "revision 10", "revision 9", "revision 8"]);
         await expect(page.getByRole("button", { name: "Older changes" })).toHaveCount(0);
 
@@ -251,11 +256,11 @@ for (const [name, address] of [
         await expect(revisions).toHaveText(["revision 7", "revision 6", "revision 5", "revision 4", "revision 3"]);
 
         await page.reload();
-        await expect(page.getByText("Page 2 of 3")).toBeVisible();
+        await expect(listPages(page).getByText("Page 2 of 3")).toBeVisible();
         await expect(revisions).toHaveText(["revision 7", "revision 6", "revision 5", "revision 4", "revision 3"]);
 
         await page.goto(`${address(bot)}${address(bot).includes("?") ? "&" : "?"}page=99`);
-        await expect(page.getByText("Page 3 of 3")).toBeVisible();
+        await expect(listPages(page).getByText("Page 3 of 3")).toBeVisible();
         await expect(revisions).toHaveText(["revision 2", "revision 1"]);
         await expect(page).toHaveURL(/[?&]page=3$/);
     });

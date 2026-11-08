@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Button } from "@/design/button";
-import { Page, Paper } from "@/design/page";
+import { Page, Paper, type HistoryPanelProps } from "@/design/page";
 import { Paginated, type Paging } from "@/design/pagination";
 import { Table } from "@/design/table";
 
@@ -12,8 +12,8 @@ export interface Column<Row> {
 }
 
 /**
- * The list screen of a resource: its heading, the button that adds one, whatever the kind shows above the list, and one table of a
- * page of rows, which only open a resource. A kind passes its own columns; what is done to a resource is done on its edit screen.
+ * The list screen of a resource: its heading, the button that adds one, whatever the kind shows above the list, one table of a
+ * page of rows, which only open a resource, and the History panel of the kind's changes at the bottom. A kind passes its own columns; what is done to a resource is done on its edit screen.
  */
 export function ResourceList<Row>({
     title,
@@ -28,6 +28,7 @@ export function ResourceList<Row>({
     openLabel = "Edit",
     onOpen,
     empty,
+    history,
 }: {
     title: string;
     addLabel: string;
@@ -41,10 +42,12 @@ export function ResourceList<Row>({
     openLabel?: string;
     onOpen: (row: Row) => void;
     empty: ReactNode;
+    history: HistoryPanelProps;
 }) {
     return (
         <Page
             title={title}
+            history={history}
             actions={
                 <Button onClick={onAdd} disabled={addDisabled}>
                     {addLabel}

@@ -10,6 +10,13 @@ import { emptyForm } from "./factForm";
 import { FactFields } from "./FactFields";
 import { FactsView } from "./FactsView";
 
+const noHistory = {
+    entries: [],
+    since: "2026-11-04T08:00:00+00:00",
+    failure: null,
+    paging: { page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined },
+};
+
 const facts: Fact[] = [
     {
         name: "customer.city",
@@ -56,7 +63,7 @@ function view(list: Fact[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/facts">
             <PageSizeContext value={{ size: 20, failure: null }}>
-                <FactsView bot="rzeczoznawca" facts={list} onAdd={() => undefined} onEdit={() => undefined} />
+                <FactsView history={noHistory} bot="rzeczoznawca" facts={list} onAdd={() => undefined} onEdit={() => undefined} />
             </PageSizeContext>
         </Router>,
     );

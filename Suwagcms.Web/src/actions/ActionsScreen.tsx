@@ -29,6 +29,7 @@ export function ActionsScreen({ bot }: { bot: string }) {
         return (
             <ActionsView
                 bot={bot}
+                history={editor.listHistory}
                 actions={editor.items}
                 isOff={(id) => availability.isOff("action", id)}
                 notice={notice}

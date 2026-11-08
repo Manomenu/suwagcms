@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>A person who maintains a bot can then change its voice and limits through the CMS, with history, a comparison and a rollback, instead of through a change in the bot's files.</p>
   </div>
   <div class="stats">
-    <div><b>15</b><span>criteria</span></div>
+    <div><b>14</b><span>criteria</span></div>
     <div><b>1</b><span>criterion after another feature</span></div>
   </div>
 </section>
@@ -516,6 +516,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
+  <p class="wf-muted"><code>AC-bot-persona-10</code>, about change history, now live in <code>change-history</code> under the same id.</p>
   <ul class="checks">
     <li><code>AC-bot-persona-1</code> A person sees and saves a bot's personality and the three parts of its scope on the Persona tab, and each reads back exactly as written, with Enter giving a line break and no other controls for lines.</li>
     <li><code>AC-bot-persona-2</code> A bot that has no saved persona shows empty fields and says so, in the web and from <code>suwagcms persona show</code>.</li>
@@ -526,7 +527,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-bot-persona-7</code> A version created after a save holds the persona in the shape this spec gives, and a version of a bot with an empty persona holds none; an older version keeps what it had after a later edit.</li>
     <li><code>AC-bot-persona-8</code> The bot's SDK gives its code the persona of a version it holds, and a document with no persona loads as having none.</li>
     <li><code>AC-bot-persona-9</code> <code>suwagcms diff</code> and the comparison on the Versions page show a change of the personality and of each part of the scope, naming the lines added and removed.</li>
-    <li><code>AC-bot-persona-10</code> Each saved change appears in the history of the persona and of the bot with what changed, and a save with no real change adds no entry.</li>
     <li><code>AC-bot-persona-11</code> A persona of one bot is never seen or changed through another bot.</li>
     <li><code>AC-bot-persona-12</code> The main skill says how to show and edit the persona, gives the form of its file, and says it reaches the bot only with a version.</li>
     <li><code>AC-bot-persona-13</code> A bot that declares <code>persona: required</code> and has no persona gets a Version-stage mistake when a version is created or pushed, saves go on, and a bot that does not declare it is unaffected.</li>

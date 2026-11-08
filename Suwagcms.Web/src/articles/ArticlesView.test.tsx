@@ -10,6 +10,13 @@ import { ArticleFields } from "./ArticleFields";
 import { emptyForm, fieldOf, HINTS, isDirty, bodyOf } from "./articleForm";
 import { ArticlesView } from "./ArticlesView";
 
+const noHistory = {
+    entries: [],
+    since: "2026-11-04T08:00:00+00:00",
+    failure: null,
+    paging: { page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined },
+};
+
 const bases: KnowledgeBase[] = [
     { id: "offer", title: "Offer", language: "pl", embedding: "default", results: 5, revision: 1 },
     { id: "forValuers", title: "For valuers", language: "en", embedding: "default", results: 5, revision: 1 },
@@ -33,6 +40,7 @@ function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase
         <Router ssrPath="/bots/rzeczoznawca/articles">
             <PageSizeContext value={{ size: 20, failure: null }}>
                 <ArticlesView
+                    history={noHistory}
                     bot="rzeczoznawca"
                     articles={list}
                     bases={knowledgeBases}
@@ -86,6 +94,7 @@ describe("the list of articles and availability", () => {
                 <Router ssrPath="/bots/rzeczoznawca/articles">
                     <PageSizeContext value={{ size: 20, failure: null }}>
                         <ArticlesView
+                            history={noHistory}
                             bot="rzeczoznawca"
                             articles={articles}
                             bases={bases}
@@ -300,6 +309,7 @@ describe("a long list", () => {
             <Router ssrPath="/bots/b/articles?page=2">
                 <PageSizeContext value={{ size: 20, failure: null }}>
                     <ArticlesView
+                        history={noHistory}
                         bot="b"
                         articles={many}
                         bases={bases}

@@ -381,7 +381,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The gate fails for a server route that has no command, so the promise that the CLI can do anything the web can is enforced instead of hoped for.</p>
   </div>
   <div class="stats">
-    <div><b>22</b><span>criteria</span></div>
+    <div><b>21</b><span>criteria</span></div>
     <div><b>4</b><span>exit codes</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
@@ -503,6 +503,7 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
 
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
+  <p class="wf-muted"><code>AC-cli-foundation-19</code>, about change history, now live in <code>change-history</code> under the same id.</p>
   <ul class="checks">
     <li><code>AC-cli-foundation-1</code> Packing the CLI produces a .NET tool whose command is <code>suwagcms</code>, and <code>suwagcms --version</code> prints its version and exits 0.</li>
     <li><code>AC-cli-foundation-2</code> The server address comes from <code>--server</code>, else <code>SUWAGCMS_URL</code>, else <code>suwagcmsUrl</code> in the repository's <code>suwagcms/config.yaml</code>, else the address saved with <code>suwagcms server &lt;url&gt;</code>, else the local default; each level is proven to win over the next.</li>
@@ -522,7 +523,6 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <li><code>AC-cli-foundation-15</code> <code>show --open</code> opens the item itself in the web, for facts, knowledge bases, articles, actions and procedures.</li>
     <li><code>AC-cli-foundation-17</code> A query parameter of a route with no option on the route's command fails the full gate, with a message naming the route, the parameter and the fix.</li>
     <li><code>AC-cli-foundation-18</code> A command that neither opens a page with <code>--open</code> nor stands in the guard's short list with its reason fails the gate; so does a screen of the web app with no command that opens it and no stated reason.</li>
-    <li><code>AC-cli-foundation-19</code> <code>suwagcms history</code>, <code>history &lt;kind&gt; &lt;id&gt;</code> and <code>versions window</code> take <code>--page &lt;n&gt;</code>: the answer is that numbered page with the total and each change written out, as the web reads it, and says how to go on; <code>--page</code> below 1 or together with <code>--before</code> exits 2, a page past the end says so, and with <code>--open</code> the page lands on that page of the list. Without <code>--page</code> what they print does not change.</li>
     <li><code>AC-cli-foundation-20</code> <code>suwagcms availability list --stored</code> lists what the CMS holds without asking the bot, and says the bot was not asked.</li>
     <li><code>AC-cli-foundation-21</code> <code>usage --open</code> opens the resource's page, which lists the same references; <code>actions test --open</code> opens the action's page, with its test panel, and calls nothing; <code>versions show --open</code> opens that version's page; <code>articles list --open</code> carries its filters to the screen.</li>
     <li><code>AC-cli-foundation-22</code> With <code>--open</code>, <code>add</code> and <code>edit</code> of a fact, knowledge base, article, procedure and action, <code>persona edit</code>, <code>rename</code>, <code>availability on</code> and <code>off</code> save and then open the resource; a refused change opens nothing; together with <code>--dry-run</code> or <code>--json</code> it exits 2 and sends nothing; a command that deletes exits 2 saying what it deletes is gone; the main skill says so.</li>

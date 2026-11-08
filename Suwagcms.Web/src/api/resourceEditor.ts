@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useSearch, useSearchParams } from "wouter";
 
 import { ApiError } from "./client";
-import { useResourceHistory } from "./history";
+import { useKindHistory, useResourceHistory } from "./history";
 import { DISCARD_QUESTION, mayLeave, useLeaveGuard } from "./leaveGuard";
 import { renamer } from "./rename";
 import { addressOf, editHref, listHref, newHref, withListSearch } from "./resourceAddress";
@@ -59,6 +59,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     const revision = shown === null ? 0 : revisionOf(shown);
     const used = useUsage(bot, usage ?? "facts", usage === null ? null : id, revision);
     const history = useResourceHistory(bot, api.collection, id, revision);
+    const listHistory = useKindHistory(bot, address.screen === "list" ? api.collection : null);
     const changer = useMemo(() => renamer(bot, api.collection, id ?? "", revision), [bot, api.collection, id, revision]);
 
     const withSearch = (href: string) => (openParam !== null ? href : withListSearch(href, search));
@@ -154,6 +155,8 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
         },
         close,
         isOpen: address.screen !== "list",
+        /** The changes of this kind of resource, for the panel under its list. */
+        listHistory,
         // Why: opening another form would throw away what was typed, so it asks first, as leaving the screen does.
         add: () => {
             if (mayLeave()) navigate(withSearch(newHref(bot, api.collection)));

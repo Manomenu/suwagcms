@@ -10,6 +10,13 @@ import { HINTS, emptyForm, fieldOf, mistakesFor, saveOf } from "./knowledgeBaseF
 import { KnowledgeBaseForm } from "./KnowledgeBaseForm";
 import { KnowledgeBasesView } from "./KnowledgeBasesView";
 
+const noHistory = {
+    entries: [],
+    since: "2026-11-04T08:00:00+00:00",
+    failure: null,
+    paging: { page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined },
+};
+
 const bases: KnowledgeBase[] = [
     { id: "oferta", title: "Our offer", language: "pl", embedding: "default", results: 5, revision: 2 },
     { id: "dlaRzeczoznawcow", title: "For valuers", language: "en", embedding: "default", results: 5, revision: 1 },
@@ -19,7 +26,7 @@ function view(list: KnowledgeBase[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/knowledge-bases">
             <PageSizeContext value={{ size: 20, failure: null }}>
-                <KnowledgeBasesView bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
+                <KnowledgeBasesView history={noHistory} bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
             </PageSizeContext>
         </Router>,
     );
@@ -174,7 +181,7 @@ describe("a long list", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/b/knowledge-bases?page=2">
                 <PageSizeContext value={{ size: 20, failure: null }}>
-                    <KnowledgeBasesView bot="b" bases={many} onAdd={() => undefined} onEdit={() => undefined} />
+                    <KnowledgeBasesView history={noHistory} bot="b" bases={many} onAdd={() => undefined} onEdit={() => undefined} />
                 </PageSizeContext>
             </Router>,
         );

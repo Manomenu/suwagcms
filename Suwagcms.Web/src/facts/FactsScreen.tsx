@@ -12,7 +12,8 @@ export function FactsScreen({ bot }: { bot: string }) {
 
     if (editor.failure !== null) return <Alert variant="destructive">{editor.failure}</Alert>;
     if (editor.items === null) return <p className="text-muted-foreground">Loading facts…</p>;
-    if (!editor.isOpen) return <FactsView bot={bot} facts={editor.items} onAdd={editor.add} onEdit={editor.edit} />;
+    if (!editor.isOpen)
+        return <FactsView bot={bot} history={editor.listHistory} facts={editor.items} onAdd={editor.add} onEdit={editor.edit} />;
 
     return (
         <ResourceEdit showUses={false} noun="fact" plural="facts" addTitle="Add a fact" idWord="name" {...editor.panels}>

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 
 import { useAvailability } from "@/api/availability";
+import { useKindHistory } from "@/api/history";
 import { addressOf, editHref, listHref, newHref, withListSearch } from "@/api/resourceAddress";
 import { Alert } from "@/design/alert";
 import { AvailabilityNotice } from "@/design/availabilityPanel";
@@ -19,6 +20,8 @@ export function ProceduresScreen({ bot }: { bot: string }) {
     const [location, navigate] = useLocation();
     const search = useSearch();
     const availability = useAvailability(bot);
+    const listed = addressOf(location, "procedures").screen === "list";
+    const history = useKindHistory(bot, listed ? "procedures" : null);
 
     useEffect(() => {
         // StrictMode runs effects twice in development: abort the first request, ignore its result.
@@ -53,6 +56,7 @@ export function ProceduresScreen({ bot }: { bot: string }) {
     return (
         <ProceduresView
             bot={bot}
+            history={history}
             list={list}
             isOff={(id) => availability.isOff("procedure", id)}
             notice={<AvailabilityNotice delivery={availability.delivery} failure={availability.failure} onSend={availability.send} />}

@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 import { ApiError, type Mistake } from "@/api/client";
 import { useResourceHistory } from "@/api/history";
 import { Alert } from "@/design/alert";
-import { HistoryPanel } from "@/design/historyPanel";
 import { useLeaveGuard } from "@/api/leaveGuard";
 
 import { fetchPersona, savePersona, type Persona } from "./api";
@@ -84,7 +83,7 @@ export function PersonaScreen({ bot }: { bot: string }) {
             failure={refusal !== null && mistakes.length === 0 ? refusal.message : null}
             mistakes={mistakes}
             outOfDate={mistakes.some((mistake) => mistake.code === "resource.stale")}
-            history={<HistoryPanel {...history} />}
+            history={history}
             onChange={change}
             onSave={() => {
                 save(form);

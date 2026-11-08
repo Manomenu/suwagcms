@@ -3,7 +3,7 @@ import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Field } from "@/design/field";
 import { InfoTip } from "@/design/infoTip";
-import { Page, Paper } from "@/design/page";
+import { Page, Paper, type HistoryPanelProps } from "@/design/page";
 import { Textarea } from "@/design/textarea";
 
 import { HINTS, fieldOf, type FieldName, type PersonaForm } from "./personaForm";
@@ -31,7 +31,7 @@ export function PersonaView({
     failure: string | null;
     mistakes: Mistake[];
     outOfDate: boolean;
-    history: React.ReactNode;
+    history: HistoryPanelProps;
     onChange: (name: FieldName, text: string) => void;
     onSave: () => void;
     onReload: () => void;
@@ -58,6 +58,7 @@ export function PersonaView({
     return (
         <Page
             title={`Persona of ${bot}`}
+            history={history}
             actions={
                 <>
                     {saved && <span className="text-sm text-success">Saved</span>}
@@ -98,7 +99,6 @@ export function PersonaView({
                 {text("outOfScope", "Out of scope", { hint: HINTS.outOfScope })}
                 {text("whenOutOfScope", "When out of scope", { hint: HINTS.whenOutOfScope })}
             </Paper>
-            {history}
         </Page>
     );
 }

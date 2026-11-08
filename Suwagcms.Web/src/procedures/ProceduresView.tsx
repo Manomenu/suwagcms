@@ -7,7 +7,7 @@ import { editHref, withListSearch } from "@/api/resourceAddress";
 import { Anchor } from "@/design/anchor";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Badge } from "@/design/badge";
-import { Paper } from "@/design/page";
+import { Paper, type HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
 
 import { mistakesOf, type ProcedureList } from "./api";
@@ -25,6 +25,7 @@ function Readiness({ count }: { count: number }) {
 /** The list of a bot's procedures, each with its description and how many mistakes still stop a version. Each opens in the editor. */
 export function ProceduresView({
     bot,
+    history,
     list,
     isOff,
     notice,
@@ -32,6 +33,7 @@ export function ProceduresView({
     onOpen,
 }: {
     bot: string;
+    history: HistoryPanelProps;
     list: ProcedureList;
     isOff?: (id: string) => boolean;
     notice?: ReactNode;
@@ -43,6 +45,7 @@ export function ProceduresView({
     const search = useSearch();
     return (
         <ResourceList
+            history={history}
             title={`Procedures of ${bot}`}
             addLabel="Add a procedure"
             onAdd={onAdd}

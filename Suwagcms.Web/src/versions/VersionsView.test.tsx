@@ -8,6 +8,13 @@ import type { Mistake } from "@/api/client";
 import type { BotStatus, PushPlan, PushResult, VersionSummary } from "./api";
 import { VersionsView } from "./VersionsView";
 
+const noHistory = {
+    entries: [],
+    since: "2026-11-04T08:00:00+00:00",
+    failure: null,
+    paging: { page: 1, pages: 1, asking: false, failure: null, onMove: () => undefined },
+};
+
 const versions: VersionSummary[] = [
     {
         number: 14,
@@ -89,6 +96,7 @@ function view(shown: {
         <Router ssrPath={`/bots/rzeczoznawca/versions${shown.search ?? ""}`}>
             <PageSizeContext value={{ size: 20, failure: null }}>
                 <VersionsView
+                    history={noHistory}
                     bot="rzeczoznawca"
                     versions={shown.versions ?? versions}
                     status={shown.status ?? null}

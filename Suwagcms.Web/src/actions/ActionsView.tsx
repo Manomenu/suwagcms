@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { usePagedRows } from "@/api/pagination";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
 import { Badge } from "@/design/badge";
+import type { HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
 
 import { isCode, type ActionView } from "./api";
@@ -10,6 +11,7 @@ import { isCode, type ActionView } from "./api";
 /** One list of the bot's actions, HTTP and code. */
 export function ActionsView({
     bot,
+    history,
     actions,
     isOff,
     notice,
@@ -17,6 +19,7 @@ export function ActionsView({
     onOpen,
 }: {
     bot: string;
+    history: HistoryPanelProps;
     actions: ActionView[];
     isOff?: (id: string) => boolean;
     notice?: ReactNode;
@@ -26,6 +29,7 @@ export function ActionsView({
     const paged = usePagedRows(actions);
     return (
         <ResourceList
+            history={history}
             title={`Actions of ${bot}`}
             addLabel="Add an action"
             onAdd={onAdd}

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { Router } from "wouter";
 
 import { ChangeList, type ChangeLine } from "./changeList";
-import { HistoryPanel } from "./historyPanel";
+import { Page } from "./page";
 import { ResourceEdit } from "./resourceEdit";
 
 const edited: ChangeLine = {
@@ -61,7 +61,7 @@ function list(entries: ChangeLine[] | null, pages = 1): string {
 }
 
 function panel(entries: ChangeLine[] | null): string {
-    return renderToStaticMarkup(<HistoryPanel entries={entries} since={SINCE} failure={null} paging={paging(1)} />);
+    return renderToStaticMarkup(<Page title="A page" history={{ entries, since: SINCE, failure: null, paging: paging(1) }} />);
 }
 
 function textOf(html: string): string {
@@ -155,6 +155,21 @@ describe("the shared list of changes", () => {
         for (const html of [panel([edited]), panel([]), edit]) {
             expect(html.match(/<h\d[^>]*>History<\/h\d>/g)).toHaveLength(1);
         }
+    });
+
+    it("AC-change-history-34: the page frame draws the History panel last, under the screen's own content, and none without history", () => {
+        const html = renderToStaticMarkup(
+            <Page
+                title="Procedures of sklep"
+                actions={<button>Add a procedure</button>}
+                history={{ entries: [edited], since: SINCE, failure: null, paging: paging(1) }}
+            >
+                <p>The list</p>
+            </Page>,
+        );
+
+        expect(html.indexOf('aria-label="History"')).toBeGreaterThan(html.indexOf("The list"));
+        expect(renderToStaticMarkup(<Page title="History of sklep" />)).not.toContain('aria-label="History"');
     });
 
     it("AC-change-history-21: an entry reads kept lines, folds and old → new as written, and draws none of it twice", () => {
