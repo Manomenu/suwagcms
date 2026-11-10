@@ -1,5 +1,4 @@
 using System.Reflection;
-using Suwagcms.Server.Api;
 
 namespace Suwagcms.Gate.Design;
 
@@ -14,10 +13,12 @@ public sealed class SubtractTests
     [Fact]
     public void Nothing_is_marked_obsolete()
     {
-        var obsolete = new[] { typeof(ServerApp).Assembly, typeof(SubtractTests).Assembly }
-            .SelectMany(assembly => assembly.DefinedTypes)
+        var obsolete = SolutionTypes
+            .Assemblies.SelectMany(assembly => assembly.DefinedTypes)
             .SelectMany(type => new MemberInfo[] { type }.Concat(type.GetMembers(AllMembers)))
             .Where(member => member.GetCustomAttribute<ObsoleteAttribute>() is not null)
+            // Why: the compiler marks the constructors of a type with required members obsolete for compilers that cannot set them
+            .Where(member => member.GetCustomAttribute<System.Runtime.CompilerServices.CompilerFeatureRequiredAttribute>() is null)
             .Select(member => member is Type type ? type.FullName : $"{member.DeclaringType?.FullName}.{member.Name}")
             .Order()
             .ToList();

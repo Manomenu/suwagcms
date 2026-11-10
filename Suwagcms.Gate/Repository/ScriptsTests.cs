@@ -4,7 +4,7 @@ namespace Suwagcms.Gate.Repository;
 
 public sealed class ScriptsTests
 {
-    private static readonly string[] NotForCalling = ["checkout-env.sh", "hook-guard-edit.sh", "hook-stop.sh", "init-project.sh"];
+    private static readonly string[] NotForCalling = ["checkout-env.sh", "hook-guard-edit.sh", "hook-stop.sh"];
 
     // Why: its --help goes to the pinned vdoc.py, so the word never stands in the script itself
     private const string AnswersThroughItsTool = "criteria.sh";
@@ -15,12 +15,7 @@ public sealed class ScriptsTests
         foreach (
             var path in RepositoryFiles
                 .Paths()
-                .Where(path =>
-                    (
-                        path.StartsWith("scripts/.internal/", StringComparison.Ordinal)
-                        || path.StartsWith("Suwagcms.Gate/scripts/", StringComparison.Ordinal)
-                    ) && path.EndsWith(".sh", StringComparison.Ordinal)
-                )
+                .Where(path => path.EndsWith(".sh", StringComparison.Ordinal))
                 .Where(path => !NotForCalling.Contains(Path.GetFileName(path)))
         )
         {

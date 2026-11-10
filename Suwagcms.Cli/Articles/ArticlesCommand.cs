@@ -65,7 +65,7 @@ internal static class ArticlesCommand
                     return await target.FailedAsync(answer, cancellationToken);
                 }
                 var articles = answer.Body?.Deserialize<List<ArticleView>>(Web) ?? [];
-                return await target.Run.Report.DoneAsync(new ArticleListDocument(target.Bot, articles), ArticleText.Table(articles));
+                return await target.Run.Report.DoneAsync(new ArticleListDocument(target.Bot, articles), ArticleOutput.Table(articles));
             }
         );
         return command;
@@ -118,7 +118,7 @@ internal static class ArticlesCommand
                 }
                 var article =
                     answer.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
-                return await target.Run.Report.DoneAsync(article, ArticleText.Detail(article));
+                return await target.Run.Report.DoneAsync(article, ArticleOutput.Detail(article));
             }
         );
         return command;

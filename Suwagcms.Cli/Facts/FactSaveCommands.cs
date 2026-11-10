@@ -14,7 +14,7 @@ internal static class FactSaveCommands
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    private sealed record Fields(
+    private sealed record FactFields(
         Option<string?> Type,
         Option<string?> Description,
         Option<string?> WritableBy,
@@ -30,7 +30,7 @@ internal static class FactSaveCommands
     );
 
     // Why: the options are left optional so that a missing one reaches the server, which reports every mistake at once.
-    private static Fields FieldOptions() =>
+    private static FactFields FieldOptions() =>
         new(
             new Option<string?>("--type") { Description = "enum, int or text. Changing the type of a fact drops its old constraints." },
             new Option<string?>("--description") { Description = "What the fact means; the model reads it." },
@@ -187,11 +187,11 @@ internal static class FactSaveCommands
     private static string[]? Given(ParseResult parsed, Option<string[]?> values) =>
         parsed.GetResult(values) is null ? null : parsed.GetValue(values);
 
-    private static Option<string?>[] PatternOptions(Fields fields) =>
+    private static Option<string?>[] PatternOptions(FactFields fields) =>
         [fields.PatternRegex, fields.PatternMeans, fields.PatternExample, fields.PatternTellCustomer];
 
     // Why: as with the other fields, what is not given stays, so a person can change the words without retyping the regex.
-    private static TextPattern? PatternGiven(ParseResult parsed, Fields fields, TextPattern? kept)
+    private static TextPattern? PatternGiven(ParseResult parsed, FactFields fields, TextPattern? kept)
     {
         if (parsed.GetValue(fields.NoPattern))
         {
@@ -211,7 +211,7 @@ internal static class FactSaveCommands
         };
     }
 
-    private static void AddFields(Command command, Fields fields)
+    private static void AddFields(Command command, FactFields fields)
     {
         command.Options.Add(fields.Type);
         command.Options.Add(fields.Description);

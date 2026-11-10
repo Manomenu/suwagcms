@@ -126,7 +126,7 @@ shell_changed() {
     fi
 }
 
-shell_scripts() { (cd "$ROOT" && { find scripts Suwagcms.Gate/scripts -name "*.sh"; echo .githooks/pre-commit; } | xargs shellcheck -S warning); }
+shell_scripts() { (cd "$ROOT" && { git ls-files --cached --others --exclude-standard '*.sh'; echo .githooks/pre-commit; } | xargs shellcheck -S warning); }
 
 web_typecheck() { cd "$ROOT/Suwagcms.Web" && pnpm exec tsc --noEmit -p tsconfig.app.json && pnpm exec tsc --noEmit -p tsconfig.node.json; }
 

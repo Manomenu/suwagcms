@@ -3,7 +3,7 @@ using Suwagcms.Contracts.Articles;
 
 namespace Suwagcms.Cli.Articles;
 
-internal static class ArticleText
+internal static class ArticleOutput
 {
     public static string Table(IReadOnlyList<ArticleView> articles)
     {

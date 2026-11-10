@@ -6,9 +6,19 @@ namespace Suwagcms.Gate.Design;
 
 internal static class SolutionTypes
 {
+    public static IReadOnlyList<Assembly> Assemblies { get; } =
+    [
+        typeof(ServerApp).Assembly,
+        typeof(Suwagcms.Sdk.BotRuntime.Actions.ActionOutcome).Assembly,
+        typeof(Suwagcms.Contracts.Actions.ActionView).Assembly,
+        // Why: the CLI's types are all internal; its assembly is named after the command
+        Assembly.Load("suwagcms"),
+        typeof(SolutionTypes).Assembly,
+    ];
+
     public static IReadOnlyList<Type> All { get; } =
     [
-        .. new[] { typeof(ServerApp).Assembly, typeof(SolutionTypes).Assembly }
+        .. Assemblies
             .SelectMany(assembly => assembly.DefinedTypes)
             .Select(info => info.AsType())
             .Where(type => type.GetCustomAttribute<CompilerGeneratedAttribute>() is null)
