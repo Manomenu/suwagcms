@@ -4,13 +4,13 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Facts;
 
-public sealed class EditGuardEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private const string Kind = """{"type":"enum","description":"What is valued","values":["house","flat","land"]}""";
     private const string Rooms = """{"type":"int","description":"Rooms","min":1,"max":50}""";
     private const string Note = """{"type":"text","description":"A note","maxLength":10}""";
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<ProcedureApi> NewBot()
     {

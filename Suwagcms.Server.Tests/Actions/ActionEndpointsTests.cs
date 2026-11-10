@@ -11,9 +11,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-public sealed class ActionEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class ActionEndpointsTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private HttpClient Client()
     {

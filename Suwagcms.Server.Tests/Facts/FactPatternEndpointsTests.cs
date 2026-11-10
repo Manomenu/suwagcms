@@ -11,7 +11,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Facts;
 
-public sealed class FactPatternEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private const string Coded =
         """{"type":"text","description":"The code","maxLength":10,"pattern":{"regex":"[A-Z]{2}","means":"two capitals","example":"AB","tellCustomer":"afterRefusal"}}""";
@@ -24,7 +24,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, SharedApp s
         TellCustomer = TellCustomers.AfterRefusal,
     };
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<ProcedureApi> NewBot()
     {

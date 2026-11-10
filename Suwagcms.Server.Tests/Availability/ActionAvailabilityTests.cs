@@ -14,7 +14,7 @@ using Suwagcms.Server.Tests.History;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-public sealed class ActionAvailabilityTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class ActionAvailabilityTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private const string Send = "send";
 
@@ -25,7 +25,7 @@ public sealed class ActionAvailabilityTests(TestDatabase database, SharedApp sha
           "failed":{"say":"Sorry."}}}
         """;
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<(AvailabilityScene Scene, ActionApi Actions)> SceneAsync(BotCapabilities? declares = null)
     {

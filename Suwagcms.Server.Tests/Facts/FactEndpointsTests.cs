@@ -3,9 +3,9 @@ using Suwagcms.Contracts.Facts;
 
 namespace Suwagcms.Server.Tests.Facts;
 
-public sealed class FactEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class FactEndpointsTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<FactApi> NewBot()
     {

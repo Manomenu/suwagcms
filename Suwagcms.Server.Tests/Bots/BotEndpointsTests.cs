@@ -7,9 +7,9 @@ using Suwagcms.Contracts.Facts;
 
 namespace Suwagcms.Server.Tests.Bots;
 
-public sealed class BotEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class BotEndpointsTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private static string FreshId() => "t" + Guid.NewGuid().ToString("N")[..12];
 

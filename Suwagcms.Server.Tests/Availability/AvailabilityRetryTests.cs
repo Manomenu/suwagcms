@@ -8,11 +8,11 @@ using Suwagcms.Server.Availability;
 namespace Suwagcms.Server.Tests.Availability;
 
 // Why: the retrier's clock is a fake one here, so a minute passes when the test says so and a retry that should not happen cannot hide behind a slow run. Only the retrier runs on it: a bot call in flight keeps its real timeout, so moving the clock never cuts one short.
-public sealed class AvailabilityRetryTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private static readonly TimeSpan Minute = TimeSpan.FromMinutes(1);
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
     private readonly WatchedClock clock = new(TimeProvider.System.GetUtcNow());
     private AvailabilityRetries? retries;
     private int puts;

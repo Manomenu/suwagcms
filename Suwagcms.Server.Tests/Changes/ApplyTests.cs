@@ -6,9 +6,9 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Changes;
 
-public sealed class ApplyTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class ApplyTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private Task<ChangeScene> NewScene()
     {

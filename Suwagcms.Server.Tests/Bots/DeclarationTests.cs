@@ -14,7 +14,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Bots;
 
-public sealed class DeclarationTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
+public sealed class DeclarationTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>, IDisposable
 {
     private static readonly BotCapabilities Everything = new()
     {
@@ -24,7 +24,7 @@ public sealed class DeclarationTests(TestDatabase database, SharedApp shared) : 
         EmbeddingProfiles = ["default"],
     };
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()

@@ -8,9 +8,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed class VersionExportTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
+public sealed class VersionExportTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>, IDisposable
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
     private readonly string scratch = Directory.CreateTempSubdirectory("suwagcms-export-server-tests").FullName;
 
     public void Dispose() => Directory.Delete(scratch, recursive: true);

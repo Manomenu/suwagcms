@@ -14,9 +14,9 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Renames;
 
-public sealed class RenameEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class RenameEndpointsTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private sealed record Scene(HttpClient Client, ProcedureApi Api)
     {

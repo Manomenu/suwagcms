@@ -5,9 +5,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-public sealed class InformBlockTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class InformBlockTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private sealed record Scene(ArticleApi Articles, ProcedureApi Procedures);
 

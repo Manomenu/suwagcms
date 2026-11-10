@@ -4,9 +4,9 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-public sealed class StartBlockTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class StartBlockTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<VersionApi> NewBot()
     {

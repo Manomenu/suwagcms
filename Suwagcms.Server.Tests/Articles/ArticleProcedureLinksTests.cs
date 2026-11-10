@@ -6,11 +6,11 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleProcedureLinksTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class ArticleProcedureLinksTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private const string Link = "[the valuation](cms://procedure/orderValuation)";
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private sealed record Scene(ArticleApi Articles, ProcedureApi Procedures);
 

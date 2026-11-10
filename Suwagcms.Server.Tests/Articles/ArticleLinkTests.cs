@@ -3,9 +3,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleLinkTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class ArticleLinkTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<ArticleApi> NewBot()
     {

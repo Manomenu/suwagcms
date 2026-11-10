@@ -6,9 +6,9 @@ using Suwagcms.Server.Tests.KnowledgeBases;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleLanguageTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class ArticleLanguageTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     // Why: the bot has the bases offer and forValuers, both en, and oferta, which is pl.
     private async Task<ArticleApi> NewBot()

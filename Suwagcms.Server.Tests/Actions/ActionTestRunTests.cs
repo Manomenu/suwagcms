@@ -10,11 +10,11 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-public sealed class ActionTestRunTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
+public sealed class ActionTestRunTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>, IDisposable
 {
     private const string Token = "bot-only-value";
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()

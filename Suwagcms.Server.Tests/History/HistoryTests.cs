@@ -15,9 +15,9 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.History;
 
-public sealed class HistoryTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class HistoryTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<(ArticleApi Articles, HistoryScene History)> NewBot()
     {

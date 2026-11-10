@@ -22,11 +22,11 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-public sealed class AvailabilityTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
+public sealed class AvailabilityTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>, IDisposable
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()

@@ -14,9 +14,9 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Personas;
 
-public sealed class PersonaVersionTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class PersonaVersionTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<(VersionApi Versions, PersonaApi Persona)> ReadyBot()
     {

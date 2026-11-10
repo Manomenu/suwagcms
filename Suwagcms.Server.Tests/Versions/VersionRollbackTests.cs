@@ -8,9 +8,9 @@ using Suwagcms.Server.Tests.History;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed class VersionRollbackTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class VersionRollbackTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {

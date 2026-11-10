@@ -4,9 +4,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;
 
-public sealed class KnowledgeBaseWithArticlesTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class KnowledgeBaseWithArticlesTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     [Fact]
     [Trait("criterion", "AC-knowledge-bases-9")]

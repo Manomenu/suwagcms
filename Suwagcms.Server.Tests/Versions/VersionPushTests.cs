@@ -10,9 +10,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed partial class VersionPushTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
+public sealed partial class VersionPushTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>, IDisposable
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()

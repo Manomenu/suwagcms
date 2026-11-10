@@ -9,7 +9,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Validation;
 
-public sealed class ValidateEndpointTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class ValidateEndpointTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private const string Unfinished = """
         {"formatVersion":4,"facts":[{"name":"Bad Name","type":"blob","description":" "}],
@@ -18,7 +18,7 @@ public sealed class ValidateEndpointTests(TestDatabase database, SharedApp share
 
     private const string Declares = """{"bot":"anything","formatVersion":4,"blocks":["listen"]}""";
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private HttpClient Client()
     {

@@ -7,9 +7,9 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Tests.Health;
 
-public sealed class HealthEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed class HealthEndpointsTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     [Fact]
     [Trait("criterion", "AC-cli-foundation-14")]

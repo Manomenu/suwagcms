@@ -11,9 +11,9 @@ using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 namespace Suwagcms.Server.Tests.Commands;
 
 // Why: "anything the web can do, the CLI can do" is enforced here, in the server's tests because the gate project is protected.
-public sealed partial class EveryRouteHasACommandTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
+public sealed partial class EveryRouteHasACommandTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
 
     private sealed record Coverage(IReadOnlyList<string> Commands, string? Reason = null)
     {

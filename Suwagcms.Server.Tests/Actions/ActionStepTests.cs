@@ -11,7 +11,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-public sealed class ActionStepTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
+public sealed class ActionStepTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>, IDisposable
 {
     private const string Check = """
         {"description":"Checks.",
@@ -28,7 +28,7 @@ public sealed class ActionStepTests(TestDatabase database, SharedApp shared) : I
           "failed":{"say":"Sorry."}}}
         """;
 
-    private TestApp App => shared.App;
+    private TestApp App => server.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()
