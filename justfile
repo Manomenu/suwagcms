@@ -111,11 +111,6 @@ sdk-publish version:
 sdk-publish-local version:
     @./scripts/.internal/sdk-publish-local.sh {{ version }}
 
-# Pack the dotnet new template as a NuGet package into .artifacts/nupkg
-[group('dev')]
-pack-template:
-    dotnet pack pack/Solid.DotnetApp.Template.csproj -o .artifacts/nupkg
-
 # Pack the CLI and install (or update) it as the global `suwagcms` command
 [group('dev')]
 cli-install:

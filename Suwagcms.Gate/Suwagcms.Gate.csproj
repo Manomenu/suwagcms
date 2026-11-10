@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Suwagcms.Server/Suwagcms.Server.csproj" />
+    <ProjectReference Include="../Suwagcms.Cli/Suwagcms.Cli.csproj" />
   </ItemGroup>
 
   <ItemGroup>

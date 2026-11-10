@@ -39,7 +39,7 @@ public static class EditGuard
                         .Where(use => use.To == new ResourceRef(ResourceKind.GlobalFact, fact.Name))
                         .Select(use => new FactUseIn(procedure, use))
                 );
-                Edited(new Edit(was, fact, new ResourceRef(ResourceKind.GlobalFact, fact.Name), "", [.. uses]), kept, causes);
+                Edited(new FactEdit(was, fact, new ResourceRef(ResourceKind.GlobalFact, fact.Name), "", [.. uses]), kept, causes);
             }
         }
         foreach (var procedure in after.Procedures)
@@ -54,7 +54,7 @@ public static class EditGuard
                         .Where(use => use.To == new ResourceRef(ResourceKind.GlobalFact, name))
                         .Select(use => new FactUseIn(procedure, use));
                     Edited(
-                        new Edit(
+                        new FactEdit(
                             was.Named(name),
                             local.Named(name),
                             new ResourceRef(ResourceKind.Procedure, procedure.Id),
@@ -131,7 +131,7 @@ public static class EditGuard
 
     private sealed record FactUseIn(Procedure Procedure, Reference Use);
 
-    private sealed record Edit(GlobalFact Was, GlobalFact Now, ResourceRef Owner, string Prefix, IReadOnlyList<FactUseIn> Uses);
+    private sealed record FactEdit(GlobalFact Was, GlobalFact Now, ResourceRef Owner, string Prefix, IReadOnlyList<FactUseIn> Uses);
 
     // Why: a value or a bound as a step holds it, with the mistake a rule gives for it on the new definition.
     private sealed record Given(Procedure Procedure, Reference Use, string Path, string Code, string Value);
@@ -145,7 +145,7 @@ public static class EditGuard
         || was.Pattern != now.Pattern
         || !(was.Values ?? []).SequenceEqual(now.Values ?? [], StringComparer.Ordinal);
 
-    private static void Edited(Edit edit, List<Mistake> kept, List<Mistake> causes)
+    private static void Edited(FactEdit edit, List<Mistake> kept, List<Mistake> causes)
     {
         if (edit.Was.Type != edit.Now.Type)
         {
@@ -182,7 +182,7 @@ public static class EditGuard
     }
 
     // Why: a value can fall out for its length or for the pattern, and each has its own field and its own way out.
-    private static IEnumerable<Mistake> TextNarrowed(Edit edit, List<Given> broken)
+    private static IEnumerable<Mistake> TextNarrowed(FactEdit edit, List<Given> broken)
     {
         var tooLong = broken.Where(given => given.Value.EnumerateRunes().Count() > edit.Now.MaxLength).ToList();
         if (tooLong.Count > 0)
@@ -214,7 +214,7 @@ public static class EditGuard
         }
     }
 
-    private static IEnumerable<Mistake> Narrowed(Edit edit, List<Given> broken)
+    private static IEnumerable<Mistake> Narrowed(FactEdit edit, List<Given> broken)
     {
         foreach (
             var (bound, limit, outside) in new[]
@@ -239,7 +239,7 @@ public static class EditGuard
         }
     }
 
-    private static void TypeChanged(Edit edit, List<Mistake> kept, List<Mistake> causes)
+    private static void TypeChanged(FactEdit edit, List<Mistake> kept, List<Mistake> causes)
     {
         if (edit.Uses.Count == 0)
         {
@@ -264,7 +264,7 @@ public static class EditGuard
         );
     }
 
-    private static void NoLongerWritable(Edit edit, List<Mistake> kept, List<Mistake> causes)
+    private static void NoLongerWritable(FactEdit edit, List<Mistake> kept, List<Mistake> causes)
     {
         if (edit.Was.WritableBy == FactWriters.Assign || edit.Now.WritableBy != FactWriters.Assign)
         {
@@ -332,7 +332,7 @@ public static class EditGuard
 
     private static Mistake Cause(
         string code,
-        Edit edit,
+        FactEdit edit,
         string field,
         string message,
         string fix,

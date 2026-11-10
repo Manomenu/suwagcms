@@ -14,7 +14,7 @@ internal static class ArticleSaveCommands
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    private sealed record Fields(
+    private sealed record ArticleFields(
         Option<string?> KnowledgeBase,
         Option<string?> Title,
         TextInput Content,
@@ -23,7 +23,7 @@ internal static class ArticleSaveCommands
     );
 
     // Why: the options are left optional so that a missing one reaches the server, which reports every mistake at once.
-    private static Fields FieldOptions() =>
+    private static ArticleFields FieldOptions() =>
         new(
             new Option<string?>("--kb")
             {
@@ -49,7 +49,7 @@ internal static class ArticleSaveCommands
             }
         );
 
-    private static void AddFields(Command command, Fields fields)
+    private static void AddFields(Command command, ArticleFields fields)
     {
         command.Options.Add(fields.KnowledgeBase);
         command.Options.Add(fields.Title);
@@ -58,7 +58,7 @@ internal static class ArticleSaveCommands
         command.Options.Add(fields.Description);
     }
 
-    private static void RefuseBadTexts(Command command, Fields fields) =>
+    private static void RefuseBadTexts(Command command, ArticleFields fields) =>
         command.Validators.Add(result =>
         {
             foreach (

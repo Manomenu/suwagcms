@@ -7,6 +7,8 @@ public sealed class InterfacesTests
     {
         var lonely = SolutionTypes
             .All.Where(type => type.IsInterface)
+            // Why: a public interface of the SDK is a seam for the bots that use it, and their stand-ins are its other implementations
+            .Where(type => !(type.IsPublic && type.Assembly == typeof(Suwagcms.Sdk.BotRuntime.IBotDefinitions).Assembly))
             .Select(contract =>
                 (contract, implementations: SolutionTypes.All.Count(type => !type.IsInterface && contract.IsAssignableFrom(type)))
             )

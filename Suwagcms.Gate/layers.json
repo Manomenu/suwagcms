@@ -8,6 +8,6 @@
     "Suwagcms.Cli.Tests": { "references": ["Suwagcms.Cli"], "internalsVisibleTo": [] },
     "Suwagcms.Server": { "references": ["Suwagcms.Contracts"], "internalsVisibleTo": ["Suwagcms.Gate", "Suwagcms.Server.Tests"] },
     "Suwagcms.Server.Tests": { "references": ["Suwagcms.Server", "Suwagcms.Cli"], "internalsVisibleTo": [] },
-    "Suwagcms.Gate": { "references": ["Suwagcms.Server"], "internalsVisibleTo": [] }
+    "Suwagcms.Gate": { "references": ["Suwagcms.Cli", "Suwagcms.Server"], "internalsVisibleTo": [] }
   }
 }
