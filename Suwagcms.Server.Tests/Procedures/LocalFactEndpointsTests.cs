@@ -9,7 +9,7 @@ using ProcedureYaml = Cli::Suwagcms.Cli.Procedures.ProcedureYaml;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-public sealed class LocalFactEndpointsTests(TestDatabase database) : IDisposable
+public sealed class LocalFactEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
     private const string Yaml = """
         id: orderValuation
@@ -33,14 +33,12 @@ public sealed class LocalFactEndpointsTests(TestDatabase database) : IDisposable
          "localFacts":{"visitDate":{"type":"text","description":"When to visit","maxLength":20}}}
         """;
 
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ProcedureApi> NewBot()
     {
         _ = database.Pool;
-        return await ProcedureApi.NewBotAsync(app.CreateClient());
+        return await ProcedureApi.NewBotAsync(App.CreateClient());
     }
 
     private static string Body(string yaml)

@@ -24,16 +24,14 @@ using Suwagcms.Server.Versions;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
+public sealed class VersionEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<VersionApi> NewBot()
     {
         _ = database.Pool;
-        return await VersionApi.NewBotAsync(app.CreateClient());
+        return await VersionApi.NewBotAsync(App.CreateClient());
     }
 
     private async Task<VersionApi> FullBot()
@@ -215,7 +213,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
     public void The_routes_under_versions_are_reads_a_creation_and_a_push_that_changes_the_bot_never_a_version()
     {
         _ = database.Pool;
-        var routes = app
+        var routes = App
             .Services.GetRequiredService<EndpointDataSource>()
             .Endpoints.OfType<RouteEndpoint>()
             .Where(endpoint => endpoint.RoutePattern.RawText?.Contains("/versions", StringComparison.Ordinal) == true)
@@ -391,7 +389,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var address = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}";
-        var api = await (await VersionApi.NewBotAsync(app.CreateClient(), address)).Ready();
+        var api = await (await VersionApi.NewBotAsync(App.CreateClient(), address)).Ready();
 
         await api.Created();
 
@@ -462,7 +460,7 @@ public sealed class VersionEndpointsTests(TestDatabase database) : IDisposable
     public async Task An_unknown_bot_is_a_404_for_every_route()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
 
         var responses = new[]
         {

@@ -11,7 +11,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-public sealed class ActionStepTests(TestDatabase database) : IDisposable
+public sealed class ActionStepTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
 {
     private const string Check = """
         {"description":"Checks.",
@@ -28,7 +28,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
           "failed":{"say":"Sorry."}}}
         """;
 
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()
@@ -37,7 +37,6 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
         {
             item.Dispose();
         }
-        app.Dispose();
     }
 
     private sealed record Scene(HttpClient Client, ActionApi Actions, FactApi Facts)
@@ -72,7 +71,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
     private async Task<Scene> SceneAsync(bool withAction = true)
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         disposables.Add(client);
         var facts = await FactApi.NewBotAsync(client);
         var scene = new Scene(client, new ActionApi(client, facts.Bot), facts);
@@ -375,7 +374,7 @@ public sealed class ActionStepTests(TestDatabase database) : IDisposable
     private async Task<BotScene> BotSceneAsync()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         disposables.Add(client);
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(id, declares: Declaring(Lookup));

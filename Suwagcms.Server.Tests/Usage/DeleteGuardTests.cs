@@ -6,16 +6,14 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Usage;
 
-public sealed class DeleteGuardTests(TestDatabase database) : IDisposable
+public sealed class DeleteGuardTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ArticleApi> NewBot()
     {
         _ = database.Pool;
-        return await ArticleApi.NewBotAsync(app.CreateClient());
+        return await ArticleApi.NewBotAsync(App.CreateClient());
     }
 
     private static string Linking(string target) => ArticleApi.Body(content: $"See [it](cms://article/{target}).");
@@ -92,7 +90,7 @@ public sealed class DeleteGuardTests(TestDatabase database) : IDisposable
         await api.Add("wycena", Linking("cennik"));
 
         Assert.Equal(HttpStatusCode.NoContent, (await api.Delete("wycena")).StatusCode);
-        var usage = await UsageApi.Of(app.CreateClient(), api.Bot, "articles", "cennik");
+        var usage = await UsageApi.Of(App.CreateClient(), api.Bot, "articles", "cennik");
         var response = await api.Delete("cennik");
 
         Assert.Empty(usage.UsedBy);
@@ -150,7 +148,7 @@ public sealed class DeleteGuardTests(TestDatabase database) : IDisposable
     public async Task A_fact_a_procedure_uses_is_refused_listing_the_procedure_with_its_step_and_field_and_the_fact_stays()
     {
         _ = database.Pool;
-        var api = await ProcedureApi.NewBotAsync(app.CreateClient());
+        var api = await ProcedureApi.NewBotAsync(App.CreateClient());
         await api.Add("orderValuation", ProcedureApi.Valuation);
         Assert.True(
             (

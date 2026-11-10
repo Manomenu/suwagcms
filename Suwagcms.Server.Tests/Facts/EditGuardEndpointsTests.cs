@@ -4,20 +4,18 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Facts;
 
-public sealed class EditGuardEndpointsTests(TestDatabase database) : IDisposable
+public sealed class EditGuardEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
     private const string Kind = """{"type":"enum","description":"What is valued","values":["house","flat","land"]}""";
     private const string Rooms = """{"type":"int","description":"Rooms","min":1,"max":50}""";
     private const string Note = """{"type":"text","description":"A note","maxLength":10}""";
 
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ProcedureApi> NewBot()
     {
         _ = database.Pool;
-        var api = await ProcedureApi.NewBotAsync(app.CreateClient());
+        var api = await ProcedureApi.NewBotAsync(App.CreateClient());
         Assert.Equal(HttpStatusCode.OK, (await api.Facts.Add("kind", Kind)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.Facts.Add("rooms", Rooms)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.Facts.Add("note", Note)).StatusCode);

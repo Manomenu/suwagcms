@@ -11,16 +11,14 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed class VersionDiffTests(TestDatabase database) : IDisposable
+public sealed class VersionDiffTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(id);
         var scene = await PushScene.RegisterAsync(client, id, bot.Address);
@@ -44,7 +42,7 @@ public sealed class VersionDiffTests(TestDatabase database) : IDisposable
     public async Task What_diff_prints_for_a_step_added_and_one_removed_is_pinned_word_for_word()
     {
         _ = database.Pool;
-        var versions = await (await VersionApi.NewBotAsync(app.CreateClient())).Ready();
+        var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var scene = new PushScene(versions.Client, versions.Bot);
         await versions.Created();
         const string Changed = """

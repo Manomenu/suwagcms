@@ -12,25 +12,23 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.History;
 
-public sealed class VersionWindowTests(TestDatabase database) : IDisposable
+public sealed class VersionWindowTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
 
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
-
-    public void Dispose() => app.Dispose();
 
     private async Task<(VersionApi Versions, FactApi Facts, ArticleApi Articles, HistoryScene History)> NewBot()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var versions = await (await VersionApi.NewBotAsync(client)).Ready();
         return (versions, new FactApi(client, versions.Bot), new ArticleApi(client, versions.Bot), new HistoryScene(client, versions.Bot));
     }
 
     private async Task<HistoryPage> Window(string bot, int number, string query = "")
     {
-        var response = await app.CreateClient()
+        var response = await App.CreateClient()
             .GetAsync($"/api/bots/{bot}/versions/{number}/window{query}", TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadFromJsonAsync<HistoryPage>(Web, TestContext.Current.CancellationToken)
@@ -50,7 +48,7 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
     public async Task Every_entry_falls_in_one_window_by_the_order_it_was_recorded_and_entries_after_the_latest_in_none()
     {
         var (versions, facts, _, history) = await NewBot();
-        var other = await (await VersionApi.NewBotAsync(app.CreateClient())).Ready();
+        var other = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var before = (await history.OfBot("?limit=50")).Entries.Count;
         await versions.Created();
         await facts.Add("a.one", FactApi.Text());
@@ -83,7 +81,7 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
     public async Task A_push_of_an_older_version_leaves_every_window_and_falls_in_the_next_one()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://127.0.0.1:1");
         await scene.FillAsync();
         await scene.CreateAsync();
@@ -107,7 +105,7 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
     public async Task A_batch_stays_together_a_rename_is_one_entry_and_a_deleted_resource_holds_what_it_held_last()
     {
         var (versions, _, articles, _) = await NewBot();
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         await versions.Created();
         var changes = new ChangeScene(client, versions.Bot);
         (
@@ -213,11 +211,11 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
         await versions.Created();
         (await articles.Put("cennik", ArticleApi.Body(content: "Wycena domu: 1100 zł"))).EnsureSuccessStatusCode();
         (await articles.Put("cennik", ArticleApi.Body(content: "Wycena domu: 900 zł"))).EnsureSuccessStatusCode();
-        await new FactApi(app.CreateClient(), versions.Bot).Add("a.other", FactApi.Text());
+        await new FactApi(App.CreateClient(), versions.Bot).Add("a.other", FactApi.Text());
         await versions.Created();
 
         var edits = (await Window(versions.Bot, 2)).Entries.Where(entry => entry.ResourceId == "cennik").ToList();
-        var comparison = await app.CreateClient()
+        var comparison = await App.CreateClient()
             .GetFromJsonAsync<VersionComparison>($"/api/bots/{versions.Bot}/versions/1/diff/2", TestContext.Current.CancellationToken);
 
         Assert.Equal(["edited", "edited"], edits.Select(entry => entry.Action));
@@ -241,7 +239,7 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
         await versions.Created();
 
         var entries = (await Window(versions.Bot, 2, "?limit=50&page=1")).Entries;
-        var comparison = await app.CreateClient()
+        var comparison = await App.CreateClient()
             .GetFromJsonAsync<VersionComparison>($"/api/bots/{versions.Bot}/versions/1/diff/2", TestContext.Current.CancellationToken);
 
         var written = Assert.Single(entries.Single(entry => entry.ResourceId == "cennik").Written?.Fields ?? []);
@@ -271,7 +269,7 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
         await versions.Created();
 
         var entry = (await history.Of("procedures", "conversation", "?limit=5&page=1")).Entries[0];
-        var comparison = await app.CreateClient()
+        var comparison = await App.CreateClient()
             .GetFromJsonAsync<VersionComparison>($"/api/bots/{versions.Bot}/versions/1/diff/2", TestContext.Current.CancellationToken);
 
         Assert.Empty(entry.Written?.Fields ?? []);
@@ -358,7 +356,7 @@ public sealed class VersionWindowTests(TestDatabase database) : IDisposable
         var run = await history.CliAsync("versions", "window", "2");
         var json = await history.CliAsync("versions", "window", "2", "--json", "--limit", "1");
         var missing = await history.CliAsync("versions", "window", "99");
-        var response = await app.CreateClient()
+        var response = await App.CreateClient()
             .GetAsync($"/api/bots/{versions.Bot}/versions/99/window", TestContext.Current.CancellationToken);
         var codes = await VersionApi.CodesOf(response);
 

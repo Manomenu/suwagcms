@@ -10,11 +10,11 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
+public sealed class ActionTestRunTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
 {
     private const string Token = "bot-only-value";
 
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()
@@ -23,7 +23,6 @@ public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
         {
             item.Dispose();
         }
-        app.Dispose();
     }
 
     private static string ActionJson(string url, string method = "POST", string extra = "") =>
@@ -63,7 +62,7 @@ public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
     )
     {
         _ = database.Pool;
-        var client = over ?? app.CreateClient();
+        var client = over ?? App.CreateClient();
         disposables.Add(client);
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(
@@ -247,7 +246,7 @@ public sealed class ActionTestRunTests(TestDatabase database) : IDisposable
     [Trait("criterion", "AC-action-test-run-6")]
     public async Task With_the_bot_not_answering_in_time_the_run_says_so()
     {
-        using var quick = app.WithWebHostBuilder(builder => builder.UseSetting("Push:ActionTestMarginSeconds", "0"));
+        using var quick = App.WithWebHostBuilder(builder => builder.UseSetting("Push:ActionTestMarginSeconds", "0"));
         await using var scene = await SceneAsync(quick.CreateClient());
         (await scene.Api.Put("check", ActionJson(scene.Service.Address, extra: ""","timeoutSeconds":1"""))).EnsureSuccessStatusCode();
         scene.Bot.OnActionTest = context => Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);

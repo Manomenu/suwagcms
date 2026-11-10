@@ -7,16 +7,14 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-public sealed class ProcedureEndpointsTests(TestDatabase database) : IDisposable
+public sealed class ProcedureEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ProcedureApi> NewBot()
     {
         _ = database.Pool;
-        return await ProcedureApi.NewBotAsync(app.CreateClient());
+        return await ProcedureApi.NewBotAsync(App.CreateClient());
     }
 
     [Fact]

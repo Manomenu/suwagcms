@@ -14,7 +14,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Bots;
 
-public sealed class DeclarationTests(TestDatabase database) : IDisposable
+public sealed class DeclarationTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
 {
     private static readonly BotCapabilities Everything = new()
     {
@@ -24,7 +24,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         EmbeddingProfiles = ["default"],
     };
 
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()
@@ -33,13 +33,12 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
         {
             item.Dispose();
         }
-        app.Dispose();
     }
 
     private HttpClient Client()
     {
         _ = database.Pool;
-        return app.CreateClient();
+        return App.CreateClient();
     }
 
     private static async Task<(PushScene Scene, TestBot Bot)> SceneAsync(HttpClient client, BotCapabilities? declares)
@@ -157,7 +156,7 @@ public sealed class DeclarationTests(TestDatabase database) : IDisposable
     public async Task A_bot_that_does_not_answer_within_the_time_limit_keeps_the_last_answer_with_the_reason()
     {
         _ = database.Pool;
-        var shorter = app.WithWebHostBuilder(builder =>
+        var shorter = App.WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration(
                 (_, configuration) =>
                     configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["Push:StateTimeoutSeconds"] = "1" })

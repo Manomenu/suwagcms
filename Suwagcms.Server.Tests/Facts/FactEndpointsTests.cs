@@ -3,16 +3,14 @@ using Suwagcms.Contracts.Facts;
 
 namespace Suwagcms.Server.Tests.Facts;
 
-public sealed class FactEndpointsTests(TestDatabase database) : IDisposable
+public sealed class FactEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<FactApi> NewBot()
     {
         _ = database.Pool;
-        return await FactApi.NewBotAsync(app.CreateClient());
+        return await FactApi.NewBotAsync(App.CreateClient());
     }
 
     [Fact]
@@ -412,14 +410,14 @@ public sealed class FactEndpointsTests(TestDatabase database) : IDisposable
     public async Task A_bot_that_does_not_exist_is_a_404_with_a_mistake_on_every_route()
     {
         _ = database.Pool;
-        var api = new FactApi(app.CreateClient(), "no-such-bot");
+        var api = new FactApi(App.CreateClient(), "no-such-bot");
 
         var responses = new[]
         {
             await api.Get("customer.city"),
             await api.Add("customer.city", FactApi.Text()),
             await api.Delete("customer.city"),
-            await app.CreateClient().GetAsync("/api/bots/no-such-bot/facts", TestContext.Current.CancellationToken),
+            await App.CreateClient().GetAsync("/api/bots/no-such-bot/facts", TestContext.Current.CancellationToken),
         };
 
         Assert.All(responses, response => Assert.Equal(HttpStatusCode.NotFound, response.StatusCode));

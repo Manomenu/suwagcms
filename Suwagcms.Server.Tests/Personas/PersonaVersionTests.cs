@@ -14,16 +14,14 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Personas;
 
-public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
+public sealed class PersonaVersionTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<(VersionApi Versions, PersonaApi Persona)> ReadyBot()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var versions = await (await VersionApi.NewBotAsync(client)).Ready();
         return (versions, new PersonaApi(client, versions.Bot));
     }
@@ -33,7 +31,7 @@ public sealed class PersonaVersionTests(TestDatabase database) : IDisposable
     private async Task<(PushScene Scene, TestBot Bot, PersonaApi Persona)> DeclaringBot(string? persona)
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(
             id,

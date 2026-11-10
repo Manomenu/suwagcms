@@ -4,16 +4,14 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleLoopTests(TestDatabase database) : IDisposable
+public sealed class ArticleLoopTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ArticleApi> BotWithPricingAndDiscounts()
     {
         _ = database.Pool;
-        var api = await ArticleApi.NewBotAsync(app.CreateClient());
+        var api = await ArticleApi.NewBotAsync(App.CreateClient());
         Assert.Equal(HttpStatusCode.OK, (await api.Add("pricing", ArticleApi.Body())).StatusCode);
         Assert.Equal(
             HttpStatusCode.OK,
@@ -51,7 +49,7 @@ public sealed class ArticleLoopTests(TestDatabase database) : IDisposable
     public async Task An_article_added_with_a_link_to_itself_is_refused_with_its_own_path_and_not_stored()
     {
         _ = database.Pool;
-        var api = await ArticleApi.NewBotAsync(app.CreateClient());
+        var api = await ArticleApi.NewBotAsync(App.CreateClient());
 
         var response = await api.Add("pricing", ArticleApi.Body(llmGuide: "Also [me](cms://article/pricing)."));
         var mistake = Assert.Single(await FactApi.MistakesOf(response));

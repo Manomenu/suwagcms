@@ -4,16 +4,14 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;
 
-public sealed class KnowledgeBaseLanguageTests(TestDatabase database) : IDisposable
+public sealed class KnowledgeBaseLanguageTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<KnowledgeBaseApi> NewBot()
     {
         _ = database.Pool;
-        return await KnowledgeBaseApi.NewBotAsync(app.CreateClient());
+        return await KnowledgeBaseApi.NewBotAsync(App.CreateClient());
     }
 
     [Fact]

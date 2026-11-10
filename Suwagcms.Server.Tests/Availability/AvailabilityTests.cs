@@ -22,11 +22,11 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-public sealed class AvailabilityTests(TestDatabase database) : IDisposable
+public sealed class AvailabilityTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()
@@ -35,19 +35,18 @@ public sealed class AvailabilityTests(TestDatabase database) : IDisposable
         {
             item.Dispose();
         }
-        app.Dispose();
     }
 
     private HttpClient Client()
     {
         _ = database.Pool;
-        return app.CreateClient();
+        return App.CreateClient();
     }
 
     private HttpClient ClientWithBotTimeout(int seconds)
     {
         _ = database.Pool;
-        var shorter = app.WithWebHostBuilder(builder =>
+        var shorter = App.WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration(
                 (_, configuration) =>
                     configuration.AddInMemoryCollection(

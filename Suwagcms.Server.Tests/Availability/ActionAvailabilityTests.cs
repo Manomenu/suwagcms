@@ -14,7 +14,7 @@ using Suwagcms.Server.Tests.History;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-public sealed class ActionAvailabilityTests(TestDatabase database) : IDisposable
+public sealed class ActionAvailabilityTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
     private const string Send = "send";
 
@@ -25,14 +25,12 @@ public sealed class ActionAvailabilityTests(TestDatabase database) : IDisposable
           "failed":{"say":"Sorry."}}}
         """;
 
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<(AvailabilityScene Scene, ActionApi Actions)> SceneAsync(BotCapabilities? declares = null)
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var scene = await AvailabilityScene.StartAsync(client, declares: declares);
         var actions = new ActionApi(client, scene.Id);
         (await actions.Add(Send, ActionApi.Least)).EnsureSuccessStatusCode();

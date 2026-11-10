@@ -8,17 +8,15 @@ using Suwagcms.Server.Tests.Versions;
 namespace Suwagcms.Server.Tests.History;
 
 // Why: the panel under each list screen reads the bot's history narrowed to one kind, so each kind's narrowing is its own promise.
-public sealed class KindFilterTests(TestDatabase database) : IDisposable
+public sealed class KindFilterTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     // Why: one change of every kind and a version created and pushed; the push fails, since nothing answers at that address, and is recorded all the same.
     private async Task<HistoryScene> EveryKind()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://127.0.0.1:1");
         await scene.FillAsync();
         Assert.True((await new ActionApi(client, scene.Bot).Add("send", ActionApi.Least)).IsSuccessStatusCode);
@@ -73,7 +71,7 @@ public sealed class KindFilterTests(TestDatabase database) : IDisposable
     public async Task Procedures_lists_deleted_and_renamed_ones_newest_first_paged_with_the_total_and_none_of_another_bot()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var procedures = await ProcedureApi.NewBotAsync(client);
         var other = await ProcedureApi.NewBotAsync(client);
         Assert.True((await other.Add("conversation", ProcedureApi.Conversation)).IsSuccessStatusCode);
@@ -107,7 +105,7 @@ public sealed class KindFilterTests(TestDatabase database) : IDisposable
     public async Task An_unknown_kind_is_refused_naming_the_kinds()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var procedures = await ProcedureApi.NewBotAsync(client);
 
         var response = await client.GetAsync($"/api/bots/{procedures.Bot}/history?kind=shoes", TestContext.Current.CancellationToken);

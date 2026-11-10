@@ -10,9 +10,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed partial class VersionPushTests(TestDatabase database) : IDisposable
+public sealed partial class VersionPushTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
 {
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()
@@ -21,7 +21,6 @@ public sealed partial class VersionPushTests(TestDatabase database) : IDisposabl
         {
             item.Dispose();
         }
-        app.Dispose();
     }
 
     [GeneratedRegex("\"digest\":\"[0-9a-f]+\"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
@@ -30,13 +29,13 @@ public sealed partial class VersionPushTests(TestDatabase database) : IDisposabl
     private HttpClient Client()
     {
         _ = database.Pool;
-        return app.CreateClient();
+        return App.CreateClient();
     }
 
     private HttpClient ClientWithPushTimeout(int seconds)
     {
         _ = database.Pool;
-        var shorter = app.WithWebHostBuilder(builder =>
+        var shorter = App.WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration(
                 (_, configuration) =>
                     configuration.AddInMemoryCollection(

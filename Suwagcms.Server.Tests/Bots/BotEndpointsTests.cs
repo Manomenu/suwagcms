@@ -7,18 +7,16 @@ using Suwagcms.Contracts.Facts;
 
 namespace Suwagcms.Server.Tests.Bots;
 
-public sealed class BotEndpointsTests(TestDatabase database) : IDisposable
+public sealed class BotEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private static string FreshId() => "t" + Guid.NewGuid().ToString("N")[..12];
 
     private HttpClient Client()
     {
         _ = database.Pool;
-        return app.CreateClient();
+        return App.CreateClient();
     }
 
     private static Task<HttpResponseMessage> Register(

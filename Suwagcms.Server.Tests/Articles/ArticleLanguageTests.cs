@@ -6,17 +6,15 @@ using Suwagcms.Server.Tests.KnowledgeBases;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleLanguageTests(TestDatabase database) : IDisposable
+public sealed class ArticleLanguageTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     // Why: the bot has the bases offer and forValuers, both en, and oferta, which is pl.
     private async Task<ArticleApi> NewBot()
     {
         _ = database.Pool;
-        var api = await ArticleApi.NewBotAsync(app.CreateClient());
+        var api = await ArticleApi.NewBotAsync(App.CreateClient());
         (await api.KnowledgeBases.AddWithLanguage("oferta", "Oferta", "pl")).EnsureSuccessStatusCode();
         return api;
     }

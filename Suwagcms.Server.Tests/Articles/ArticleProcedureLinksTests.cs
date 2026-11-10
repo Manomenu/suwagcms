@@ -6,20 +6,18 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleProcedureLinksTests(TestDatabase database) : IDisposable
+public sealed class ArticleProcedureLinksTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
     private const string Link = "[the valuation](cms://procedure/orderValuation)";
 
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private sealed record Scene(ArticleApi Articles, ProcedureApi Procedures);
 
     private async Task<Scene> NewBot()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         var procedures = new ProcedureApi(client, new FactApi(client, articles.Bot));
         Assert.True((await procedures.Add("conversation", ProcedureApi.Conversation)).IsSuccessStatusCode);
@@ -138,7 +136,7 @@ public sealed class ArticleProcedureLinksTests(TestDatabase database) : IDisposa
         Assert.True((await scene.Articles.Add("wycena", Guided(guide))).IsSuccessStatusCode);
         using var content = JsonContent.Create(new { newId = "valuation" });
 
-        var renamed = await app.CreateClient()
+        var renamed = await App.CreateClient()
             .PostAsync($"/api/bots/{scene.Articles.Bot}/procedures/orderValuation/rename", content, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, renamed.StatusCode);

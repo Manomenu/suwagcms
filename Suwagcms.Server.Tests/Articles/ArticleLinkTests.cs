@@ -3,16 +3,14 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleLinkTests(TestDatabase database) : IDisposable
+public sealed class ArticleLinkTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ArticleApi> NewBot()
     {
         _ = database.Pool;
-        return await ArticleApi.NewBotAsync(app.CreateClient());
+        return await ArticleApi.NewBotAsync(App.CreateClient());
     }
 
     [Fact]

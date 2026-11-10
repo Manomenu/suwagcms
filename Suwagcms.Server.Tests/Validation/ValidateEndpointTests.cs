@@ -9,7 +9,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Validation;
 
-public sealed class ValidateEndpointTests(TestDatabase database) : IDisposable
+public sealed class ValidateEndpointTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
     private const string Unfinished = """
         {"formatVersion":4,"facts":[{"name":"Bad Name","type":"blob","description":" "}],
@@ -18,14 +18,12 @@ public sealed class ValidateEndpointTests(TestDatabase database) : IDisposable
 
     private const string Declares = """{"bot":"anything","formatVersion":4,"blocks":["listen"]}""";
 
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private HttpClient Client()
     {
         _ = database.Pool;
-        return app.CreateClient();
+        return App.CreateClient();
     }
 
     private static async Task<ValidationAnswer> PostAsync(HttpClient client, string body)
