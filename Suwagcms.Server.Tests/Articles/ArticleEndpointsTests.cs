@@ -4,16 +4,14 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Articles;
 
-public sealed class ArticleEndpointsTests(TestDatabase database) : IDisposable
+public sealed class ArticleEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ArticleApi> NewBot()
     {
         _ = database.Pool;
-        return await ArticleApi.NewBotAsync(app.CreateClient());
+        return await ArticleApi.NewBotAsync(App.CreateClient());
     }
 
     private static string[] Codes(IEnumerable<JsonElement> mistakes) =>
@@ -255,7 +253,7 @@ public sealed class ArticleEndpointsTests(TestDatabase database) : IDisposable
     public async Task An_article_of_one_bot_is_not_visible_from_another_bot_and_two_bots_can_share_an_article_id()
     {
         var first = await NewBot();
-        var second = await ArticleApi.NewBotAsync(app.CreateClient());
+        var second = await ArticleApi.NewBotAsync(App.CreateClient());
         await first.Add("priceList", ArticleApi.Body(title: "Of the first"));
         await first.Add("onlyHere", ArticleApi.Body());
 

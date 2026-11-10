@@ -8,16 +8,14 @@ using Suwagcms.Server.Tests.History;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed class VersionRollbackTests(TestDatabase database) : IDisposable
+public sealed class VersionRollbackTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(id);
         var scene = await PushScene.RegisterAsync(client, id, bot.Address);

@@ -10,16 +10,14 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;
 
-public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database) : IDisposable
+public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<KnowledgeBaseApi> NewBot()
     {
         _ = database.Pool;
-        return await KnowledgeBaseApi.NewBotAsync(app.CreateClient());
+        return await KnowledgeBaseApi.NewBotAsync(App.CreateClient());
     }
 
     [Fact]
@@ -72,7 +70,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database) : IDis
     public async Task A_version_carries_the_profile_and_results_of_each_base()
     {
         _ = database.Pool;
-        var versions = await (await VersionApi.NewBotAsync(app.CreateClient())).Ready();
+        var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var bases = new KnowledgeBaseApi(versions.Client, versions.Bot);
         Assert.True(
             (await bases.Put("legal", """{"title":"Legal","embedding":"legalText","results":12}""", "?ifRevision=0")).IsSuccessStatusCode
@@ -89,8 +87,8 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database) : IDis
     public async Task A_file_of_changes_adds_a_base_with_both_and_edits_one_alone()
     {
         _ = database.Pool;
-        var scene = await ChangeScene.NewAsync(app.CreateClient());
-        var bases = new KnowledgeBaseApi(app.CreateClient(), scene.Bot);
+        var scene = await ChangeScene.NewAsync(App.CreateClient());
+        var bases = new KnowledgeBaseApi(App.CreateClient(), scene.Bot);
 
         Assert.True(
             (
@@ -110,7 +108,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database) : IDis
     public async Task Creating_a_version_whose_base_names_a_profile_the_bot_does_not_serve_is_refused_and_stores_nothing()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var id = PushScene.FreshId();
         await using var bot = await TestBot.StartAsync(
             id,

@@ -9,16 +9,14 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Personas;
 
-public sealed class PersonaEndpointsTests(TestDatabase database) : IDisposable
+public sealed class PersonaEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<PersonaApi> NewBot()
     {
         _ = database.Pool;
-        return await PersonaApi.NewBotAsync(app.CreateClient());
+        return await PersonaApi.NewBotAsync(App.CreateClient());
     }
 
     private static async Task<PersonaView> ViewOf(HttpResponseMessage response)
@@ -185,7 +183,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database) : IDisposable
     public async Task A_bot_that_does_not_exist_has_no_persona_to_show_or_save()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var nobody = new PersonaApi(client, "no-such-bot");
 
         Assert.Equal(HttpStatusCode.NotFound, (await nobody.Save(PersonaApi.Whole)).StatusCode);
@@ -207,7 +205,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database) : IDisposable
         await ViewOf(await api.Save(PersonaApi.Whole));
         using var content = new StringContent("""{"newId":"other"}""", System.Text.Encoding.UTF8, "application/json");
 
-        var response = await app.CreateClient()
+        var response = await App.CreateClient()
             .PostAsync(
                 new Uri(string.Format(System.Globalization.CultureInfo.InvariantCulture, address, api.Bot), UriKind.Relative),
                 content,
@@ -226,7 +224,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database) : IDisposable
     {
         var api = await NewBot();
 
-        var response = await app.CreateClient()
+        var response = await App.CreateClient()
             .PostAsJsonAsync(
                 $"/api/bots/{api.Bot}/changes",
                 new { changes = new object[] { new Dictionary<string, string> { [verb] = "persona" } } },
@@ -246,7 +244,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database) : IDisposable
     public async Task A_file_of_changes_replaces_the_whole_persona_with_its_line_breaks_even_one_never_saved()
     {
         var api = await NewBot();
-        var client = app.CreateClient();
+        var client = App.CreateClient();
 
         var first = await client.PostAsJsonAsync(
             $"/api/bots/{api.Bot}/changes",

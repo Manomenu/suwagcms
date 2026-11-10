@@ -14,11 +14,9 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Renames;
 
-public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
+public sealed class RenameEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private sealed record Scene(HttpClient Client, ProcedureApi Api)
     {
@@ -69,7 +67,7 @@ public sealed class RenameEndpointsTests(TestDatabase database) : IDisposable
     private async Task<Scene> NewScene()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var scene = new Scene(client, await ProcedureApi.NewBotAsync(client));
         Assert.Equal(
             HttpStatusCode.OK,

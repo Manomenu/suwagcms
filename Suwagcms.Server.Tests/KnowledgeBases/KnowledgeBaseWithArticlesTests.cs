@@ -4,18 +4,16 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;
 
-public sealed class KnowledgeBaseWithArticlesTests(TestDatabase database) : IDisposable
+public sealed class KnowledgeBaseWithArticlesTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     [Fact]
     [Trait("criterion", "AC-knowledge-bases-9")]
     public async Task A_base_with_articles_cannot_be_deleted_and_the_refusal_lists_them_until_they_are_moved_or_deleted()
     {
         _ = database.Pool;
-        var api = await ArticleApi.NewBotAsync(app.CreateClient());
+        var api = await ArticleApi.NewBotAsync(App.CreateClient());
         await api.Add("priceList", ArticleApi.Body());
         await api.Add("discounts", ArticleApi.Body());
         await api.Add("guide", ArticleApi.Body("forValuers"));

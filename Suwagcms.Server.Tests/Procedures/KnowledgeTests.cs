@@ -6,18 +6,16 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-public sealed class KnowledgeTests(TestDatabase database) : IDisposable
+public sealed class KnowledgeTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private sealed record Scene(ArticleApi Articles, ProcedureApi Procedures);
 
     private async Task<Scene> NewBot(bool withArticle = true)
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         if (withArticle)
         {
@@ -138,7 +136,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
     public async Task A_blank_query_or_a_query_with_no_articles_is_saved_listed_and_reported_when_creating_a_version_until_it_is_mended()
     {
         var scene = await NewBot(withArticle: false);
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var versions = $"/api/bots/{scene.Articles.Bot}/versions";
 
         var saved = await ProcedureApi.DetailOf(
@@ -159,7 +157,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
     public async Task A_query_is_saved_with_no_call_to_the_bot_and_reads_back_byte_for_byte()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         using var listening = new TcpListener(IPAddress.Loopback, 0);
         listening.Start();
         var scene = await PushScene.RegisterAsync(
@@ -220,7 +218,7 @@ public sealed class KnowledgeTests(TestDatabase database) : IDisposable
     public async Task A_base_an_entry_names_cannot_be_deleted_shows_in_the_panels_and_its_new_id_rewrites_the_entry()
     {
         var scene = await NewBot(withArticle: false);
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var bot = scene.Articles.Bot;
         var ask = TestContext.Current.CancellationToken;
         Assert.True(

@@ -15,16 +15,14 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.History;
 
-public sealed class HistoryTests(TestDatabase database) : IDisposable
+public sealed class HistoryTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<(ArticleApi Articles, HistoryScene History)> NewBot()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         return (articles, new HistoryScene(client, articles.Bot));
     }
@@ -151,7 +149,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public void No_route_changes_or_deletes_an_entry_and_no_server_code_can()
     {
         _ = database.Pool;
-        var routes = app
+        var routes = App
             .Services.GetRequiredService<EndpointDataSource>()
             .Endpoints.OfType<RouteEndpoint>()
             .Where(endpoint => (endpoint.RoutePattern.RawText ?? "").Contains("history", StringComparison.OrdinalIgnoreCase))
@@ -223,7 +221,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public async Task A_numbered_page_of_a_bot_or_a_resource_holds_its_entries_newest_first_with_none_missing_or_repeated()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var facts = await FactApi.NewBotAsync(client);
         var history = new HistoryScene(client, facts.Bot);
         await facts.Add("customer.city", FactApi.Text("The city"));
@@ -321,8 +319,8 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public async Task History_covers_facts_and_procedures()
     {
         var (articles, history) = await NewBot();
-        var facts = new FactApi(app.CreateClient(), articles.Bot);
-        var procedures = new ProcedureApi(app.CreateClient(), facts);
+        var facts = new FactApi(App.CreateClient(), articles.Bot);
+        var procedures = new ProcedureApi(App.CreateClient(), facts);
         await facts.Add("customer.city", FactApi.Text("One"));
         await facts.Put("customer.city", FactApi.Text("Two"));
         await procedures.Add("conversation", ProcedureApi.Conversation);
@@ -342,7 +340,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public async Task A_push_is_recorded_with_the_version_and_the_result()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://127.0.0.1:1");
         await scene.FillAsync();
         var history = new HistoryScene(client, scene.Bot);
@@ -365,7 +363,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public async Task A_succeeded_push_is_recorded_with_the_version_and_the_result()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var id = PushScene.FreshId();
         await using var bot = await TestBot.StartAsync(id);
         var scene = await PushScene.RegisterAsync(client, id, bot.Address);
@@ -388,7 +386,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public async Task Creating_a_version_is_recorded_and_a_dry_run_or_a_refusal_is_not()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://bot.internal");
         var history = new HistoryScene(client, scene.Bot);
 
@@ -416,7 +414,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public async Task Each_resource_a_file_changes_gets_its_own_entry_and_the_entries_of_one_file_share_a_batch()
     {
         var (articles, history) = await NewBot();
-        var scene = new ChangeScene(app.CreateClient(), articles.Bot);
+        var scene = new ChangeScene(App.CreateClient(), articles.Bot);
         await articles.Add("single", ArticleApi.Body());
         Assert.Null((await history.Of("articles", "single")).Entries[0].Batch);
 
@@ -440,7 +438,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     }
 
     private async Task<HttpResponseMessage> Rename(string bot, string collection, string id, string newId) =>
-        await app.CreateClient()
+        await App.CreateClient()
             .PostAsJsonAsync($"/api/bots/{bot}/{collection}/{id}/rename", new { newId }, TestContext.Current.CancellationToken);
 
     [Fact]
@@ -487,7 +485,7 @@ public sealed class HistoryTests(TestDatabase database) : IDisposable
     public async Task A_rename_of_a_fact_names_its_old_and_new_name()
     {
         var (articles, history) = await NewBot();
-        var facts = new FactApi(app.CreateClient(), articles.Bot);
+        var facts = new FactApi(App.CreateClient(), articles.Bot);
         await facts.Add("customer.city", FactApi.Text());
 
         (await Rename(articles.Bot, "facts", "customer.city", "client.town")).EnsureSuccessStatusCode();

@@ -11,7 +11,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Facts;
 
-public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposable
+public sealed class FactPatternEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
     private const string Coded =
         """{"type":"text","description":"The code","maxLength":10,"pattern":{"regex":"[A-Z]{2}","means":"two capitals","example":"AB","tellCustomer":"afterRefusal"}}""";
@@ -24,14 +24,12 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
         TellCustomer = TellCustomers.AfterRefusal,
     };
 
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<ProcedureApi> NewBot()
     {
         _ = database.Pool;
-        return await ProcedureApi.NewBotAsync(app.CreateClient());
+        return await ProcedureApi.NewBotAsync(App.CreateClient());
     }
 
     private static string Procedure(string steps, string extra = "") =>
@@ -95,7 +93,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
     public async Task A_version_holds_the_pattern_and_a_fact_without_one_has_no_such_member_while_the_api_answers_null()
     {
         _ = database.Pool;
-        var versions = await (await VersionApi.NewBotAsync(app.CreateClient())).Ready();
+        var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var facts = new FactApi(versions.Client, versions.Bot);
         Assert.Equal(HttpStatusCode.OK, (await facts.Add("order.code", Coded)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await facts.Add("order.note", FactApi.Text("A note", 10))).StatusCode);
@@ -118,7 +116,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
     public async Task The_comparison_of_two_versions_names_a_changed_pattern()
     {
         _ = database.Pool;
-        var versions = await (await VersionApi.NewBotAsync(app.CreateClient())).Ready();
+        var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var facts = new FactApi(versions.Client, versions.Bot);
         await facts.Add("order.code", Coded);
         var from = (await versions.Created()).Version.Number;
@@ -293,7 +291,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
     public async Task A_file_of_changes_adds_a_pattern_keeps_it_through_an_edit_and_takes_it_off_with_null()
     {
         _ = database.Pool;
-        var scene = await ChangeScene.NewAsync(app.CreateClient());
+        var scene = await ChangeScene.NewAsync(App.CreateClient());
 
         var added = await scene.CliAsync(
             """
@@ -348,7 +346,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
     public async Task An_edit_in_a_file_of_changes_naming_a_pattern_replaces_the_whole_of_it()
     {
         _ = database.Pool;
-        var scene = await ChangeScene.NewAsync(app.CreateClient());
+        var scene = await ChangeScene.NewAsync(App.CreateClient());
         await scene.Facts.Add("order.code", Coded);
 
         var edited = await scene.CliAsync(
@@ -372,7 +370,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
     public async Task An_edit_in_a_file_of_changes_from_text_to_int_drops_the_pattern()
     {
         _ = database.Pool;
-        var scene = await ChangeScene.NewAsync(app.CreateClient());
+        var scene = await ChangeScene.NewAsync(App.CreateClient());
         await scene.Facts.Add("order.code", Coded);
 
         var edited = await scene.Post(ChangeScene.File("""{"edit":"fact","name":"order.code","type":"int","min":1,"max":5}"""));
@@ -388,7 +386,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database) : IDisposab
     public async Task The_commands_add_edit_show_and_take_off_a_pattern_on_the_real_server()
     {
         _ = database.Pool;
-        var scene = await ChangeScene.NewAsync(app.CreateClient());
+        var scene = await ChangeScene.NewAsync(App.CreateClient());
 
         var added = await scene.CommandAsync(
             "facts",

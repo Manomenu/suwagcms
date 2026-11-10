@@ -7,11 +7,9 @@ using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed class OldFormatTests(TestDatabase database) : IDisposable
+public sealed class OldFormatTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {
@@ -26,7 +24,7 @@ public sealed class OldFormatTests(TestDatabase database) : IDisposable
                 EmbeddingProfiles = ["default"],
             }
         );
-        var scene = await PushScene.RegisterAsync(app.CreateClient(), id, bot.Address);
+        var scene = await PushScene.RegisterAsync(App.CreateClient(), id, bot.Address);
         await scene.FillAsync();
         return (scene, bot);
     }

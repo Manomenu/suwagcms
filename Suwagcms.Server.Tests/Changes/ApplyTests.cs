@@ -6,16 +6,14 @@ using Suwagcms.Server.Tests.Procedures;
 
 namespace Suwagcms.Server.Tests.Changes;
 
-public sealed class ApplyTests(TestDatabase database) : IDisposable
+public sealed class ApplyTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private Task<ChangeScene> NewScene()
     {
         _ = database.Pool;
-        return ChangeScene.NewAsync(app.CreateClient());
+        return ChangeScene.NewAsync(App.CreateClient());
     }
 
     private static List<JsonElement> Mistakes(JsonElement problem) => [.. problem.GetProperty("mistakes").EnumerateArray()];

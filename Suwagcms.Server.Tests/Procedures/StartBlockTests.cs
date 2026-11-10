@@ -4,16 +4,14 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-public sealed class StartBlockTests(TestDatabase database) : IDisposable
+public sealed class StartBlockTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<VersionApi> NewBot()
     {
         _ = database.Pool;
-        var versions = await VersionApi.NewBotAsync(app.CreateClient());
+        var versions = await VersionApi.NewBotAsync(App.CreateClient());
         Assert.True((await versions.Procedures.Add("conversation", ProcedureApi.Conversation)).IsSuccessStatusCode);
         return versions;
     }
@@ -50,7 +48,7 @@ public sealed class StartBlockTests(TestDatabase database) : IDisposable
     public async Task A_target_only_another_bot_has_is_refused_with_reference_missing_listing_this_bots_procedures()
     {
         var api = (await NewBot()).Procedures;
-        var other = await ProcedureApi.NewBotAsync(app.CreateClient());
+        var other = await ProcedureApi.NewBotAsync(App.CreateClient());
         Assert.True((await other.Add("documentsList", Documents)).IsSuccessStatusCode);
 
         var response = await api.Add("orderValuation", Starting("documentsList"));

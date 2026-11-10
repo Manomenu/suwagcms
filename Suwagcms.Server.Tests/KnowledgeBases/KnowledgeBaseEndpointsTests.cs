@@ -3,16 +3,14 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;
 
-public sealed class KnowledgeBaseEndpointsTests(TestDatabase database) : IDisposable
+public sealed class KnowledgeBaseEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private async Task<KnowledgeBaseApi> NewBot()
     {
         _ = database.Pool;
-        return await KnowledgeBaseApi.NewBotAsync(app.CreateClient());
+        return await KnowledgeBaseApi.NewBotAsync(App.CreateClient());
     }
 
     [Fact]
@@ -161,7 +159,7 @@ public sealed class KnowledgeBaseEndpointsTests(TestDatabase database) : IDispos
     public async Task Two_bots_can_each_have_a_base_with_the_same_id_and_title_and_neither_lists_the_others()
     {
         var first = await NewBot();
-        var second = first.InAnotherBot((await FactApi.NewBotAsync(app.CreateClient())).Bot);
+        var second = first.InAnotherBot((await FactApi.NewBotAsync(App.CreateClient())).Bot);
 
         Assert.Equal(HttpStatusCode.OK, (await first.Add("offer", "Offer")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await second.Add("offer", "Offer")).StatusCode);

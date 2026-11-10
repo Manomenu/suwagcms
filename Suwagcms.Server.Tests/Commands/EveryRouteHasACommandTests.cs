@@ -11,9 +11,9 @@ using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 namespace Suwagcms.Server.Tests.Commands;
 
 // Why: "anything the web can do, the CLI can do" is enforced here, in the server's tests because the gate project is protected.
-public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : IDisposable
+public sealed partial class EveryRouteHasACommandTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
 
     private sealed record Coverage(IReadOnlyList<string> Commands, string? Reason = null)
     {
@@ -91,8 +91,6 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         ["text"] = "--text",
     };
 
-    public void Dispose() => app.Dispose();
-
     private static Command? Find(RootCommand root, string words)
     {
         Command? found = root;
@@ -156,7 +154,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database) : 
         _ = database.Pool;
         return
         [
-            .. app
+            .. App
                 .Services.GetRequiredService<EndpointDataSource>()
                 .Endpoints.OfType<RouteEndpoint>()
                 .SelectMany(endpoint =>

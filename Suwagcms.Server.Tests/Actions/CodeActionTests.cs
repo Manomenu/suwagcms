@@ -11,7 +11,7 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-public sealed class CodeActionTests(TestDatabase database) : IDisposable
+public sealed class CodeActionTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
 {
     private static readonly CodeActionField Pesel = new()
     {
@@ -29,7 +29,7 @@ public sealed class CodeActionTests(TestDatabase database) : IDisposable
         Results = [Pesel with { Name = "policyNumber", MaxLength = 20 }],
     };
 
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
     private readonly List<IDisposable> disposables = [];
 
     public void Dispose()
@@ -38,13 +38,12 @@ public sealed class CodeActionTests(TestDatabase database) : IDisposable
         {
             item.Dispose();
         }
-        app.Dispose();
     }
 
     private HttpClient Client()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         disposables.Add(client);
         return client;
     }

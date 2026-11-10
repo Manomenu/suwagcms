@@ -11,19 +11,17 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-public sealed class ActionEndpointsTests(TestDatabase database) : IDisposable
+public sealed class ActionEndpointsTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
 
     private HttpClient Client()
     {
         _ = database.Pool;
-        return app.CreateClient();
+        return App.CreateClient();
     }
 
     private Task<ActionApi> Api() => ActionApi.NewBotAsync(Client());
-
-    public void Dispose() => app.Dispose();
 
     private static JsonNode Parsed(string json) => JsonNode.Parse(json) ?? throw new InvalidOperationException("no json");
 

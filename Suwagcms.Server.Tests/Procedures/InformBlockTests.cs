@@ -5,11 +5,9 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-public sealed class InformBlockTests(TestDatabase database) : IDisposable
+public sealed class InformBlockTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>
 {
-    private readonly TestApp app = new();
-
-    public void Dispose() => app.Dispose();
+    private TestApp App => shared.App;
 
     private sealed record Scene(ArticleApi Articles, ProcedureApi Procedures);
 
@@ -17,7 +15,7 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
     private async Task<Scene> NewBot()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         var facts = new FactApi(client, articles.Bot);
         Assert.True((await articles.Add("officeContact", ArticleApi.Body(knowledgeBase: "offer"))).IsSuccessStatusCode);
@@ -113,7 +111,7 @@ public sealed class InformBlockTests(TestDatabase database) : IDisposable
 
         var saved = await ProcedureApi.DetailOf(await scene.Procedures.Add("orderValuation", Informing(inform)));
         using var empty = new StringContent("");
-        var refused = await app.CreateClient()
+        var refused = await App.CreateClient()
             .PostAsync($"/api/bots/{scene.Articles.Bot}/versions", empty, TestContext.Current.CancellationToken);
 
         Assert.Equal(codes, ProcedureApi.NotReadyCodes(saved));

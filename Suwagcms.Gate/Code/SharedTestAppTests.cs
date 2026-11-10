@@ -1,0 +1,26 @@
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace Suwagcms.Gate.Code;
+
+// Why: xunit makes a test class anew for every test, so a server started in a field starts once per test, which made the server tests five times slower (2026-11-10).
+public sealed class SharedTestAppTests
+{
+    [Fact]
+    public void No_test_class_starts_the_server_in_a_field()
+    {
+        var found = SourceFile
+            .All.Where(file => file.Path.StartsWith("Suwagcms.Server.Tests/", StringComparison.Ordinal))
+            .SelectMany(file =>
+                file.Root.DescendantNodes()
+                    .OfType<FieldDeclarationSyntax>()
+                    .Where(field => field.Declaration.Type.ToString() == "TestApp")
+                    .Select(field => $"{file.Path}:{file.LineOf(field) + 1}")
+            )
+            .ToList();
+
+        Assert.True(
+            found.Count == 0,
+            $"take the server as a class fixture: (TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, then private TestApp App => shared.App; a test that needs other settings makes its own TestApp in a using inside the test: {string.Join(", ", found)}"
+        );
+    }
+}

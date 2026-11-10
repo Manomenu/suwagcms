@@ -8,21 +8,17 @@ using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-public sealed class VersionExportTests(TestDatabase database) : IDisposable
+public sealed class VersionExportTests(TestDatabase database, SharedApp shared) : IClassFixture<SharedApp>, IDisposable
 {
-    private readonly TestApp app = new();
+    private TestApp App => shared.App;
     private readonly string scratch = Directory.CreateTempSubdirectory("suwagcms-export-server-tests").FullName;
 
-    public void Dispose()
-    {
-        Directory.Delete(scratch, recursive: true);
-        app.Dispose();
-    }
+    public void Dispose() => Directory.Delete(scratch, recursive: true);
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {
         _ = database.Pool;
-        var client = app.CreateClient();
+        var client = App.CreateClient();
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(id);
         var scene = await PushScene.RegisterAsync(client, id, bot.Address);
