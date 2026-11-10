@@ -20,8 +20,8 @@ just tmux-dev start       # db, server and web in one tmux session (stop: just t
 just e2e                  # browser tests (own server, own database, own ports; not part of the gate)
 just logs                 # why did it fail? last warnings/errors of the newest server log (see below)
 just api-types            # regenerate Suwagcms.Web/src/api/openapi.d.ts after changing a record the API exposes
+just slow-tests           # the 10 slowest .NET tests (-n 25 for more): a report, the gate never measures time
 just mutate               # Stryker.NET (MTP runner, preview) on the server code changed since master; needs a master with commits
-just pack-template        # the dotnet new template as a NuGet package in .artifacts/nupkg
 just sdk-publish 0.1.0    # the owner releases the SDK to nuget.org through CI (docs/release.md)
 just up / just down      # the container stack on http://127.0.0.1:8220, then the smoke test
 just check-quick          # repository guards, and build, lint and types only for what changed
