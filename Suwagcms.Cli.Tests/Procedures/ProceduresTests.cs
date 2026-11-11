@@ -231,6 +231,56 @@ public sealed class ProceduresTests : IDisposable
         return document;
     }
 
+    // Why: a text that starts with a brace is a flow mapping in YAML unless quoted, so both a quoted and an inner placeholder must survive.
+    private const string Booking = """
+        id: booking
+        description: Books a valuation.
+        firstStep: confirm
+        steps:
+          confirm:
+            say: Booked for {customer.city}, reference {bookingReference}.
+            next: repeat
+          repeat:
+            say: "{bookingReference} is your reference."
+        localFacts:
+          bookingReference: { type: text, description: The booking's reference, maxLength: 20 }
+        """;
+
+    [Theory]
+    [Trait("criterion", "AC-procedure-model-18")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_say_showing_facts_is_sent_as_written_and_its_show_output_is_accepted_back(bool json)
+    {
+        var (_, stored) = Echo(Wire(Booking).ToJsonString(), "booking", 1);
+        var recorder = new Recorder();
+        var server = recorder.Serving(
+            (request, body) => request.Method == HttpMethod.Get ? (HttpStatusCode.OK, stored) : Echo(body, "booking", 2)
+        );
+
+        var added = await TestCli.Run(Args("procedures", "add", "--file", FileWith("b.yaml", Booking)), server);
+        var shown = await TestCli.Run(
+            json ? [.. Args("procedures", "show", "booking"), "--json"] : Args("procedures", "show", "booking"),
+            server
+        );
+        var edited = await TestCli.Run(
+            Args("procedures", "edit", "booking", "--file", FileWith(json ? "shown.json" : "shown.yaml", shown.Output)),
+            server
+        );
+
+        Assert.Equal((0, 0, 0), (added.ExitCode, shown.ExitCode, edited.ExitCode));
+        var writes = recorder.Calls.Where(call => call.Method == "PUT").Select(call => JsonNode.Parse(call.Body)).ToList();
+        Assert.Equal(2, writes.Count);
+        Assert.All(
+            writes,
+            body =>
+                Assert.Equal(
+                    ("Booked for {customer.city}, reference {bookingReference}.", "{bookingReference} is your reference."),
+                    (At(body, "steps", "confirm", "say").GetValue<string>(), At(body, "steps", "repeat", "say").GetValue<string>())
+                )
+        );
+    }
+
     [Theory]
     [Trait("criterion", "AC-procedure-model-2")]
     [InlineData(false)]

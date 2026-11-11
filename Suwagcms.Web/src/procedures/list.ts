@@ -17,6 +17,8 @@ export interface StepRow {
     branches?: Branch[];
     /** An action's onFailure; absent while none is set, which is a mistake of its own. */
     failure?: StepList;
+    /** An action's onUnavailable. Absent or empty, the step has none and a turned-off action goes as on failure. */
+    unavailable?: StepList;
     /** An action's fixed next, once it has a failure branch to go beside. */
     success?: StepList;
 }
@@ -26,7 +28,9 @@ export interface StepList {
     last: ListEnd;
 }
 
-export type Links = Pick<Step, "next" | "onFailure">;
+export type Links = Pick<Step, "next" | "onFailure" | "onUnavailable">;
+
+type Arm = number | "failure" | "unavailable" | "success";
 
 export function emptyList(): StepList {
     return { rows: [], last: null };
@@ -39,7 +43,7 @@ function loneDefault(next: Step["next"]): string | Rule[] | undefined {
 function targetsOf(step: Step): string[] {
     const next = loneDefault(step.next);
     const targets = next === undefined ? [] : typeof next === "string" ? [next] : next.map((rule) => rule.to);
-    return step.onFailure === undefined ? targets : [...targets, step.onFailure];
+    return [...targets, ...[step.onFailure, step.onUnavailable].filter((target) => target !== undefined)];
 }
 
 function known(steps: Record<string, Step>, name: string): boolean {
@@ -112,20 +116,27 @@ export function listOf(firstStep: string | null, steps: Record<string, Step>): {
             const step = steps[name] ?? {};
             const next = loneDefault(step.next);
             const failure = step.onFailure;
+            const unavailable = step.onUnavailable;
             const rules = Array.isArray(next) ? next : null;
-            if (failure === undefined && rules === null) {
+            if (failure === undefined && unavailable === undefined && rules === null) {
                 rows.push({ name });
                 if (next === undefined) return { rows, last: stop === null ? null : "end" };
                 current = next as string;
                 continue;
             }
             const targets = [...(rules ?? []).map((rule) => rule.to), ...(typeof next === "string" ? [next] : [])];
-            const continuation = continuationOf(failure === undefined ? targets : [...targets, failure], stop, outer);
+            const arms = [failure, unavailable].filter((target) => target !== undefined);
+            const continuation = continuationOf([...targets, ...arms], stop, outer);
             const inner = continuation ?? stop;
             const deeper = new Set([...outer, ...(stop === null ? [] : [stop]), ...(continuation === null ? [] : [continuation])]);
             if (inner !== null) deeper.delete(inner);
             const row: StepRow = { name };
             if (failure !== undefined) row.failure = walk(failure, inner, deeper);
+            if (unavailable !== undefined) {
+                const list = walk(unavailable, inner, deeper);
+                // Why: an empty branch means none, so one that goes straight on below says where with a Next: row.
+                row.unavailable = list.rows.length === 0 && list.last === null ? { rows: [], last: { next: unavailable } } : list;
+            }
             if (rules !== null) {
                 row.branches = rules.map((rule) => ({
                     ...(rule.when === undefined ? {} : { when: rule.when }),
@@ -173,6 +184,12 @@ export function linksOf(list: StepList): Record<string, Links> {
                 if (onFailure !== null) links.onFailure = onFailure;
                 build(row.failure, after);
             }
+            if (row.unavailable) {
+                const { rows, last } = row.unavailable;
+                const onUnavailable = rows[0]?.name ?? (last !== null && last !== "end" ? last.next : null);
+                if (onUnavailable !== null) links.onUnavailable = onUnavailable;
+                build(row.unavailable, after);
+            }
             if (row.branches) {
                 links.next = row.branches.map((branch) => ({
                     ...(branch.when === undefined ? {} : { when: branch.when }),
@@ -193,18 +210,21 @@ export function linksOf(list: StepList): Record<string, Links> {
 }
 
 /** Says which list a row or a control belongs to: the top one, or an arm of a step's row. */
-export type ListRef = null | { step: string; arm: number | "failure" | "success" };
+export type ListRef = null | { step: string; arm: Arm };
 
-function armsOf(row: StepRow): { arm: number | "failure" | "success"; list: StepList }[] {
+/** The arms of a row in reading order. */
+export function armsOf(row: StepRow): { arm: Arm; list: StepList }[] {
     return [
         ...(row.failure ? [{ arm: "failure" as const, list: row.failure }] : []),
+        ...(row.unavailable ? [{ arm: "unavailable" as const, list: row.unavailable }] : []),
         ...(row.success ? [{ arm: "success" as const, list: row.success }] : []),
         ...(row.branches ?? []).map((branch, arm) => ({ arm, list: branch.list })),
     ];
 }
 
-function withArm(row: StepRow, arm: number | "failure" | "success", list: StepList): StepRow {
+function withArm(row: StepRow, arm: Arm, list: StepList): StepRow {
     if (arm === "failure") return { ...row, failure: list };
+    if (arm === "unavailable") return { ...row, unavailable: list };
     if (arm === "success") return { ...row, success: list };
     return { ...row, branches: (row.branches ?? []).map((branch, at) => (at === arm ? { ...branch, list } : branch)) };
 }
@@ -249,7 +269,9 @@ export function changeList(list: StepList, ref: ListRef, change: (one: StepList)
     if (ref === null) return change(list);
     return changeRow(list, ref.step, (row) => {
         const arm = armsOf(row).find((other) => other.arm === ref.arm);
-        return arm ? withArm(row, arm.arm, change(arm.list)) : row;
+        if (arm) return withArm(row, arm.arm, change(arm.list));
+        // Why: When unavailable is shown empty on every action, so its first step opens it.
+        return ref.arm === "unavailable" ? withArm(row, "unavailable", change(emptyList())) : row;
     });
 }
 
@@ -336,7 +358,7 @@ export function moveIf(list: StepList, name: string, direction: "up" | "down"): 
     const { branches, ...left } = moving;
     const { success: _, ...joined } = neighbour;
     return changeRow(
-        changeRow(list, name, () => (left.failure ? { ...left, success: emptyList() } : left)),
+        changeRow(list, name, () => (left.failure || left.unavailable ? { ...left, success: emptyList() } : left)),
         neighbour.name,
         () => ({ ...joined, branches }),
     );

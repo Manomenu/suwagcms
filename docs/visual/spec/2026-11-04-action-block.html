@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>The mapping lives in the step, never in the action, so one action serves many procedures and the CMS can check every mapping against the types on both sides.</p>
   </div>
   <div class="stats">
-    <div><b>18</b><span>criteria</span></div>
+    <div><b>19</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -400,7 +400,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>Running the step: bots do that, and the first bot's specs are in its own repository. “What this asks of a bot” below is the contract they implement.</li>
       <li>Fixed values in <code>with</code>: README maps parameters to facts, and an <code>assign</code> step before it does the same job.</li>
       <li>Refusing to delete a used action, or to change what a step maps, and renaming: <code>delete-guard</code>, <code>edit-guard</code> and <code>resource-rename</code> hold those items.</li>
-      <li>Branching on the kind of failure: there is one failure path, and the reason is not a fact.</li>
+      <li>Branching on the kind of failure: there is one failure path, and the reason is not a fact. A turned-off action is not a failure: it has its own optional path.</li>
     </ul></div>
   </div>
 </section>
@@ -414,6 +414,7 @@ checkAddress:
   with: { address: customer.address }
   results: { serviceable: isServiceable }
   onFailure: tellItFailed
+  onUnavailable: tellSomeoneWillCall
   next:
     - when: { isServiceable: { oneOf: [yes] } }
       to: offerPlan
@@ -439,6 +440,7 @@ Saved orderService, revision 4. Not ready for a version, 2 mistakes:
     <tr><td><code>with</code></td><td>parameter name → the fact that gives its value</td></tr>
     <tr><td><code>results</code></td><td>result name → the fact it writes; a result may be left unmapped and is then ignored</td></tr>
     <tr><td><code>onFailure</code></td><td>the step to go to on a failure</td></tr>
+    <tr><td><code>onUnavailable</code></td><td>optional: the step to go to when the action is turned off; without it the step goes to <code>onFailure</code>, so the customer can be told something other than to try again</td></tr>
     <tr><td><code>next</code></td><td>as on any step: where to go on success, by fixed target or by rules on facts</td></tr>
   </table>
   <h3>What is checked when</h3>
@@ -449,11 +451,11 @@ Saved orderService, revision 4. Not ready for a version, 2 mistakes:
     <tr><td><code>with</code> or <code>results</code> naming a fact this bot does not have</td><td>Save, with the bot's facts</td></tr>
     <tr><td>a mapping whose types do not fit, as below</td><td>Save, with both types</td></tr>
     <tr><td>two results written to one fact</td><td>Save</td></tr>
-    <tr><td><code>onFailure</code> naming a step that does not exist</td><td>Save, with the steps of the procedure</td></tr>
-    <tr><td><code>onFailure</code> on a step with another block</td><td>Save</td></tr>
+    <tr><td><code>onFailure</code> or <code>onUnavailable</code> naming a step that does not exist</td><td>Save, with the steps of the procedure</td></tr>
+    <tr><td><code>onFailure</code> or <code>onUnavailable</code> on a step with another block</td><td>Save</td></tr>
     <tr><td>a step with no <code>action</code> filled in, a parameter of the action not mapped, no <code>onFailure</code></td><td>Version</td></tr>
   </table>
-  <p>A step reached only through an <code>onFailure</code> is reachable. A fact may be written by a result at any level of <code>writableBy</code>, because the action writes it and not the model. A save behaves as <code>procedure-model</code> describes: <code>Save</code> mistakes refuse it, and <code>Version</code> mistakes are listed without refusing.</p>
+  <p>A step reached only through an <code>onFailure</code> or an <code>onUnavailable</code> is reachable. A step with no <code>onUnavailable</code> is complete, and <code>onUnavailable</code> may name the same step as <code>onFailure</code>. A fact may be written by a result at any level of <code>writableBy</code>, because the action writes it and not the model. A save behaves as <code>procedure-model</code> describes: <code>Save</code> mistakes refuse it, and <code>Version</code> mistakes are listed without refusing.</p>
   <h3>When types fit</h3>
   <p>Types must be the same, and every value the source can hold must fit the target. A parameter's source is its fact; a result's target is its fact.</p>
   <table>
@@ -467,7 +469,9 @@ Saved orderService, revision 4. Not ready for a version, 2 mistakes:
   <p>Part of the public contract. A bot's engine, in its own repository, runs the step this way, and running an HTTP action is described in the <code>http-actions</code> spec.</p>
   <script type="text/x-mermaid" data-caption="One action step in a conversation">
 flowchart TD
-  S[Step reached] --> K{"Does every parameter have a value?"}
+  S[Step reached] --> O{"Is the action turned off?"}
+  O -->|yes| U[Go to onUnavailable, or onFailure when it has none]
+  O -->|no| K{"Does every parameter have a value?"}
   K -->|no| F[Go to onFailure, no fact written]
   K -->|yes| R[Run the action]
   R -->|failure| F
@@ -483,6 +487,7 @@ flowchart TD
     <li>Fit is judged on what the source can hold, without looking at live values: a value that could never be written is a mistake now, not a failed conversation later.</li>
     <li>A parameter whose fact has no value at run time means failure, not an empty call. The CMS cannot prove in general that a fact is known by then, and an author already has <code>collect</code> and <code>onFailure</code> for it.</li>
     <li>Every parameter must be mapped and a result need not be: a call without its input is broken, while a result nobody needs is harmless.</li>
+    <li><code>onUnavailable</code> arrives with format 5, together with placeholders in a <code>say</code> text, so a bot that declares an older format is refused by the declaration check before any version reaches it.</li>
     <li><code>onFailure</code> is required by the <code>Version</code> stage and not by <code>Save</code>, in line with how <code>procedure-model</code> treats unfinished work, and <code>availability</code> relies on it being there.</li>
     <li>A parameter or a result the action does not have is <code>reference.missing</code>, as any name that points at nothing is; a mapping that does not fit a code action is <code>action.code.mapping</code> at <code>Version</code>, one code for what a declaration can cause.</li>
   </ul>
@@ -490,7 +495,7 @@ flowchart TD
 <section data-role="acceptance">
   <h2>Acceptance criteria</h2>
   <ul class="checks">
-    <li><code>AC-action-block-1</code> A procedure with an <code>action</code> step using <code>with</code>, <code>results</code>, <code>onFailure</code> and rule-based <code>next</code>, saved with <code>suwagcms procedures add --file</code>, reads back as written in YAML and JSON, and <code>show</code> output is accepted back by <code>edit --file</code>.</li>
+    <li><code>AC-action-block-1</code> A procedure with an <code>action</code> step using <code>with</code>, <code>results</code>, <code>onFailure</code>, <code>onUnavailable</code> and rule-based <code>next</code>, saved with <code>suwagcms procedures add --file</code>, reads back as written in YAML and JSON, and <code>show</code> output is accepted back by <code>edit --file</code>.</li>
     <li><code>AC-action-block-2</code> An action never holds a fact's name: the same action is used by two procedures mapping it to different facts, and neither save changes the action.</li>
     <li><code>AC-action-block-3</code> <code>action</code> naming an action the bot does not have is refused with <code>reference.missing</code>, with the bot's actions.</li>
     <li><code>AC-action-block-4</code> <code>with</code> or <code>results</code> naming a parameter or result the action does not have is refused, with the ones it has.</li>
@@ -499,12 +504,13 @@ flowchart TD
     <li><code>AC-action-block-7</code> For each type, a result mapping that fits is saved and one that does not is refused, naming both types.</li>
     <li><code>AC-action-block-8</code> A result may be mapped to a fact with <code>writableBy</code> <code>assign</code>, <code>set</code> or <code>correct</code>.</li>
     <li><code>AC-action-block-9</code> A result left unmapped produces no mistake; two results mapped to one fact are refused.</li>
-    <li><code>AC-action-block-10</code> <code>onFailure</code> naming a missing step, and <code>onFailure</code> on a step with another block, are each refused.</li>
+    <li><code>AC-action-block-10</code> <code>onFailure</code> or <code>onUnavailable</code> naming a missing step, and <code>onFailure</code> or <code>onUnavailable</code> on a step with another block, are each refused.</li>
     <li><code>AC-action-block-11</code> At the <code>Version</code> stage the validator reports a step with no <code>action</code> filled in, a parameter not mapped and a missing <code>onFailure</code>; a procedure with only these is saved, and the answer lists them with the CLI exiting 0.</li>
-    <li><code>AC-action-block-12</code> A step reached only through <code>onFailure</code> is not reported as unreachable.</li>
+    <li><code>AC-action-block-12</code> A step reached only through <code>onFailure</code> or <code>onUnavailable</code> is not reported as unreachable.</li>
+    <li><code>AC-action-block-20</code> An <code>action</code> step with no <code>onUnavailable</code> is valid and produces no mistake at any stage.</li>
     <li><code>AC-action-block-13</code> The mapping rules give the same mistakes from the server and from the validator offline.</li>
     <li><code>AC-action-block-15</code> The lines of <code>suwagcms procedures</code> in the plugin's main skill give the format of the <code>action</code> block.</li>
-    <li><code>AC-action-block-16</code> The form of an <code>action</code> step offers the bot's actions, then a row per parameter and result offering only the facts that fit, and <b>On failure</b> as a branch of its row; the mistakes show beside it.</li>
+    <li><code>AC-action-block-16</code> The form of an <code>action</code> step offers the bot's actions, then a row per parameter and result offering only the facts that fit, <b>On failure</b> as a branch of its row and <b>When unavailable</b> as an optional one, empty by default; the mistakes show beside them.</li>
     <li><code>AC-action-block-17</code> The “Uses” panel and <code>suwagcms usage</code> of a procedure list the action and each fact a step maps, with the field holding each.</li>
     <li><code>AC-action-block-18</code> A result can fill a local fact and a parameter can take its value from one, by the same rules of reference and type.</li>
     <li><code>AC-action-block-19</code> The view of an action shows the procedures that use it.</li>
@@ -513,7 +519,7 @@ flowchart TD
 <section data-role="risks">
   <h2>Risks and assumptions</h2>
   <div class="callout risk"><p><b>Strict types may annoy.</b> A fact of up to 500 characters cannot feed a parameter of up to 200, even if real values are short. The fix is a change of one number with a clear message, and the alternative is failures in conversations.</p></div>
-  <div class="callout warn"><p><b>This block changes reachability in <code>procedure-model</code>.</b> That rule has to follow <code>onFailure</code> too, and the criterion above guards it.</p></div>
+  <div class="callout warn"><p><b>This block changes reachability in <code>procedure-model</code>.</b> That rule has to follow <code>onFailure</code> and <code>onUnavailable</code> too, and the criterion above guards it.</p></div>
 </section>
 
 <!-- CONTENT END -->

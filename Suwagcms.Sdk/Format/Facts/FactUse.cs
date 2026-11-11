@@ -7,4 +7,5 @@ public enum FactUse
     Condition,
     Parameter,
     Result,
+    Say,
 }

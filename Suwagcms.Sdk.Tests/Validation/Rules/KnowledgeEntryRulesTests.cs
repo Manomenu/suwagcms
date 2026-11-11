@@ -139,7 +139,7 @@ public sealed class KnowledgeEntryRulesTests
     public void Knowledge_on_a_block_with_no_instruction_is_refused_saying_where_it_belongs()
     {
         const string json = """
-            {"formatVersion":4,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
+            {"formatVersion":5,"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
               "a":{"say":"Hi","knowledge":[{"knowledgeBase":"faq","articles":["officeContact"]}]}}}]}
             """;
 
@@ -198,11 +198,11 @@ public sealed class KnowledgeEntryRulesTests
     public void The_validator_on_its_own_reports_the_reference_and_version_mistakes_with_the_same_codes_from_json()
     {
         const string missing = """
-            {"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"FAQ","embedding":"default","results":5}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
+            {"formatVersion":5,"knowledgeBases":[{"id":"faq","title":"FAQ","embedding":"default","results":5}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
               "a":{"inform":{"instruction":"Say it.","points":{"office":"Where it is."},"knowledge":[{"knowledgeBase":"faq","articles":["ghost"]}]}}}}]}
             """;
         const string unfinished = """
-            {"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"FAQ","embedding":"default","results":5}],"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{
+            {"formatVersion":5,"knowledgeBases":[{"id":"faq","title":"FAQ","embedding":"default","results":5}],"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{
               "a":{"inform":{"instruction":"Say it.","points":{"office":"Where it is."},"knowledge":[{"knowledgeBase":"faq","searchQueries":["hours"," "]}]}}}}]}
             """;
 

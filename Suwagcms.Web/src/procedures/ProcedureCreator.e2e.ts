@@ -1038,7 +1038,7 @@ test("AC-procedure-creator-19: the page offers only the blocks the bot last decl
     const server = createServer((_, response) => {
         response
             .writeHead(200, { "content-type": "application/json" })
-            .end(JSON.stringify({ bot: id, formatVersion: 4, blocks: ["listen", "say"] }));
+            .end(JSON.stringify({ bot: id, formatVersion: 5, blocks: ["listen", "say"] }));
     });
     await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
     try {
@@ -1066,7 +1066,7 @@ test("AC-procedure-creator-38: Knowledge shows on a Tell and never on When stall
     request,
 }) => {
     const id = freshId();
-    let declared: object = { bot: id, formatVersion: 4, blocks: ["listen", "say", "inform"] };
+    let declared: object = { bot: id, formatVersion: 5, blocks: ["listen", "say", "inform"] };
     const server = createServer((_, response) => {
         response.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify(declared));
     });
@@ -1113,7 +1113,7 @@ test("AC-procedure-creator-38: Knowledge shows on a Tell and never on When stall
     }
 });
 
-test("AC-action-block-16: an action step's form offers the bot's actions, then a row per parameter and result with only the facts that fit, and On failure as a branch; the mistakes show beside it", async ({
+test("AC-action-block-16: an action step's form offers the bot's actions, then a row per parameter and result with only the facts that fit, On failure as a branch and When unavailable as an optional one; the mistakes show beside them", async ({
     page,
     request,
 }) => {
@@ -1145,10 +1145,22 @@ test("AC-action-block-16: an action step's form offers the bot's actions, then a
     await addStep(page, "say", "Add step to On failure of run");
 
     await expect(page.getByText("Step 'run' has no onFailure.")).toHaveCount(0);
+    const unavailable = page.locator('[data-row="unavailable"]');
+    await expect(unavailable.getByText("no steps: as on failure", { exact: true })).toBeVisible();
+    expect(await above(page.locator('[data-row="failure"]'), unavailable)).toBe(true);
+    expect(await above(unavailable, page.locator('[data-row="success"]'))).toBe(true);
+    await addStep(page, "say", "Add step to When unavailable of run");
+    await expect(unavailable.getByText("no steps: as on failure", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await expect
         .poll(async () => (await stored<{ steps: { run: unknown } }>(request, bot, "withAction")).steps.run)
-        .toMatchObject({ action: "checkKind", with: { place: "customer.city" }, results: { kind: "order.kind" }, onFailure: "say" });
+        .toMatchObject({
+            action: "checkKind",
+            with: { place: "customer.city" },
+            results: { kind: "order.kind" },
+            onFailure: "say",
+            onUnavailable: "say2",
+        });
 });
 
 test("AC-action-block-17: the Uses panel of a procedure lists the action and each fact a step maps, with the field holding each", async ({

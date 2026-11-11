@@ -29,17 +29,22 @@ public sealed class OldFormatTests(TestDatabase database, ClassServer server) : 
         return (scene, bot);
     }
 
-    // Why: this CMS can no longer create a format-1 version, so one left from before is made the only way it can still exist: a row that was written then.
-    private async Task MakeOldAsync(string bot, int number)
+    // Why: this CMS can no longer create a version in an older format, so one left from before is made the only way it can still exist: a row that was written then.
+    private async Task MakeOldAsync(string bot, int number, int format = 1)
     {
         await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
         var changed = await connection.ExecuteAsync(
             """
             UPDATE bot_version
-            SET format_version = 1, document = replace(document, '"formatVersion":4', '"formatVersion":1')
-            WHERE bot_id = @bot AND number = @number AND document LIKE '%"formatVersion":4%'
+            SET format_version = @format, document = replace(document, '"formatVersion":5', '"formatVersion":' || @format)
+            WHERE bot_id = @bot AND number = @number AND document LIKE '%"formatVersion":5%'
             """,
-            new { bot, number }
+            new
+            {
+                bot,
+                number,
+                format,
+            }
         );
         Assert.Equal(1, changed);
     }
@@ -84,5 +89,25 @@ public sealed class OldFormatTests(TestDatabase database, ClassServer server) : 
 
         RefusedWithItsFix(result);
         Assert.Equal(newer.Number, (await bot.Store.ReadStateAsync(TestContext.Current.CancellationToken)).Current);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-chatbot-contract-14")]
+    public async Task A_version_kept_in_format_4_still_reads_as_it_was_kept_and_cannot_be_pushed()
+    {
+        var (scene, bot) = await FilledAsync();
+        await using var _ = bot;
+        var version = await scene.CreateAsync();
+        await MakeOldAsync(scene.Bot, version.Number, format: 4);
+        var versions = new VersionApi(scene.Client, new Procedures.ProcedureApi(scene.Client, scene.Facts));
+
+        var kept = await versions.DocumentOf(version.Number);
+        var result = await scene.PushAsync(version.Number);
+
+        Assert.Equal(4, kept.GetProperty("formatVersion").GetInt32());
+        Assert.NotEmpty(kept.GetProperty("procedures").EnumerateArray());
+        RefusedWithItsFix(result);
+        Assert.Contains("set formatVersion to 5", Assert.Single(result.Mistakes).Fix, StringComparison.Ordinal);
+        Assert.Empty((await bot.Store.ReadStateAsync(TestContext.Current.CancellationToken)).Held);
     }
 }

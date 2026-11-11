@@ -49,6 +49,10 @@ A bot outside .NET serves the same route and validates a definition through the 
 
 A procedure may hold `whenInterrupted`, `keep` or `discard`: what happens to it when another one is started on top of it. `Procedure.IsDiscardedWhenInterrupted` is false when it is left out; what keeping and discarding do is your engine's to carry out.
 
+A `say` text may hold `{name}`, a fact name in braces written as the procedure's other blocks name a fact (dot-separated camelCase words; a local fact by its name in the procedure); braces around anything else are plain text. The validator checks that the procedure sees the fact, and your engine replaces the placeholder with the fact's value when it sends the text: what to send when the fact has no value is yours to decide, since the SDK cannot know.
+
+Format 5 brought these placeholders and a step's `OnUnavailable`. A bot built on this SDK declares format 5 through `BotDefinition.CurrentFormatVersion`; one still declaring format 4 is refused every new version with `declaration.formatVersion` until it takes this SDK.
+
 A version may hold a `persona`: `personality`, and `scope` with `inScope`, `outOfScope` and `whenOutOfScope`, each one text with its line
 breaks. `GetAsync` gives it as `BotDefinition.Persona`, null when the version has none; what the bot does with it is its own concern.
 `PersonaRequired` is satisfied by any text; `BotDeclaration.PersonaComplete` only by all four parts.
@@ -63,7 +67,7 @@ The bot's code uses `IBotDefinitions`:
   included, and once at start when there is one. Each piece of news runs on its own task, never holding up a push: a failure is logged, and a slow
   listener may overlap the next, so go by the number. Several instances each hear it. A version is current before you hear of it: nothing waits for your search.
 - `OnAvailabilityChanged((number, cancellationToken) => …)`: tells your code each time what is off changes, with the message's number, and once at start when a set is held, the same way, so a search can drop an article at once.
-- `IsOff(number, kind, id)`: whether a resource is turned off, for a conversation on that version. Off is a live setting outside versions: `GetAsync` still gives the resource, and what off means is your engine's to carry out; a step running a turned-off action has its `OnFailure` step to take.
+- `IsOff(number, kind, id)`: whether a resource is turned off, for a conversation on that version. Off is a live setting outside versions: `GetAsync` still gives the resource, and what off means is your engine's to carry out; a step running a turned-off action has its `OnUnavailable` step to take, or its `OnFailure` step when `OnUnavailable` is null.
 - `ReportInUseAsync(numbers)`: the versions your open conversations use, **across all instances of the bot**. Versions neither
   current nor reported are removed; until the first report nothing is. A push or a rollback removes the version it replaced unless your last report named it, so report a number before you save the first conversation on it. When a conversation expires is your decision.
 

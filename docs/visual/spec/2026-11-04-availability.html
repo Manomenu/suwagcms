@@ -446,7 +446,7 @@ The bot still has the previous setting. Send it with: suwagcms availability send
     <tr><th>Off</th><th>Effect</th></tr>
     <tr><td>Article</td><td>left out of search; a procedure naming it explicitly still gets it</td></tr>
     <tr><td>Procedure</td><td>the model cannot start it, even from an article's guide; conversations already in it finish</td></tr>
-    <tr><td>Action</td><td>the SDK says it is off, and the bot's engine takes the step's <code>onFailure</code>, which makes it a usable emergency switch</td></tr>
+    <tr><td>Action</td><td>the SDK says it is off, and the bot's engine takes the step's <code>onUnavailable</code>, or its <code>onFailure</code> when it has none, which makes it a usable emergency switch</td></tr>
   </table>
   <p>The bot's engine carries these out, in its own repository. The SDK gives it the answers, so that bots cannot differ on them, and this spec's criteria check those answers.</p>
   <h3>How a change travels</h3>
@@ -564,7 +564,7 @@ sequenceDiagram
     <li><code>AC-availability-24</code> Every push sends the whole set before the version, so a missed change is repaired and a new version never runs without it.</li>
     <li><code>AC-availability-25</code> A renamed resource keeps its setting, and the SDK says it is off, also for an older version that holds it under its old <code>id</code>.</li>
     <li><code>AC-availability-26</code> An action, HTTP or in code, can be turned off and on like an article, with its setting kept when its <code>id</code> changes, and the Actions screen shows its state; the rest of a code action stays read-only.</li>
-    <li><code>AC-availability-28</code> For a step running a turned-off action, the SDK says on any version that the action is off and still gives the step with its <code>onFailure</code> step.</li>
+    <li><code>AC-availability-28</code> For a step running a turned-off action, the SDK says on any version that the action is off and still gives the step with its <code>onUnavailable</code> step when it has one, and its <code>onFailure</code> step.</li>
     <li><code>AC-availability-29</code> The SDK gives an article a procedure names explicitly even while it is off: the version still holds it and the answer says it is off.</li>
     <li><code>AC-availability-30</code> A delete and a change of one resource at the same moment run one after the other.</li>
     <li><code>AC-availability-31</code> After an article or an action changes its <code>id</code>, the screen still says whether it is off, under the new <code>id</code>.</li>

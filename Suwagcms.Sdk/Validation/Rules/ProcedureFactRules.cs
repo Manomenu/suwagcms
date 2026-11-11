@@ -41,7 +41,10 @@ internal static class ProcedureFactRules
                 MistakeCodes.ReferenceMissing,
                 reference.Path,
                 $"{Where(reference)} in '{procedure.Id}' names fact '{reference.To.Id}', which this procedure does not see.",
-                known
+                // Why: braces in a say may have been meant as plain text, and the way to keep them so is not obvious.
+                reference.Use == FactUse.Say
+                    ? $"{known} To send the braces as written, put a space inside them: {{ {reference.To.Id} }}."
+                    : known
             );
         }
     }
@@ -210,6 +213,7 @@ internal static class ProcedureFactRules
             FactUse.Condition => $"A condition of step '{Step(reference)}'",
             FactUse.Parameter => $"'with' of step '{Step(reference)}'",
             FactUse.Result => $"'results' of step '{Step(reference)}'",
+            FactUse.Say => $"A placeholder in 'say' of step '{Step(reference)}'",
             _ => throw new ArgumentOutOfRangeException(nameof(reference)),
         };
 

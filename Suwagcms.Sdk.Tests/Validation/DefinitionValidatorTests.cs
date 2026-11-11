@@ -52,7 +52,7 @@ public sealed class DefinitionValidatorTests
     {
         var shuffled = new BotDefinition
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Procedures =
             [
                 Samples.Procedure("conversation"),
@@ -77,7 +77,7 @@ public sealed class DefinitionValidatorTests
     {
         var definition = new BotDefinition
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Articles = [new Article { Id = "a" }],
             Procedures = [new Procedure { Id = "p" }, new Procedure { Id = "p" }],
         };
@@ -97,12 +97,12 @@ public sealed class DefinitionValidatorTests
     [Trait("criterion", "AC-sdk-validator-7")]
     public void An_unknown_format_version_returns_one_mistake_and_no_rule_runs()
     {
-        var definition = Samples.WithDuplicatesInTwoKinds with { FormatVersion = 5 };
+        var definition = Samples.WithDuplicatesInTwoKinds with { FormatVersion = 4 };
 
         var mistake = Assert.Single(DefinitionValidator.Validate(definition, ValidationStage.Version));
 
         Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
-        Assert.Contains("reads 4", mistake.Message, StringComparison.Ordinal);
+        Assert.Contains("reads 5", mistake.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class DefinitionValidatorTests
             DefinitionValidator.Validate(
                 new BotDefinition
                 {
-                    FormatVersion = 4,
+                    FormatVersion = 5,
                     Articles = [new Article { Id = "pricing" }, new Article { Id = "faq" }, new Article { Id = "pricing" }],
                 },
                 ValidationStage.Save,

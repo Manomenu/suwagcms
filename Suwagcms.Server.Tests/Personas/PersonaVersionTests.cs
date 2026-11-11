@@ -37,7 +37,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
             id,
             declares: new BotCapabilities
             {
-                FormatVersion = 4,
+                FormatVersion = 5,
                 Blocks = Block.Names,
                 Persona = persona,
                 EmbeddingProfiles = ["default"],
@@ -76,7 +76,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
         var held = (await versions.DocumentOf(created.Version.Number)).GetProperty("persona");
 
         Assert.Equal("""{"personality":"One\nTwo\n","scope":{"inScope":"In\nscope"}}""", held.GetRawText());
-        Assert.Equal(4, (await versions.DocumentOf(created.Version.Number)).GetProperty("formatVersion").GetInt32());
+        Assert.Equal(5, (await versions.DocumentOf(created.Version.Number)).GetProperty("formatVersion").GetInt32());
     }
 
     [Theory]
@@ -267,7 +267,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
                     new
                     {
                         bot = scene.Bot,
-                        formatVersion = 4,
+                        formatVersion = 5,
                         blocks = Block.Names,
                         persona = BotDeclaration.PersonaRequired,
                         embeddingProfiles = Profiles,

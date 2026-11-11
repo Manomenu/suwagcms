@@ -383,7 +383,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="stats">
     <div><b>4</b><span>blocks</span></div>
     <div><b>3</b><span>condition kinds</span></div>
-    <div><b>16</b><span>criteria</span></div>
+    <div><b>18</b><span>criteria</span></div>
   </div>
 </section>
 
@@ -442,7 +442,7 @@ Refused, 1 mistake:
     <tr><th>Block</th><th>Means</th></tr>
     <tr><td><code>listen</code></td><td>wait for the next message</td></tr>
     <tr><td><code>collect</code></td><td>ask until the listed facts are known</td></tr>
-    <tr><td><code>say</code></td><td>send a fixed text</td></tr>
+    <tr><td><code>say</code></td><td>send a fixed text; <code>{name}</code> in it shows the value of the fact <code>name</code>, named as <code>collect</code> names it (a global fact by its full name, a local one by its name in the procedure), so a customer hears an action's result exactly; braces around anything else are plain text</td></tr>
     <tr><td><code>assign</code></td><td>overwrite facts with values the author chose</td></tr>
   </table>
   <h3>Going to the next step</h3>
@@ -461,6 +461,7 @@ Refused, 1 mistake:
     <tr><td><code>firstStep</code>, <code>next</code> or <code>to</code> naming a step that does not exist</td><td>Save</td></tr>
     <tr><td>a block or condition naming a fact this bot does not have</td><td>Save</td></tr>
     <tr><td><code>collect</code> naming a fact with <code>writableBy: assign</code></td><td>Save</td></tr>
+    <tr><td>a placeholder in a <code>say</code> naming a fact this procedure does not see</td><td>Save</td></tr>
     <tr><td>a condition that does not fit the fact's type; a value in <code>oneOf</code>, <code>range</code> or <code>assign</code> the fact can never take</td><td>Save</td></tr>
     <tr><td>no <code>firstStep</code>; a step with no block; an empty <code>collect</code> or <code>assign</code>; a blank <code>say</code></td><td>Version</td></tr>
     <tr><td>a step no path from <code>firstStep</code> reaches</td><td>Version</td></tr>
@@ -505,7 +506,7 @@ steps:
         to: confirm
       - to: goodbye
   confirm:
-    say: Thank you, we will call you.
+    say: Thank you, we will call you about your {order.kind} in {customer.city}.
   goodbye:
     say: Sorry, we only value houses.
 whenStalled:
@@ -521,6 +522,8 @@ whenStalled:
     <li>A bot gets no automatic <code>conversation</code>: creating one would decide the bot's base behaviour for its author, and the version check makes the need loud.</li>
     <li>The CLI replaces a procedure from a whole file rather than editing a step at a time: a procedure is one structure, and an agent reasons about it whole.</li>
     <li>A new bot gets no <code>conversation</code> procedure by itself (the open question's recommended answer, accepted): nothing runs that nobody decided, and the plugin's skill can show the smallest one.</li>
+    <li>The SDK checks the name in a <code>say</code> placeholder and the bot substitutes the value when it sends the text; what to send when the fact has no value is the bot's to decide.</li>
+    <li>A placeholder is a use of its fact like a name in <code>collect</code>: it blocks the fact's delete and a change of its type, and a rename of the fact rewrites it. Since it changes what a text means, it arrives with format 5.</li>
     <li>Names and rules follow Suwchatbot's reader, except that a mistake gives a path instead of a file, line and column, because here no file exists.</li>
   </ul>
 </section>
@@ -543,6 +546,8 @@ whenStalled:
     <li><code>AC-procedure-model-13</code> <code>--dry-run</code> on a save gives the same answer and changes nothing, and a stale edit based on an old revision is refused.</li>
     <li><code>AC-procedure-model-14</code> The web and <code>suwagcms procedures list</code> list a bot's procedures with their description and how many mistakes stop a version.</li>
     <li><code>AC-procedure-model-15</code> The plugin's main skill gives the file format of a procedure.</li>
+    <li><code>AC-procedure-model-18</code> A <code>say</code> text with a placeholder naming a fact the procedure sees, global or local, is saved and reads back as written, in YAML and in JSON.</li>
+    <li><code>AC-procedure-model-19</code> A placeholder in a <code>say</code> naming a fact the procedure does not see is refused with <code>reference.missing</code>, naming the step and the fact, like any name that points at nothing; braces around anything that is not a fact name produce no mistake.</li>
     <li><code>AC-procedure-model-17</code> A rule with no <code>when</code> that is not the last rule of a step is a <code>Version</code> mistake, <code>next.default.notLast</code>, saying that the rules after it never apply.</li>
   </ul>
 </section>

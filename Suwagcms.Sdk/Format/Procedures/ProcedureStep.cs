@@ -28,6 +28,9 @@ public sealed record ProcedureStep
 
     public string? OnFailure { get; init; }
 
+    // Why: a turned-off service is not a failure, so the customer can be told something other than to try again; without it the step takes OnFailure.
+    public string? OnUnavailable { get; init; }
+
     public NextSteps? Next { get; init; }
 
     [JsonExtensionData]

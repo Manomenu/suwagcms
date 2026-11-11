@@ -52,13 +52,19 @@ public sealed class ActionBlockRulesTests
             WritableBy = writableBy,
         };
 
-    private static ProcedureStep Step(string? parameterFact = "the.fact", string? resultFact = null, string? onFailure = "failed") =>
+    private static ProcedureStep Step(
+        string? parameterFact = "the.fact",
+        string? resultFact = null,
+        string? onFailure = "failed",
+        string? onUnavailable = null
+    ) =>
         new()
         {
             Action = "check",
             With = parameterFact is null ? null : new Dictionary<string, string> { ["input"] = parameterFact },
             Results = resultFact is null ? null : new Dictionary<string, string> { ["output"] = resultFact },
             OnFailure = onFailure,
+            OnUnavailable = onUnavailable,
         };
 
     private static Procedure Procedure(ProcedureStep step, Dictionary<string, LocalFact>? locals = null) =>
@@ -78,7 +84,7 @@ public sealed class ActionBlockRulesTests
     private static BotDefinition Bot(BotAction action, GlobalFact fact, ProcedureStep step) =>
         new()
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Facts = [fact],
             Actions = [action],
             Procedures = [Procedure(step)],
@@ -263,27 +269,36 @@ public sealed class ActionBlockRulesTests
         Assert.Equal(MistakeCodes.ActionMappingResultTwice, mistake.Code);
     }
 
-    [Fact]
+    [Theory]
     [Trait("criterion", "AC-action-block-10")]
-    public void On_failure_naming_a_missing_step_is_refused_with_the_steps()
+    [InlineData("onFailure")]
+    [InlineData("onUnavailable")]
+    public void On_failure_or_on_unavailable_naming_a_missing_step_is_refused_with_the_steps(string field)
     {
-        var mistake = Assert.Single(Save(Bot(Action(Text, Text), Fact(Text), Step(onFailure: "ghost"))));
+        var step = field == "onFailure" ? Step(onFailure: "ghost") : Step(onUnavailable: "ghost");
+
+        var mistake = Assert.Single(Save(Bot(Action(Text, Text), Fact(Text), step)));
 
         Assert.Equal(MistakeCodes.StepMissing, mistake.Code);
-        Assert.Equal("steps.run.onFailure", mistake.Path);
+        Assert.Equal($"steps.run.{field}", mistake.Path);
         Assert.Contains("failed", mistake.Fix, StringComparison.Ordinal);
     }
 
-    [Fact]
+    [Theory]
     [Trait("criterion", "AC-action-block-10")]
-    public void On_failure_on_a_step_with_another_block_is_refused()
+    [InlineData("onFailure")]
+    [InlineData("onUnavailable")]
+    public void On_failure_or_on_unavailable_on_a_step_with_another_block_is_refused(string field)
     {
-        var step = new ProcedureStep { Say = "Hi", OnFailure = "failed" };
+        var step =
+            field == "onFailure"
+                ? new ProcedureStep { Say = "Hi", OnFailure = "failed" }
+                : new ProcedureStep { Say = "Hi", OnUnavailable = "failed" };
 
         var mistake = Assert.Single(Save(Bot(Action(Text, Text), Fact(Text), step)));
 
         Assert.Equal(MistakeCodes.StepActionFieldForeign, mistake.Code);
-        Assert.Equal("steps.run.onFailure", mistake.Path);
+        Assert.Equal($"steps.run.{field}", mistake.Path);
     }
 
     [Fact]
@@ -310,6 +325,33 @@ public sealed class ActionBlockRulesTests
         var definition = Bot(Action(Text, Text), Fact(Text), Step());
 
         Assert.DoesNotContain(OfProcedures(definition, ValidationStage.Version), mistake => mistake.Code == MistakeCodes.StepUnreachable);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-action-block-12")]
+    public void A_step_reached_only_through_on_unavailable_is_not_unreachable()
+    {
+        var definition = Bot(Action(Text, Text), Fact(Text), Step(onUnavailable: "callBack"));
+        var procedure = definition.Procedures[0];
+        var steps = new Dictionary<string, ProcedureStep>(procedure.Steps) { ["callBack"] = new() { Say = "Someone will call you." } };
+
+        var mistakes = OfProcedures(definition with { Procedures = [procedure with { Steps = steps }] }, ValidationStage.Version);
+
+        Assert.DoesNotContain(mistakes, mistake => mistake.Code == MistakeCodes.StepUnreachable);
+    }
+
+    [Theory]
+    [Trait("criterion", "AC-action-block-20")]
+    [InlineData(null)]
+    [InlineData("failed")]
+    public void An_action_step_with_no_on_unavailable_or_one_naming_the_on_failure_step_produces_no_mistake_at_any_stage(
+        string? onUnavailable
+    )
+    {
+        var definition = Bot(Action(Text, Text), Fact(Text), Step(onUnavailable: onUnavailable));
+
+        Assert.Empty(OfProcedures(definition, ValidationStage.Save));
+        Assert.Empty(OfProcedures(definition, ValidationStage.Version));
     }
 
     [Fact]

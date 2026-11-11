@@ -102,4 +102,30 @@ public sealed class LinkRewriteTests
         var local = procedure with { LocalFacts = new Dictionary<string, LocalFact> { ["customer.city"] = new() } };
         Assert.Same(local, ReferenceWalker.Rewrite(local, target, "client.town"));
     }
+
+    [Fact]
+    [Trait("criterion", "AC-resource-rename-30")]
+    public void A_facts_name_is_rewritten_in_each_whole_say_placeholder_and_nowhere_else_in_the_text()
+    {
+        const string Text = "Booked {customer.city}; {customer.cityName}, customer.city, { customer.city } and {customer.city}.";
+        var procedure = new Procedure
+        {
+            Id = "p",
+            Steps = new Dictionary<string, ProcedureStep> { ["tell"] = new() { Say = Text } },
+        };
+        var target = new ResourceRef(ResourceKind.GlobalFact, "customer.city");
+
+        var rewritten = ReferenceWalker.Rewrite(procedure, target, "client.town");
+
+        Assert.Equal(
+            "Booked {client.town}; {customer.cityName}, customer.city, { customer.city } and {client.town}.",
+            rewritten.Steps["tell"].Say
+        );
+        Assert.Equal(
+            ["client.town", "customer.cityName"],
+            ReferenceWalker.From(rewritten).Select(reference => reference.To.Id).Order(StringComparer.Ordinal)
+        );
+        var local = procedure with { LocalFacts = new Dictionary<string, LocalFact> { ["customer.city"] = new() } };
+        Assert.Equal(Text, ReferenceWalker.Rewrite(local, target, "client.town").Steps["tell"].Say);
+    }
 }

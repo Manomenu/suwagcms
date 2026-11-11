@@ -8,7 +8,7 @@ public sealed class DeclarationCommandTests
     private static readonly string[] OnBot = ["bots", "declaration", "--server", "http://cms.internal", "--bot", "rzeczoznawca"];
 
     private const string Declaration =
-        """{"bot":"rzeczoznawca","declaresNothing":false,"formatVersion":4,"blocks":["listen","collect","say","assign"],"codeActions":[{"id":"lookupPolicy","description":"Finds a policy","parameters":[],"results":[]}]}""";
+        """{"bot":"rzeczoznawca","declaresNothing":false,"formatVersion":5,"blocks":["listen","collect","say","assign"],"codeActions":[{"id":"lookupPolicy","description":"Finds a policy","parameters":[],"results":[]}]}""";
 
     private static string Status(
         string ask,
@@ -29,7 +29,7 @@ public sealed class DeclarationCommandTests
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal("http://cms.internal/api/bots/rzeczoznawca/declaration", Assert.Single(server.Requests).ToString());
-        Assert.Contains("format 4", result.Output, StringComparison.Ordinal);
+        Assert.Contains("format 5", result.Output, StringComparison.Ordinal);
         Assert.Contains("blocks listen, collect, say, assign", result.Output, StringComparison.Ordinal);
         Assert.Contains("actions lookupPolicy", result.Output, StringComparison.Ordinal);
     }
@@ -64,7 +64,7 @@ public sealed class DeclarationCommandTests
         Assert.Equal(1, result.ExitCode);
         var lines = result.Error.ReplaceLineEndings("\n").TrimEnd().Split('\n');
         Assert.Equal("Cannot reach http://rzeczoznawca.internal:8080. Last answer, from 2026-11-04 21:40 UTC:", lines[0]);
-        Assert.Equal("  format 4", lines[1]);
+        Assert.Equal("  format 5", lines[1]);
         Assert.Equal("  blocks listen, collect, say, assign", lines[2]);
         Assert.Equal("  actions lookupPolicy", lines[3]);
         Assert.Equal("Check that the bot is running and that the CMS can reach it, then ask again.", lines[4]);
@@ -82,7 +82,7 @@ public sealed class DeclarationCommandTests
         Assert.Equal(1, result.ExitCode);
         using var document = JsonDocument.Parse(result.Output);
         Assert.Equal("Unreachable", document.RootElement.GetProperty("ask").GetString());
-        Assert.Equal(4, document.RootElement.GetProperty("declaration").GetProperty("formatVersion").GetInt32());
+        Assert.Equal(5, document.RootElement.GetProperty("declaration").GetProperty("formatVersion").GetInt32());
     }
 
     [Fact]

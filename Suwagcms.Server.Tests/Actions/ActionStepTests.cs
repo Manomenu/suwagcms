@@ -22,9 +22,10 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
 
     private const string Order = """
         {"description":"Orders.","firstStep":"checkAddress","steps":{
-          "checkAddress":{"action":"checkServiceability","with":{"address":"customer.address"},"results":{"serviceable":"isServiceable"},"onFailure":"failed",
+          "checkAddress":{"action":"checkServiceability","with":{"address":"customer.address"},"results":{"serviceable":"isServiceable"},"onFailure":"failed","onUnavailable":"callBack",
             "next":[{"when":{"isServiceable":{"oneOf":["yes"]}},"to":"offer"},{"to":"failed"}]},
           "offer":{"say":"We serve you."},
+          "callBack":{"say":"Someone will call you."},
           "failed":{"say":"Sorry."}}}
         """;
 
@@ -97,6 +98,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
         Assert.Equal("customer.address", step.GetProperty("with").GetProperty("address").GetString());
         Assert.Equal("isServiceable", step.GetProperty("results").GetProperty("serviceable").GetString());
         Assert.Equal("failed", step.GetProperty("onFailure").GetString());
+        Assert.Equal("callBack", step.GetProperty("onUnavailable").GetString());
         Assert.Equal("offer", step.GetProperty("next")[0].GetProperty("to").GetString());
     }
 
@@ -150,7 +152,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
         });
         var action = await scene.Actions.Show("checkServiceability");
         var document = $$"""
-            {"formatVersion":4,"facts":{{JsonSerializer.Serialize(facts, JsonSerializerOptions.Web)}},
+            {"formatVersion":5,"facts":{{JsonSerializer.Serialize(facts, JsonSerializerOptions.Web)}},
              "actions":[{"id":"checkServiceability","description":"Checks.","parameters":{{action.GetProperty(
                 "parameters"
             ).GetRawText()}},"results":{{action.GetProperty("results").GetRawText()}},"implementation":{{action.GetProperty(
@@ -352,7 +354,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
     private static BotCapabilities Declaring(params CodeAction[] actions) =>
         new()
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Blocks = Block.Names,
             CodeActions = actions,
         };

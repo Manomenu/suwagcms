@@ -10,7 +10,7 @@ public sealed class DefinitionReadTests
     public void A_bot_reads_a_definition_with_the_options_of_the_format_so_a_newer_optional_field_is_skipped()
     {
         var definition = BotDefinition.Read(
-            """{"formatVersion":4,"fromTheFuture":{"a":1},"facts":[{"name":"a","type":"text","description":"d","maxLength":3,"new":1}]}"""
+            """{"formatVersion":5,"fromTheFuture":{"a":1},"facts":[{"name":"a","type":"text","description":"d","maxLength":3,"new":1}]}"""
         );
 
         Assert.Equal(("a", 3), (definition.Facts[0].Name, definition.Facts[0].MaxLength));
@@ -18,8 +18,8 @@ public sealed class DefinitionReadTests
 
     [Theory]
     [Trait("criterion", "AC-bot-runtime-sdk-19")]
-    [InlineData("""{"formatVersion":4,"facts":[{"name":"a","type":"text","description":"d","maxLength":"3"}]}""")]
-    [InlineData("""{"formatVersion":4,"Facts":[],"facts":null}""")]
+    [InlineData("""{"formatVersion":5,"facts":[{"name":"a","type":"text","description":"d","maxLength":"3"}]}""")]
+    [InlineData("""{"formatVersion":5,"Facts":[],"facts":null}""")]
     [InlineData("""{"facts":[]}""")]
     [InlineData("{ not json")]
     public void A_document_that_does_not_fit_the_format_throws_as_the_format_says(string json) =>

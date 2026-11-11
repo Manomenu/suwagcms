@@ -187,6 +187,7 @@ internal static class ActionBlockRules
                 new (string Field, bool Given)[]
                 {
                     ("onFailure", step.Value.OnFailure is not null),
+                    ("onUnavailable", step.Value.OnUnavailable is not null),
                     ("with", step.Value.With is not null),
                     ("results", step.Value.Results is not null),
                 }

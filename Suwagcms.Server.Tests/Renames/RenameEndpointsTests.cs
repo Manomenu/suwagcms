@@ -157,6 +157,29 @@ public sealed class RenameEndpointsTests(TestDatabase database, ClassServer serv
     }
 
     [Fact]
+    [Trait("criterion", "AC-resource-rename-30")]
+    public async Task A_facts_name_changes_in_each_say_placeholder_and_the_procedure_reads_back_with_it_in_json_and_yaml()
+    {
+        var scene = await NewScene();
+        var procedure = """
+            {"description":"D","firstStep":"tell","steps":{
+              "tell":{"say":"We come to {customer.city}; customer.city and { customer.city } are words."}}}
+            """;
+        Assert.Equal(HttpStatusCode.OK, (await scene.Api.Add("orderValuation", procedure)).StatusCode);
+
+        var renamed = await AnswerOf(await scene.Rename("facts", "customer.city", "client.town"));
+
+        Assert.Equal(["steps.tell.say"], renamed.Referrers.Select(referrer => referrer.Field));
+        const string Expected = "We come to {client.town}; customer.city and { customer.city } are words.";
+        var stored = await scene.Read("procedures", "orderValuation");
+        Assert.Equal(Expected, stored.GetProperty("steps").GetProperty("tell").GetProperty("say").GetString());
+        var yaml = await new Versions.PushScene(scene.Client, scene.Bot).CliAsync("procedures", "show", "orderValuation");
+        Assert.Equal(0, yaml.ExitCode);
+        Assert.Contains($"say: {Expected}", yaml.Output, StringComparison.Ordinal);
+        Assert.Equal(["orderValuation"], (await FactApi.FactOf(await scene.Api.Facts.Get("client.town"))).UsedBy);
+    }
+
+    [Fact]
     [Trait("criterion", "AC-resource-rename-6")]
     public async Task A_taken_id_a_bad_form_the_same_id_and_a_missing_resource_are_each_refused_and_nothing_changes()
     {

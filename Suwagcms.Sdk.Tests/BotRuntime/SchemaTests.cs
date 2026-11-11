@@ -50,7 +50,7 @@ public sealed class SchemaTests
     [Trait("criterion", "AC-bot-runtime-sdk-16")]
     public void The_schema_describes_the_request_that_makes_a_held_version_current()
     {
-        var choice = Generate().Member("currentChoice").ToJsonString();
+        var choice = Generate().Member("currentVersionChoice").ToJsonString();
 
         Assert.Contains("\"number\"", choice, StringComparison.Ordinal);
         Assert.Contains("\"digest\"", choice, StringComparison.Ordinal);
@@ -105,7 +105,7 @@ public sealed class SchemaTests
             ["refusal"] = Schema(typeof(BotRefusal)),
             ["availability"] = Schema(typeof(BotAvailability)),
             ["versionEnvelope"] = Schema(typeof(VersionEnvelope)),
-            ["currentChoice"] = Schema(typeof(CurrentChoice)),
+            ["currentVersionChoice"] = Schema(typeof(CurrentVersionChoice)),
             ["declaration"] = Schema(typeof(BotDeclaration)),
             ["actionTestRequest"] = Schema(typeof(ActionTestRequest)),
             ["actionTestAnswer"] = Schema(typeof(ActionOutcome)),

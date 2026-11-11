@@ -54,7 +54,7 @@ internal sealed class BotClient(HttpClient http, IOptions<PushOptions> options, 
             address,
             new HttpRequestMessage(HttpMethod.Put, Route(address, "current"))
             {
-                Content = JsonContent.Create(new CurrentChoice { Number = number, Digest = digest }, options: Json),
+                Content = JsonContent.Create(new CurrentVersionChoice { Number = number, Digest = digest }, options: Json),
             },
             options.Value.PushTimeoutSeconds,
             cancellationToken

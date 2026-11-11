@@ -1,10 +1,11 @@
 using System.Text.RegularExpressions;
+using Suwagcms.Sdk.Format;
 
 namespace Suwagcms.Sdk.Validation.Rules;
 
 internal static partial class ResourceIds
 {
-    [GeneratedRegex("^[a-z][a-zA-Z0-9]*$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    [GeneratedRegex("^" + CamelCase.Word + "$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex CamelCasePattern();
 
     [GeneratedRegex("[^a-zA-Z0-9]+", RegexOptions.None, matchTimeoutMilliseconds: 1000)]

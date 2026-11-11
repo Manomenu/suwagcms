@@ -210,7 +210,7 @@ The editor shows a procedure as a numbered list of steps, and the format stores 
 | :-------- | :------------------------------------------------ |
 | `listen`  | waits for the next message                        |
 | `collect` | asks until the listed facts are known             |
-| `say`     | sends a fixed text                                |
+| `say`     | sends a fixed text; `{name}` shows a fact's value |
 | `assign`  | overwrites facts with values the author chose     |
 | `start`   | starts another procedure                          |
 | `inform`  | has the model tell the customer named points      |
@@ -223,6 +223,12 @@ An `inform` holds an `instruction`, optional `knowledge` (entries of `knowledgeB
 
 The editor offers the blocks the bot declares and shows the format's rules while the author works: exactly one block per step, rules ending with a default,
 no unreachable steps, and `whenStalled` when the procedure collects.
+In a `say` text, `{name}` is replaced by the bot with the value of the fact `name`, named as `collect` names it (a local fact by its name
+in the procedure), so a customer hears an action's result exactly; braces around anything else are plain text. A placeholder naming a fact
+the procedure does not see is refused (`reference.missing`). A placeholder is a use of its fact: it blocks deleting the fact or changing its type,
+and renaming the fact rewrites it. In YAML, quote a text that starts with `{`.
+An action step goes to `onFailure` when the action fails, and to the optional `onUnavailable` when the action is turned off,
+so the customer can be told something other than to try again; without it a turned-off action goes to `onFailure`.
 
 ```yaml
 checkAddress:
@@ -230,6 +236,7 @@ checkAddress:
   with: { address: customer.address }
   results: { serviceable: isServiceable }
   onFailure: tellItFailed
+  onUnavailable: tellSomeoneWillCall
   next:
     - when: { isServiceable: { oneOf: [yes] } }
       to: offerPlan
@@ -309,7 +316,7 @@ Turning a resource off changes whether it can be found, never whether it exists,
 | :------------- | :---------------------------------------------------------------------------- |
 | **Article**    | left out of search; a procedure naming it explicitly still gets it            |
 | **Procedure**  | the model cannot start it, even from an article's guide; conversations already in it finish |
-| **Action**     | a step running it takes `onFailure`, which makes it a usable emergency switch |
+| **Action**     | a step running it takes `onUnavailable`, or `onFailure` when it has none, which makes it a usable emergency switch |
 
 The screen lists what uses the resource before it is turned off. Facts have no availability.
 
