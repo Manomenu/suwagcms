@@ -22,4 +22,9 @@
     <Using Include="Suwagcms.Gate.Repository" />
     <Using Include="Xunit" />
   </ItemGroup>
+
+  <!-- Why: the gate tests the fixture's decision without referencing a test project, which the reference rules do not allow -->
+  <ItemGroup>
+    <Compile Include="../Suwagcms.Server.Tests/LinkedWorktree.cs" Link="Repository/LinkedWorktree.cs" />
+  </ItemGroup>
 </Project>

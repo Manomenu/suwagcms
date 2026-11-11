@@ -7,9 +7,12 @@ namespace Suwagcms.Server.Tests;
 
 public sealed class TestDatabase : IAsyncLifetime
 {
-    public static readonly string ConnectionString =
-        Environment.GetEnvironmentVariable("TEST_CONNECTION_STRING")
-        ?? "Host=127.0.0.1;Port=5563;Database=suwagcms_test;Username=suwagcms;Password=suwagcms";
+    private const string MainCheckoutConnectionString =
+        "Host=127.0.0.1;Port=5563;Database=suwagcms_test;Username=suwagcms;Password=suwagcms";
+
+    private static readonly string? FromEnvironment = Environment.GetEnvironmentVariable("TEST_CONNECTION_STRING");
+
+    public static readonly string ConnectionString = FromEnvironment ?? MainCheckoutConnectionString;
 
     private string? unavailable;
     private Pool? pool;
@@ -28,6 +31,7 @@ public sealed class TestDatabase : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
+        LinkedWorktree.RefuseMainCheckoutDatabase(FromEnvironment, AppContext.BaseDirectory);
         try
         {
             await RecreateAsync(ConnectionString);
