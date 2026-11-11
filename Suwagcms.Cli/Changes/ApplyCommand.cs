@@ -21,6 +21,16 @@ internal static class ApplyCommand
     {
         var file = new Argument<string>("file") { Description = "A YAML or JSON file with a `changes` list of add, edit and delete." };
         var dryRun = EditOptions.DryRun();
+        var replace = new Option<bool>("--replace")
+        {
+            Description =
+                "An `add` of a resource the CMS already holds replaces the whole of it, as `edit --file` would; one that would store what is stored leaves it as it is, revision and history too. Nothing the file does not name is deleted.",
+        };
+        var compare = new Option<bool>("--compare")
+        {
+            Description =
+                "Say what applying the file with --replace would change, and change nothing: each change added, replaced with the fields and steps that differ, or unchanged, and what the CMS holds of the same kinds that the file does not name. Exit code 0 when nothing would change, 4 when something would, 1 when the file would be refused.",
+        };
         var command = new Command(
             "apply",
             "Apply a file of changes all or nothing: order inside it does not matter, and every mistake comes back at once."
@@ -28,8 +38,17 @@ internal static class ApplyCommand
         {
             file,
             dryRun,
+            replace,
+            compare,
         };
         EditOptions.RefuseOpen(command, options, "apply");
+        command.Validators.Add(result =>
+        {
+            if (result.GetValue(compare) && result.GetValue(dryRun))
+            {
+                result.AddError("--compare changes nothing already: drop --dry-run.");
+            }
+        });
         command.SetBotAction(
             options,
             environment,
@@ -40,11 +59,18 @@ internal static class ApplyCommand
                 {
                     return await target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
                 }
-                var dry = parsed.GetValue(dryRun);
+                var comparing = parsed.GetValue(compare);
+                var dry = comparing || parsed.GetValue(dryRun);
+                var replacing = comparing || parsed.GetValue(replace);
+                var query = EditOptions.Query(dry, null);
+                if (replacing)
+                {
+                    query += (query.Length == 0 ? "?" : "&") + "replace=true";
+                }
                 var answer = await ServerCall.PostAsync(
                     environment,
                     target.Address,
-                    target.CollectionPath("changes") + EditOptions.Query(dry, null),
+                    target.CollectionPath("changes") + query,
                     document,
                     cancellationToken
                 );
@@ -54,23 +80,25 @@ internal static class ApplyCommand
                 }
                 var applied =
                     answer.Body?.Deserialize<ChangesApplied>(Web) ?? throw new InvalidOperationException("the server sent no result");
-                return await target.Run.Report.DoneAsync(applied, Summary(applied));
+                if (!comparing)
+                {
+                    return await target.Run.Report.DoneAsync(applied, Summary(applied, replacing));
+                }
+                await target.Run.Report.DoneAsync(applied, CompareText.Of(applied));
+                return CompareText.Differs(applied) ? ExitCodes.Differs : ExitCodes.Done;
             }
         );
         return command;
     }
 
-    private static string Summary(ChangesApplied applied)
+    private static string Summary(ChangesApplied applied, bool replacing)
     {
         if (applied.Changes.Count == 0)
         {
-            return "Nothing to apply: the file lists no changes.";
+            return CompareText.Nothing;
         }
         var text = new StringBuilder(
-            string.Create(
-                CultureInfo.InvariantCulture,
-                $"{(applied.DryRun ? "Would apply" : "Applied")}: {applied.Added} added, {applied.Edited} edited, {applied.Deleted} deleted."
-            )
+            $"{(applied.DryRun ? "Would apply" : "Applied")}: {(replacing ? CompareText.Counts(applied) : PlainCounts(applied))}."
         );
         if (applied.NotReady.Count > 0)
         {
@@ -82,6 +110,9 @@ internal static class ApplyCommand
         }
         return text.ToString();
     }
+
+    private static string PlainCounts(ChangesApplied applied) =>
+        string.Create(CultureInfo.InvariantCulture, $"{applied.Added} added, {applied.Edited} edited, {applied.Deleted} deleted");
 
     // Why: an unknown bot keeps the shared answer, which lists the bots; only a refused file says how many mistakes and where each one is.
     private static ServerAnswer WithHeading(ServerAnswer answer, bool dry)

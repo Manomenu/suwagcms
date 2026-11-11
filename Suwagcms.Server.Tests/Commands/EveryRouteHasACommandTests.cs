@@ -88,6 +88,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
         ["language"] = "--language",
         ["limit"] = "--limit",
         ["page"] = "--page",
+        ["replace"] = "--replace",
         ["text"] = "--text",
     };
 

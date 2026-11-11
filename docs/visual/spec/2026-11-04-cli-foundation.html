@@ -382,7 +382,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   </div>
   <div class="stats">
     <div><b>21</b><span>criteria</span></div>
-    <div><b>4</b><span>exit codes</span></div>
+    <div><b>5</b><span>exit codes</span></div>
     <div><b>1</b><span>criteria after other features</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
@@ -457,6 +457,7 @@ Cannot reach http://localhost:3240. Start the server, or pass --server or set SU
     <tr><td>1</td><td>the server refused the change</td><td>every mistake with its fix, all of them in one pass</td></tr>
     <tr><td>2</td><td>the command was used wrongly: unknown command or option, missing argument</td><td>what is wrong and the correct usage</td></tr>
     <tr><td>3</td><td>the server cannot be reached, or answered with something other than a refusal</td><td>the address tried and what to do</td></tr>
+    <tr><td>4</td><td>a comparison found differences, used only by <code>apply --compare</code> (<code>batch-apply</code>): it refused nothing, yet a script must tell it from one that found none</td><td>the differences</td></tr>
   </table>
   <p>Results go to stdout and problems to stderr, except with <code>--json</code>, where the one document holds either.</p>
   <h3>Every route has a command</h3>

@@ -47,3 +47,18 @@ changes:
 - One resource may be named once: two changes to it are refused with `change.twice`, since what they did together would depend on their order.
 - Changes that only work together belong in one file: an article and the links to it can go at once, and articles may come before their knowledge base. Two articles linking to each other are still a loop, refused with `reference.loop`.
 - `apply` never creates a version or pushes; those are separate steps.
+
+## A seed applied again
+
+A seed is a file of `add` changes kept in a bot's repository. Without options an `add` of what the CMS holds is refused, so
+once the seed has been applied, apply it again with `--replace`:
+
+1. `suwagcms apply seed.yaml --compare --json`: changes nothing. Each change in `changes` has `action` `added`, `replaced`
+   (with `fields` and `parts`, what differs, as `diff` shows it) or `unchanged`; `notMentioned` lists what the CMS holds of
+   the same kinds that the file does not name. Exit code `0`: nothing would change; `4`: something would; `1`: refused, fix
+   `mistakes` as above.
+2. `suwagcms apply seed.yaml --replace --json`: an `add` of an existing resource replaces the whole of it (what the entry
+   leaves out goes back to its default), with every guard of an edit, all or nothing. An `unchanged` one keeps its revision
+   and history, so a second run changes nothing. Nothing in `notMentioned` is changed or deleted.
+
+Key order, YAML style, comments and defaults written or left out are never differences.

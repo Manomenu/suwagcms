@@ -378,15 +378,17 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <div class="tldr">
     <p><code>suwagcms apply changes.yaml</code> applies a file of changes all or nothing. The rules judge the result of the whole file, so the order of the changes inside it does not matter, and every mistake comes back at once. <code>--dry-run</code> gives the same answer and changes nothing.</p>
     <p>It is the one way to make changes that only work together, and it is an ordinary save with more than one change in it, so it knows no rule of its own. A file says what to change. It is not a local copy of the bot.</p>
+    <p>With <code>--replace</code> an <code>add</code> of something the CMS already holds replaces it, so a seed kept in a bot's repository can be applied again after it changed; one that would store what is already stored changes nothing, so a second run is a no-op. <code>--compare</code> says what that would change, and changes nothing.</p>
   </div>
   <div class="stats">
-    <div><b>19</b><span>criteria</span></div>
+    <div><b>25</b><span>criteria</span></div>
     <div><b>0</b><span>open questions</span></div>
   </div>
 </section>
 <section data-role="problem">
   <h2>Problem</h2>
   <p>An agent writing 40 articles for a new product has to save each one separately, in an order where each link's target exists first. If number 23 is refused, the bot is left with half a product, and the agent has to work out what is left to do. Some changes also cannot be made one at a time at all, such as removing a link and the article it points at, when a guard refuses each step taken alone in the wrong order.</p>
+  <p>A bot's repository keeps a seed: a file of <code>add</code> changes that fills an empty CMS. Once the CMS holds the bot, an <code>add</code> of what exists is refused, so when the seed changes (a procedure gains a step, a fact's description is reworded) the CMS stays on the old content, and someone rebuilds each resource by hand without knowing which ones differ.</p>
 </section>
 <section data-role="goals">
   <h2>Goals and non-goals</h2>
@@ -396,9 +398,10 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
       <li>One pass fixes a whole batch, because all mistakes come at once.</li>
       <li>The same rules and the same refusals as any save.</li>
       <li>Try a batch without changing anything.</li>
+      <li>Apply a changed seed to a CMS that holds the bot, and see first what it would change.</li>
     </ul></div>
     <div><h4>Non-goals <span class="tag note">optional</span></h4><ul>
-      <li>Keeping a bot in local files: resources not named in the file stay as they are, and nothing is deleted for being absent (README: no local editing).</li>
+      <li>Keeping a bot in local files: resources not named in the file stay as they are, and nothing is deleted for being absent, with <code>--replace</code> too (README: no local editing). A sync that deletes what a seed no longer names is not built.</li>
       <li>Reading an export back: export files are for reading only.</li>
       <li>A screen for this: the CLI may do more than the web (README), and the web's forms save one resource at a time.</li>
       <li>Renaming an <code>id</code> inside a file: <code>resource-rename</code> is one operation of its own.</li>
@@ -430,6 +433,26 @@ Applied: 5 added, 2 edited, 1 deleted.
   <ol class="steps">
     <li><p>A change in the file says <code>ifRevision: 7</code>, but Marta has saved <code>cennik</code> since. The whole file is refused, naming the current revision, and nothing is saved.</p></li>
   </ol>
+  <h3>5. A seed changed in the repository, and the CMS already holds the bot</h3>
+  <p>The appraiser's seed was applied months ago. Since then a procedure's <code>inform</code> was reworded and a fact's description changed in the repository; a mapping's keys were also reordered, which means nothing.</p>
+  <div class="term"><span class="dim">$</span> suwagcms apply seed/changes.yaml --compare
+Would apply: 0 added, 2 replaced, 46 unchanged, 0 edited, 0 deleted.
+  change 10, fact 'property.address' replaced
+    description The address of the property. → The full address of the property, with the flat number.
+  change 15, procedure 'quoteRequest' replaced
+    step 'tellConditionReview' changed
+      inform.instruction Tell the customer how the age of the building affects this task. Name no price. → Tell the customer how the age of the building affects the quote. Name no price.
+<span class="dim">$</span> echo $?
+4
+<span class="dim">$</span> suwagcms apply seed/changes.yaml --replace
+Applied: 0 added, 2 replaced, 46 unchanged, 0 edited, 0 deleted.
+<span class="dim">$</span> suwagcms apply seed/changes.yaml --compare
+The same: applying the file would change nothing, 48 unchanged.
+<span class="dim">$</span> echo $?
+0</div>
+  <ol class="steps">
+    <li><p>Run again, <code>--replace</code> answers 48 unchanged: no revision moves, the history gets no entry, and <code>versions create</code> finds nothing new. Had the new seed changed the type of a fact that a procedure collects, the whole file would have been refused with the edit guard's <code>fact.type.inUse</code>, and neither replacement would have been saved.</p></li>
+  </ol>
 </section>
 <section data-role="behaviour">
   <h2>Behaviour</h2>
@@ -447,6 +470,11 @@ Applied: 5 added, 2 edited, 1 deleted.
     <tr><td><code>bot</code> in the file differs from the bot in use</td><td>refused, naming both, so a file written for one bot cannot land on another by accident</td></tr>
     <tr><td>a save of the same bot at the same moment</td><td>one after the other, each checked against what the previous one left</td></tr>
     <tr><td>a dry run</td><td>the same answer, with “would”, and nothing changed</td></tr>
+    <tr><td>an <code>add</code> of what the CMS holds, with <code>--replace</code></td><td>replaces the whole resource with the entry, as <code>edit --file</code> with the whole definition would, keeping its availability and history; an <code>add</code> of something new still adds, and <code>edit</code> and <code>delete</code> behave as without it. Every guard of an edit applies and refuses the whole file</td></tr>
+    <tr><td>a replacement that would store what is stored</td><td><code>unchanged</code>: its revision stays, the history gets no entry, and it gives no reason for a new version. The same holds for <code>edit: persona</code> with <code>--replace</code>, as it already replaces the whole persona</td></tr>
+    <tr><td>resources the file does not name, with <code>--replace</code></td><td>stay as they are; the answer lists those of the kinds the file changes, in <code>notMentioned</code></td></tr>
+    <tr><td><code>--compare</code></td><td>the answer of <code>--replace --dry-run</code>, and nothing changed: per change added, replaced with the fields and steps that differ (as <code>diff</code> writes them), edited, deleted or unchanged, and what the file does not name. Exit 0 when nothing would change, 4 when something would, 1 with every mistake when the file would be refused</td></tr>
+    <tr><td>a stored resource and an entry that differ only in key order, flow or block style, comments, or a default written or left out</td><td>the same: both are read into the form a save stores, and that form is compared as data</td></tr>
     <tr><td>a large file</td><td>the bot's other saves wait for it, as for any save, and the request's ordinary size limit applies</td></tr>
   </table>
 </section>
@@ -486,6 +514,14 @@ changes:
     <li>A refused file answers with the same status whatever refused it, and every mistake it holds carries its change's position; a mistake on a resource the file does not name has none.</li>
     <li>An edit is merged with what is stored under the bot's lock, so a save just before it is kept, not refused; <code>ifRevision</code> is what asks for a refusal.</li>
     <li>Changing a resource's availability is not part of a file: availability is a live setting outside versions and not a field of a resource.</li>
+    <li>Add-or-replace is a mode of <code>apply</code>, on the same request, and not a new command: it changes only what an <code>add</code> of an existing resource means, so the file, its rules and its transaction are those of every file. Without it an <code>add</code> of what exists stays refused, so a typo in a hand-written file cannot overwrite a resource.</li>
+    <li>A replacement is a whole resource, never a merge: the entry is what the CMS should hold, as a seed says it, so what the entry leaves out goes back to its default.</li>
+    <li>A replacement that changes nothing is no edit: equal states give equal versions anyway, and a revision or a history entry that moves for nothing would make a repeated seed look like work done.</li>
+    <li>Compare is the dry run of add-or-replace with the differences shown: one path, so it cannot report less, or other refusals, than the real run would hit. Plain <code>--dry-run</code> keeps its meaning.</li>
+    <li>A difference is told as two versions are compared, field by field and a procedure's steps and local facts as parts, so a person reads one form of a difference everywhere.</li>
+    <li>Sameness is judged on the form a save stores, read as data: the server already fills in what an author may leave out, and that is the only normal form there is, so a second one would sooner or later disagree with it.</li>
+    <li>“Differs” has an exit code of its own, 4: 1 means refused on every command, and a script deciding whether to apply must tell the two apart.</li>
+    <li>What the file does not name is listed, never deleted: deleting what a seed no longer names would make every hand-made resource a casualty of the next seed.</li>
   </ul>
 </section>
 <section data-role="acceptance">
@@ -512,6 +548,12 @@ changes:
     <li><code>AC-batch-apply-20</code> An exported file given to <code>apply</code> is refused, since it holds no list of changes, and nothing is saved.</li>
     <li><code>AC-batch-apply-21</code> <code>edit: persona</code> in a file takes no <code>id</code> and replaces the whole persona, and an <code>add</code> or <code>delete</code> of a persona is refused.</li>
     <li><code>AC-batch-apply-22</code> Every number and boolean field of a change file read by <code>apply</code>, and of a definition read by <code>validate</code>, reaches the server as a number or a boolean, whatever the field is called.</li>
+    <li><code>AC-batch-apply-23</code> With <code>--replace</code>, a file adding a fact, a knowledge base, an article, an action and a procedure the CMS holds, and one of each it does not, applies in one transaction: each existing one then reads back as its entry, as a whole and not merged, each new one is added, and the answer says replaced or added for each.</li>
+    <li><code>AC-batch-apply-24</code> With <code>--replace</code>, a file whose replacement the edit guard refuses (a change of type of a fact a procedure collects), or which writes a code action, or makes a reference loop, is refused as a whole, with the same codes as an edit, with and without <code>--dry-run</code>: every resource keeps its value and revision.</li>
+    <li><code>AC-batch-apply-25</code> Applying the same file with <code>--replace</code> a second time changes nothing: every change says unchanged with its revision, no revision or row moves, and the history gets no entry.</li>
+    <li><code>AC-batch-apply-26</code> With <code>--replace</code>, nothing the file does not name is deleted or changed, and the answer lists the resources of the kinds the file changes that it does not name.</li>
+    <li><code>AC-batch-apply-27</code> <code>--compare</code> changes nothing and says per change added, replaced with the fields and steps that differ, or unchanged, lists what the file does not name, gives one document with <code>--json</code>, and exits 0 when nothing would change, 4 when something would, and 1 with every mistake when the file would be refused.</li>
+    <li><code>AC-batch-apply-28</code> A file that differs from what the CMS holds only in key order, flow or block style, comments, or defaults written or left out, is unchanged for <code>--compare</code> and for <code>--replace</code>.</li>
   </ul>
 </section>
 <section data-role="risks">

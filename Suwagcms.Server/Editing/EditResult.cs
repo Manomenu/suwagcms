@@ -11,6 +11,11 @@ internal abstract record EditResult
     {
         // Why: what a rename rewrote, found under the lock, as the state before it names it.
         public IReadOnlyList<Reference> Rewritten { get; init; } = [];
+
+        // Why: the state found under the lock and the one the save leaves, so a caller can tell an add from a replacement and from one that changed nothing, and say what differs.
+        public IReadOnlyDictionary<ResourceRef, StoredResource> Before { get; init; } = new Dictionary<ResourceRef, StoredResource>();
+
+        public IReadOnlyDictionary<ResourceRef, StoredResource> After { get; init; } = new Dictionary<ResourceRef, StoredResource>();
     }
 
     internal sealed record Refused(IReadOnlyList<Mistake> Mistakes) : EditResult;

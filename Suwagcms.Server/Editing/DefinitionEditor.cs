@@ -83,7 +83,12 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         {
             await transaction.CommitAsync(cancellationToken);
         }
-        return new EditResult.Saved(revisions, !dryRun, found) { Rewritten = rewritten };
+        return new EditResult.Saved(revisions, !dryRun, found)
+        {
+            Rewritten = rewritten,
+            Before = before,
+            After = after,
+        };
     }
 
     // Why: the bot has already changed and a refusal would only hide that, so this step judges nothing; it holds the bot's lock, so it runs in turn with any save, and reads the stored declaration under it, so two answers arriving out of order cannot leave the older one in force.
@@ -267,14 +272,14 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
             switch (change)
             {
                 case Put put:
-                    if (put.Record.GetType() != ResourceKinds.RecordType(put.Target.Kind))
+                    after[put.Target] = Stored(put.Target, put.Record, before.GetValueOrDefault(put.Target));
+                    break;
+                case Replace replace:
+                    var found = before.GetValueOrDefault(replace.Target);
+                    if (found is null || !ResourceKinds.Same(found.Record, replace.Record))
                     {
-                        throw new ArgumentException(
-                            $"A {put.Target.Kind} is a {ResourceKinds.RecordType(put.Target.Kind).Name}, not a {put.Record.GetType().Name}."
-                        );
+                        after[replace.Target] = Stored(replace.Target, replace.Record, found);
                     }
-                    before.TryGetValue(put.Target, out var was);
-                    after[put.Target] = new StoredResource(was?.Id ?? Guid.NewGuid(), put.Target, (was?.Revision ?? 0) + 1, put.Record);
                     break;
                 case Edit edit:
                     var stored = before[edit.Target];
@@ -307,5 +312,16 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
             }
         }
         return after;
+    }
+
+    private static StoredResource Stored(ResourceRef target, object record, StoredResource? was)
+    {
+        if (record.GetType() != ResourceKinds.RecordType(target.Kind))
+        {
+            throw new ArgumentException(
+                $"A {target.Kind} is a {ResourceKinds.RecordType(target.Kind).Name}, not a {record.GetType().Name}."
+            );
+        }
+        return new StoredResource(was?.Id ?? Guid.NewGuid(), target, (was?.Revision ?? 0) + 1, record);
     }
 }

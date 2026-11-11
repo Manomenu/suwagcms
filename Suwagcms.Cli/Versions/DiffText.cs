@@ -14,14 +14,27 @@ internal static class DiffText
         foreach (var resource in comparison.Resources)
         {
             lines.Add($"  {Noun(resource.Kind)} {resource.Id} {Word(resource.Difference)}");
-            lines.AddRange(resource.Fields.SelectMany(field => Field(field, "    ")));
-            foreach (var part in resource.Parts)
-            {
-                lines.Add($"    {part.Part} '{part.Name}' {Word(part.Difference)}");
-                lines.AddRange(part.Fields.SelectMany(field => Field(field, "      ")));
-            }
+            lines.AddRange(Differences(resource.Fields, resource.Parts, "    "));
         }
         return string.Join(Environment.NewLine, lines);
+    }
+
+    // Why: a file of changes compared with the CMS writes what differs as a comparison of two versions does, so a person reads one form.
+    public static IEnumerable<string> Differences(IReadOnlyList<FieldDifference> fields, IReadOnlyList<PartDifference> parts, string indent)
+    {
+        ArgumentNullException.ThrowIfNull(parts);
+        foreach (var line in fields.SelectMany(field => Field(field, indent)))
+        {
+            yield return line;
+        }
+        foreach (var part in parts)
+        {
+            yield return $"{indent}{part.Part} '{part.Name}' {Word(part.Difference)}";
+            foreach (var line in part.Fields.SelectMany(field => Field(field, indent + "  ")))
+            {
+                yield return line;
+            }
+        }
     }
 
     private static string Heading(VersionComparison comparison)

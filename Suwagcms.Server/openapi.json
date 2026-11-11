@@ -2303,6 +2303,14 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "replace",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
           }
         ],
         "requestBody": {
@@ -3430,7 +3438,9 @@
           "action",
           "kind",
           "id",
-          "revision"
+          "revision",
+          "fields",
+          "parts"
         ],
         "type": "object",
         "properties": {
@@ -3459,9 +3469,21 @@
               "string"
             ],
             "format": "int32"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldDifference"
+            }
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartDifference"
+            }
           }
         },
-        "description": "What one change of a file did, or would do on a dry run. Change is its position in the file, from 1; Action is added, edited or deleted; Kind is the word the file uses; Revision is the resource's new revision, none after a delete."
+        "description": "What one change of a file did, or would do on a dry run. Change is its position in the file, from 1; Action is added, edited or deleted, and with replace also replaced (an add of a resource the CMS holds) or unchanged (a change that would store what is already stored, so the revision stays); Kind is the word the file uses; Revision is the resource's revision afterwards, none after a delete. Fields and Parts say what differs from what the CMS held, as a comparison of two versions says it: only a replaced or edited resource lists them, and a procedure's steps and local facts are parts."
       },
       "ChangeMistake": {
         "required": [
@@ -3515,15 +3537,34 @@
       "ChangesApplied": {
         "required": [
           "added",
+          "replaced",
+          "unchanged",
           "edited",
           "deleted",
           "dryRun",
           "changes",
+          "notMentioned",
           "notReady"
         ],
         "type": "object",
         "properties": {
           "added": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "replaced": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "unchanged": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -3556,6 +3597,12 @@
               "$ref": "#/components/schemas/ChangeApplied"
             }
           },
+          "notMentioned": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UnmentionedResource"
+            }
+          },
           "notReady": {
             "type": "array",
             "items": {
@@ -3563,7 +3610,7 @@
             }
           }
         },
-        "description": "The answer to a file of changes: the counts, the result per change, whether anything was written, and NotReady, what still stops a version, which never refuses a file."
+        "description": "The answer to a file of changes: the counts, the result per change, whether anything was written, NotMentioned, what the CMS holds of the kinds the file changes that the file does not name (left as it is), and NotReady, what still stops a version, which never refuses a file."
       },
       "ChangesRefusal": {
         "required": [
@@ -5343,6 +5390,22 @@
             "type": "string"
           }
         }
+      },
+      "UnmentionedResource": {
+        "required": [
+          "kind",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "description": "A resource the CMS holds that a file of changes does not name, of a kind the file changes: Kind is the word a file uses, Id its id (a fact's name). A file never deletes it for being absent."
       },
       "UsageLink": {
         "required": [

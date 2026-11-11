@@ -28,11 +28,12 @@ internal sealed class ChangeScene(HttpClient client, string bot)
 
     public static async Task<ChangeScene> NewAsync(HttpClient client) => new(client, (await FactApi.NewBotAsync(client)).Bot);
 
-    public async Task<HttpResponseMessage> Post(string json, bool dryRun = false)
+    public async Task<HttpResponseMessage> Post(string json, bool dryRun = false, bool replace = false)
     {
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        string[] query = [.. dryRun ? ["dryRun=true"] : Array.Empty<string>(), .. replace ? ["replace=true"] : Array.Empty<string>()];
         return await client.PostAsync(
-            $"/api/bots/{Bot}/changes{(dryRun ? "?dryRun=true" : "")}",
+            $"/api/bots/{Bot}/changes{(query.Length == 0 ? "" : "?" + string.Join('&', query))}",
             content,
             TestContext.Current.CancellationToken
         );
@@ -103,5 +104,11 @@ internal sealed class ChangeScene(HttpClient client, string bot)
             new { bot = Bot }
         );
         return [.. rows];
+    }
+
+    public async Task<int> HistoryCountAsync(Pool pool)
+    {
+        await using var connection = await pool.OpenAsync(TestContext.Current.CancellationToken);
+        return await connection.ExecuteScalarAsync<int>("SELECT count(*) FROM change_entry WHERE bot_id = @bot", new { bot = Bot });
     }
 }
