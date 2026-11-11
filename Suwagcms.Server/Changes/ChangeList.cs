@@ -53,6 +53,7 @@ internal static class ChangeList
     public static async Task<(List<ChangeItem> Items, List<ChangeMistake> Mistakes)> ReadAsync(
         Stream body,
         string bot,
+        bool replace,
         CancellationToken cancellationToken
     )
     {
@@ -117,7 +118,7 @@ internal static class ChangeList
         var items = new List<ChangeItem>();
         foreach (var (node, index) in list.Select((node, index) => (node, index)))
         {
-            var (item, found) = Item(node, index + 1, whole);
+            var (item, found) = Item(node, index + 1, whole, replace);
             mistakes.AddRange(found);
             if (item is not null)
             {
@@ -130,7 +131,7 @@ internal static class ChangeList
     public static ChangeMistake At(int? position, Mistake mistake) =>
         new(position, mistake.Code, mistake.Stage, mistake.Resource, mistake.Path, mistake.Message, mistake.Fix, mistake.Related);
 
-    private static (ChangeItem? Item, List<ChangeMistake> Mistakes) Item(JsonNode? node, int position, ResourceRef whole)
+    private static (ChangeItem? Item, List<ChangeMistake> Mistakes) Item(JsonNode? node, int position, ResourceRef whole, bool replace)
     {
         List<ChangeMistake> Refused(string message, string fix)
         {
@@ -221,10 +222,14 @@ internal static class ChangeList
         }
 
         var element = JsonSerializer.SerializeToElement(fields);
+        var add =
+            verb != Add ? (Func<object, Change>?)null
+            : replace ? record => new Replace(target, record, null)
+            : record => new Put(target, record, 0);
         var (made, unreadable) = kind switch
         {
             ResourceKind.GlobalFact => Made<SaveFact, GlobalFact>(
-                verb,
+                add,
                 target,
                 element,
                 ifRevision,
@@ -238,7 +243,7 @@ internal static class ChangeList
                     )
             ),
             ResourceKind.KnowledgeBase => Made<SaveKnowledgeBase, KnowledgeBase>(
-                verb,
+                add,
                 target,
                 element,
                 ifRevision,
@@ -246,7 +251,7 @@ internal static class ChangeList
                 EditOverlay.Over
             ),
             ResourceKind.Article => Made<SaveArticle, Article>(
-                verb,
+                add,
                 target,
                 element,
                 ifRevision,
@@ -254,7 +259,7 @@ internal static class ChangeList
                 EditOverlay.Over
             ),
             ResourceKind.Procedure => Made<SaveProcedure, Procedure>(
-                verb,
+                add,
                 target,
                 element,
                 ifRevision,
@@ -262,14 +267,14 @@ internal static class ChangeList
                 EditOverlay.Over
             ),
             ResourceKind.Action => Made<SaveAction, BotAction>(
-                verb,
+                add,
                 target,
                 element,
                 ifRevision,
                 body => ActionMapping.ToRecord(id, body),
                 EditOverlay.Over
             ),
-            ResourceKind.Persona => Replacing(target, element, ifRevision),
+            ResourceKind.Persona => Replacing(target, element, ifRevision, replace),
             ResourceKind.Definition => throw new InvalidOperationException($"{kind} is not a kind of a file of changes."),
             _ => throw new ArgumentOutOfRangeException(nameof(node)),
         };
@@ -278,8 +283,9 @@ internal static class ChangeList
             : (new ChangeItem(position, verb == Add ? "added" : "edited", kindWord, made), []);
     }
 
+    // Why: `add` is null for an edit, which merges what it gives with what is stored.
     private static (Change? Change, IReadOnlyList<Mistake> Mistakes) Made<TBody, TRecord>(
-        string verb,
+        Func<object, Change>? add,
         ResourceRef target,
         JsonElement fields,
         int? ifRevision,
@@ -294,16 +300,26 @@ internal static class ChangeList
         {
             return (null, unreadable);
         }
-        return verb == Add
-            ? (new Put(target, record(body), 0), [])
+        return add is not null
+            ? (add(record(body)), [])
             : (new Edit(target, stored => record(merged((TRecord)stored, body)), ifRevision), []);
     }
 
-    // Why: an edit of a persona replaces the whole of it, as its own command does, and works on one never saved, which has no row for an Edit to find.
-    private static (Change? Change, IReadOnlyList<Mistake> Mistakes) Replacing(ResourceRef target, JsonElement fields, int? ifRevision)
+    // Why: an edit of a persona replaces the whole of it, as its own command does, and works on one never saved, which has no row for an Edit to find; with replace it is a replacement like any other, so one that changes nothing leaves the persona as it is.
+    private static (Change? Change, IReadOnlyList<Mistake> Mistakes) Replacing(
+        ResourceRef target,
+        JsonElement fields,
+        int? ifRevision,
+        bool replace
+    )
     {
         var (body, unreadable) = PersonaMapping.Read(fields, target);
-        return body is null ? (null, unreadable) : (new Put(target, PersonaMapping.ToRecord(body), ifRevision), []);
+        if (body is null)
+        {
+            return (null, unreadable);
+        }
+        var record = PersonaMapping.ToRecord(body);
+        return replace ? (new Replace(target, record, ifRevision), []) : (new Put(target, record, ifRevision), []);
     }
 
     private static string? Text(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;

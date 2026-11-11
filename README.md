@@ -89,7 +89,7 @@ The CMS is the single source of truth, so nobody edits a local copy. For work th
 
 | Command             | What it does                                                                                  |
 | :------------------ | :-------------------------------------------------------------------------------------------- |
-| `suwagcms apply`    | applies a file of changes all or nothing, so the order of changes inside it does not matter; a dry run only reports what would break |
+| `suwagcms apply`    | applies a file of changes all or nothing, so the order of changes inside it does not matter; a dry run only reports what would break; `--replace` applies a seed again over what the CMS holds, and `--compare` says first what that would change |
 | `suwagcms export`   | writes a version to files for reading and searching; changes to those files do nothing        |
 | `suwagcms diff`     | compares two versions                                                                         |
 | `suwagcms persona`  | shows the bot's persona, and replaces the whole of it from a file                             |

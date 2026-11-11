@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Suwagcms.Sdk.Format;
@@ -114,6 +115,10 @@ internal static class ResourceKinds
     public static ResourceKind FromColumn(string column) => Enum.Parse<ResourceKind>(column, ignoreCase: true);
 
     public static string Write(object record) => JsonSerializer.Serialize(record, Json);
+
+    // Why: two records are the same when their stored forms are, read as data: what the save fills in for a field left out is in both, and the order of a map's keys counts for nothing.
+    public static bool Same(object record, object other) =>
+        JsonNode.DeepEquals(JsonNode.Parse(Write(record)), JsonNode.Parse(Write(other)));
 
     public static object Read(ResourceKind kind, string body) =>
         JsonSerializer.Deserialize(body, RecordType(kind), Json) ?? throw new InvalidOperationException($"A stored {kind} body is null.");

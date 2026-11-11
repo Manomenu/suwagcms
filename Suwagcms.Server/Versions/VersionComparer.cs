@@ -110,33 +110,48 @@ internal static class VersionComparer
             .OfType<JsonObject>()
             .ToDictionary(item => item[key]?.GetValue<string>() ?? throw new InvalidOperationException($"A resource has no {key}."));
 
+    // Why: one resource's stored form against another, as a comparison of two versions tells them apart, so a file of changes compared with the CMS reads like a diff; null when they do not differ.
+    public static ResourceDifference? Between(ResourceKind kind, string id, string? before, string? after)
+    {
+        var was = before is null ? null : Parse(before);
+        var now = after is null ? null : Parse(after);
+        return kind == ResourceKind.Persona ? PersonaDifference(was, now).FirstOrDefault() : Resource(kind, id, was, now);
+    }
+
     private static IEnumerable<ResourceDifference> Resources(ResourceKind kind, string key, JsonNode? before, JsonNode? after)
     {
         var old = ByKey(before, key);
         var fresh = ByKey(after, key);
-        foreach (var id in old.Keys.Union(fresh.Keys).Order(StringComparer.Ordinal))
+        return old
+            .Keys.Union(fresh.Keys)
+            .Order(StringComparer.Ordinal)
+            .Select(id => Resource(kind, id, old.GetValueOrDefault(id), fresh.GetValueOrDefault(id)))
+            .OfType<ResourceDifference>();
+    }
+
+    private static ResourceDifference? Resource(ResourceKind kind, string id, JsonObject? was, JsonObject? now)
+    {
+        if (now is null)
         {
-            if (!fresh.TryGetValue(id, out var now))
-            {
-                yield return new ResourceDifference(kind, id, Difference.Removed, [], []);
-            }
-            else if (!old.TryGetValue(id, out var was))
-            {
-                yield return new ResourceDifference(kind, id, Difference.Added, [], []);
-            }
-            else if (!JsonNode.DeepEquals(was, now))
-            {
-                yield return kind == ResourceKind.Procedure
-                    ? new ResourceDifference(
-                        kind,
-                        id,
-                        Difference.Changed,
-                        Fields(Without(was, ProcedureParts), Without(now, ProcedureParts), ""),
-                        [.. Parts("step", was["steps"], now["steps"]), .. Parts("local fact", was["localFacts"], now["localFacts"])]
-                    )
-                    : new ResourceDifference(kind, id, Difference.Changed, Fields(was, now, ""), []);
-            }
+            return was is null ? null : new ResourceDifference(kind, id, Difference.Removed, [], []);
         }
+        if (was is null)
+        {
+            return new ResourceDifference(kind, id, Difference.Added, [], []);
+        }
+        if (JsonNode.DeepEquals(was, now))
+        {
+            return null;
+        }
+        return kind == ResourceKind.Procedure
+            ? new ResourceDifference(
+                kind,
+                id,
+                Difference.Changed,
+                Fields(Without(was, ProcedureParts), Without(now, ProcedureParts), ""),
+                [.. Parts("step", was["steps"], now["steps"]), .. Parts("local fact", was["localFacts"], now["localFacts"])]
+            )
+            : new ResourceDifference(kind, id, Difference.Changed, Fields(was, now, ""), []);
     }
 
     // Why: one member, not a list, and its texts are what a person wrote line by line, so even a persona added or removed says its lines.

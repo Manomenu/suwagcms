@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Changes;
+using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Editing;
+using Suwagcms.Server.Versions;
 
 namespace Suwagcms.Server.Changes;
 
@@ -10,6 +12,11 @@ internal static class ChangesEndpoints
 {
     private const string Title = "The changes were not applied.";
     private const string Problem = "application/problem+json";
+    private const string Added = "added";
+    private const string Replaced = "replaced";
+    private const string Unchanged = "unchanged";
+    private const string Edited = "edited";
+    private const string Deleted = "deleted";
 
     public static void MapChanges(this IEndpointRouteBuilder routes) =>
         routes
@@ -23,10 +30,11 @@ internal static class ChangesEndpoints
         HttpRequest request,
         DefinitionEditor editor,
         CancellationToken cancellationToken,
-        bool dryRun = false
+        bool dryRun = false,
+        bool replace = false
     )
     {
-        var (items, unreadable) = await ChangeList.ReadAsync(request.Body, bot, cancellationToken);
+        var (items, unreadable) = await ChangeList.ReadAsync(request.Body, bot, replace, cancellationToken);
         if (unreadable.Count > 0)
         {
             return Refused(unreadable);
@@ -40,23 +48,50 @@ internal static class ChangesEndpoints
         };
     }
 
-    private static ChangesApplied Answer(List<ChangeItem> items, EditResult.Saved saved, bool dryRun) =>
-        new(
-            items.Count(item => item.Action == "added"),
-            items.Count(item => item.Action == "edited"),
-            items.Count(item => item.Action == "deleted"),
+    private static ChangesApplied Answer(List<ChangeItem> items, EditResult.Saved saved, bool dryRun)
+    {
+        var changes = items.Select(item => Applied(item, saved)).ToList();
+        var named = items.Select(item => item.Change.Target).ToHashSet();
+        var kinds = named.Select(target => target.Kind).ToHashSet();
+        return new(
+            changes.Count(change => change.Action == Added),
+            changes.Count(change => change.Action == Replaced),
+            changes.Count(change => change.Action == Unchanged),
+            changes.Count(change => change.Action == Edited),
+            changes.Count(change => change.Action == Deleted),
             dryRun,
+            changes,
             [
-                .. items.Select(item => new ChangeApplied(
-                    item.Position,
-                    item.Action,
-                    item.Kind,
-                    item.Change.Target.Id,
-                    saved.Revisions.TryGetValue(item.Change.Target, out var revision) ? revision : null
-                )),
+                .. saved
+                    .Before.Keys.Where(target => kinds.Contains(target.Kind) && !named.Contains(target))
+                    .Select(target => new UnmentionedResource(ResourceKinds.Word(target.Kind), target.Id))
+                    .OrderBy(resource => resource.Kind, StringComparer.Ordinal)
+                    .ThenBy(resource => resource.Id, StringComparer.Ordinal),
             ],
             saved.NotReady
         );
+    }
+
+    private static ChangeApplied Applied(ChangeItem item, EditResult.Saved saved)
+    {
+        var target = item.Change.Target;
+        var was = saved.Before.GetValueOrDefault(target);
+        var now = saved.After.GetValueOrDefault(target);
+        var action = item.Change switch
+        {
+            Replace when ReferenceEquals(was, now) => Unchanged,
+            Replace when was is not null && item.Action == Added => Replaced,
+            _ => item.Action,
+        };
+        var difference = VersionComparer.Between(
+            target.Kind,
+            target.Id,
+            was is null ? null : ResourceKinds.Write(was.Record),
+            now is null ? null : ResourceKinds.Write(now.Record)
+        );
+        var changed = difference is { Difference: Difference.Changed } ? difference : null;
+        return new ChangeApplied(item.Position, action, item.Kind, target.Id, now?.Revision, changed?.Fields ?? [], changed?.Parts ?? []);
+    }
 
     // Why: the rules name a resource and not a position; a mistake on a resource the file does not name has no position to give.
     private static ChangeMistake Placed(Mistake mistake, List<ChangeItem> items) =>
