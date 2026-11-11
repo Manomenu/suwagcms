@@ -383,7 +383,7 @@ public sealed class ActionTestRunTests(TestDatabase database, ClassServer server
     private static BotCapabilities Declaring() =>
         new()
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Blocks = Block.Names,
             CodeActions = [Lookup],
         };

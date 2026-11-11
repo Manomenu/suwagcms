@@ -46,12 +46,13 @@ export function placeOf(mistake: Mistake, procedure: string, draft: Draft): stri
     const branch = new RegExp(`^steps\\.${name}\\.next\\[(\\d+)\\]`).exec(path);
     if (branch) return `branch:${name}:${branch[1]}`;
     if (path === `steps.${name}.onFailure`) return `failure:${name}`;
+    if (path === `steps.${name}.onUnavailable`) return `unavailable:${name}`;
     return `step:${name}`;
 }
 
 /** The step to select for a place, so clicking a mistake opens the row it is about. */
 export function stepOfPlace(place: string): string | null {
-    const match = /^(?:step|failure|knowledge):([^:]+)/.exec(place);
+    const match = /^(?:step|failure|unavailable|knowledge):([^:]+)/.exec(place);
     return match?.[1] ?? null;
 }
 

@@ -2,6 +2,7 @@
 // shape the server accepts, and the server's dry run says what is wrong with it.
 import type { Fact, ProcedureDetail, SaveProcedure } from "./api";
 import {
+    armsOf,
     changeList,
     changeRow,
     emptyList,
@@ -9,6 +10,7 @@ import {
     findRow,
     firstStepOf,
     linksOf,
+    listAt,
     listOf,
     moveIf,
     moveRow as moveRowIn,
@@ -76,6 +78,8 @@ export interface Step {
     results?: Record<string, string>;
     /** Held only by a step under Not connected: the place of a row in the list says where any other step goes. */
     onFailure?: string;
+    /** Held only by a step under Not connected, as onFailure is. */
+    onUnavailable?: string;
     next?: string | Rule[];
 }
 
@@ -144,6 +148,7 @@ function stepOf(wire: Wire): Step {
     if (wire.with) step.with = { ...wire.with };
     if (wire.results) step.results = { ...wire.results };
     if (wire.onFailure != null) step.onFailure = wire.onFailure;
+    if (wire.onUnavailable != null) step.onUnavailable = wire.onUnavailable;
     const next = wire.next;
     if (typeof next === "string") step.next = next;
     else if (Array.isArray(next)) step.next = next.map(ruleOf);
@@ -161,7 +166,7 @@ export function fromDetail(detail: ProcedureDetail): Draft {
         steps: Object.fromEntries(
             Object.entries(stored).map(([name, step]) => {
                 if (notConnected.includes(name)) return [name, step];
-                const { next: _next, onFailure: _onFailure, ...block } = step;
+                const { next: _next, onFailure: _onFailure, onUnavailable: _onUnavailable, ...block } = step;
                 return [name, block];
             }),
         ),
@@ -182,6 +187,7 @@ export function toSave(draft: Draft): SaveProcedure {
                 const linked = links[name];
                 const next = linked ? linked.next : step.next;
                 const onFailure = linked ? linked.onFailure : step.onFailure;
+                const onUnavailable = linked ? linked.onUnavailable : step.onUnavailable;
                 return [
                     name,
                     {
@@ -195,6 +201,7 @@ export function toSave(draft: Draft): SaveProcedure {
                         ...(step.with ? { with: step.with } : {}),
                         ...(step.results ? { results: step.results } : {}),
                         ...(onFailure === undefined ? {} : { onFailure }),
+                        ...(onUnavailable === undefined ? {} : { onUnavailable }),
                         ...(next === undefined ? {} : { next }),
                     },
                 ];
@@ -241,6 +248,8 @@ export function setListEnd(draft: Draft, ref: ListRef, last: ListEnd): Draft {
 
 /** End says a step has no next, which is what the end of a list already means when nothing follows, so it is only offered where a row would. */
 export function canEnd(draft: Draft, ref: ListRef): boolean {
+    // Why: an empty When unavailable means none, so an End with no step above it would say nothing.
+    if (ref?.arm === "unavailable" && listAt(draft.list, ref).rows.length === 0) return false;
     return ref !== null && fallOf(draft.list, ref) !== null;
 }
 
@@ -281,7 +290,7 @@ export function removeIf(draft: Draft, name: string): Draft {
         steps: withoutSteps(draft.steps, gone),
         list: changeRow(draft.list, name, (found) => {
             const { branches: _, ...rest } = found;
-            return found.failure ? { ...rest, success: emptyList() } : rest;
+            return found.failure || found.unavailable ? { ...rest, success: emptyList() } : rest;
         }),
     };
 }
@@ -333,12 +342,7 @@ export function removeBranch(draft: Draft, name: string, index: number): Draft {
 function ownerRef(list: StepList, name: string, ref: ListRef = null): ListRef {
     if (list.rows.some((row) => row.name === name)) return ref;
     for (const row of list.rows) {
-        const arms: { arm: NonNullable<ListRef>["arm"]; list: StepList }[] = [
-            ...(row.failure ? [{ arm: "failure" as const, list: row.failure }] : []),
-            ...(row.success ? [{ arm: "success" as const, list: row.success }] : []),
-            ...(row.branches ?? []).map((branch, arm) => ({ arm, list: branch.list })),
-        ];
-        for (const arm of arms) {
+        for (const arm of armsOf(row)) {
             if (namesIn(arm.list).includes(name)) return ownerRef(arm.list, name, { step: row.name, arm: arm.arm });
         }
     }
@@ -381,6 +385,7 @@ export function renameStep(draft: Draft, from: string, to: string): Draft {
                 {
                     ...step,
                     ...(step.onFailure === undefined ? {} : { onFailure: again(step.onFailure) }),
+                    ...(step.onUnavailable === undefined ? {} : { onUnavailable: again(step.onUnavailable) }),
                     ...(step.next === undefined
                         ? {}
                         : {
@@ -399,7 +404,7 @@ export function renameStep(draft: Draft, from: string, to: string): Draft {
 export function whyNotDeletable(row: StepRow | undefined): string | null {
     if (row === undefined) return null;
     if (row.branches) return "Remove the If below this step first: an If needs a step above it.";
-    if ((row.failure && namesIn(row.failure).length > 0) || (row.success && namesIn(row.success).length > 0)) {
+    if (armsOf(row).some((arm) => typeof arm.arm === "string" && namesIn(arm.list).length > 0)) {
         return "Remove the steps in its branches first.";
     }
     return null;
@@ -431,7 +436,7 @@ export function moveBranch(draft: Draft, name: string, index: number, direction:
 
 /** Moves a Not connected step to the end of the main list; its place says where it goes now, so what it stored goes. */
 export function connectStep(draft: Draft, name: string): Draft {
-    const { next: _next, onFailure: _onFailure, ...block } = draft.steps[name] ?? {};
+    const { next: _next, onFailure: _onFailure, onUnavailable: _onUnavailable, ...block } = draft.steps[name] ?? {};
     return {
         ...draft,
         notConnected: draft.notConnected.filter((other) => other !== name),

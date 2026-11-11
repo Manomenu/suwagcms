@@ -13,7 +13,7 @@ export const PROCEDURE_HINTS = {
         "How Next: rows, traces and the bot's points refer to this step. camelCase, unique in the procedure. Renaming it renames every place that points at it; traces then use the new name.",
     collect:
         "The bot asks until these facts are known, and the model fills them from what the customer writes. A fact the model may not write, writableBy assign, is not offered.",
-    say: "A fixed text sent to the customer word for word, without the model.",
+    say: "A fixed text sent to the customer word for word, without the model. {name} shows a fact's value, like {customer.city}; a local fact goes by its name in this procedure.",
     assign: "Overwrites these facts with the values you choose here, without asking the customer.",
     start: "Starts this procedure on top of the current one. 'conversation' cannot be started.",
     instruction: "What the model is told to do with the points below, like how to open or what tone to take.",
@@ -26,6 +26,8 @@ export const PROCEDURE_HINTS = {
     actionParameters: "The fact each parameter of the action takes its value from. Only facts that fit its type are offered.",
     actionResults: "The fact each result of the action is written to. A result left as ignored is not kept.",
     onFailure: "What happens when the action fails. No steps: it goes on below.",
+    onUnavailable:
+        "What happens when the action is turned off, so the customer can be told something other than to try again. No steps: as on failure.",
     onSuccess: "What happens when the action succeeds. No steps: it goes on below.",
     next: "Goes on at this step instead of the row below, forward or back.",
     conditions: "When every condition here holds, this branch is taken. Branches are tried in order, and the first that holds wins.",

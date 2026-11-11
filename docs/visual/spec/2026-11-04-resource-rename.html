@@ -380,7 +380,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <p>Only the target of a link changes: the rest of each referrer's text stays exactly as it was, and versions already created keep the old <code>id</code>. Plain text naming a resource is not a reference, so it is left alone.</p>
   </div>
   <div class="stats">
-    <div><b>23</b><span>criteria</span></div>
+    <div><b>24</b><span>criteria</span></div>
   </div>
 </section>
 <section data-role="problem">
@@ -439,7 +439,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <tr><th>Kind</th><th>What is rewritten</th></tr>
     <tr><td>article</td><td>each link to it in the <code>content</code> and <code>llmGuide</code> of the bot's articles</td></tr>
     <tr><td>knowledge base</td><td>the <code>knowledgeBase</code> of each of its articles and of each <code>knowledge</code> entry naming it</td></tr>
-    <tr><td>global fact</td><td>its <code>name</code>, in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it</td></tr>
+    <tr><td>global fact</td><td>its <code>name</code>, in each <code>collect</code>, <code>assign</code> and <code>when</code> that uses it, each step's mapping, and each placeholder in a <code>say</code> text that names it as a whole: <code>{customer.city}</code> changes, while the words <code>customer.city</code> in plain text and a longer name starting with it stay as they are</td></tr>
     <tr><td>procedure</td><td>its <code>id</code>; <code>conversation</code> cannot change its id</td></tr>
   </table>
   <p>Each later kind of resource and reference joins this list through “Criteria after other features”. Changing a title is not this operation, and the knowledge-base screen's existing “Rename” stays a change of title, so here the web's action is called “Change id”, or “Change name” on a fact, whose id is its name.</p>
@@ -520,6 +520,7 @@ This bot has no article 'cennik'. 'suwagcms articles list' shows them.</div>
     <li><code>AC-resource-rename-26</code> Changing an article's <code>id</code> rewrites each <code>knowledge</code> entry that names it; a search query holding those words is text and stays as it is.</li>
     <li><code>AC-resource-rename-27</code> Changing a procedure's <code>id</code> rewrites each <code>cms://procedure/</code> link in the bot's articles, with the same byte-for-byte rule.</li>
     <li><code>AC-resource-rename-28</code> Change id is disabled while the form has unsaved changes, with the reason beside it, on facts, knowledge bases, articles and actions.</li>
+    <li><code>AC-resource-rename-30</code> Changing a fact's name rewrites each placeholder in a <code>say</code> text that names it as a whole, leaving plain text and longer names as they are, and the procedure reads back with the new name in YAML and in JSON.</li>
     <li><code>AC-resource-rename-29</code> The heading of the edit screen shows the id that Change id acts on, beside the button, with help saying what it does; on a fact, whose id is its name, the action, its dialog and its help say “name”.</li>
   </ul>
 </section>

@@ -85,7 +85,7 @@ async function startDeclaringBot(id: string, blocks: () => string[]): Promise<{ 
         response.writeHead(200, { "content-type": "application/json" }).end(
             JSON.stringify({
                 bot: id,
-                formatVersion: 4,
+                formatVersion: 5,
                 blocks: blocks(),
                 codeActions: [{ id: "lookupPolicy", description: "Finds a policy" }],
             }),

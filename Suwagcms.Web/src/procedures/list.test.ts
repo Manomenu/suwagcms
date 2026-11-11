@@ -28,6 +28,7 @@ function lines(list: StepList, indent = ""): string[] {
     list.rows.forEach((row, index) => {
         out.push(`${indent}${index + 1}. ${row.name}`);
         if (row.failure) out.push(`${indent}On failure`, ...lines(row.failure, `${indent}  `));
+        if (row.unavailable) out.push(`${indent}When unavailable`, ...lines(row.unavailable, `${indent}  `));
         if (row.success) out.push(`${indent}On success`, ...lines(row.success, `${indent}  `));
         (row.branches ?? []).forEach((branch, at) => {
             out.push(indent + (branch.when === undefined ? "Else" : at === 0 ? "If" : "Else if"));
@@ -392,7 +393,13 @@ function randomGraph(seed: number): { first: string | null; steps: Graph } {
         else if (kind < 8) steps[name] = { say: name, next: rulesOf() };
         else {
             const shape = pick(3);
-            steps[name] = { action: "x", onFailure: any(), ...(shape === 0 ? {} : { next: shape === 1 ? any() : rulesOf() }) };
+            const unavailable = pick(3);
+            steps[name] = {
+                action: "x",
+                onFailure: any(),
+                ...(unavailable === 0 ? {} : { onUnavailable: any() }),
+                ...(shape === 0 ? {} : { next: shape === 1 ? any() : rulesOf() }),
+            };
         }
     }
     return { first: pick(10) === 0 ? null : (names[0] ?? "s0"), steps };
@@ -414,6 +421,7 @@ describe("the round trip", () => {
                 if (notConnected.includes(name)) continue;
                 expect(links[name]?.next, `seed ${seed}, next of ${name}`).toEqual(nextAsSaved(step.next));
                 expect(links[name]?.onFailure, `seed ${seed}, onFailure of ${name}`).toEqual(step.onFailure);
+                expect(links[name]?.onUnavailable, `seed ${seed}, onUnavailable of ${name}`).toEqual(step.onUnavailable);
             }
         }
     });
@@ -436,6 +444,29 @@ describe("the round trip", () => {
             expect(saved.steps, `seed ${seed}`).toEqual(expected);
             const again = toSave(fromDetail({ ...detail, steps: saved.steps } as unknown as ProcedureDetail));
             expect(again, `seed ${seed}, second round`).toEqual(saved);
+        }
+    });
+
+    it("AC-procedure-creator-29: When unavailable is a branch beside On failure, and one naming the step that follows or the failure step keeps it", () => {
+        const steps: Graph = {
+            s: { action: "f", onFailure: "sorry", onUnavailable: "call", next: "go" },
+            sorry: { say: "no" },
+            call: { say: "we call", next: "go" },
+            go: { say: "go" },
+        };
+        expect(read("s", steps)).toEqual([
+            "1. s",
+            "On failure",
+            "  1. sorry",
+            "  End",
+            "When unavailable",
+            "  1. call",
+            "On success",
+            "2. go",
+        ]);
+        for (const onUnavailable of ["go", "sorry"]) {
+            const graph: Graph = { ...steps, s: { action: "f", onFailure: "sorry", onUnavailable, next: "go" } };
+            expect(linksOf(listOf("s", graph).list)["s"], onUnavailable).toEqual({ onFailure: "sorry", onUnavailable, next: "go" });
         }
     });
 

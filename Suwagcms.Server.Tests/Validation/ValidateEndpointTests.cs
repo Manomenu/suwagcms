@@ -12,11 +12,11 @@ namespace Suwagcms.Server.Tests.Validation;
 public sealed class ValidateEndpointTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private const string Unfinished = """
-        {"formatVersion":4,"facts":[{"name":"Bad Name","type":"blob","description":" "}],
+        {"formatVersion":5,"facts":[{"name":"Bad Name","type":"blob","description":" "}],
          "procedures":[{"id":"conversation","description":"Base","firstStep":"ask","steps":{"ask":{"say":"Hello"}}}]}
         """;
 
-    private const string Declares = """{"bot":"anything","formatVersion":4,"blocks":["listen"]}""";
+    private const string Declares = """{"bot":"anything","formatVersion":5,"blocks":["listen"]}""";
 
     private TestApp App => server.App;
 
@@ -72,11 +72,11 @@ public sealed class ValidateEndpointTests(TestDatabase database, ClassServer ser
     {
         var answer = await PostAsync(
             Client(),
-            """{"definition":{"formatVersion":4,"procedures":[{"id":"conversation","description":"Base","firstStep":"ask","steps":{"ask":{"say":"Hello"}}}]}}"""
+            """{"definition":{"formatVersion":5,"procedures":[{"id":"conversation","description":"Base","firstStep":"ask","steps":{"ask":{"say":"Hello"}}}]}}"""
         );
         Assert.Empty(answer.Mistakes);
 
-        var missing = await PostAsync(Client(), """{"definition":{"formatVersion":4}}""");
+        var missing = await PostAsync(Client(), """{"definition":{"formatVersion":5}}""");
         Assert.Equal(MistakeCodes.BotConversationMissing, Assert.Single(missing.Mistakes).Code);
     }
 
@@ -89,7 +89,7 @@ public sealed class ValidateEndpointTests(TestDatabase database, ClassServer ser
         Assert.Equal(
             MistakeCodes.DeclarationInvalid,
             Assert
-                .Single((await PostAsync(client, """{"definition":{"formatVersion":4},"declaration":{"blocks":"listen"}}""")).Mistakes)
+                .Single((await PostAsync(client, """{"definition":{"formatVersion":5},"declaration":{"blocks":"listen"}}""")).Mistakes)
                 .Code
         );
 

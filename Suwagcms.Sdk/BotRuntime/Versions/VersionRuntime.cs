@@ -363,11 +363,11 @@ internal sealed partial class VersionRuntime(
             Availability = from.State.Availability ?? BotAvailability.Nothing,
         };
 
-    private static CurrentChoice? ChoiceIn(string body)
+    private static CurrentVersionChoice? ChoiceIn(string body)
     {
         try
         {
-            return JsonSerializer.Deserialize<CurrentChoice>(body, BotRuntimeJson.Options);
+            return JsonSerializer.Deserialize<CurrentVersionChoice>(body, BotRuntimeJson.Options);
         }
         catch (JsonException)
         {

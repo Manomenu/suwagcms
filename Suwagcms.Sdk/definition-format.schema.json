@@ -384,6 +384,12 @@
                     "null"
                   ]
                 },
+                "onUnavailable": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
                 "next": {
                   "oneOf": [
                     {

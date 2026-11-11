@@ -115,7 +115,7 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 
 - `suwagcms procedures list` - list the procedures of the bot with what still stops each from becoming a version, and what stops the bot as a whole (no `conversation`); `--open` opens the Procedures screen in the web app.
 - `suwagcms procedures show <id>` - print one procedure as YAML (`--json` for JSON), with its revision; what stops it from becoming a version is added as comments. Both forms are accepted back by `procedures edit --file`; `--open` opens it in the web editor instead.
-- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results` and `onFailure` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused.
+- `suwagcms procedures add --file <file>` - add a procedure from a YAML or JSON file that holds the whole of it, id included. A step runs an action with `action`, `with`, `results`, `onFailure` and the optional `onUnavailable` (see Action step below). An unfinished procedure is saved and the answer lists what still stops a version; a mistake that makes it unsound is refused.
 - `suwagcms procedures edit <id> --file <file> [--if-revision n]` - replace a procedure with the whole of the file (never a step at a time). The `revision` field of a file from `show` guards the edit; `--if-revision` wins over it. A file whose id differs from `<id>` is refused.
 - `suwagcms procedures delete <id> [--if-revision n]` - delete a procedure; `conversation`, the base of every conversation, is always refused.
 - `suwagcms actions list` - list the actions of the bot, HTTP and code in one list, with the implementation of each and whether the bot also declares an HTTP action's id or no longer declares a code action in use; `--open` opens the Actions screen in the web app.
@@ -125,7 +125,7 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 - `suwagcms actions delete <id> [--if-revision n]` - delete an action that no procedure uses. A code action is read-only too: the CMS removes its copy once the bot stops declaring it and no step uses it.
 - `suwagcms actions test <id> [--param name=value ...] [--yes]` - try a saved action through the bot, also one no version holds yet, and see the results or the failure with its reason. A test run really calls the service: every method but `GET`, and every code action, needs `--yes`; without it the command prints what would be called, sends nothing and exits `1`. `--json` gives `outcome` (`success`, `failure`, or `unreachable` or `notOffered`, where the action has not been judged), `results`, `reason`, `status` and `elapsedMs`. It exits `0` only on success. `--open` opens the action's page, with its test panel, and calls nothing.
 - `suwagcms usage <kind> <id>` - with `<kind>` fact, article, procedure or action: show what uses a resource ("Used by") and what it uses ("Uses"), each with the field that holds the reference; `--json` gives both as data; `--open` opens the resource's page, which lists the same. Ask it before a delete; it changes nothing.
-- `suwagcms rename <kind> <id> <newId> [--if-revision n] [--dry-run]` - with `<kind>` fact, kb, article, procedure or action: change a resource's id and rewrite every reference to it, all or nothing: a link's target in `content` and `llmGuide` (its label and all other text stay byte for byte), an article's `knowledgeBase`, a fact's name in each `collect`, `assign` and `when`. Each rewritten resource gets a new revision, so a save based on an older one is refused; versions already created keep the old id, and plain text naming the resource is not changed. `conversation` cannot change its id. `--dry-run` lists each referrer and field; `--json` gives them as data; `--open` opens the resource at its new address.
+- `suwagcms rename <kind> <id> <newId> [--if-revision n] [--dry-run]` - with `<kind>` fact, kb, article, procedure or action: change a resource's id and rewrite every reference to it, all or nothing: a link's target in `content` and `llmGuide` (its label and all other text stay byte for byte), an article's `knowledgeBase`, a fact's name in each `collect`, `assign`, `when` and step mapping, and in each `{name}` placeholder of a `say` text that names it as a whole. Each rewritten resource gets a new revision, so a save based on an older one is refused; versions already created keep the old id, and plain text naming the resource is not changed. `conversation` cannot change its id. `--dry-run` lists each referrer and field; `--json` gives them as data; `--open` opens the resource at its new address.
 - `suwagcms versions list` - list the versions of the bot, newest first, with date, counts of resources and digest; `--open` opens the Versions screen in the web app.
 - `suwagcms versions create [--dry-run]` - validate the bot's whole working state and freeze it as the next numbered version, which never changes. Refused (exit code `1`) with every mistake while anything is unfinished, and when nothing has changed since the latest version. It never contacts the bot; `suwagcms push` sends it. `--dry-run` answers the same, creates nothing and uses no number.
 - `suwagcms versions show <number>` - show one version with its document exactly as stored; `--json` gives it with its digest; `--open` opens the version's page.
@@ -145,7 +145,7 @@ example `If the customer wants a valuation, start [the valuation](cms://procedur
 - `suwagcms push --version <n>` - this is the rollback: push a kept version other than the latest. It changes only the bot: the working state and the latest version stay as they are, resources deleted since come back to customers but stay deleted in the CMS, and conversations in progress finish on their version; `suwagcms push` goes forward again. `--dry-run` says whether the version would be sent, made current or needs nothing, lists what it changes, and leaves the bot as it is. A bot holding the version on an SDK without the route fails saying to upgrade it.
 - `suwagcms diff <from> <to>` - say what going from one version to another changes: each resource added, removed or changed, and in a changed one its fields with old and new values, `content` and `llmGuide` as lines removed and added, and a procedure's steps and local facts. It reads two frozen versions only, never the working state or the bot. Exit code `0` also when differences are found; `1` for a number the bot does not have. `--json` gives the same in a fixed order; `--open` opens the comparison in the web app.
 - `suwagcms export [<number>] --out <folder>` - write a version (the latest when no number is given) to a new or empty folder of YAML files for reading and searching with ordinary tools: one file for the version itself and one per fact, knowledge base, article, procedure and action, in a folder per kind, and one for the persona. Changes to those files do nothing: no command takes them back. A folder with anything in it, or a number the bot does not have, is refused with exit code `1`; no `--out` exits `2`. `--json` gives the folder, the version and the count of files per kind; `--open` opens the version in the web app.
-- `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON, holding the whole bot and `formatVersion: 4`) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
+- `suwagcms validate --file <file> [--declaration <file>] [--stage save|version]` - check a definition (YAML or JSON, holding the whole bot and `formatVersion: 5`) with the same validator the CMS uses, without storing anything or contacting a bot: for a bot outside .NET. The Version stage unless told otherwise; `--declaration` also reports what that bot cannot run (the file holds what `GET /suwagcms/declaration` answers). Exit code `0` for no mistakes, `1` with every mistake otherwise.
 
 `actions add`, `actions edit`, `actions delete`, `facts add`, `facts edit`, `facts delete`, `kb add`, `kb edit`, `kb delete`, `articles add`, `articles edit`, `articles delete`, `procedures add`, `procedures edit`, `procedures delete`, `persona edit`, `rename`, `apply` and `versions create` take `--dry-run`: it answers as the real command would, with the same refusals, and changes nothing. Use it to learn what a change would be refused for.
 
@@ -192,7 +192,7 @@ Show what a push will change first: `suwagcms versions status` gives the version
 
 ## Action step
 
-A procedure's step runs an action with the `action` block: `with` maps each parameter to the fact that gives its value, `results` maps a result to the fact it writes (one left out is ignored), `onFailure` names the step to go to when the action fails, and `next` says where to go on success. On a failure no fact is written.
+A procedure's step runs an action with the `action` block: `with` maps each parameter to the fact that gives its value, `results` maps a result to the fact it writes (one left out is ignored), `onFailure` names the step to go to when the action fails, `onUnavailable` (optional) the step to go to when the action is turned off, so the customer hears something other than to try again (without it the step takes `onFailure`), and `next` says where to go on success. On a failure no fact is written.
 
 ```yaml
 checkAddress:
@@ -200,6 +200,7 @@ checkAddress:
   with: { address: customer.address }
   results: { serviceable: isServiceable }
   onFailure: tellItFailed
+  onUnavailable: tellSomeoneWillCall
   next:
     - when: { isServiceable: { oneOf: [yes] } }
       to: offerPlan
@@ -232,7 +233,7 @@ A parameter or a result is typed like a fact (`enum` with `values`, `int` with `
 
 ## Procedure file
 
-A procedure is a graph of steps, which the web edits as a list; the file holds one whole procedure in YAML or JSON (the same structure). It belongs to `formatVersion: 4`, which a whole definition names and a procedure file does not. `id` is one camelCase word,
+A procedure is a graph of steps, which the web edits as a list; the file holds one whole procedure in YAML or JSON (the same structure). It belongs to `formatVersion: 5`, which a whole definition names and a procedure file does not. `id` is one camelCase word,
 `description` is required, step names are camelCase. The procedure called `conversation` is the base of every conversation: a version
 needs it, and a new bot has none, so write it. The smallest one:
 
@@ -252,6 +253,10 @@ steps:
 - A step holds exactly one block: `listen` (wait for the next message), `collect: [fact, ...]` (ask until the facts are known),
   `say: text` (send a fixed text), `assign: { fact: value }` (overwrite facts with values you chose), `start` and `inform` (below). `collect` cannot name a fact
   with `writableBy: assign`; every fact named must exist (`suwagcms facts list`) and a value must fit the fact's type.
+- In a `say` text, `{name}` shows the value of the fact `name`, named as `collect` names it (a local fact by its name in the procedure), so the customer
+  hears an action's result exactly: `say: Booked for {booking.date}, reference {bookingReference}.` The bot fills it in when it sends the text. A placeholder
+  naming a fact the procedure does not see is refused (`reference.missing`); braces around anything else are plain text. Quote a text that starts with `{`.
+  A placeholder is a use of its fact, as in `collect`: it blocks deleting the fact or changing its type, and `suwagcms rename fact` rewrites it.
 - `start: <procedure id>` starts another procedure of this bot, and the step's `next` is where this one goes on once that one ends. The
   target must exist (`suwagcms procedures list`); `conversation` cannot be started (`start.target.conversation`), and a loop of starts is
   refused (`reference.loop`). A blank target is saved and listed as unfinished.
@@ -261,7 +266,7 @@ steps:
   (`step.inform.pointBlank`) or a blank instruction (`instruction.blank`) is saved and listed as unfinished. A point is fixed text and names no fact.
 - `next` is a step's id, or a list of rules `{ when, to }` tried from the top; the last rule has no `when` and is the default, and only the last may (`next.default.notLast`).
   A step without `next` ends the procedure. Steps may loop back (a `conversation` returns to its own `listen`).
-- The web's list is the same graph in other words, so nothing it does needs a file form of its own. Its `If` is a rule with `when` on the step above, its `Else` the last rule without `when`, its `Next:` row a `next` naming a step or a rule's `to`, its `End` a step with no `next`, and an action's failure branch is `onFailure`.
+- The web's list is the same graph in other words, so nothing it does needs a file form of its own. Its `If` is a rule with `when` on the step above, its `Else` the last rule without `when`, its `Next:` row a `next` naming a step or a rule's `to`, its `End` a step with no `next`, an action's On failure branch `onFailure` and its When unavailable branch `onUnavailable`.
 - `when` maps facts to one condition each: `oneOf: [a, b]` (enum, int, text), `range: { min: 1, max: 9 }` (int; one bound may be left out)
   or `known: true|false` (any fact).
 - `whenStalled: { instruction: text }` is required when a step collects. It holds only its instruction: knowledge goes on an `inform`.

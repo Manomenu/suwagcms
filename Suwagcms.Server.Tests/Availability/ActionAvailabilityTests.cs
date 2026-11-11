@@ -25,6 +25,14 @@ public sealed class ActionAvailabilityTests(TestDatabase database, ClassServer s
           "failed":{"say":"Sorry."}}}
         """;
 
+    private const string OrderingWithCallBack = """
+        {"description":"Orders.","firstStep":"sendIt","steps":{
+          "sendIt":{"action":"send","onFailure":"failed","onUnavailable":"callBack","next":[{"to":"offer"}]},
+          "offer":{"say":"Sent."},
+          "callBack":{"say":"Someone will call you."},
+          "failed":{"say":"Sorry."}}}
+        """;
+
     private TestApp App => server.App;
 
     private async Task<(AvailabilityScene Scene, ActionApi Actions)> SceneAsync(BotCapabilities? declares = null)
@@ -109,7 +117,7 @@ public sealed class ActionAvailabilityTests(TestDatabase database, ClassServer s
         const string code = "lookupPolicy";
         var declares = new BotCapabilities
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Blocks = Block.Names,
             CodeActions = [new CodeAction { Id = code, Description = "Finds" }],
         };
@@ -126,25 +134,25 @@ public sealed class ActionAvailabilityTests(TestDatabase database, ClassServer s
 
     [Fact]
     [Trait("criterion", "AC-availability-28")]
-    public async Task For_a_step_on_a_turned_off_action_the_sdk_says_it_is_off_on_any_version_and_gives_the_failure_step()
+    public async Task For_a_step_on_a_turned_off_action_the_sdk_says_it_is_off_on_any_version_and_gives_the_unavailable_and_failure_steps()
     {
         var (scene, _) = await SceneAsync();
         await using var __ = scene;
         await PutProcedureAsync(scene);
         var older = (await scene.Push.CreateAsync()).Number;
         await scene.Push.PushAsync(older);
-        await scene.Push.ChangeAsync();
+        await PutProcedureAsync(scene, OrderingWithCallBack);
         var newer = (await scene.Push.CreateAsync()).Number;
         await scene.Push.PushAsync(newer);
 
         await scene.Turn("off", Send, kind: "action");
 
-        foreach (var number in new[] { older, newer })
+        foreach (var (number, unavailable) in new (int, string?)[] { (older, null), (newer, "callBack") })
         {
             var definition = await scene.Bot.Definitions.GetAsync(number, Token);
             var step = definition.Procedures.Single(procedure => procedure.Id == "ordering").Steps["sendIt"];
             Assert.True(scene.Bot.Definitions.IsOff(number, ResourceKind.Action, step.Action ?? ""));
-            Assert.Equal("failed", step.OnFailure);
+            Assert.Equal((unavailable, "failed"), (step.OnUnavailable, step.OnFailure));
         }
     }
 
@@ -174,9 +182,9 @@ public sealed class ActionAvailabilityTests(TestDatabase database, ClassServer s
         return await response.Content.ReadFromJsonAsync<ActionTestAnswer>(Token) ?? throw new InvalidOperationException("no answer");
     }
 
-    private static async Task PutProcedureAsync(AvailabilityScene scene)
+    private static async Task PutProcedureAsync(AvailabilityScene scene, string procedure = Ordering)
     {
-        using var content = new StringContent(Ordering, Encoding.UTF8, "application/json");
+        using var content = new StringContent(procedure, Encoding.UTF8, "application/json");
         (await scene.Push.Client.PutAsync($"/api/bots/{scene.Id}/procedures/ordering", content, Token)).EnsureSuccessStatusCode();
     }
 }

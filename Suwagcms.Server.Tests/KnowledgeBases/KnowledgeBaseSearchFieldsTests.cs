@@ -114,7 +114,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, ClassS
             id,
             declares: new BotCapabilities
             {
-                FormatVersion = 4,
+                FormatVersion = 5,
                 Blocks = Block.Names,
                 EmbeddingProfiles = ["default"],
             }

@@ -279,7 +279,7 @@
       "digest"
     ]
   },
-  "currentChoice": {
+  "currentVersionChoice": {
     "type": "object",
     "properties": {
       "number": {

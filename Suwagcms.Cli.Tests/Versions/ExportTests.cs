@@ -25,7 +25,7 @@ public sealed class ExportTests : IDisposable
     private static string Answer(params string[] files) => $$"""{"bot":"rzeczoznawca","number":14,"files":[{{string.Join(",", files)}}]}""";
 
     private static readonly string Whole = Answer(
-        File_("version.yaml", "version", "null", """{"bot":"rzeczoznawca","number":14,"formatVersion":4,"digest":"abc"}"""),
+        File_("version.yaml", "version", "null", """{"bot":"rzeczoznawca","number":14,"formatVersion":5,"digest":"abc"}"""),
         File_(
             "facts/customer.city.yaml",
             "customer.city",
@@ -193,7 +193,7 @@ public sealed class ExportTests : IDisposable
 
         Assert.Equal("rzeczoznawca", read?["bot"]?.GetValue<string>());
         Assert.Equal(14, read?["number"]?.GetValue<long>());
-        Assert.Equal(4, read?["formatVersion"]?.GetValue<long>());
+        Assert.Equal(5, read?["formatVersion"]?.GetValue<long>());
         Assert.Equal("abc", read?["digest"]?.GetValue<string>());
     }
 

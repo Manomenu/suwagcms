@@ -432,4 +432,34 @@ describe("an action step", () => {
         expect(toSave(draft).steps?.["listen"]).toEqual({ listen: {}, next: "say" });
         expect(toSave(renameStep(draft, "listen", "wait")).steps?.["action"]?.onFailure).toBe("wait");
     });
+
+    it("AC-action-block-16: When unavailable is an optional branch of the row: empty, the step has none; its first step or Next: names it, and it reads back", () => {
+        let draft: Draft = {
+            description: "",
+            list: { rows: [], last: null },
+            notConnected: [],
+            whenStalled: null,
+            localFacts: {},
+            steps: {},
+        };
+        draft = addStep(draft, null, "action").draft;
+        draft = addStep(draft, null, "say").draft;
+        draft = openFailure(draft, "action");
+        const ref = { step: "action", arm: "unavailable" as const };
+        expect(toSave(draft).steps?.["action"]).toEqual({ action: "", onFailure: "say", next: "say" });
+        expect(canEnd(draft, ref)).toBe(false);
+
+        draft = addStep(draft, ref, "listen").draft;
+        expect(toSave(draft).steps?.["action"]).toEqual({ action: "", onFailure: "say", onUnavailable: "listen", next: "say" });
+        expect(toSave(draft).steps?.["listen"]).toEqual({ listen: {}, next: "say" });
+        expect(toSave(renameStep(draft, "listen", "wait")).steps?.["action"]?.onUnavailable).toBe("wait");
+        const reopened = fromDetail({ ...toSave(draft), revision: 1, notReady: [] } as unknown as ProcedureDetail);
+        expect(toSave(reopened)).toEqual(toSave(draft));
+
+        draft = deleteStep(draft, "listen");
+        expect(toSave(draft).steps?.["action"]).toEqual({ action: "", onFailure: "say", next: "say" });
+
+        draft = setListEnd(draft, ref, { next: "say" });
+        expect(toSave(draft).steps?.["action"]).toEqual({ action: "", onFailure: "say", onUnavailable: "say", next: "say" });
+    });
 });

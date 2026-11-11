@@ -75,6 +75,9 @@ describe("the rules of every screen", () => {
         expect(filesWith(/data-row=|aria-expanded|[↑↓]/, notProcedures)).toEqual(["/src/procedures/ListRow.tsx"]);
         expect(sources["/src/procedures/StepsEditor.tsx"]).not.toMatch(/✕|<button\b|Remove them/);
         expect(sources["/src/procedures/StepsEditor.tsx"]).toContain("<ListRow");
+        for (const kind of ["failure", "unavailable", "success"]) {
+            expect(sources["/src/procedures/StepsEditor.tsx"]).toMatch(new RegExp(`<ListRow\\s+kind="${kind}"`));
+        }
     });
 
     it("AC-procedure-creator-45: every edit screen's Save sits in the shared actions that stay in view", () => {

@@ -8,7 +8,7 @@ namespace Suwagcms.Cli.Tests.Validation;
 public sealed class ValidateCommandTests : IDisposable
 {
     private const string Mistake =
-        """{"code":"declaration.formatVersion","stage":"Version","resource":{"kind":"Definition","id":""},"path":"formatVersion","message":"This definition is format 4 and the bot wants format 5.","fix":"Update Suwagcms.Sdk on the CMS, or declare format 4 in the bot.","related":[]}""";
+        """{"code":"declaration.formatVersion","stage":"Version","resource":{"kind":"Definition","id":""},"path":"formatVersion","message":"This definition is format 5 and the bot wants format 4.","fix":"Update Suwagcms.Sdk on the CMS, or declare format 5 in the bot.","related":[]}""";
 
     private static readonly string[] Common = ["--server", "http://cms.internal"];
 
@@ -41,14 +41,14 @@ public sealed class ValidateCommandTests : IDisposable
     [Trait("criterion", "AC-bot-declaration-15")]
     public async Task It_reads_json_checks_the_version_stage_unless_told_otherwise_and_exits_0_for_no_mistakes()
     {
-        var path = File("definition.json", """{"formatVersion":4,"facts":[]}""");
+        var path = File("definition.json", """{"formatVersion":5,"facts":[]}""");
 
         var result = await TestCli.Run(["validate", "--file", path, .. Common], Answering(""));
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("No mistakes at the Version stage.", result.Output, StringComparison.Ordinal);
         Assert.Equal("Version", sent[0]["stage"]?.GetValue<string>());
-        Assert.Equal(4, sent[0]["definition"]?["formatVersion"]?.GetValue<int>());
+        Assert.Equal(5, sent[0]["definition"]?["formatVersion"]?.GetValue<int>());
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class ValidateCommandTests : IDisposable
         var definition = File(
             "definition.yaml",
             """
-            formatVersion: 4
+            formatVersion: 5
             facts:
               - name: floors
                 type: int
@@ -81,7 +81,7 @@ public sealed class ValidateCommandTests : IDisposable
                     assign: { min: 42 }
             """
         );
-        var declaration = File("declaration.yaml", "bot: x\nformatVersion: 5\nblocks: [listen]\ndeclaresNothing: false\n");
+        var declaration = File("declaration.yaml", "bot: x\nformatVersion: 4\nblocks: [listen]\ndeclaresNothing: false\n");
 
         var result = await TestCli.Run(
             ["validate", "--file", definition, "--declaration", declaration, "--stage", "save", .. Common],
@@ -91,7 +91,7 @@ public sealed class ValidateCommandTests : IDisposable
         Assert.Equal(0, result.ExitCode);
         var body = sent[0];
         Assert.Equal("Save", body["stage"]?.GetValue<string>());
-        Assert.Equal(4, body["definition"]?["formatVersion"]?.GetValue<int>());
+        Assert.Equal(5, body["definition"]?["formatVersion"]?.GetValue<int>());
         var facts = body["definition"]?["facts"];
         Assert.Equal(9, facts?[0]?["max"]?.GetValue<int>());
         Assert.Equal("42", facts?[0]?["description"]?.GetValue<string>());
@@ -100,7 +100,7 @@ public sealed class ValidateCommandTests : IDisposable
         Assert.Equal("{}", steps?["wait"]?["listen"]?.ToJsonString());
         Assert.True(steps?["wait"]?["next"]?[0]?["when"]?["floors"]?["known"]?.GetValue<bool>());
         Assert.Equal("42", steps?["set"]?["assign"]?["min"]?.GetValue<string>());
-        Assert.Equal(5, body["declaration"]?["formatVersion"]?.GetValue<int>());
+        Assert.Equal(4, body["declaration"]?["formatVersion"]?.GetValue<int>());
         Assert.False(body["declaration"]?["declaresNothing"]?.GetValue<bool>());
     }
 
@@ -111,7 +111,7 @@ public sealed class ValidateCommandTests : IDisposable
         var path = File(
             "definition.yaml",
             """
-            formatVersion: 4
+            formatVersion: 5
             actions:
               - id: priceLookup
                 description: Looks up a price.
@@ -133,7 +133,7 @@ public sealed class ValidateCommandTests : IDisposable
         var path = File(
             "definition.yaml",
             """
-            formatVersion: 4
+            formatVersion: 5
             procedures:
               - id: conversation
                 steps:
@@ -159,7 +159,7 @@ public sealed class ValidateCommandTests : IDisposable
         var path = File(
             "definition.yaml",
             """
-            formatVersion: 4
+            formatVersion: 5
             procedures:
               - id: conversation
                 steps:
@@ -178,7 +178,7 @@ public sealed class ValidateCommandTests : IDisposable
     [Trait("criterion", "AC-bot-declaration-15")]
     public async Task Mistakes_are_listed_with_exit_1_and_json_returns_them()
     {
-        var path = File("definition.json", """{"formatVersion":4}""");
+        var path = File("definition.json", """{"formatVersion":5}""");
 
         var text = await TestCli.Run(["validate", "--file", path, .. Common], Answering(Mistake));
         var json = await TestCli.Run(["validate", "--file", path, "--json", .. Common], Answering(Mistake));
@@ -186,7 +186,7 @@ public sealed class ValidateCommandTests : IDisposable
         Assert.Equal(1, text.ExitCode);
         Assert.Contains("Mistakes, 1:", text.Error, StringComparison.Ordinal);
         Assert.Contains(
-            "declaration.formatVersion This definition is format 4 and the bot wants format 5. Update Suwagcms.Sdk on the CMS",
+            "declaration.formatVersion This definition is format 5 and the bot wants format 4. Update Suwagcms.Sdk on the CMS",
             text.Error,
             StringComparison.Ordinal
         );

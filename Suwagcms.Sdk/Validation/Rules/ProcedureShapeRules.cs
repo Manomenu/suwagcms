@@ -105,6 +105,10 @@ internal static class ProcedureShapeRules
             {
                 yield return Missing(procedure, $"steps.{name}.onFailure", $"'onFailure: {failure}' of step '{name}'");
             }
+            if (step.OnUnavailable is { } unavailable && ProcedureMistake.Given(unavailable) && !procedure.Steps.ContainsKey(unavailable))
+            {
+                yield return Missing(procedure, $"steps.{name}.onUnavailable", $"'onUnavailable: {unavailable}' of step '{name}'");
+            }
             foreach (var (path, target) in step.Next?.Targets ?? [])
             {
                 if (!procedure.Steps.ContainsKey(target))

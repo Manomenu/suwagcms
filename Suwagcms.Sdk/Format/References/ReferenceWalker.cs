@@ -146,6 +146,7 @@ public static class ReferenceWalker
                     step.Value with
                     {
                         Collect = step.Value.Collect?.Select(Renamed).ToList(),
+                        Say = step.Value.Say is { } say ? SayPlaceholders.Renamed(say, target.Id, newId) : null,
                         Assign = step.Value.Assign?.ToDictionary(entry => Renamed(entry.Key), entry => entry.Value),
                         With = step.Value.With?.ToDictionary(entry => entry.Key, entry => Renamed(entry.Value)),
                         Results = step.Value.Results?.ToDictionary(entry => entry.Key, entry => Renamed(entry.Value)),

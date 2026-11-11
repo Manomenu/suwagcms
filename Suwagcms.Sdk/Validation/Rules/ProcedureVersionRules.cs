@@ -123,7 +123,8 @@ internal static class ProcedureVersionRules
         {
             var step = procedure.Steps[current];
             var targets = (step.Next?.Targets ?? []).Select(target => target.Target);
-            foreach (var target in step.OnFailure is { } failure ? targets.Append(failure) : targets)
+            var branches = new[] { step.OnFailure, step.OnUnavailable }.OfType<string>();
+            foreach (var target in targets.Concat(branches))
             {
                 if (procedure.Steps.ContainsKey(target) && reached.Add(target))
                 {

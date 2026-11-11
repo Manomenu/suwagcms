@@ -29,7 +29,7 @@ public sealed class ArticleLinkRulesTests
     private static BotDefinition Bot(Article from, params Article[] others) =>
         new()
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             KnowledgeBases = [Samples.Faq, Offer],
             Articles = [from, .. others],
         };
@@ -67,7 +67,7 @@ public sealed class ArticleLinkRulesTests
     public void The_offline_validator_refuses_the_same_link_in_the_llm_guide_and_reports_every_bad_link_at_once()
     {
         const string json = """
-            {"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}],"articles":[
+            {"formatVersion":5,"knowledgeBases":[{"id":"faq","title":"Questions","embedding":"default","results":5}],"articles":[
             {"id":"wycena","knowledgeBase":"faq","title":"T","content":"[a](cms://article/one) [b](cms://article/one) [c](cms://article/two)","llmGuide":"[d](cms://article/three)","description":"D"}]}
             """;
 

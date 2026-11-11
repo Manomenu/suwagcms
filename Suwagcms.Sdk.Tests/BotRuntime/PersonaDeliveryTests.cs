@@ -45,7 +45,7 @@ public sealed class PersonaDeliveryTests
 
         Assert.NotNull(schema?["properties"]?["persona"]?["properties"]?["scope"]?["properties"]?["whenOutOfScope"]);
         Assert.DoesNotContain("persona", (schema?["required"]?.AsArray() ?? []).Select(item => item?.GetValue<string>()));
-        Assert.Equal(4, BotDefinition.CurrentFormatVersion);
+        Assert.Equal(5, BotDefinition.CurrentFormatVersion);
     }
 
     private static string RepositoryRoot()

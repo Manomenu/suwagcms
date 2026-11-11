@@ -210,12 +210,61 @@ public sealed class ProcedureRulesTests
         );
     }
 
+    private static Procedure Saying(string text) =>
+        ProcedureSamples.Alone(new ProcedureStep { Say = text }) with
+        {
+            LocalFacts = new Dictionary<string, LocalFact>
+            {
+                ["bookingReference"] = new()
+                {
+                    Type = FactTypes.Text,
+                    Description = "d",
+                    MaxLength = 20,
+                },
+            },
+        };
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-model-18")]
+    public void A_say_showing_facts_the_procedure_sees_is_saved_and_survives_json()
+    {
+        const string Text = "Booked for {customer.city}, reference {bookingReference}; {system.flag} and {order.floors}.";
+        var procedure = Saying(Text);
+
+        var back = JsonSerializer.Deserialize<Procedure>(JsonSerializer.Serialize(procedure, Wire), Wire);
+
+        Assert.DoesNotContain(Check(procedure, ValidationStage.Version), mistake => mistake.Code == MistakeCodes.ReferenceMissing);
+        Assert.Empty(Check(procedure));
+        Assert.Equal(Text, back?.Steps["only"].Say);
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-procedure-model-19")]
+    public void A_say_showing_a_fact_the_procedure_does_not_see_is_refused_and_other_braces_are_plain_text()
+    {
+        var procedure = Saying("Hi {customer.cty}, {gone} and {gone}; { spaced } {Upper} {a..b} {} {customer.} {order.kind}.");
+
+        var mistakes = Check(procedure);
+
+        Assert.All(mistakes, mistake => Assert.Equal((MistakeCodes.ReferenceMissing, "steps.only.say"), (mistake.Code, mistake.Path)));
+        Assert.Equal(
+            [
+                "A placeholder in 'say' of step 'only' in 'p' names fact 'customer.cty', which this procedure does not see.",
+                "A placeholder in 'say' of step 'only' in 'p' names fact 'gone', which this procedure does not see.",
+            ],
+            mistakes.Select(mistake => mistake.Message)
+        );
+        Assert.Contains("bookingReference, customer.city", mistakes[0].Fix, StringComparison.Ordinal);
+        Assert.Contains("{ customer.cty }", mistakes[0].Fix, StringComparison.Ordinal);
+        Assert.Empty(Check(Saying("Plain { spaced } {Upper} {a..b} {} {customer.} {1x} text.")));
+    }
+
     [Fact]
     [Trait("criterion", "AC-procedure-model-6")]
     public void A_bot_with_no_facts_says_to_add_one_first()
     {
         var mistakes = DefinitionValidator.Validate(
-            new BotDefinition { FormatVersion = 4, Procedures = [ProcedureSamples.All] },
+            new BotDefinition { FormatVersion = 5, Procedures = [ProcedureSamples.All] },
             ValidationStage.Save
         );
 

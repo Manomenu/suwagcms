@@ -1,6 +1,6 @@
 namespace Suwagcms.Sdk.BotRuntime.Versions;
 
-public sealed record CurrentChoice
+public sealed record CurrentVersionChoice
 {
     public required int Number { get; init; }
 

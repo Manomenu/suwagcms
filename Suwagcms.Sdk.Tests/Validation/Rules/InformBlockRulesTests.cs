@@ -57,7 +57,7 @@ public sealed class InformBlockRulesTests
     private static BotDefinition Bot(Procedure procedure, params Article[] articles) =>
         new()
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Facts = ProcedureSamples.Facts,
             KnowledgeBases = [Samples.Faq, Offer],
             Articles = articles,
@@ -120,7 +120,7 @@ public sealed class InformBlockRulesTests
     public void An_id_in_the_wrong_form_or_null_is_refused_as_malformed_and_not_also_as_missing()
     {
         const string json = """
-            {"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"F","embedding":"default","results":5}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
+            {"formatVersion":5,"knowledgeBases":[{"id":"faq","title":"F","embedding":"default","results":5}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
               "a":{"inform":{"instruction":"Say it.","points":{"one":"Text."},"knowledge":[{"knowledgeBase":"faq","articles":["Office Contact",null]}]}}}}]}
             """;
 
@@ -179,11 +179,11 @@ public sealed class InformBlockRulesTests
     public void The_validator_on_its_own_reports_the_reference_and_version_mistakes_with_the_same_codes_from_json()
     {
         const string missing = """
-            {"formatVersion":4,"knowledgeBases":[{"id":"faq","title":"F","embedding":"default","results":5}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
+            {"formatVersion":5,"knowledgeBases":[{"id":"faq","title":"F","embedding":"default","results":5}],"procedures":[{"id":"p","description":"d","firstStep":"a","steps":{
               "a":{"inform":{"instruction":"Say it.","points":{"bad_name":"Text."},"knowledge":[{"knowledgeBase":"faq","articles":["ghost"]}]}}}}]}
             """;
         const string unfinished = """
-            {"formatVersion":4,"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{
+            {"formatVersion":5,"procedures":[{"id":"conversation","description":"d","firstStep":"a","steps":{
               "a":{"inform":{}}}}]}
             """;
 

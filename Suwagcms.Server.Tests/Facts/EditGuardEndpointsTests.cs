@@ -102,6 +102,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
     [Trait("criterion", "AC-edit-guard-3")]
     [InlineData(""" "ask":{"collect":["note"]} """)]
     [InlineData(""" "ask":{"assign":{"note":"7"}} """)]
+    [InlineData(""" "ask":{"say":"Your note: {note}."} """)]
     public async Task Changing_the_type_of_a_fact_in_use_is_refused_even_when_the_use_would_still_fit(string steps)
     {
         var api = await NewBot();
@@ -175,12 +176,13 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
 
     [Fact]
     [Trait("criterion", "AC-edit-guard-6")]
-    public async Task Narrowing_that_leaves_everything_inside_or_a_fact_used_only_by_collect_or_known_and_any_widening_are_accepted()
+    public async Task Narrowing_that_leaves_everything_inside_or_a_fact_used_only_by_collect_known_or_a_say_and_any_widening_are_accepted()
     {
         var api = await NewBot();
         Assert.Equal(HttpStatusCode.OK, (await api.Add("first", Procedure(When("rooms", """{"range":{"min":2,"max":9}}""")))).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.Add("second", Procedure(""" "ask":{"collect":["note"]} """))).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.Add("third", Procedure(When("kind", """{"oneOf":["flat"]}""")))).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await api.Add("fourth", Procedure(""" "ask":{"say":"Your note: {note}."} """))).StatusCode);
 
         Assert.Equal(
             HttpStatusCode.OK,

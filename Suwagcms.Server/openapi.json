@@ -4551,6 +4551,12 @@
               "string"
             ]
           },
+          "onUnavailable": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "next": {
             "oneOf": [
               {

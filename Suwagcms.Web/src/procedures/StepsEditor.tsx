@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { Button } from "@/design/button";
+import { InfoTip } from "@/design/infoTip";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
@@ -416,6 +417,29 @@ function ArmsView({ row, props }: { row: StepRow; props: StepsProps }) {
                             />
                         </div>
                     )}
+                </div>
+            )}
+            {isAction && (
+                <div className="flex flex-col gap-1" data-place={`unavailable:${row.name}`}>
+                    <ListRow
+                        kind="unavailable"
+                        tag="When unavailable"
+                        tone={BRANCH}
+                        text={
+                            (row.unavailable === undefined || (row.unavailable.rows.length === 0 && row.unavailable.last === null)) && (
+                                <span className="text-muted-foreground">no steps: as on failure</span>
+                            )
+                        }
+                        note={<InfoTip about="When unavailable" help={PROCEDURE_HINTS.onUnavailable} />}
+                    />
+                    {beside(`unavailable:${row.name}`)}
+                    <div className="ml-6 border-l border-border pl-3">
+                        <StepsOf
+                            list={{ step: row.name, arm: "unavailable" }}
+                            props={props}
+                            label={`Add step to When unavailable of ${row.name}`}
+                        />
+                    </div>
                 </div>
             )}
             {row.success && (

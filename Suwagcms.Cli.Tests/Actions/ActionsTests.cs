@@ -317,12 +317,15 @@ public sealed class ActionsTests : IDisposable
             with: { address: customer.address }
             results: { serviceable: isServiceable }
             onFailure: tellItFailed
+            onUnavailable: tellSomeoneWillCall
             next:
               - when: { isServiceable: { oneOf: [yes] } }
                 to: offerPlan
               - to: tellItFailed
           offerPlan:
             say: We serve you.
+          tellSomeoneWillCall:
+            say: Someone will call you.
           tellItFailed:
             say: Sorry.
         """;
@@ -333,7 +336,7 @@ public sealed class ActionsTests : IDisposable
     {
         var sent = new List<(string Method, string Path, string Body)>();
         var added =
-            """{"id":"orderService","description":"Orders a service.","firstStep":"checkAddress","steps":{"checkAddress":{"action":"checkServiceability","with":{"address":"customer.address"},"results":{"serviceable":"isServiceable"},"onFailure":"tellItFailed","next":[{"when":{"isServiceable":{"oneOf":["yes"]}},"to":"offerPlan"},{"to":"tellItFailed"}]},"offerPlan":{"say":"We serve you."},"tellItFailed":{"say":"Sorry."}},"whenStalled":null,"revision":1,"notReady":[],"localFacts":null}""";
+            """{"id":"orderService","description":"Orders a service.","firstStep":"checkAddress","steps":{"checkAddress":{"action":"checkServiceability","with":{"address":"customer.address"},"results":{"serviceable":"isServiceable"},"onFailure":"tellItFailed","onUnavailable":"tellSomeoneWillCall","next":[{"when":{"isServiceable":{"oneOf":["yes"]}},"to":"offerPlan"},{"to":"tellItFailed"}]},"offerPlan":{"say":"We serve you."},"tellSomeoneWillCall":{"say":"Someone will call you."},"tellItFailed":{"say":"Sorry."}},"whenStalled":null,"revision":1,"notReady":[],"localFacts":null}""";
 
         var add = await TestCli.Run(["procedures", "add", "--file", Saved("p.yaml", Step), .. OnBot], Recording(sent, added));
         var yaml = await TestCli.Run(["procedures", "show", "orderService", .. OnBot], Recording(sent, added));
@@ -352,6 +355,7 @@ public sealed class ActionsTests : IDisposable
 
         Assert.Equal(0, add.ExitCode);
         Assert.Equal("isServiceable", JsonNode.Parse(bodies[0])?["steps"]?["checkAddress"]?["results"]?["serviceable"]?.GetValue<string>());
+        Assert.Equal("tellSomeoneWillCall", JsonNode.Parse(bodies[0])?["steps"]?["checkAddress"]?["onUnavailable"]?.GetValue<string>());
         var first = Text(JsonNode.Parse(bodies[0]));
         Assert.All(bodies, body => Assert.Equal(first, Text(JsonNode.Parse(body))));
     }
@@ -379,7 +383,7 @@ public sealed class ActionsTests : IDisposable
             .Split('\n')
             .Single(text => text.StartsWith("- `suwagcms procedures add", StringComparison.Ordinal));
 
-        foreach (var field in new[] { "`action`", "`with`", "`results`", "`onFailure`" })
+        foreach (var field in new[] { "`action`", "`with`", "`results`", "`onFailure`", "`onUnavailable`" })
         {
             Assert.Contains(field, line, StringComparison.Ordinal);
         }

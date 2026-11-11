@@ -15,14 +15,14 @@ public sealed class DeclarationValidatorTests
         new()
         {
             Bot = "rzeczoznawca",
-            FormatVersion = 4,
+            FormatVersion = 5,
             Blocks = blocks.Length == 0 ? Block.Names : blocks,
         };
 
     private static BotDefinition Definition =>
         new()
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             Facts = ProcedureSamples.Facts,
             Procedures =
             [
@@ -60,7 +60,7 @@ public sealed class DeclarationValidatorTests
         var answer = new BotDeclaration
         {
             Bot = "another",
-            FormatVersion = 4,
+            FormatVersion = 5,
             Blocks = ["listen", "fly"],
             CodeActions =
             [
@@ -136,7 +136,7 @@ public sealed class DeclarationValidatorTests
         var answer = new BotDeclaration
         {
             Bot = "rzeczoznawca",
-            FormatVersion = 5,
+            FormatVersion = 4,
             Blocks = ["fly"],
         };
 
@@ -154,18 +154,20 @@ public sealed class DeclarationValidatorTests
         Assert.Equal([MistakeCodes.DeclarationBot], Codes(DeclarationValidator.CheckAnswer(answer, "another")));
     }
 
-    [Fact]
+    [Theory]
     [Trait("criterion", "AC-bot-declaration-12")]
-    public void Another_format_version_is_a_version_mistake_naming_both_with_its_fix_and_nothing_at_save()
+    [InlineData(4)]
+    [InlineData(6)]
+    public void Another_format_version_is_a_version_mistake_naming_both_with_its_fix_and_nothing_at_save(int wanted)
     {
-        var declaration = Good() with { FormatVersion = 5 };
+        var declaration = Good() with { FormatVersion = wanted };
 
         var mistake = Assert.Single(DefinitionValidator.Validate(Definition, ValidationStage.Version, declaration));
 
         Assert.Equal(MistakeCodes.DeclarationFormatVersion, mistake.Code);
         Assert.Equal(ValidationStage.Version, mistake.Stage);
-        Assert.Equal("This definition is format 4 and the bot wants format 5.", mistake.Message);
-        Assert.Contains("declare format 4 in the bot", mistake.Fix, StringComparison.Ordinal);
+        Assert.Equal($"This definition is format 5 and the bot wants format {wanted}.", mistake.Message);
+        Assert.Contains("declare format 5 in the bot", mistake.Fix, StringComparison.Ordinal);
         Assert.Empty(DefinitionValidator.Validate(Definition, ValidationStage.Save, declaration));
     }
 

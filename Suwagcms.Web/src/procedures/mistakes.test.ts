@@ -61,6 +61,11 @@ describe("the live list of mistakes", () => {
         expect(stepOfPlace("field:description")).toBeNull();
     });
 
+    it("AC-action-block-16: a mistake on When unavailable belongs beside that branch, and clicking it opens the step", () => {
+        expect(placeOf(mistake("Save", "steps.ask.onUnavailable"), "p", draft)).toBe("unavailable:ask");
+        expect(stepOfPlace("unavailable:ask")).toBe("ask");
+    });
+
     it("AC-procedure-creator-3: a mistake belongs beside its row, branch or field, and one with no place on the page at the top of the form", () => {
         const at = (path: string) => placeOf(mistake("Version", path), "p", draft);
 

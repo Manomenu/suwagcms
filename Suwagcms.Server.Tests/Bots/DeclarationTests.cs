@@ -18,7 +18,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
 {
     private static readonly BotCapabilities Everything = new()
     {
-        FormatVersion = 4,
+        FormatVersion = 5,
         Blocks = Block.Names,
         CodeActions = [new CodeAction { Id = "lookupPolicy", Description = "Finds a policy" }],
         EmbeddingProfiles = ["default"],
@@ -87,7 +87,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
         var asked = await AskAsync(scene);
 
         Assert.Equal((DeclarationAsk.Answered, DeclarationStored.Declared), (asked.Ask, asked.Stored));
-        Assert.Equal(4, asked.Declaration?.FormatVersion);
+        Assert.Equal(5, asked.Declaration?.FormatVersion);
         Assert.Equal(Block.Names, asked.Declaration?.Blocks);
         Assert.Equal("lookupPolicy", Assert.Single(asked.Declaration?.CodeActions ?? []).Id);
         Assert.NotNull(asked.AnsweredAt);
@@ -101,7 +101,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
         Assert.Equal(0, cli.ExitCode);
         using var document = JsonDocument.Parse(cli.Output);
         Assert.Equal("Answered", document.RootElement.GetProperty("ask").GetString());
-        Assert.Equal(4, document.RootElement.GetProperty("declaration").GetProperty("formatVersion").GetInt32());
+        Assert.Equal(5, document.RootElement.GetProperty("declaration").GetProperty("formatVersion").GetInt32());
         Assert.Equal(
             "lookupPolicy",
             document.RootElement.GetProperty("declaration").GetProperty("codeActions")[0].GetProperty("id").GetString()
@@ -176,19 +176,19 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
     }
 
     [Theory]
-    [InlineData("""{"bot":"another","formatVersion":4,"blocks":["listen"]}""", MistakeCodes.DeclarationBot)]
-    [InlineData("""{"bot":"SELF","formatVersion":4,"blocks":[]}""", MistakeCodes.DeclarationBlocksMissing)]
-    [InlineData("""{"bot":"SELF","formatVersion":4,"blocks":["fly"]}""", MistakeCodes.DeclarationBlockUnknown)]
+    [InlineData("""{"bot":"another","formatVersion":5,"blocks":["listen"]}""", MistakeCodes.DeclarationBot)]
+    [InlineData("""{"bot":"SELF","formatVersion":5,"blocks":[]}""", MistakeCodes.DeclarationBlocksMissing)]
+    [InlineData("""{"bot":"SELF","formatVersion":5,"blocks":["fly"]}""", MistakeCodes.DeclarationBlockUnknown)]
     [InlineData(
-        """{"bot":"SELF","formatVersion":4,"blocks":["listen"],"codeActions":[{"id":"a"}]}""",
+        """{"bot":"SELF","formatVersion":5,"blocks":["listen"],"codeActions":[{"id":"a"}]}""",
         MistakeCodes.CodeActionDescriptionMissing
     )]
     [InlineData(
-        """{"bot":"SELF","formatVersion":4,"blocks":["listen"],"codeActions":[{"id":"a","description":"d"},{"id":"a","description":"d"}]}""",
+        """{"bot":"SELF","formatVersion":5,"blocks":["listen"],"codeActions":[{"id":"a","description":"d"},{"id":"a","description":"d"}]}""",
         MistakeCodes.CodeActionRepeated
     )]
     [InlineData(
-        """{"bot":"SELF","formatVersion":4,"blocks":["listen"],"codeActions":[{"id":"a","description":"d","parameters":[{"name":"n","type":"blob","description":"d"}]}]}""",
+        """{"bot":"SELF","formatVersion":5,"blocks":["listen"],"codeActions":[{"id":"a","description":"d","parameters":[{"name":"n","type":"blob","description":"d"}]}]}""",
         MistakeCodes.FactTypeInvalid
     )]
     [InlineData("not json", MistakeCodes.DeclarationInvalid)]
@@ -216,7 +216,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
     {
         var (scene, bot) = await SceneAsync(Client(), Everything);
         await using var _ = bot;
-        bot.OnDeclaration = Answering("""{"bot":"another","formatVersion":4,"blocks":[],"codeActions":[{"id":"a"},{"id":"a"}]}""");
+        bot.OnDeclaration = Answering("""{"bot":"another","formatVersion":5,"blocks":[],"codeActions":[{"id":"a"},{"id":"a"}]}""");
 
         var status = await AskAsync(scene);
 
@@ -238,14 +238,14 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
     {
         var (scene, bot) = await SceneAsync(Client(), null);
         await using var _ = bot;
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":5,"blocks":["fly"]}""");
+        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":4,"blocks":["fly"]}""");
 
         var status = await AskAsync(scene);
 
         Assert.Equal((DeclarationAsk.Answered, DeclarationStored.Declared), (status.Ask, status.Stored));
-        Assert.Equal(5, status.Declaration?.FormatVersion);
+        Assert.Equal(4, status.Declaration?.FormatVersion);
         Assert.Contains("update Suwagcms.Sdk on the CMS", status.FormatFix, StringComparison.Ordinal);
-        Assert.Contains("wants format 5", (await scene.CliAsync("bots", "declaration")).Output, StringComparison.Ordinal);
+        Assert.Contains("wants format 4", (await scene.CliAsync("bots", "declaration")).Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -256,7 +256,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
         await using var _ = bot;
         await AskAsync(scene);
         bot.OnDeclaration = Answering(
-            $$"""{"bot":"{{scene.Bot}}","formatVersion":4,"blocks":["listen"],"embeddingProfiles":["default"]}"""
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":5,"blocks":["listen"],"embeddingProfiles":["default"]}"""
         );
 
         var status = await AskAsync(scene);
@@ -303,7 +303,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
 
         await AskAsync(scene);
         bot.OnDeclaration = Answering(
-            $$"""{"bot":"{{scene.Bot}}","formatVersion":4,"blocks":["listen"],"embeddingProfiles":["default"]}"""
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":5,"blocks":["listen"],"embeddingProfiles":["default"]}"""
         );
         await AskAsync(scene);
 
@@ -319,7 +319,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
         await scene.FillAsync();
         Assert.Empty((await AskAsync(scene)).CannotRun);
         bot.OnDeclaration = Answering(
-            $$"""{"bot":"{{scene.Bot}}","formatVersion":4,"blocks":["listen","say","assign"],"embeddingProfiles":["default"]}"""
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":5,"blocks":["listen","say","assign"],"embeddingProfiles":["default"]}"""
         );
 
         var status = await AskAsync(scene);
@@ -338,7 +338,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
             Client(),
             new BotCapabilities
             {
-                FormatVersion = 4,
+                FormatVersion = 5,
                 Blocks = ["listen", "say", "assign"],
                 EmbeddingProfiles = ["default"],
             }
@@ -368,7 +368,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
         Assert.Equal(1, (await scene.CreateAsync()).Number);
 
         await scene.ChangeAsync();
-        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":5,"blocks":["fly"]}""");
+        bot.OnDeclaration = Answering($$"""{"bot":"{{scene.Bot}}","formatVersion":4,"blocks":["fly"]}""");
         await AskAsync(scene);
 
         var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
@@ -391,7 +391,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
             return Task.CompletedTask;
         };
         bot.OnDeclaration = Answering(
-            $$"""{"bot":"{{scene.Bot}}","formatVersion":4,"blocks":["listen","say","assign"],"embeddingProfiles":["default"],"codeActions":[{"id":"lookupPolicy","description":"Finds a policy"}]}"""
+            $$"""{"bot":"{{scene.Bot}}","formatVersion":5,"blocks":["listen","say","assign"],"embeddingProfiles":["default"],"codeActions":[{"id":"lookupPolicy","description":"Finds a policy"}]}"""
         );
 
         var result = await scene.PushAsync(version.Number);

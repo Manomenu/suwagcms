@@ -171,7 +171,7 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
         const string Body =
             """{"description":"d","implementation":{"http":{"method":"GRAB","url":"https://x.internal/{none}","headers":{"Cookie":"a"}}}}""";
         var offline = DefinitionValidator.ValidateJson(
-            """{"formatVersion":4,"actions":[{"id":"check","description":"d","implementation":{"http":{"method":"GRAB","url":"https://x.internal/{none}","headers":{"Cookie":"a"}}}}]}""",
+            """{"formatVersion":5,"actions":[{"id":"check","description":"d","implementation":{"http":{"method":"GRAB","url":"https://x.internal/{none}","headers":{"Cookie":"a"}}}}]}""",
             ValidationStage.Save
         );
 

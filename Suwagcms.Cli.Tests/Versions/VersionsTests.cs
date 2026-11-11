@@ -61,7 +61,7 @@ public sealed class VersionsTests
     [Trait("criterion", "AC-version-create-13")]
     public async Task Versions_show_prints_the_version_with_its_document_exactly_as_stored_and_json_gives_both()
     {
-        var detail = $$"""{"version":{{V14}},"document":"{\"formatVersion\":4,\"number\":14}"}""";
+        var detail = $$"""{"version":{{V14}},"document":"{\"formatVersion\":5,\"number\":14}"}""";
         var recorder = new Recorder();
         var server = recorder.Serving(HttpStatusCode.OK, detail);
 
@@ -70,10 +70,10 @@ public sealed class VersionsTests
 
         Assert.Equal(("GET", "/api/bots/rzeczoznawca/versions/14"), recorder.Calls[0]);
         Assert.Contains("sha256 3f9a", text.Output, StringComparison.Ordinal);
-        Assert.Contains("""{"formatVersion":4,"number":14}""", text.Output, StringComparison.Ordinal);
+        Assert.Contains("""{"formatVersion":5,"number":14}""", text.Output, StringComparison.Ordinal);
         using var document = JsonDocument.Parse(json.Output);
         Assert.Equal(14, document.RootElement.GetProperty("version").GetProperty("number").GetInt32());
-        Assert.Equal("""{"formatVersion":4,"number":14}""", document.RootElement.GetProperty("document").GetString());
+        Assert.Equal("""{"formatVersion":5,"number":14}""", document.RootElement.GetProperty("document").GetString());
     }
 
     [Fact]

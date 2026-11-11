@@ -23,7 +23,7 @@ public sealed class DeleteGuardTests
     private static BotDefinition Bot(params Article[] articles) =>
         new()
         {
-            FormatVersion = 4,
+            FormatVersion = 5,
             KnowledgeBases = [Samples.Faq],
             Articles = articles,
         };
@@ -105,6 +105,23 @@ public sealed class DeleteGuardTests
         Assert.All(mistake.Related, related => Assert.Equal(new ResourceRef(ResourceKind.Procedure, "orderValuation"), related.Resource));
         Assert.Contains(mistake.Related, related => related.Location.StartsWith("steps.ask.", StringComparison.Ordinal));
         Assert.Contains(mistake.Related, related => related.Location.Contains("when.customer.city", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("criterion", "AC-delete-guard-12")]
+    public void A_fact_only_a_say_placeholder_shows_is_refused_listing_the_procedure_with_the_step()
+    {
+        var fact = new ResourceRef(ResourceKind.GlobalFact, "customer.city");
+        var after = ProcedureSamples.Bot(ProcedureSamples.Alone(new ProcedureStep { Say = "We come to {customer.city}." })) with
+        {
+            Facts = [.. ProcedureSamples.Facts.Where(item => item.Name != "customer.city")],
+        };
+
+        var mistake = Assert.Single(Deleting(after, fact), mistake => mistake.Resource == fact);
+
+        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(new RelatedResource(new ResourceRef(ResourceKind.Procedure, "p"), "steps.only.say"), Assert.Single(mistake.Related));
+        Assert.Contains("steps.only.say of procedure 'p'", mistake.Message, StringComparison.Ordinal);
     }
 
     [Fact]
