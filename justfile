@@ -46,15 +46,10 @@ down:
 api-types:
     @./scripts/.internal/api-types.sh
 
-# Browser tests (Playwright) against a real server and an empty database of their own; not part of `just check`
-[group('maintenance')]
-e2e *args:
-    @./scripts/.internal/e2e.sh {{ args }}
-
-# The whole gate: build with analyzers, csharpier, every test, the web checks, the API contract and its version, acceptance criteria, shellcheck, gitleaks (the same CI runs); a linked worktree gets its own test database
+# The whole gate: build with analyzers, csharpier, every test, the web checks, the API contract and its version, acceptance criteria, shellcheck, gitleaks, the browser tests (the same CI runs); a linked worktree gets its own test databases and ports
 [group('maintenance')]
 check:
-    @eval "$({{ suwgate }} dev checkout-env)" && {{ suwgate }} check
+    @{{ suwgate }} check
 
 # The quick gate: the repository guards, and build, csharpier, eslint, tsc, shellcheck for what changed (what the Claude Code Stop hook runs)
 [group('maintenance')]

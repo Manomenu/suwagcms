@@ -2971,8 +2971,7 @@
               "string"
             ]
           }
-        },
-        "description": "What a test run came to. `Outcome` is `success` or `failure` when the bot ran the action, `unreachable` when the bot could not be reached or gave no usable answer, and `notOffered` when the bot has no such route; in the last two the action has not been judged.\n`Status`, `ElapsedMs` and `AnswerStart` are what is known of the call; `AnswerCut` says the answer was longer than what is shown. `Note` says what the run cannot show, such as that the action is turned off."
+        }
       },
       "ActionView": {
         "required": [
@@ -3042,8 +3041,7 @@
           "noLongerDeclared": {
             "type": "boolean"
           }
-        },
-        "description": "An action of a bot as the API shows it: the format's fields, with secrets only as the names its headers hold, the revision to send back to guard an edit, the procedures that use it, whether the bot also declares this id as a code action, and whether a code action in use is no longer declared."
+        }
       },
       "ApplyChanges": {
         "required": [
@@ -3064,8 +3062,7 @@
               "array"
             ]
           }
-        },
-        "description": "A file of changes as a request. Each change says what it does (add, edit or delete, with the kind as the value: fact, knowledgeBase, article, procedure, action, persona), the resource's id (name for a fact, none for a persona, which is only edited), and for an add or edit the fields of that resource's own save; an edit or delete may give ifRevision. Bot, when given, must be the bot of the address."
+        }
       },
       "ArticleView": {
         "required": [
@@ -3109,8 +3106,7 @@
             ],
             "format": "int32"
           }
-        },
-        "description": "An article of a bot as the API shows it: the format's fields, the language of its knowledge base (read only, derived), and the revision to send back to guard an edit."
+        }
       },
       "AvailabilityAnswer": {
         "required": [
@@ -3144,8 +3140,7 @@
           "delivery": {
             "$ref": "#/components/schemas/AvailabilityDelivery"
           }
-        },
-        "description": "The result of turning a resource on or off, or with a dry run what it would be: `Changed` is false when it already was so; `UsedBy` is what uses it, listed when turning off; `Delivery` says whether the bot has it."
+        }
       },
       "AvailabilityDelivery": {
         "required": [
@@ -3182,16 +3177,14 @@
               "string"
             ]
           }
-        },
-        "description": "Whether the bot has the CMS's setting, from the bot's own answer: the CMS's `Number`, the one the bot reports (null when it gave none), and when not delivered the `Reason`, which says what to do."
+        }
       },
       "AvailabilityDeliveryState": {
         "enum": [
           "Confirmed",
           "NotDelivered",
           "NotAsked"
-        ],
-        "description": "What the bot's own answer says about the setting: `Confirmed` it reports the CMS's number, `NotDelivered` it does not or could not be asked, `NotAsked` nobody asked it, as with nothing ever turned off or a dry run."
+        ]
       },
       "AvailabilityItem": {
         "required": [
@@ -3210,8 +3203,7 @@
           "off": {
             "type": "boolean"
           }
-        },
-        "description": "One resource that has availability: its kind (article or procedure), its id, and whether it is off; a resource never touched is on."
+        }
       },
       "AvailabilityView": {
         "required": [
@@ -3238,8 +3230,7 @@
           "delivery": {
             "$ref": "#/components/schemas/AvailabilityDelivery"
           }
-        },
-        "description": "The bot's setting in the CMS: its number, every resource that has availability, and whether the bot has it."
+        }
       },
       "Bot": {
         "required": [
@@ -3258,8 +3249,7 @@
           "address": {
             "type": "string"
           }
-        },
-        "description": "A registered bot: the id that sits in addresses and commands, the name people see, and where the CMS reaches it."
+        }
       },
       "BotDeclaration": {
         "type": "object",
@@ -3322,8 +3312,7 @@
           "Answered",
           "Unreachable",
           "WrongAddress"
-        ],
-        "description": "What asking a bot for its state came to: it answered, it could not be reached, or the address answers as another bot."
+        ]
       },
       "BotStatus": {
         "required": [
@@ -3429,8 +3418,7 @@
               "$ref": "#/components/schemas/PushAttempt"
             }
           }
-        },
-        "description": "What the bot itself reports (never what the CMS tried to send), and what the CMS knows beside it.\n`Has`, `Held` and `InUse` are the bot's answer and are empty unless `Reach` is `Answered`;\n`LastKnown` is the number it reported the last time it answered, at `LastKnownAt`."
+        }
       },
       "ChangeApplied": {
         "required": [
@@ -3482,8 +3470,7 @@
               "$ref": "#/components/schemas/PartDifference"
             }
           }
-        },
-        "description": "What one change of a file did, or would do on a dry run. Change is its position in the file, from 1; Action is added, edited or deleted, and with replace also replaced (an add of a resource the CMS holds) or unchanged (a change that would store what is already stored, so the revision stays); Kind is the word the file uses; Revision is the resource's revision afterwards, none after a delete. Fields and Parts say what differs from what the CMS held, as a comparison of two versions says it: only a replaced or edited resource lists them, and a procedure's steps and local facts are parts."
+        }
       },
       "ChangeMistake": {
         "required": [
@@ -3531,8 +3518,7 @@
               "$ref": "#/components/schemas/RelatedResource"
             }
           }
-        },
-        "description": "A mistake as a save returns it, with the position in the file of the change it belongs to, from 1. Change is empty when the mistake is on the file as a whole or on a resource the file does not name."
+        }
       },
       "ChangesApplied": {
         "required": [
@@ -3609,8 +3595,7 @@
               "$ref": "#/components/schemas/Mistake"
             }
           }
-        },
-        "description": "The answer to a file of changes: the counts, the result per change, whether anything was written, NotMentioned, what the CMS holds of the kinds the file changes that the file does not name (left as it is), and NotReady, what still stops a version, which never refuses a file."
+        }
       },
       "ChangesRefusal": {
         "required": [
@@ -3641,8 +3626,7 @@
               "$ref": "#/components/schemas/ChangeMistake"
             }
           }
-        },
-        "description": "The Problem Details of a refused file of changes: every mistake at once, each with its change's position. Nothing was saved."
+        }
       },
       "CodeAction": {
         "type": "object",
@@ -3723,8 +3707,7 @@
           "NotAsked",
           "Unreachable",
           "Invalid"
-        ],
-        "description": "What this look at a bot's declaration came to: the bot gave a good answer, was not asked (the stored one was read), could not be reached, or gave an answer that was refused."
+        ]
       },
       "DeclarationStatus": {
         "required": [
@@ -3794,24 +3777,21 @@
               "$ref": "#/components/schemas/Mistake"
             }
           }
-        },
-        "description": "What a bot last declared and what this look at it came to. `Declaration` and `AnsweredAt` are the last good answer;\n`Reason` says why the bot gave none now; `Mistakes` lists what is wrong with a refused answer;\n`FormatFix` says what to do about a format version this CMS does not read; `CannotRun` lists what of the working state does not fit the declaration: steps using a block it leaves out, and actions it no longer has, describes differently or also holds as a code action."
+        }
       },
       "DeclarationStored": {
         "enum": [
           "NeverAnswered",
           "DeclaresNothing",
           "Declared"
-        ],
-        "description": "What the CMS holds of a bot's declaration: no good answer yet, the answer that the bot declares nothing, or a declaration."
+        ]
       },
       "Difference": {
         "enum": [
           "Added",
           "Removed",
           "Changed"
-        ],
-        "description": "What happened to a resource, or to a part of one, going from one version to another."
+        ]
       },
       "ExportedFile": {
         "required": [
@@ -3841,8 +3821,7 @@
           "data": {
             "$ref": "#/components/schemas/JsonElement"
           }
-        },
-        "description": "One file of an exported version: the resource it holds (no kind for `version.yaml`), where it goes inside the folder, and what the version holds for it."
+        }
       },
       "Fact": {
         "required": [
@@ -3932,8 +3911,7 @@
               "type": "string"
             }
           }
-        },
-        "description": "A global fact of a bot as the API shows it: the format's fields, the revision to send back to guard an edit, and the procedures that use it."
+        }
       },
       "FieldChange": {
         "required": [
@@ -3966,8 +3944,7 @@
               }
             ]
           }
-        },
-        "description": "One changed field of a history entry. Old is empty on an add, New is empty on a delete; each is the field's value as the API shows it."
+        }
       },
       "FieldDifference": {
         "required": [
@@ -4002,8 +3979,7 @@
               "$ref": "#/components/schemas/TextLine"
             }
           }
-        },
-        "description": "A changed field: its old and new values (null when it had none), or for a long text its lines removed and added, with a few around them."
+        }
       },
       "HealthStatus": {
         "required": [
@@ -4082,8 +4058,7 @@
               }
             ]
           }
-        },
-        "description": "One recorded change: when the server saved it, what it reached (kind: fact, knowledgeBase, article, procedure, action or version; and id), the action (added, edited, deleted, renamed, turned on, turned off, created or pushed), the revision it produced, the changed fields, and Batch, which the entries of one file of changes share. Written is the same changes as a comparison writes them, answered only when a numbered `page` was asked for."
+        }
       },
       "HistoryPage": {
         "required": [
@@ -4127,8 +4102,7 @@
               "boolean"
             ]
           }
-        },
-        "description": "A page of history, newest first. Next is the `before` that asks for the next page, empty on the last; Since is when history started, so an empty page can say no change has been recorded since then; Total is how many entries there are in all, answered only when a numbered `page` was asked for; Incomplete, answered only for a version's window, says the window opens before history started, so changes may be missing from it."
+        }
       },
       "InformArguments": {
         "type": "object",
@@ -4196,8 +4170,7 @@
             ],
             "format": "int32"
           }
-        },
-        "description": "A knowledge base of a bot as the API shows it: its id, title, language, embedding profile and results per search, and the revision to send back to guard an edit."
+        }
       },
       "KnowledgeEntry": {
         "type": "object",
@@ -4231,8 +4204,7 @@
           "Removed",
           "Added",
           "Folded"
-        ],
-        "description": "What a line of a long text is in a comparison: around a change, gone, new, or standing for unchanged lines left out."
+        ]
       },
       "ListenArguments": {
         "type": "object"
@@ -4360,8 +4332,7 @@
               "$ref": "#/components/schemas/FieldDifference"
             }
           }
-        },
-        "description": "A part of a procedure that differs: a step or a local fact, by name, with what changed in it."
+        }
       },
       "PersonaScope": {
         "type": "object",
@@ -4418,8 +4389,7 @@
             ],
             "format": "int32"
           }
-        },
-        "description": "A bot's persona as the API shows it: its texts, null when empty, and the revision to send back to guard an edit, 0 before the first save."
+        }
       },
       "ProcedureDetail": {
         "required": [
@@ -4490,8 +4460,7 @@
               "string"
             ]
           }
-        },
-        "description": "A procedure as the API shows it: the format's fields, the revision to send back to guard an edit, and what still stops it from becoming a version."
+        }
       },
       "ProcedureList": {
         "required": [
@@ -4512,8 +4481,7 @@
               "$ref": "#/components/schemas/Mistake"
             }
           }
-        },
-        "description": "A bot's procedures, and the mistakes that stop a version but belong to no procedure, such as having no conversation."
+        }
       },
       "ProcedureStep": {
         "type": "object",
@@ -4647,8 +4615,7 @@
             ],
             "format": "int32"
           }
-        },
-        "description": "One line of a bot's procedures: how many mistakes still stop this procedure from becoming a version."
+        }
       },
       "PushAttempt": {
         "required": [
@@ -4685,15 +4652,13 @@
             "type": "string",
             "format": "date-time"
           }
-        },
-        "description": "One recorded push: the version, when it was tried, how it ended and, when it failed, the reason."
+        }
       },
       "PushOutcome": {
         "enum": [
           "Succeeded",
           "Failed"
-        ],
-        "description": "How an attempt to push a version ended."
+        ]
       },
       "PushPlan": {
         "required": [
@@ -4748,8 +4713,7 @@
               }
             ]
           }
-        },
-        "description": "What a push of a version would do, with nothing changed: the way it would go, the version the bot reports, what the push would be refused for (`Problem` and `Mistakes`, empty when it would go through), and what going from the bot's version to this one changes (null when the two cannot be compared)."
+        }
       },
       "PushResult": {
         "required": [
@@ -4793,16 +4757,14 @@
               "$ref": "#/components/schemas/Mistake"
             }
           }
-        },
-        "description": "The answer to a push: how it ended, the version the bot reported afterwards (null when it did not answer), and when it failed, the reason and every mistake the bot named."
+        }
       },
       "PushWay": {
         "enum": [
           "Send",
           "MakeCurrent",
           "Nothing"
-        ],
-        "description": "How a push reaches the bot: the document is sent, a version the bot holds is made current without sending it, or nothing is needed because it is already current."
+        ]
       },
       "Refusal": {
         "required": [
@@ -4833,8 +4795,7 @@
               "$ref": "#/components/schemas/Mistake"
             }
           }
-        },
-        "description": "The Problem Details of a refused change: every mistake at once, each with its fix."
+        }
       },
       "RegisterBot": {
         "required": [
@@ -4853,8 +4814,7 @@
           "address": {
             "type": "string"
           }
-        },
-        "description": "What registering a bot takes. Registering never contacts the address."
+        }
       },
       "RelatedResource": {
         "required": [
@@ -4904,8 +4864,7 @@
               "$ref": "#/components/schemas/RenameReferrer"
             }
           }
-        },
-        "description": "The result of changing an id, or with a dry run what it would be: the resource's kind, its old and new id, its revision, and each field of each referrer rewritten."
+        }
       },
       "RenameReferrer": {
         "required": [
@@ -4942,8 +4901,7 @@
             ],
             "format": "int32"
           }
-        },
-        "description": "One field of a resource rewritten by a change of id (`Kind` is article or procedure): how many links or uses it held, and the revision the resource then has."
+        }
       },
       "RenameResource": {
         "required": [
@@ -4957,8 +4915,7 @@
               "string"
             ]
           }
-        },
-        "description": "What changing a resource's id takes: the new id, which is checked by the same rules as a new resource's."
+        }
       },
       "ResourceDifference": {
         "required": [
@@ -4991,8 +4948,7 @@
               "$ref": "#/components/schemas/PartDifference"
             }
           }
-        },
-        "description": "A resource that differs between two versions, by kind and id; only a changed one lists fields and parts, and a persona always lists the lines of its texts."
+        }
       },
       "ResourceKind": {
         "enum": [
@@ -5035,8 +4991,7 @@
               "type": "string"
             }
           }
-        },
-        "description": "What a test run of a saved action takes: the value of each parameter, as text."
+        }
       },
       "SaveAction": {
         "required": [
@@ -5081,8 +5036,7 @@
               }
             ]
           }
-        },
-        "description": "What saving an action takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once. A secret stands in a header as {secret:NAME}, never as its value."
+        }
       },
       "SaveArticle": {
         "required": [
@@ -5124,8 +5078,7 @@
               "string"
             ]
           }
-        },
-        "description": "What saving an article takes: every field of it but the id, which the address gives. A field left out is refused by the server; an article has no language of its own, so one sent is refused as an unknown field; content and llmGuide are Markdown, kept exactly as sent."
+        }
       },
       "SaveFact": {
         "required": [
@@ -5204,8 +5157,7 @@
               }
             ]
           }
-        },
-        "description": "What saving a fact takes: every field of it but the name, which the address gives. A field left out is checked by the server; only writableBy has a default, set."
+        }
       },
       "SaveKnowledgeBase": {
         "required": [
@@ -5243,8 +5195,7 @@
             ],
             "format": "int32"
           }
-        },
-        "description": "What saving a knowledge base takes: its title, its language, the name of the embedding profile the bot embeds its articles with, and how many results one search gives from it (1 to 20); the id comes from the address. A title, profile or results left out is refused by the server; a language left out is en."
+        }
       },
       "SavePersona": {
         "required": [
@@ -5269,8 +5220,7 @@
               }
             ]
           }
-        },
-        "description": "What saving a persona takes: the whole of it, each text exactly as written. A text left out, empty or only white space is no text."
+        }
       },
       "SaveProcedure": {
         "required": [
@@ -5327,8 +5277,7 @@
               "string"
             ]
           }
-        },
-        "description": "What saving a procedure takes: every field of it but the id, which the address gives. A field left out is checked by the server, which reports every mistake at once."
+        }
       },
       "ServerSettings": {
         "required": [
@@ -5344,8 +5293,7 @@
             ],
             "format": "int32"
           }
-        },
-        "description": "What the server was started with and the web app must follow. PageSize is how many rows a page of a list holds."
+        }
       },
       "StallInstruction": {
         "type": "object",
@@ -5368,8 +5316,7 @@
           "text": {
             "type": "string"
           }
-        },
-        "description": "One line of a compared text; a folded one says how many unchanged lines it stands for."
+        }
       },
       "TextPattern": {
         "type": "object",
@@ -5404,8 +5351,7 @@
           "id": {
             "type": "string"
           }
-        },
-        "description": "A resource the CMS holds that a file of changes does not name, of a kind the file changes: Kind is the word a file uses, Id its id (a fact's name). A file never deletes it for being absent."
+        }
       },
       "UsageLink": {
         "required": [
@@ -5424,8 +5370,7 @@
           "field": {
             "type": "string"
           }
-        },
-        "description": "One reference: the resource on the other end (`Kind` is fact, article or procedure) and the field of the referrer that holds it."
+        }
       },
       "UsageView": {
         "required": [
@@ -5446,8 +5391,7 @@
               "$ref": "#/components/schemas/UsageLink"
             }
           }
-        },
-        "description": "What refers to a resource and what it refers to, each with the field that holds the reference: the lists a refused delete is made of."
+        }
       },
       "ValidateDefinition": {
         "required": [
@@ -5469,8 +5413,7 @@
             ]
           },
           "declaration": { }
-        },
-        "description": "What the validate endpoint takes: a definition, the stage to check it at (Version when left out) and optionally what a bot declares. The two documents stay raw so that their mistakes are the validator's own."
+        }
       },
       "ValidationAnswer": {
         "required": [
@@ -5484,8 +5427,7 @@
               "$ref": "#/components/schemas/Mistake"
             }
           }
-        },
-        "description": "What the validator says about a definition: every mistake, each with its fix; none means it passes."
+        }
       },
       "ValidationStage": {
         "enum": [
@@ -5561,8 +5503,7 @@
               "$ref": "#/components/schemas/ResourceDifference"
             }
           }
-        },
-        "description": "What going from one version of a bot to another changes, in a fixed order: by kind, then by id. `Definition` lists what differs outside the resources, such as the format version; numbers and digests are not differences."
+        }
       },
       "VersionCreated": {
         "required": [
@@ -5577,8 +5518,7 @@
           "written": {
             "type": "boolean"
           }
-        },
-        "description": "The answer to creating a version: the version, and whether it was stored (false on a dry run, where the number and the sha256 are what it would get)."
+        }
       },
       "VersionDetail": {
         "required": [
@@ -5593,8 +5533,7 @@
           "document": {
             "type": "string"
           }
-        },
-        "description": "One version with its document exactly as stored: the JSON a bot receives, whose sha256 can be checked against it."
+        }
       },
       "VersionExport": {
         "required": [
@@ -5621,8 +5560,7 @@
               "$ref": "#/components/schemas/ExportedFile"
             }
           }
-        },
-        "description": "A version split into the files of an export, for reading and searching; nothing takes them back. The same version always gives the same files."
+        }
       },
       "VersionSummary": {
         "required": [
@@ -5692,8 +5630,7 @@
           "sha256": {
             "type": "string"
           }
-        },
-        "description": "A version of a bot in the list: its number, when it was created, how many resources of each kind it holds, and the sha256 of its document."
+        }
       },
       "WrittenChange": {
         "required": [
@@ -5714,8 +5651,7 @@
               "$ref": "#/components/schemas/PartDifference"
             }
           }
-        },
-        "description": "An entry's changes written as a comparison writes them: each field with its old and new values or its lines, and a procedure's steps and local facts as parts."
+        }
       }
     }
   },

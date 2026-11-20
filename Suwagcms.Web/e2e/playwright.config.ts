@@ -17,9 +17,7 @@ export default defineConfig(
                 env: {
                     ASPNETCORE_URLS: `http://127.0.0.1:${SERVER_PORT}`,
                     PAGINATION_PAGE_SIZE: "5",
-                    ConnectionStrings__Default:
-                        process.env["E2E_CONNECTION_STRING"] ??
-                        `Host=127.0.0.1;Port=5563;Database=${DATABASE};Username=suwagcms;Password=suwagcms`,
+                    ConnectionStrings__Default: `Host=127.0.0.1;Port=5563;Database=${DATABASE};Username=suwagcms;Password=suwagcms`,
                 },
                 reuseExistingServer: false,
                 timeout: 60_000,

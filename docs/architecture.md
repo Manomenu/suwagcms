@@ -16,7 +16,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `Suwagcms.Cli.Tests/` — xUnit v3 tests of the CLI, run in process on the streams it is given.
 - `.claude-plugin/` — `marketplace.json`: this repository as a Claude Code marketplace, offering one plugin, `suwagcms`.
 - `claude-plugin/` — the Claude Code plugin: `.claude-plugin/plugin.json`, and `skills/suwagcms/SKILL.md`, the main skill that lists every CLI command. Tests in `Suwagcms.Cli.Tests/Plugin/` keep the list and the CLI equal.
-- `Suwagcms.Gate/` — the xUnit project that calls the .NET guards of NuGet `Suwgate.Architecture` and `Suwgate.Database` (`ArchitectureTests`), and this app's own guards suwgate does not have; `suwgate check --quick` runs it. See "The gate" below.
+- `Suwagcms.Gate/` — the xUnit project that calls the .NET guards of NuGet `Suwgate.Architecture` and `Suwgate.Database` (one `SuwgateGuards.VerifyAll` test, `GuardTests`), and this app's own guards suwgate does not have; `suwgate check --quick` runs it. See "The gate" below.
 - `Suwagcms.Web/` — the web app (React 19, Tailwind 4, Vite, TypeScript strict, pnpm), with the gate `@maniumek/suwgate` among its packages. A folder per feature under `src/`; `src/shell/` the page frame, `src/design/` the design system, `src/api/` the HTTP client and generated types.
 - `contract/` — the API contract (`openapi.json`) and its version (`package.json`), generated (`just api-types`) and committed for consumers.
 - `compose.yaml` — the whole stack on a laptop from the same Dockerfiles: db (profile `db`, also the local database of `suwgate dev db`), server, web; everything configured from `.env` (`.env.example`) with ASP.NET names (`Section__Key`); ports only on 127.0.0.1 (db 5563, web 8220).
@@ -26,7 +26,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `.vscode/` — the editor's glue, shared: recommended extensions, formatter per language, the schema of `suwgate.yml`, file nesting, debug launch, tasks that run the gate. No style rules (they live in `.editorconfig` and the formatters' configs, so Rider agrees).
 - `.githooks/` — `pre-commit` runs `suwgate hook pre-commit`: gitleaks on what is being committed, then the quick gate; `just sync` enables it.
 - `docs/` — documentation for people working on the repo: this map, `development.md`, `release.md`, the specs in `visual/spec/` (their acceptance criteria live as guardrails, see AGENTS.md), decisions above one feature in `adr/`.
-- `scripts/` — `scripts/.internal/` holds the tools of this app that `just` runs: `api-types.sh`, `e2e.sh`, `slow-tests.sh`, `sdk-schema.sh`, `sdk-version.sh`, `sdk-publish.sh`, `sdk-publish-local.sh`; the local stack is `suwgate dev`. The gate refuses a script that nothing calls.
+- `scripts/` — `scripts/.internal/` holds the tools of this app that `just` runs: `api-types.sh`, `slow-tests.sh`, `sdk-schema.sh`, `sdk-version.sh`, `sdk-publish.sh`, `sdk-publish-local.sh`; the local stack is `suwgate dev`. The gate refuses a script that nothing calls.
 - `.claude/` — the committed Claude Code settings: `suwgate hook stop` runs the quick gate when Claude stops, `suwgate hook guard-edit` protects migrations, generated files, and the gate with the lint configs (`ALLOW_GATE_EDIT=1 claude` lifts the last).
 - `.config/` — `dotnet-tools.json`: the pinned CSharpier.
 - `tmux-dev.just` — the `justfile` module of the local stack; a tool's own module is `<folder>/mod.just`.
@@ -43,11 +43,11 @@ The gate is suwgate (npm `@maniumek/suwgate`, [its README](https://github.com/Ma
 of the profiles `suwgate.yml` names (web, dotnet, database) and its repository guards. This repository keeps only the wiring and what
 is its own:
 
-- `suwgate.yml`: the profiles, where the web app lives, the steps it skips and the exceptions, each with its reason, the edit hook's
+- `suwgate.yml`: the profiles, where the web app lives, the exceptions, each with its reason, the edit hook's
   extra files, and the name and port offset of the local stack (`suwgate dev`: server 6330, web 3330, e2e 6331/3331, database 5563, stack 8220).
 - `layers.json`: the order of the server's layers and which project may reference which; the app's own design.
-- `Suwagcms.Gate/`: one call of `Guards.Verify` per .NET guard of `Suwgate.Architecture` and `Suwgate.Database`, with this app's arguments
-  (its assemblies, layers file, solution, migrations folder, test fixture), and the guards of this app that suwgate does not have (below).
+- `Suwagcms.Gate/`: one `SuwgateGuards.VerifyAll` test that runs every .NET guard of `Suwgate.Architecture` and `Suwgate.Database` with
+  this app's assemblies and server type (it finds the layers file, solution, sources and migrations itself), and the guards of this app that suwgate does not have (below).
   It stays a project of its own, apart from the test projects, because `suwgate check --quick` runs every test of a project that uses
   those packages: here that is a few seconds, while the server tests need PostgreSQL and start the server.
 - `Directory.Build.props` and `.editorconfig`: the build defaults, the banned APIs and the analyzer rules come from `Suwgate.Architecture`
@@ -59,9 +59,9 @@ An agent that cannot pass a guard must not be able to change it: the edit hook r
 the hooks, the workflows and the lint, type and build configs (suwgate's defaults; `Suwagcms.Gate/` is this app's line in `settings.hooks.protected`).
 The owner lifts it for one session with `ALLOW_GATE_EDIT=1 claude`.
 
-suwgate's `dotnet-test` step does not export the worktree's database names. The server tests' fixture drops and recreates its
-database, so in a linked worktree it refuses to run on the main checkout's `suwagcms_test` until `TEST_CONNECTION_STRING` is set:
-`just check` sets it (`suwgate dev checkout-env`) before `suwgate check`, and the refusal says how.
+suwgate's `dotnet-test` and `e2e` steps run under `suwgate dev checkout-env`, so a linked worktree tests on databases of its own; the
+browser tests start from a fresh, empty one every run. The server tests' fixture still refuses the main checkout's `suwagcms_test`
+in a linked worktree without `TEST_CONNECTION_STRING` (a `dotnet test` outside the gate), and the refusal says how.
 
 ## What the gate forbids
 
@@ -83,7 +83,7 @@ suwgate's guards and steps are listed with their reasons in its README; the ones
 - Deleting (architecture/nothing-obsolete, architecture/no-unused-types): nothing `[Obsolete]`, no unused non-public type of the server.
 - Escape hatches (architecture/no-escape-hatches): no `dynamic`, no null-forgiving `!`.
 - Server tests (architecture/no-fixture-in-field): a test class takes the server from its class fixture, never starts one in a field.
-- Comments (`comments-*` guards and suwgate's eslint rule `no-comments`): none in any code or config file, only the tool directives AGENTS.md lists ("No comments"). The contracts keep their `///` docs, which are the API's documentation in `contract/openapi.json` and the web app's types; `ContractDocsTests` refuses every other comment there.
+- Comments (`comments-*` guards and suwgate's eslint rule `no-comments`): none in any code or config file, only the tool directives AGENTS.md lists ("No comments").
 - Time in tests (`TestTimingTests`): no test measures, waits on or limits real time: no `Stopwatch`, real clock, `Thread.Sleep`, `Task.Delay` outside a poll loop or `Timeout` in .NET tests; no `performance.now`, `Date.now()` arithmetic, `waitForTimeout`, `setTimeout` or own time limit in web tests. A retry or a timeout is proved with a fake `TimeProvider`.
 - Worktrees (`LinkedWorktreeTests`): the server tests' fixture refuses the main checkout's test database in a linked worktree.
 - Migrations at run time (`MigratorTests`): grate runs a script once, refuses a script edited after it ran, leaves nothing behind after a failing one, and leaves no temporary folders.
@@ -148,9 +148,6 @@ Reasons that used to sit in comments and that no name or test can carry.
   the server tests about five times slower (architecture/no-fixture-in-field).
 - The deletion guard (architecture/no-unused-types) gets `ServerApp` as an entry point, because the top-level `Program` that starts it has a
   generated `Main` the architecture reader does not see.
-- The browser-test run (`e2e.sh`) drops and creates its database in two commands, because `CREATE DATABASE` cannot run inside the one
-  transaction a single `-c` would be.
-- A migration that already ran keeps its comment (`suwgate.yml` lets five through `comments-sql`): grate refuses a changed script.
 
 ## How code is split
 

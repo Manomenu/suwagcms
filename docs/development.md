@@ -18,7 +18,6 @@ just tmux-dev start       # PostgreSQL (compose.yaml, localhost:5563), the API o
                           # and the web app on http://localhost:3330 (pnpm dev) in one tmux session (stop: just tmux-dev stop)
 just db up                # the local PostgreSQL alone (also down, reset, psql, logs, status)
 just server               # the API alone (suwgate dev server); just web the web app alone
-just e2e                  # browser tests (own server, own database, own ports; not part of the gate)
 just logs                 # why did it fail? last warnings/errors of the newest server log (see below)
 just api-types            # regenerate contract/openapi.json and Suwagcms.Web/src/api/openapi.d.ts after changing a record the API
                           # exposes; then raise the contract's version in contract/package.json
@@ -49,9 +48,9 @@ port pair (20000-29999), so checkouts that run the gate or the browser tests at 
 name); the main checkout and CI keep the plain names and ports (`suwagcms_test`, `suwagcms_e2e`, 6331/3331); a value already in the
 environment wins. A worktree's databases are left behind, not dropped.
 
-`suwgate check` does not apply these names to its .NET tests yet. The server tests' fixture drops and recreates its database, so in
-a linked worktree it refuses to run without `TEST_CONNECTION_STRING`: run the full gate there with `just check`, which evaluates
-`suwgate dev checkout-env` first, or `eval "$(Suwagcms.Web/node_modules/.bin/suwgate dev checkout-env)"` once in the shell.
+`suwgate check` applies these names to its .NET tests and its browser tests. The server tests' fixture drops and recreates its
+database, so in a linked worktree it still refuses to run without `TEST_CONNECTION_STRING` when started outside the gate (`dotnet test`
+alone): `eval "$(Suwagcms.Web/node_modules/.bin/suwgate dev checkout-env)"` once in the shell.
 
 ## Claude Code hooks
 
@@ -88,7 +87,7 @@ you drop it (`docker volume rm suwagcms-postgres`).
 ## Logs
 
 The server writes JSON log lines (the built-in console JSON formatter, `Logging:Console` in `appsettings.json`).
-`just server` (`suwgate dev server`) also writes them to .artifacts/logs/server.jsonl, `e2e.sh` to .artifacts/logs/e2e-server.jsonl;
+`just server` (`suwgate dev server`) also writes them to .artifacts/logs/server.jsonl, the browser tests to .artifacts/logs/e2e-server.jsonl;
 the container stack is read with `--compose`. `just logs` prints the last warnings and errors of the newest log, one
 line each; `just logs --trace <traceId>` shows every line of one request, with the `traceId` any error response
 carries. `--all` shows every level, `-n N` the last N lines.
