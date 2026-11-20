@@ -1,4 +1,6 @@
-import { ApiError, request } from "./client";
+import { ApiError, dataOf } from "@maniumek/suwfrontkit";
+
+import { api, mistakesOf } from "./client";
 import type { components } from "./openapi";
 
 type RenameAnswer = components["schemas"]["RenameAnswer"];
@@ -13,12 +15,14 @@ function send(
     dryRun: boolean,
     signal?: AbortSignal,
 ) {
-    const query = `?ifRevision=${ifRevision}${dryRun ? "&dryRun=true" : ""}`;
-    return request<RenameAnswer>(`/bots/${encodeURIComponent(bot)}/${collection}/${encodeURIComponent(id)}/rename${query}`, {
-        method: "POST",
-        body: JSON.stringify({ newId }),
-        signal: signal ?? null,
-    });
+    const query = dryRun ? { ifRevision, dryRun } : { ifRevision };
+    return dataOf(
+        api.POST("/api/bots/{bot}/{kind}/{id}/rename", {
+            params: { path: { bot, kind: collection, id }, query },
+            body: { newId },
+            signal: signal ?? null,
+        }),
+    );
 }
 
 function linesOf(answer: RenameAnswer): { id: string; where: string }[] {
@@ -30,8 +34,8 @@ function linesOf(answer: RenameAnswer): { id: string; where: string }[] {
 }
 
 function refusalOf(error: unknown): { lines: { id: string; where: string }[]; mistakes: string[] } {
-    if (error instanceof ApiError && error.mistakes.length > 0) {
-        return { lines: [], mistakes: error.mistakes.map((mistake) => `${mistake.message} ${mistake.fix}`) };
+    if (error instanceof ApiError && mistakesOf(error).length > 0) {
+        return { lines: [], mistakes: mistakesOf(error).map((mistake) => `${mistake.message} ${mistake.fix}`) };
     }
     return { lines: [], mistakes: [error instanceof Error ? error.message : String(error)] };
 }

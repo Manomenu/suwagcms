@@ -8,7 +8,7 @@ public sealed class SettingsTests(TestDatabase database)
 {
     private async Task<int> PageSizeWith(string? value)
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         using var app = new TestApp(value);
         var settings = await app.CreateClient().GetFromJsonAsync<ServerSettings>("/api/settings", TestContext.Current.CancellationToken);
         return settings?.PageSize ?? throw new InvalidOperationException("no settings in the answer");
@@ -28,7 +28,7 @@ public sealed class SettingsTests(TestDatabase database)
     [Trait("criterion", "AC-pagination-1")]
     public async Task A_page_size_of_5_leaves_a_resources_list_route_whole()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         using var app = new TestApp("5");
         var facts = await FactApi.NewBotAsync(app.CreateClient());
         for (var number = 0; number < 25; number++)

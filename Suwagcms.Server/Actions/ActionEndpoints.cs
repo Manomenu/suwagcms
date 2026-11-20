@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Actions;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Actions;
@@ -61,21 +61,21 @@ internal static class ActionEndpoints
 
     private static async Task<Results<Ok<List<ActionView>>, ProblemHttpResult>> List(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     ) =>
-        await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
-            ? TypedResults.Ok(await ShownAsync(stored, bot, pool, cancellationToken))
+        await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is { } stored
+            ? TypedResults.Ok(await ShownAsync(stored, bot, dataSource, cancellationToken))
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The actions were not listed.");
 
     private static async Task<List<ActionView>> ShownAsync(
         List<StoredResource> stored,
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
-        var declaration = (await DeclarationStore.FindAsync(pool, bot, cancellationToken))?.Parsed;
+        var declaration = (await DeclarationStore.FindAsync(dataSource, bot, cancellationToken))?.Parsed;
         return
         [
             .. stored.Where(item => item.Target.Kind == ResourceKind.Action).Select(item => ActionMapping.Show(item, stored, declaration)),
@@ -85,17 +85,19 @@ internal static class ActionEndpoints
     private static async Task<Results<Ok<ActionView>, ProblemHttpResult>> Get(
         string bot,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
         var target = new ResourceRef(ResourceKind.Action, id);
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The action was not shown.");
         }
         return stored.SingleOrDefault(item => item.Target == target) is { } found
-            ? TypedResults.Ok(ActionMapping.Show(found, stored, (await DeclarationStore.FindAsync(pool, bot, cancellationToken))?.Parsed))
+            ? TypedResults.Ok(
+                ActionMapping.Show(found, stored, (await DeclarationStore.FindAsync(dataSource, bot, cancellationToken))?.Parsed)
+            )
             : EditProblems.For(new EditResult.Missing(target), bot, "The action was not shown.");
     }
 
@@ -104,7 +106,7 @@ internal static class ActionEndpoints
         string id,
         HttpRequest request,
         DefinitionEditor editor,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken,
         bool dryRun = false,
         int? ifRevision = null
@@ -122,8 +124,8 @@ internal static class ActionEndpoints
         {
             return EditProblems.For(result, bot, Title);
         }
-        var all = await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [];
-        var declaration = (await DeclarationStore.FindAsync(pool, bot, cancellationToken))?.Parsed;
+        var all = await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) ?? [];
+        var declaration = (await DeclarationStore.FindAsync(dataSource, bot, cancellationToken))?.Parsed;
         return TypedResults.Ok(ActionMapping.Show(record, saved.Revisions[target], all, declaration));
     }
 

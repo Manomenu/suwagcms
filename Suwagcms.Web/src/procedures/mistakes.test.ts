@@ -1,6 +1,7 @@
+import { ApiError } from "@maniumek/suwfrontkit";
 import { describe, expect, it } from "vitest";
 
-import { ApiError, type Mistake } from "@/api/client";
+import { type Mistake } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
 import type { Draft } from "./draft";
@@ -38,7 +39,8 @@ function detail(revision: number, notReady: Mistake[] = [], say = "hi"): Procedu
     };
 }
 
-const refused = (status: number, mistakes: Mistake[] = [], message = "no") => Promise.reject(new ApiError(message, mistakes, status));
+const refused = (status: number, mistakes: Mistake[] = [], message = "no") =>
+    Promise.reject(new ApiError(status, { detail: message, mistakes }));
 
 describe("the live list of mistakes", () => {
     it("AC-procedure-creator-3: shows what the server's dry run reports, whichever stage it speaks of", async () => {

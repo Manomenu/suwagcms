@@ -1,10 +1,9 @@
+import { Anchor, Button, Paper, Table } from "@maniumek/suwfrontkit";
+import { Link } from "wouter";
 import type { ReactNode } from "react";
 
 import type { Bot } from "@/api/bots";
-import { Anchor } from "@/design/anchor";
-import { Button } from "@/design/button";
-import { Page, Paper } from "@/design/page";
-import { Table } from "@/design/table";
+import { Page } from "@/design/page";
 
 export function profilePath(id: string): string {
     return `/bots/${encodeURIComponent(id)}`;
@@ -24,7 +23,9 @@ function MissingBot({ id }: { id: string }) {
         <div className="flex flex-col items-start gap-3">
             <h2 className="text-xl font-bold">No bot '{id}'</h2>
             <p className="text-muted-foreground">There is no bot with this id. It may be mistyped, or not registered yet.</p>
-            <Anchor href="~/bots">Bots</Anchor>
+            <Anchor asChild>
+                <Link href="~/bots">Bots</Link>
+            </Anchor>
         </div>
     );
 }
@@ -80,7 +81,9 @@ export function BotsView({
                                 {bots.map((bot) => (
                                     <tr key={bot.id}>
                                         <td>
-                                            <Anchor href={`~${profilePath(bot.id)}`}>{bot.name}</Anchor>
+                                            <Anchor asChild>
+                                                <Link href={`~${profilePath(bot.id)}`}>{bot.name}</Link>
+                                            </Anchor>
                                         </td>
                                         <td className="text-muted-foreground">{bot.address}</td>
                                     </tr>

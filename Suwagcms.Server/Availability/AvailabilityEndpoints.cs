@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Availability;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Availability;
@@ -42,22 +42,22 @@ internal static class AvailabilityEndpoints
 
     private static async Task<Results<Ok<AvailabilityView>, ProblemHttpResult>> Show(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         AvailabilitySender sender,
         CancellationToken cancellationToken,
         bool ask = true
     )
     {
-        if (await BotStore.FindAddressAsync(pool, bot, cancellationToken) is not { } address)
+        if (await BotStore.FindAddressAsync(dataSource, bot, cancellationToken) is not { } address)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The availability was not shown.");
         }
-        var resources = await AvailabilityStore.ListAsync(pool, bot, Kinds.Values, cancellationToken);
+        var resources = await AvailabilityStore.ListAsync(dataSource, bot, Kinds.Values, cancellationToken);
         var delivery = ask
             ? await sender.AskAsync(bot, address, cancellationToken)
             : new AvailabilityDelivery(
                 AvailabilityDeliveryState.NotAsked,
-                await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken),
+                await AvailabilityStore.ReadNumberAsync(dataSource, bot, cancellationToken),
                 null,
                 null
             );
@@ -66,11 +66,11 @@ internal static class AvailabilityEndpoints
 
     private static async Task<Results<Ok<AvailabilityDelivery>, ProblemHttpResult>> Send(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         AvailabilitySender sender,
         CancellationToken cancellationToken
     ) =>
-        await BotStore.FindAddressAsync(pool, bot, cancellationToken) is { } address
+        await BotStore.FindAddressAsync(dataSource, bot, cancellationToken) is { } address
             ? TypedResults.Ok(await sender.SendAsync(bot, address, cancellationToken))
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The availability was not sent.");
 
@@ -78,23 +78,23 @@ internal static class AvailabilityEndpoints
         string bot,
         string kind,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         AvailabilitySender sender,
         TimeProvider time,
         CancellationToken cancellationToken,
         bool dryRun = false
-    ) => TurnAsync(bot, kind, id, off: true, dryRun, pool, sender, time, cancellationToken);
+    ) => TurnAsync(bot, kind, id, off: true, dryRun, dataSource, sender, time, cancellationToken);
 
     private static Task<Results<Ok<AvailabilityAnswer>, ProblemHttpResult>> TurnOn(
         string bot,
         string kind,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         AvailabilitySender sender,
         TimeProvider time,
         CancellationToken cancellationToken,
         bool dryRun = false
-    ) => TurnAsync(bot, kind, id, off: false, dryRun, pool, sender, time, cancellationToken);
+    ) => TurnAsync(bot, kind, id, off: false, dryRun, dataSource, sender, time, cancellationToken);
 
     private static async Task<Results<Ok<AvailabilityAnswer>, ProblemHttpResult>> TurnAsync(
         string bot,
@@ -102,7 +102,7 @@ internal static class AvailabilityEndpoints
         string id,
         bool off,
         bool dryRun,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         AvailabilitySender sender,
         TimeProvider time,
         CancellationToken cancellationToken
@@ -118,7 +118,15 @@ internal static class AvailabilityEndpoints
         {
             return EditProblems.For(new EditResult.Refused([Conversation(target)]), bot, title);
         }
-        var (result, usedBy) = await AvailabilityStore.ChangeAsync(pool, bot, target, off, dryRun, time.GetUtcNow(), cancellationToken);
+        var (result, usedBy) = await AvailabilityStore.ChangeAsync(
+            dataSource,
+            bot,
+            target,
+            off,
+            dryRun,
+            time.GetUtcNow(),
+            cancellationToken
+        );
         if (result == AvailabilityStore.Outcome.UnknownBot)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, title);
@@ -127,11 +135,11 @@ internal static class AvailabilityEndpoints
         {
             return Missing(target, bot, title);
         }
-        var address = await BotStore.FindAddressAsync(pool, bot, cancellationToken) ?? "";
+        var address = await BotStore.FindAddressAsync(dataSource, bot, cancellationToken) ?? "";
         var delivery = dryRun
             ? new AvailabilityDelivery(
                 AvailabilityDeliveryState.NotAsked,
-                await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken),
+                await AvailabilityStore.ReadNumberAsync(dataSource, bot, cancellationToken),
                 null,
                 null
             )

@@ -1,31 +1,31 @@
 using System.Globalization;
+using Npgsql;
 using Suwagcms.Contracts.Availability;
 using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.BotRuntime.Availability;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Availability;
 
-internal sealed class AvailabilitySender(Pool pool, BotClient client, AvailabilityRetries retries)
+internal sealed class AvailabilitySender(NpgsqlDataSource dataSource, BotClient client, AvailabilityRetries retries)
 {
     private const string SendAgain = "Check that the bot is running, then send again.";
 
     public async Task<AvailabilityDelivery> SendAsync(string bot, string address, CancellationToken cancellationToken)
     {
-        var message = await AvailabilityStore.ReadMessageAsync(pool, bot, cancellationToken);
+        var message = await AvailabilityStore.ReadMessageAsync(dataSource, bot, cancellationToken);
         return await DeliverAsync(bot, address, message, cancellationToken);
     }
 
     public async Task<AvailabilityDelivery?> CatchUpAsync(string bot, string address, CancellationToken cancellationToken)
     {
-        var message = await AvailabilityStore.ReadMessageAsync(pool, bot, cancellationToken);
+        var message = await AvailabilityStore.ReadMessageAsync(dataSource, bot, cancellationToken);
         return message.Number == 0 ? null : await DeliverAsync(bot, address, message, cancellationToken);
     }
 
     public async Task<AvailabilityDelivery> AskAsync(string bot, string address, CancellationToken cancellationToken)
     {
-        var number = await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken);
+        var number = await AvailabilityStore.ReadNumberAsync(dataSource, bot, cancellationToken);
         return number == 0
             ? new AvailabilityDelivery(AvailabilityDeliveryState.NotAsked, number, null, null)
             : Judge(bot, address, number, await client.ReadStateAsync(address, cancellationToken));
@@ -39,7 +39,7 @@ internal sealed class AvailabilitySender(Pool pool, BotClient client, Availabili
     )
     {
         var reply = await client.PutAvailabilityAsync(address, message, cancellationToken);
-        var delivery = Judge(bot, address, await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken), reply);
+        var delivery = Judge(bot, address, await AvailabilityStore.ReadNumberAsync(dataSource, bot, cancellationToken), reply);
         if (delivery.State == AvailabilityDeliveryState.Confirmed)
         {
             retries.Cancel(bot);

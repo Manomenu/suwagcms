@@ -13,7 +13,7 @@ public sealed class InformBlockTests(TestDatabase database, ClassServer server) 
 
     private async Task<Scene> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         var facts = new FactApi(client, articles.Bot);

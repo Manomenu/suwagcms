@@ -9,7 +9,7 @@ public sealed class KnowledgeBaseEndpointsTests(TestDatabase database, ClassServ
 
     private async Task<KnowledgeBaseApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await KnowledgeBaseApi.NewBotAsync(App.CreateClient());
     }
 

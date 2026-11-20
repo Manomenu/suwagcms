@@ -1,4 +1,6 @@
-import { request } from "../api/client";
+import { dataOf } from "@maniumek/suwfrontkit";
+
+import { api } from "../api/client";
 import type { components } from "../api/openapi";
 
 export type ProcedureList = components["schemas"]["ProcedureList"];
@@ -9,32 +11,24 @@ export type Fact = components["schemas"]["Fact"];
 type ArticleView = components["schemas"]["ArticleView"];
 type KnowledgeBaseView = components["schemas"]["KnowledgeBaseView"];
 
-function proceduresPath(bot: string): string {
-    return `/bots/${encodeURIComponent(bot)}/procedures`;
-}
-
-function procedurePath(bot: string, id: string): string {
-    return `${proceduresPath(bot)}/${encodeURIComponent(id)}`;
-}
-
 export function fetchProcedures(bot: string, signal: AbortSignal): Promise<ProcedureList> {
-    return request<ProcedureList>(proceduresPath(bot), { signal });
+    return dataOf(api.GET("/api/bots/{bot}/procedures", { params: { path: { bot } }, signal }));
 }
 
 export function fetchProcedure(bot: string, id: string, signal: AbortSignal): Promise<ProcedureDetail> {
-    return request<ProcedureDetail>(procedurePath(bot, id), { signal });
+    return dataOf(api.GET("/api/bots/{bot}/procedures/{id}", { params: { path: { bot, id } }, signal }));
 }
 
 export function fetchFacts(bot: string, signal: AbortSignal): Promise<Fact[]> {
-    return request<Fact[]>(`/bots/${encodeURIComponent(bot)}/facts`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/facts", { params: { path: { bot } }, signal }));
 }
 
 export function fetchArticles(bot: string, signal: AbortSignal): Promise<ArticleView[]> {
-    return request<ArticleView[]>(`/bots/${encodeURIComponent(bot)}/articles`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/articles", { params: { path: { bot } }, signal }));
 }
 
 export function fetchKnowledgeBases(bot: string, signal: AbortSignal): Promise<KnowledgeBaseView[]> {
-    return request<KnowledgeBaseView[]>(`/bots/${encodeURIComponent(bot)}/knowledge-bases`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/knowledge-bases", { params: { path: { bot } }, signal }));
 }
 
 export function saveProcedure(
@@ -45,16 +39,12 @@ export function saveProcedure(
     dryRun: boolean,
     signal?: AbortSignal,
 ): Promise<ProcedureDetail> {
-    const query = `?ifRevision=${ifRevision}${dryRun ? "&dryRun=true" : ""}`;
-    return request<ProcedureDetail>(`${procedurePath(bot, id)}${query}`, {
-        method: "PUT",
-        body: JSON.stringify(body),
-        signal: signal ?? null,
-    });
+    const query = dryRun ? { ifRevision, dryRun } : { ifRevision };
+    return dataOf(api.PUT("/api/bots/{bot}/procedures/{id}", { params: { path: { bot, id }, query }, body, signal: signal ?? null }));
 }
 
 export function deleteProcedure(bot: string, id: string, ifRevision: number): Promise<undefined> {
-    return request<undefined>(`${procedurePath(bot, id)}?ifRevision=${ifRevision}`, { method: "DELETE" });
+    return dataOf(api.DELETE("/api/bots/{bot}/procedures/{id}", { params: { path: { bot, id }, query: { ifRevision } } }));
 }
 
 export function mistakesOf(procedure: ProcedureSummary): number {
@@ -68,5 +58,5 @@ export function revisionOfProcedure(procedure: ProcedureDetail): number {
 export type ActionView = components["schemas"]["ActionView"];
 
 export function fetchActions(bot: string, signal: AbortSignal): Promise<ActionView[]> {
-    return request<ActionView[]>(`/bots/${encodeURIComponent(bot)}/actions`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/actions", { params: { path: { bot } }, signal }));
 }

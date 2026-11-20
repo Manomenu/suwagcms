@@ -61,7 +61,7 @@ public sealed class ActionTestRunTests(TestDatabase database, ClassServer server
         string? secret = Token
     )
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = over ?? App.CreateClient();
         disposables.Add(client);
         var id = PushScene.FreshId();

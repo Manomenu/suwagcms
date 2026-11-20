@@ -17,7 +17,7 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
 
     private HttpClient Client()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return App.CreateClient();
     }
 

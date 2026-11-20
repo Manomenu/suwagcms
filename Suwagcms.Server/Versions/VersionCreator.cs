@@ -1,16 +1,16 @@
 using System.Globalization;
 using System.Text.Json;
+using Npgsql;
 using Suwagcms.Contracts.History;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
-internal sealed class VersionCreator(Pool pool, TimeProvider time)
+internal sealed class VersionCreator(NpgsqlDataSource dataSource, TimeProvider time)
 {
     public const string Unchanged = "version.unchanged";
 
@@ -20,7 +20,7 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
         CancellationToken cancellationToken
     )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await ResourceStore.LockBotAsync(connection, transaction, bot, cancellationToken);

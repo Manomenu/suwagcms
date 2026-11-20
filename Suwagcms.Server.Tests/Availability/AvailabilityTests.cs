@@ -39,13 +39,13 @@ public sealed class AvailabilityTests(TestDatabase database, ClassServer server)
 
     private HttpClient Client()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return App.CreateClient();
     }
 
     private HttpClient ClientWithBotTimeout(int seconds)
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var shorter = App.WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration(
                 (_, configuration) =>
@@ -845,7 +845,7 @@ public sealed class AvailabilityTests(TestDatabase database, ClassServer server)
         await scene.Turn("off", id: "renamedOne");
 
         Assert.Equal([new OffResource(ResourceKind.Article, "renamedOne")], (await scene.OnBot()).Off);
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         var rows = await connection.ExecuteScalarAsync<int>(
             new CommandDefinition(
                 "SELECT count(*) FROM resource_former_id f JOIN resource r ON r.id = f.resource_id WHERE r.bot_id = @bot",

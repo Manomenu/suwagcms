@@ -1,4 +1,5 @@
 using System.Globalization;
+using Npgsql;
 using Suwagcms.Contracts.Availability;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Versions;
@@ -6,12 +7,17 @@ using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
-internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAsker asker, AvailabilitySender availability, TimeProvider time)
+internal sealed class VersionPusher(
+    NpgsqlDataSource dataSource,
+    BotClient client,
+    DeclarationAsker asker,
+    AvailabilitySender availability,
+    TimeProvider time
+)
 {
     internal sealed record Rejected(int Status, Mistake Mistake);
 
@@ -36,7 +42,7 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
         };
 
         await PushStore.RecordAsync(
-            pool,
+            dataSource,
             bot,
             number,
             route.Left,
@@ -47,7 +53,7 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
         );
         if (reported)
         {
-            await PushStore.ReportAsync(pool, bot, result.BotHas, time.GetUtcNow(), CancellationToken.None);
+            await PushStore.ReportAsync(dataSource, bot, result.BotHas, time.GetUtcNow(), CancellationToken.None);
         }
         return (result, null);
     }
@@ -76,18 +82,18 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
 
     private async Task<(Target? Target, Rejected? Rejected)> FindAsync(string bot, int number, CancellationToken cancellationToken)
     {
-        if (await PushStore.FindBotAsync(pool, bot, cancellationToken) is not { } registered)
+        if (await PushStore.FindBotAsync(dataSource, bot, cancellationToken) is not { } registered)
         {
             return (null, new Rejected(StatusCodes.Status404NotFound, EditProblems.UnknownBot(bot)));
         }
-        return await VersionStore.FindAsync(pool, bot, number, cancellationToken) is { } version
+        return await VersionStore.FindAsync(dataSource, bot, number, cancellationToken) is { } version
             ? (new Target(registered, version), null)
             : (null, new Rejected(StatusCodes.Status404NotFound, await NoSuchVersionAsync(bot, number, cancellationToken)));
     }
 
     private async Task<Mistake> NoSuchVersionAsync(string bot, int number, CancellationToken cancellationToken)
     {
-        var kept = (await VersionStore.ListAsync(pool, bot, cancellationToken) ?? []).Select(version => version.Number).ToList();
+        var kept = (await VersionStore.ListAsync(dataSource, bot, cancellationToken) ?? []).Select(version => version.Number).ToList();
         var missing = VersionEndpoints.NoSuchVersion(bot, number, kept.Count == 0 ? null : kept.Max());
         if (kept.Count == 0)
         {
@@ -192,7 +198,7 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
         int number,
         CancellationToken cancellationToken
     ) =>
-        left is { } from && from != number && await VersionStore.FindAsync(pool, bot, from, cancellationToken) is { } before
+        left is { } from && from != number && await VersionStore.FindAsync(dataSource, bot, from, cancellationToken) is { } before
             ? VersionComparer.Compare(bot, from, number, before.Document, version.Document)
             : null;
 

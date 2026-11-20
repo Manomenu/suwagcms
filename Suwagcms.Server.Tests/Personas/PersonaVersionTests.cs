@@ -20,7 +20,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
 
     private async Task<(VersionApi Versions, PersonaApi Persona)> ReadyBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var versions = await (await VersionApi.NewBotAsync(client)).Ready();
         return (versions, new PersonaApi(client, versions.Bot));
@@ -30,7 +30,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
 
     private async Task<(PushScene Scene, TestBot Bot, PersonaApi Persona)> DeclaringBot(string? persona)
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(

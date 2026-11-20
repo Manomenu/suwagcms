@@ -149,7 +149,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
 
     private List<string> Mapped()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return
         [
             .. App

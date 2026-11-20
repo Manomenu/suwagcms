@@ -1,7 +1,7 @@
 import * as React from "react";
+import { Page as Frame, Paper } from "@maniumek/suwfrontkit";
 
 import { ChangeList } from "@/design/changeList";
-import { cn } from "@/design/classNames";
 
 export type HistoryPanelProps = React.ComponentProps<typeof ChangeList> & { note?: string };
 
@@ -17,18 +17,14 @@ export function Page({
     children?: React.ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
-                <h1 className="text-[26px] leading-[1.35] font-bold">{title}</h1>
-                {actions !== undefined && <div className="flex items-center gap-2">{actions}</div>}
-            </div>
+        <Frame title={title} actions={actions}>
             {children}
             {history !== undefined && <HistoryPanel {...history} />}
-        </div>
+        </Frame>
     );
 }
 
-function HistoryPanel({ note, ...list }: HistoryPanelProps) {
+export function HistoryPanel({ note, ...list }: HistoryPanelProps) {
     return (
         <Paper aria-label="History" role="region" className="flex flex-col gap-2 wrap-anywhere">
             <h3 className="text-sm font-semibold">History</h3>
@@ -36,8 +32,4 @@ function HistoryPanel({ note, ...list }: HistoryPanelProps) {
             <ChangeList {...list} />
         </Paper>
     );
-}
-
-export function Paper({ className, ...props }: React.ComponentProps<"div">) {
-    return <div className={cn("rounded-lg border border-border bg-card p-4", className)} {...props} />;
 }

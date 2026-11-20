@@ -10,7 +10,7 @@ public sealed class StartBlockTests(TestDatabase database, ClassServer server) :
 
     private async Task<VersionApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var versions = await VersionApi.NewBotAsync(App.CreateClient());
         Assert.True((await versions.Procedures.Add("conversation", ProcedureApi.Conversation)).IsSuccessStatusCode);
         return versions;

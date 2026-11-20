@@ -20,7 +20,7 @@ public sealed class VersionWindowTests(TestDatabase database, ClassServer server
 
     private async Task<(VersionApi Versions, FactApi Facts, ArticleApi Articles, HistoryScene History)> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var versions = await (await VersionApi.NewBotAsync(client)).Ready();
         return (versions, new FactApi(client, versions.Bot), new ArticleApi(client, versions.Bot), new HistoryScene(client, versions.Bot));
@@ -37,7 +37,7 @@ public sealed class VersionWindowTests(TestDatabase database, ClassServer server
 
     private async Task Execute(string sql, object parameters)
     {
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         await connection.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: TestContext.Current.CancellationToken));
     }
 
@@ -79,7 +79,7 @@ public sealed class VersionWindowTests(TestDatabase database, ClassServer server
     [Trait("criterion", "AC-change-history-28")]
     public async Task A_push_of_an_older_version_leaves_every_window_and_falls_in_the_next_one()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://127.0.0.1:1");
         await scene.FillAsync();

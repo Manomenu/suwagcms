@@ -37,7 +37,7 @@ public sealed class LocalFactEndpointsTests(TestDatabase database, ClassServer s
 
     private async Task<ProcedureApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await ProcedureApi.NewBotAsync(App.CreateClient());
     }
 

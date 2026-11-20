@@ -28,14 +28,18 @@ public sealed class DefinitionEditorTests(TestDatabase database)
     {
         var bot = "e" + Guid.NewGuid().ToString("N")[..12];
         Assert.True(
-            await BotStore.AddAsync(database.Pool, new Bot(bot, "A bot", "http://bot.internal"), TestContext.Current.CancellationToken)
+            await BotStore.AddAsync(
+                database.DataSource,
+                new Bot(bot, "A bot", "http://bot.internal"),
+                TestContext.Current.CancellationToken
+            )
         );
-        return (new DefinitionEditor(database.Pool, TimeProvider.System), bot);
+        return (new DefinitionEditor(database.DataSource, TimeProvider.System), bot);
     }
 
     private async Task<List<Row>> Rows(string bot)
     {
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         var rows = await connection.QueryAsync<Row>(
             "SELECT public_id AS PublicId, revision AS Revision, body::text AS Body, updated_at AS UpdatedAt FROM resource WHERE bot_id = @bot ORDER BY public_id",
             new { bot }

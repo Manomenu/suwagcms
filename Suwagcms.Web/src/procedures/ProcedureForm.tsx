@@ -1,14 +1,7 @@
+import { Alert, Button, Field, Input, Legend, Paper, Select, StickyActions, Textarea } from "@maniumek/suwfrontkit";
 import { useMemo, type ReactNode } from "react";
 
 import type { Mistake } from "@/api/client";
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
-import { Field, Legend } from "@/design/field";
-import { Input } from "@/design/input";
-import { Paper } from "@/design/page";
-import { Select } from "@/design/select";
-import { StickyActions } from "@/design/stickyActions";
-import { Textarea } from "@/design/textarea";
 
 import { factsSeen, withStallText } from "./draft";
 import { LocalFactsPanel } from "./LocalFactsPanel";

@@ -1,10 +1,6 @@
+import { Alert, Button, Field, InfoTip, Paper, Textarea } from "@maniumek/suwfrontkit";
 import type { Mistake } from "@/api/client";
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
-import { Field } from "@/design/field";
-import { InfoTip } from "@/design/infoTip";
-import { Page, Paper, type HistoryPanelProps } from "@/design/page";
-import { Textarea } from "@/design/textarea";
+import { Page, type HistoryPanelProps } from "@/design/page";
 
 import { HINTS, fieldOf, type FieldName, type PersonaForm } from "./personaForm";
 

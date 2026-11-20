@@ -1,8 +1,10 @@
 import type { components } from "./openapi";
-import { request } from "./client";
+import { dataOf } from "@maniumek/suwfrontkit";
+
+import { api } from "./client";
 
 export type DeclarationStatus = components["schemas"]["DeclarationStatus"];
 
 export function fetchDeclaration(bot: string, signal: AbortSignal, ask = true): Promise<DeclarationStatus> {
-    return request<DeclarationStatus>(`/bots/${encodeURIComponent(bot)}/declaration${ask ? "" : "?ask=false"}`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/declaration", { params: { path: { bot }, query: ask ? {} : { ask: false } }, signal }));
 }

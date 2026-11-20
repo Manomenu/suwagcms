@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.KnowledgeBases;
 using Suwagcms.Sdk.Format.References;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.KnowledgeBases;
@@ -31,10 +31,10 @@ internal static class KnowledgeBaseEndpoints
 
     private static async Task<Results<Ok<List<KnowledgeBaseView>>, ProblemHttpResult>> List(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     ) =>
-        await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
+        await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is { } stored
             ? TypedResults.Ok(
                 stored.Where(item => item.Target.Kind == ResourceKind.KnowledgeBase).Select(KnowledgeBaseMapping.Show).ToList()
             )
@@ -43,12 +43,12 @@ internal static class KnowledgeBaseEndpoints
     private static async Task<Results<Ok<KnowledgeBaseView>, ProblemHttpResult>> Get(
         string bot,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
         var target = new ResourceRef(ResourceKind.KnowledgeBase, id);
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The knowledge base was not shown.");
         }

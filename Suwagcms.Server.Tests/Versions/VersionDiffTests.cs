@@ -17,7 +17,7 @@ public sealed class VersionDiffTests(TestDatabase database, ClassServer server) 
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(id);
@@ -41,7 +41,7 @@ public sealed class VersionDiffTests(TestDatabase database, ClassServer server) 
     [Trait("criterion", "AC-change-history-23")]
     public async Task What_diff_prints_for_a_step_added_and_one_removed_is_pinned_word_for_word()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var scene = new PushScene(versions.Client, versions.Bot);
         await versions.Created();

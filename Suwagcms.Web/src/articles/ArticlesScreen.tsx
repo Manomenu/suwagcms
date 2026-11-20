@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { Alert } from "@maniumek/suwfrontkit";
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Redirect, useLocation, useSearchParams } from "wouter";
 
 import { useAvailability } from "@/api/availability";
+import { messageOf } from "@/api/client";
 import { editHref } from "@/api/resourceAddress";
 import { useResourceEditor } from "@/api/resourceEditor";
-import { Alert } from "@/design/alert";
 import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
 import { ResourceEdit } from "@/design/resourceEdit";
 
@@ -14,8 +16,12 @@ import { ArticleForm } from "./ArticleForm";
 import { ArticlesView } from "./ArticlesView";
 
 export function ArticlesScreen({ bot }: { bot: string }) {
-    const [bases, setBases] = useState<KnowledgeBase[] | null>(null);
-    const [basesFailure, setBasesFailure] = useState<string | null>(null);
+    const basesQuery = useQuery({
+        queryKey: ["resources", bot, "knowledge-bases", "list", null],
+        queryFn: ({ signal }) => fetchKnowledgeBases(bot, signal),
+    });
+    const bases: KnowledgeBase[] | null = basesQuery.data ?? null;
+    const basesFailure = basesQuery.error === null ? null : messageOf(basesQuery.error);
     const [params, setParams] = useSearchParams();
     const knowledgeBase = params.get("knowledgeBase") ?? "";
     const language = params.get("language") ?? "";
@@ -23,8 +29,11 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     const filters: Filters = { knowledgeBase, language, text };
     const [, navigate] = useLocation();
     const availability = useAvailability(bot);
-    const list = useCallback(
-        (signal: AbortSignal) => fetchArticles(bot, { knowledgeBase, language, text }, signal),
+    const list = useMemo(
+        () => ({
+            key: [knowledgeBase, language, text],
+            fetch: (signal: AbortSignal) => fetchArticles(bot, { knowledgeBase, language, text }, signal),
+        }),
         [bot, knowledgeBase, language, text],
     );
     const editor = useResourceEditor({
@@ -36,18 +45,6 @@ export function ArticlesScreen({ bot }: { bot: string }) {
         revisionOfOpened: true,
         onRenamed: availability.reload,
     });
-
-    useEffect(() => {
-        const controller = new AbortController();
-        fetchKnowledgeBases(bot, controller.signal)
-            .then(setBases)
-            .catch((error: unknown) => {
-                if (!controller.signal.aborted) setBasesFailure(error instanceof Error ? error.message : String(error));
-            });
-        return () => {
-            controller.abort();
-        };
-    }, [bot]);
 
     if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     const failure = editor.failure ?? basesFailure;

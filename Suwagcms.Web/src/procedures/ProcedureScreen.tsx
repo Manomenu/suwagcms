@@ -1,17 +1,16 @@
+import { Alert, ApiError, Button } from "@maniumek/suwfrontkit";
+import { mistakesOf } from "@/api/client";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation, useSearch, useSearchParams } from "wouter";
 
 import { useAvailability } from "@/api/availability";
-import { ApiError } from "@/api/client";
 import { fetchDeclaration } from "@/api/declaration";
 import { useResourceHistory } from "@/api/history";
-import { mayLeave, useLeaveGuard } from "@/api/leaveGuard";
+import { mayLeave, useLeaveGuard } from "@maniumek/suwfrontkit";
 import { renamer } from "@/api/rename";
 import { editHref, listHref, withListSearch } from "@/api/resourceAddress";
 import { usageHref, useUsage, type UsageLink } from "@/api/usage";
-import { Alert } from "@/design/alert";
 import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
-import { Button } from "@/design/button";
 import { MistakeItems } from "@/design/mistakeItems";
 import { BackToList, ResourceEdit } from "@/design/resourceEdit";
 
@@ -111,7 +110,7 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
             .catch((error: unknown) => {
                 setDeleteFailure(
                     error instanceof ApiError
-                        ? [error.message, ...error.mistakes.map((mistake) => `${mistake.message} ${mistake.fix}`)].join(" ")
+                        ? [error.message, ...mistakesOf(error).map((mistake) => `${mistake.message} ${mistake.fix}`)].join(" ")
                         : String(error),
                 );
             });

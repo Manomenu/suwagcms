@@ -37,7 +37,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
 
     private HttpClient Client()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return App.CreateClient();
     }
 
@@ -155,7 +155,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
     [Trait("criterion", "AC-bot-declaration-6")]
     public async Task A_bot_that_does_not_answer_within_the_time_limit_keeps_the_last_answer_with_the_reason()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var shorter = App.WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration(
                 (_, configuration) =>

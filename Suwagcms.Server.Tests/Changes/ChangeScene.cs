@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Dapper;
-using Suwagcms.Server.Database;
+using Npgsql;
 using Suwagcms.Server.Tests.Articles;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Personas;
@@ -91,9 +91,9 @@ internal sealed class ChangeScene(HttpClient client, string bot)
             : "absent";
     }
 
-    public async Task<List<string>> RowsAsync(Pool pool)
+    public async Task<List<string>> RowsAsync(NpgsqlDataSource dataSource)
     {
-        await using var connection = await pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         var rows = await connection.QueryAsync<string>(
             """
             SELECT kind || '/' || public_id || '/' || revision || '/' || updated_at::text || '/' || body::text
@@ -104,9 +104,9 @@ internal sealed class ChangeScene(HttpClient client, string bot)
         return [.. rows];
     }
 
-    public async Task<int> HistoryCountAsync(Pool pool)
+    public async Task<int> HistoryCountAsync(NpgsqlDataSource dataSource)
     {
-        await using var connection = await pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         return await connection.ExecuteScalarAsync<int>("SELECT count(*) FROM change_entry WHERE bot_id = @bot", new { bot = Bot });
     }
 }

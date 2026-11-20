@@ -28,7 +28,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
 
     private async Task<ProcedureApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await ProcedureApi.NewBotAsync(App.CreateClient());
     }
 
@@ -92,7 +92,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
     [Trait("criterion", "AC-fact-pattern-1")]
     public async Task A_version_holds_the_pattern_and_a_fact_without_one_has_no_such_member_while_the_api_answers_null()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var facts = new FactApi(versions.Client, versions.Bot);
         Assert.Equal(HttpStatusCode.OK, (await facts.Add("order.code", Coded)).StatusCode);
@@ -115,7 +115,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
     [Trait("criterion", "AC-fact-pattern-15")]
     public async Task The_comparison_of_two_versions_names_a_changed_pattern()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var facts = new FactApi(versions.Client, versions.Bot);
         await facts.Add("order.code", Coded);
@@ -290,7 +290,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
     [Trait("criterion", "AC-fact-pattern-13")]
     public async Task A_file_of_changes_adds_a_pattern_keeps_it_through_an_edit_and_takes_it_off_with_null()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var scene = await ChangeScene.NewAsync(App.CreateClient());
 
         var added = await scene.CliAsync(
@@ -345,7 +345,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
     [Trait("criterion", "AC-fact-pattern-13")]
     public async Task An_edit_in_a_file_of_changes_naming_a_pattern_replaces_the_whole_of_it()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var scene = await ChangeScene.NewAsync(App.CreateClient());
         await scene.Facts.Add("order.code", Coded);
 
@@ -369,7 +369,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
     [Trait("criterion", "AC-fact-pattern-13")]
     public async Task An_edit_in_a_file_of_changes_from_text_to_int_drops_the_pattern()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var scene = await ChangeScene.NewAsync(App.CreateClient());
         await scene.Facts.Add("order.code", Coded);
 
@@ -385,7 +385,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
     [Trait("criterion", "AC-fact-pattern-12")]
     public async Task The_commands_add_edit_show_and_take_off_a_pattern_on_the_real_server()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var scene = await ChangeScene.NewAsync(App.CreateClient());
 
         var added = await scene.CommandAsync(

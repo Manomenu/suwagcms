@@ -13,7 +13,7 @@ public sealed class KindFilterTests(TestDatabase database, ClassServer server) :
 
     private async Task<HistoryScene> EveryKind()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://127.0.0.1:1");
         await scene.FillAsync();
@@ -68,7 +68,7 @@ public sealed class KindFilterTests(TestDatabase database, ClassServer server) :
     [Trait("criterion", "AC-change-history-36")]
     public async Task Procedures_lists_deleted_and_renamed_ones_newest_first_paged_with_the_total_and_none_of_another_bot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var procedures = await ProcedureApi.NewBotAsync(client);
         var other = await ProcedureApi.NewBotAsync(client);
@@ -102,7 +102,7 @@ public sealed class KindFilterTests(TestDatabase database, ClassServer server) :
     [Trait("criterion", "AC-change-history-36")]
     public async Task An_unknown_kind_is_refused_naming_the_kinds()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var procedures = await ProcedureApi.NewBotAsync(client);
 

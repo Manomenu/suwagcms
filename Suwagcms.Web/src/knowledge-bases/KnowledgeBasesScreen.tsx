@@ -1,7 +1,7 @@
+import { Alert } from "@maniumek/suwfrontkit";
 import { Redirect } from "wouter";
 
 import { useResourceEditor } from "@/api/resourceEditor";
-import { Alert } from "@/design/alert";
 import { ResourceEdit } from "@/design/resourceEdit";
 
 import { knowledgeBasesApi } from "./api";

@@ -21,10 +21,7 @@ test("AC-bot-profiles-2: registering a bot opens its profile at /bots/<id>, and 
     await page.getByRole("button", { name: "Register", exact: true }).click();
 
     await expect(page).toHaveURL(`/bots/${id}`);
-    await expect(page.getByRole("navigation").getByRole("listitem").filter({ hasText: "Registered in the web" })).toHaveAttribute(
-        "aria-current",
-        "page",
-    );
+    await expect(page.getByRole("navigation").getByRole("link", { name: "Registered in the web" })).toHaveAttribute("aria-current", "page");
     await page.goto("/bots");
     await expect(page.getByRole("main").getByRole("link", { name: "Registered in the web" })).toBeVisible();
     await expect(page.getByRole("main").getByText("http://registered.internal:8080")).toBeVisible();
@@ -69,12 +66,7 @@ test("AC-bot-profiles-8: switching the profile in one tab changes neither anothe
     await expect(tabOne).toHaveURL(`/bots/${second}`);
     await tabTwo.reload();
     await expect(tabTwo).toHaveURL(`/bots/${first}`);
-    await expect(
-        tabTwo
-            .getByRole("navigation")
-            .getByRole("listitem")
-            .filter({ hasText: `Name of ${first}` }),
-    ).toHaveAttribute("aria-current", "page");
+    await expect(tabTwo.getByRole("navigation").getByRole("link", { name: `Name of ${first}` })).toHaveAttribute("aria-current", "page");
     expect(changes).toEqual([]);
 });
 

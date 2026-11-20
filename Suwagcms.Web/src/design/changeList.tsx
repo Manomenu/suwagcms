@@ -1,9 +1,6 @@
+import { Alert, Anchor, Badge, Paginated, type Paging } from "@maniumek/suwfrontkit";
+import { Link } from "wouter";
 import type { ReactNode } from "react";
-
-import { Alert } from "@/design/alert";
-import { Anchor } from "@/design/anchor";
-import { Badge } from "@/design/badge";
-import { Paginated, type Paging } from "@/design/pagination";
 
 export interface WrittenField {
     field: string;
@@ -152,7 +149,10 @@ function Entry({ line, hrefOf }: { line: ChangeLine; hrefOf: ((line: ChangeLine)
                 : {
                       resource: (
                           <>
-                              {line.kind} <Anchor href={hrefOf(line)}>{line.resourceId}</Anchor>
+                              {line.kind}{" "}
+                              <Anchor asChild>
+                                  <Link href={hrefOf(line)}>{line.resourceId}</Link>
+                              </Anchor>
                           </>
                       ),
                   })}

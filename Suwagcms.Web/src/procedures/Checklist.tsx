@@ -1,4 +1,4 @@
-import { Legend } from "@/design/field";
+import { Legend } from "@maniumek/suwfrontkit";
 
 export function Checklist({
     legend,

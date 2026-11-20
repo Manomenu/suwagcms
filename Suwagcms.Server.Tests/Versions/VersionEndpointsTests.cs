@@ -30,7 +30,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
 
     private async Task<VersionApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await VersionApi.NewBotAsync(App.CreateClient());
     }
 
@@ -212,7 +212,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
     [Trait("criterion", "AC-version-create-6")]
     public void The_routes_under_versions_are_reads_a_creation_and_a_push_that_changes_the_bot_never_a_version()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var routes = App
             .Services.GetRequiredService<EndpointDataSource>()
             .Endpoints.OfType<RouteEndpoint>()
@@ -335,8 +335,8 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
     public async Task Concurrent_creations_of_changing_states_take_each_number_once_and_a_save_is_wholly_in_or_wholly_out()
     {
         var api = await (await NewBot()).Ready();
-        var editor = new DefinitionEditor(database.Pool, TimeProvider.System);
-        var creator = new VersionCreator(database.Pool, TimeProvider.System);
+        var editor = new DefinitionEditor(database.DataSource, TimeProvider.System);
+        var creator = new VersionCreator(database.DataSource, TimeProvider.System);
         var cancellation = TestContext.Current.CancellationToken;
         await editor.ApplyAsync(
             api.Bot,
@@ -385,7 +385,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
     [Trait("criterion", "AC-version-create-11")]
     public async Task Creating_a_version_sends_no_request_to_the_bot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var address = $"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}";
@@ -459,7 +459,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
     [Trait("criterion", "AC-bot-profiles-13")]
     public async Task An_unknown_bot_is_a_404_for_every_route()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
 
         var responses = new[]

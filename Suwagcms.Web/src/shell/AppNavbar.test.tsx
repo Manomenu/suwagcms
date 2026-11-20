@@ -44,14 +44,14 @@ describe("AppNavbar", () => {
     });
 
     it("AC-web-shell-3: marks the open bot as the current page, and as current while one of its tabs is open", () => {
-        expect(render("sklep", null)).toMatch(/<li aria-current="page"><a [^>]*>Sklep/);
-        expect(render("sklep", "facts")).toMatch(/<li aria-current="true"><a [^>]*>Sklep/);
+        expect(render("sklep", null)).toMatch(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*Sklep/);
+        expect(render("sklep", "facts")).toMatch(/<li aria-current="true"[^>]*><a (?:(?!aria-current)[^>])*>(?:(?!<\/a>).)*Sklep/);
     });
 
     it("AC-web-shell-3: marks only the current tab", () => {
         const html = render("sklep", "versions");
 
         expect(html.match(/aria-current="page"/g)).toHaveLength(1);
-        expect(html).toMatch(/aria-current="page"[^>]*>Versions/);
+        expect(html).toMatch(/aria-current="page"[^>]*>(?:(?!<\/a>).)*Versions/);
     });
 });

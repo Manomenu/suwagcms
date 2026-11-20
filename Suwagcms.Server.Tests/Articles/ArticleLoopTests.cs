@@ -10,7 +10,7 @@ public sealed class ArticleLoopTests(TestDatabase database, ClassServer server) 
 
     private async Task<ArticleApi> BotWithPricingAndDiscounts()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var api = await ArticleApi.NewBotAsync(App.CreateClient());
         Assert.Equal(HttpStatusCode.OK, (await api.Add("pricing", ArticleApi.Body())).StatusCode);
         Assert.Equal(
@@ -48,7 +48,7 @@ public sealed class ArticleLoopTests(TestDatabase database, ClassServer server) 
     [Trait("criterion", "AC-loop-guard-3")]
     public async Task An_article_added_with_a_link_to_itself_is_refused_with_its_own_path_and_not_stored()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var api = await ArticleApi.NewBotAsync(App.CreateClient());
 
         var response = await api.Add("pricing", ArticleApi.Body(llmGuide: "Also [me](cms://article/pricing)."));

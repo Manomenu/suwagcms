@@ -1,14 +1,13 @@
+import { Anchor, Input, Select } from "@maniumek/suwfrontkit";
+import { Link } from "wouter";
 import type { ReactNode } from "react";
 
 import { LANGUAGES } from "@/api/languages";
 import { usePagedRows } from "@/api/pagination";
 import { listHref } from "@/api/resourceAddress";
-import { Anchor } from "@/design/anchor";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
-import { Input } from "@/design/input";
 import type { HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
-import { Select } from "@/design/select";
 
 import type { Article, Filters, KnowledgeBase } from "./api";
 
@@ -51,8 +50,10 @@ export function ArticlesView({
                     {bases.length === 0 && (
                         <p className="text-muted-foreground">
                             This bot has no knowledge base yet, and an article lives in one.{" "}
-                            <Anchor href={`~${listHref(bot, "knowledge-bases")}`} onClick={onLeave}>
-                                Create the first knowledge base
+                            <Anchor asChild>
+                                <Link href={`~${listHref(bot, "knowledge-bases")}`} onClick={onLeave}>
+                                    Create the first knowledge base
+                                </Link>
                             </Anchor>
                             .
                         </p>

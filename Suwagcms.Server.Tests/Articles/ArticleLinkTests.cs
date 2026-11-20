@@ -9,7 +9,7 @@ public sealed class ArticleLinkTests(TestDatabase database, ClassServer server) 
 
     private async Task<ArticleApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await ArticleApi.NewBotAsync(App.CreateClient());
     }
 

@@ -1,22 +1,22 @@
+using Npgsql;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Versions;
 
-internal sealed class BotStatusReader(Pool pool, BotClient client, TimeProvider time, AvailabilitySender availability)
+internal sealed class BotStatusReader(NpgsqlDataSource dataSource, BotClient client, TimeProvider time, AvailabilitySender availability)
 {
     private const int Recent = 10;
 
     public async Task<BotStatus?> ReadAsync(string bot, CancellationToken cancellationToken)
     {
-        if (await PushStore.FindBotAsync(pool, bot, cancellationToken) is not { } registered)
+        if (await PushStore.FindBotAsync(dataSource, bot, cancellationToken) is not { } registered)
         {
             return null;
         }
-        var latest = await VersionStore.LatestNumberAsync(pool, bot, cancellationToken);
-        var attempts = await PushStore.RecentAsync(pool, bot, Recent, cancellationToken);
+        var latest = await VersionStore.LatestNumberAsync(dataSource, bot, cancellationToken);
+        var attempts = await PushStore.RecentAsync(dataSource, bot, Recent, cancellationToken);
         var known = new BotStatus(
             bot,
             registered.Address,
@@ -40,8 +40,8 @@ internal sealed class BotStatusReader(Pool pool, BotClient client, TimeProvider 
                 {
                     return known with { Reach = BotReach.WrongAddress, OtherBot = state.Bot };
                 }
-                await PushStore.ReportAsync(pool, bot, state.Current, time.GetUtcNow(), cancellationToken);
-                if (state.Availability.Number < await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken))
+                await PushStore.ReportAsync(dataSource, bot, state.Current, time.GetUtcNow(), cancellationToken);
+                if (state.Availability.Number < await AvailabilityStore.ReadNumberAsync(dataSource, bot, cancellationToken))
                 {
                     await availability.CatchUpAsync(bot, registered.Address, cancellationToken);
                 }
@@ -55,7 +55,7 @@ internal sealed class BotStatusReader(Pool pool, BotClient client, TimeProvider 
                     LastKnownAt = time.GetUtcNow(),
                     Reason = state.StoreError,
                     HasUnknownVersion =
-                        state.Current is { } current && !await VersionStore.ExistsAsync(pool, bot, current, cancellationToken),
+                        state.Current is { } current && !await VersionStore.ExistsAsync(dataSource, bot, current, cancellationToken),
                 };
             case BotClient.Reply.Answer answer:
                 return known with

@@ -1,30 +1,19 @@
-import { useEffect, useState } from "react";
+import { Alert } from "@maniumek/suwfrontkit";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useLocation } from "wouter";
 
-import { fetchBots, type Bot } from "@/api/bots";
-import { Alert } from "@/design/alert";
+import { BOTS, useBots } from "@/api/bots";
 
 import { BotsView, profilePath } from "./BotsView";
 import { DeclarationPanel } from "./DeclarationPanel";
 import { RegisterBotForm } from "./RegisterBotForm";
 
 export function BotsScreen({ openId }: { openId: string | null }) {
-    const [bots, setBots] = useState<Bot[] | null>(null);
-    const [failure, setFailure] = useState<string | null>(null);
+    const { bots, failure } = useBots();
     const [registering, setRegistering] = useState(false);
     const [, navigate] = useLocation();
-
-    useEffect(() => {
-        const controller = new AbortController();
-        fetchBots(controller.signal)
-            .then(setBots)
-            .catch((error: unknown) => {
-                if (!controller.signal.aborted) setFailure(error instanceof Error ? error.message : String(error));
-            });
-        return () => {
-            controller.abort();
-        };
-    }, []);
+    const queries = useQueryClient();
 
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;
@@ -43,6 +32,7 @@ export function BotsScreen({ openId }: { openId: string | null }) {
                 registering ? (
                     <RegisterBotForm
                         onRegistered={(bot) => {
+                            void queries.invalidateQueries({ queryKey: BOTS });
                             navigate(`~${profilePath(bot.id)}`);
                         }}
                         onCancel={() => {

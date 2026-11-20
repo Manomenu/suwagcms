@@ -99,7 +99,7 @@ describe("FactsView", () => {
         const html = view(facts);
 
         expect(html).not.toContain(">Delete<");
-        expect(html.match(/>Edit</g)).toHaveLength(3);
+        expect(html.match(/<button[^>]*>Edit</g)).toHaveLength(3);
     });
 });
 

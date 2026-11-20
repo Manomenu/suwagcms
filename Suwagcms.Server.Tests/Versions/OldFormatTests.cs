@@ -13,7 +13,7 @@ public sealed class OldFormatTests(TestDatabase database, ClassServer server) : 
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(
             id,
@@ -31,7 +31,7 @@ public sealed class OldFormatTests(TestDatabase database, ClassServer server) : 
 
     private async Task MakeOldAsync(string bot, int number, int format = 1)
     {
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         var changed = await connection.ExecuteAsync(
             """
             UPDATE bot_version

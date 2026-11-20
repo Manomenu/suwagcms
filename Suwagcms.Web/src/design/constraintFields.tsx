@@ -1,8 +1,7 @@
+import { Input, Select } from "@maniumek/suwfrontkit";
 import type { ReactNode } from "react";
 
 import { CONSTRAINT_HINTS, PATTERN_HINTS } from "@/design/factHints";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
 
 export type FieldWrapper<Name extends string> = (
     name: Name,

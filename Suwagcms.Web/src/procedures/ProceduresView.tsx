@@ -1,13 +1,12 @@
+import { Anchor, Badge, Paper } from "@maniumek/suwfrontkit";
 import type { ReactNode } from "react";
-import { useSearch } from "wouter";
+import { Link, useSearch } from "wouter";
 
 import type { Mistake } from "@/api/client";
 import { usePagedRows } from "@/api/pagination";
 import { editHref, withListSearch } from "@/api/resourceAddress";
-import { Anchor } from "@/design/anchor";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
-import { Badge } from "@/design/badge";
-import { Paper, type HistoryPanelProps } from "@/design/page";
+import { type HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
 
 import { mistakesOf, type ProcedureList } from "./api";
@@ -74,7 +73,9 @@ export function ProceduresView({
                 {
                     header: "Procedure",
                     cell: (procedure) => (
-                        <Anchor href={`~${withListSearch(editHref(bot, "procedures", procedure.id), search)}`}>{procedure.id}</Anchor>
+                        <Anchor asChild>
+                            <Link href={`~${withListSearch(editHref(bot, "procedures", procedure.id), search)}`}>{procedure.id}</Link>
+                        </Anchor>
                     ),
                 },
                 { header: "Description", className: "text-muted-foreground", cell: (procedure) => procedure.description },

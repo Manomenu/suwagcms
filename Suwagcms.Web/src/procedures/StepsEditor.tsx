@@ -1,9 +1,5 @@
+import { Button, InfoTip, Input, Select } from "@maniumek/suwfrontkit";
 import { useState } from "react";
-
-import { Button } from "@/design/button";
-import { InfoTip } from "@/design/infoTip";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
 
 import type { ActionView, Fact } from "./api";
 import {

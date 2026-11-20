@@ -1,17 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ApiError, mayLeave, useLeaveGuardActive } from "@maniumek/suwfrontkit";
+import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useLocation, useSearch, useSearchParams } from "wouter";
 
-import { ApiError } from "./client";
+import { messageOf, mistakesOf } from "./client";
 import { useKindHistory, useResourceHistory } from "./history";
-import { mayLeave, useLeaveGuardActive } from "./leaveGuard";
 import { renamer } from "./rename";
 import { addressOf, editHref, listHref, newHref, withListSearch } from "./resourceAddress";
 import { revisionOf, type ResourceApi } from "./resourceApi";
 import { usageHref, useUsage, type UsageCollection, type UsageLink } from "./usage";
-
-function messageOf(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
-}
 
 export function useResourceEditor<View extends { revision: number | string }, Save>({
     bot,
@@ -26,13 +23,10 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     api: ResourceApi<View, Save>;
     idOf: (view: View) => string;
     usage: UsageCollection | null;
-    list?: (signal: AbortSignal) => Promise<View[]>;
+    list?: { key: unknown; fetch: (signal: AbortSignal) => Promise<View[]> };
     revisionOfOpened?: boolean;
     onRenamed?: () => void;
 }) {
-    const [items, setItems] = useState<View[] | null>(null);
-    const [failure, setFailure] = useState<string | null>(null);
-    const [opened, setOpened] = useState<{ id: string; item: View | null } | null>(null);
     const [deleteFailure, setDeleteFailure] = useState<{ id: string; message: string } | null>(null);
     const [changingId, setChangingId] = useState(false);
     const [location, navigate] = useLocation();
@@ -43,7 +37,28 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
 
     const address = addressOf(location, api.collection);
     const wanted = address.screen === "edit" ? address.id : null;
-    const current = opened !== null && opened.id === wanted ? opened : null;
+    const queries = useQueryClient();
+    const resources = ["resources", bot, api.collection];
+    const listed = useQuery({
+        queryKey: [...resources, "list", list?.key ?? null],
+        queryFn: ({ signal }) => list?.fetch(signal) ?? api.list(bot, signal),
+    });
+    const opened = useQuery({
+        queryKey: [...resources, "item", wanted],
+        queryFn: wanted === null ? skipToken : ({ signal }) => api.get(bot, wanted, signal),
+    });
+    const items = listed.data ?? null;
+    const missing = opened.error instanceof ApiError && opened.error.status === 404;
+    const openFailure = opened.error === null || missing ? null : messageOf(opened.error);
+    const failure = listed.error === null ? openFailure : messageOf(listed.error);
+    const current =
+        wanted === null
+            ? null
+            : missing
+              ? { id: wanted, item: null }
+              : opened.data === undefined
+                ? null
+                : { id: wanted, item: opened.data };
     const item = current?.item ?? null;
     const id = item === null ? null : idOf(item);
     const shown = revisionOfOpened ? item : (items?.find((other) => idOf(other) === id) ?? item);
@@ -55,52 +70,10 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
 
     const withSearch = (href: string) => withListSearch(href, search);
 
-    const fetchList = useCallback((signal: AbortSignal) => list?.(signal) ?? api.list(bot, signal), [list, api, bot]);
-
     const reload = () => {
-        fetchList(new AbortController().signal)
-            .then(setItems)
-            .catch((error: unknown) => {
-                setFailure(messageOf(error));
-            });
+        void queries.invalidateQueries({ queryKey: resources });
+        void queries.invalidateQueries({ queryKey: ["history"] });
     };
-
-    useEffect(() => {
-        const controller = new AbortController();
-        fetchList(controller.signal)
-            .then(setItems)
-            .catch((error: unknown) => {
-                if (!controller.signal.aborted) setFailure(messageOf(error));
-            });
-        return () => {
-            controller.abort();
-        };
-    }, [fetchList]);
-
-    const fetchOpened = useCallback(
-        (openedId: string, signal: AbortSignal) => {
-            api.get(bot, openedId, signal)
-                .then((found) => {
-                    setOpened({ id: openedId, item: found });
-                })
-                .catch((error: unknown) => {
-                    if (signal.aborted) return;
-                    if (error instanceof ApiError && error.status === 404) setOpened({ id: openedId, item: null });
-                    else setFailure(messageOf(error));
-                });
-        },
-        [api, bot],
-    );
-
-    useEffect(() => {
-        if (wanted === null) return undefined;
-        const controller = new AbortController();
-        fetchOpened(wanted, controller.signal);
-        return () => {
-            controller.abort();
-            setOpened(null);
-        };
-    }, [wanted, fetchOpened]);
 
     function close() {
         setDeleteFailure(null);
@@ -121,7 +94,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
                     id: removed,
                     message:
                         error instanceof ApiError
-                            ? [error.message, ...error.mistakes.map((mistake) => `${mistake.message} ${mistake.fix}`)].join(" ")
+                            ? [error.message, ...mistakesOf(error).map((mistake) => `${mistake.message} ${mistake.fix}`)].join(" ")
                             : String(error),
                 });
             });
@@ -134,7 +107,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
         item,
         reload,
         openById: (other: string) => {
-            if (other === wanted) fetchOpened(other, new AbortController().signal);
+            if (other === wanted) void opened.refetch();
             else navigate(withSearch(editHref(bot, api.collection, other)));
         },
         close,

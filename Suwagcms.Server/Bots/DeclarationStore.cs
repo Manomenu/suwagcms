@@ -2,7 +2,6 @@ using Dapper;
 using Npgsql;
 using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Sdk.Validation;
-using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Bots;
 
@@ -15,9 +14,9 @@ internal static class DeclarationStore
         public BotDeclaration? Parsed => Declaration is null ? null : DeclarationValidator.ParseJson(Declaration).Declaration;
     }
 
-    public static async Task<StoredDeclaration?> FindAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    public static async Task<StoredDeclaration?> FindAsync(NpgsqlDataSource dataSource, string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await FindAsync(connection, null, bot, cancellationToken);
     }
 
@@ -36,9 +35,15 @@ internal static class DeclarationStore
             )
         );
 
-    public static async Task StoreAsync(Pool pool, string bot, string? declaration, DateTimeOffset at, CancellationToken cancellationToken)
+    public static async Task StoreAsync(
+        NpgsqlDataSource dataSource,
+        string bot,
+        string? declaration,
+        DateTimeOffset at,
+        CancellationToken cancellationToken
+    )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(
             new CommandDefinition(
                 """

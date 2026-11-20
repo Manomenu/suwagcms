@@ -1,8 +1,8 @@
+import { Alert } from "@maniumek/suwfrontkit";
 import { Redirect } from "wouter";
 
 import { useAvailability } from "@/api/availability";
 import { useResourceEditor } from "@/api/resourceEditor";
-import { Alert } from "@/design/alert";
 import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
 import { ResourceEdit } from "@/design/resourceEdit";
 

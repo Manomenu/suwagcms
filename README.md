@@ -485,7 +485,7 @@ Rasa concepts in this project's terms:
 
 ## Development
 
-Stack: built from the [`solid-dotnet-app-tpl`](https://github.com/Manomenu/solid-dotnet-app-tpl) template: .NET 10 with ASP.NET Core minimal APIs and PostgreSQL on the server, React 19 with shadcn/ui and Tailwind on the web, and one gate that decides when a change is done.
+Stack: built from the [`solid-dotnet-app-tpl`](https://github.com/Manomenu/solid-dotnet-app-tpl) template: .NET 10 with ASP.NET Core minimal APIs and PostgreSQL on the server, React 19 on the shared kit suwfrontkit (with TanStack Query) and Tailwind on the web, and one gate that decides when a change is done.
 
 Requirements and commands: [docs/development.md](docs/development.md). Rules for contributors and agents: [AGENTS.md](AGENTS.md). Where code goes: [docs/architecture.md](docs/architecture.md).
 
@@ -494,8 +494,8 @@ The pictures here are drawn on [docs/visual/board/readme.html](docs/visual/board
 <details>
 <summary><b>The application skeleton</b></summary>
 
-An ASP.NET Core minimal-API server (Npgsql, Dapper, hand-written SQL, grate migrations), a React 19 + shadcn/ui + Tailwind
-web app with types generated from the server's OpenAPI document.
+An ASP.NET Core minimal-API server on suwbackkit (Dapper, hand-written SQL, grate migrations), a React 19 + suwfrontkit + Tailwind
+web app calling the server through the kit's typed client, with types generated from the server's OpenAPI document.
 
 </details>
 

@@ -12,7 +12,7 @@ public sealed class ArticleLanguageTests(TestDatabase database, ClassServer serv
 
     private async Task<ArticleApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var api = await ArticleApi.NewBotAsync(App.CreateClient());
         (await api.KnowledgeBases.AddWithLanguage("oferta", "Oferta", "pl")).EnsureSuccessStatusCode();
         return api;
@@ -86,7 +86,7 @@ public sealed class ArticleLanguageTests(TestDatabase database, ClassServer serv
     public async Task A_stored_article_body_holding_a_language_still_loads_with_the_field_ignored_and_does_not_write_it_back()
     {
         var api = await NewBot();
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         await connection.ExecuteAsync(
             "INSERT INTO resource (id, bot_id, kind, public_id, revision, body, updated_at) VALUES (@id, @bot, 'article', 'cennik', 1, @body::jsonb, now())",
             new

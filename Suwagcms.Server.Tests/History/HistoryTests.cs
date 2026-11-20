@@ -21,7 +21,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
 
     private async Task<(ArticleApi Articles, HistoryScene History)> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         return (articles, new HistoryScene(client, articles.Bot));
@@ -104,7 +104,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
         var (articles, history) = await NewBot();
         await articles.Add("cennik", ArticleApi.Body(title: "Before"));
         var trigger = "refuse_" + history.Bot;
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         await connection.ExecuteAsync(
             $$"""
             CREATE FUNCTION {{trigger}}() RETURNS trigger LANGUAGE plpgsql AS $body$ BEGIN RAISE EXCEPTION 'no entries today'; END $body$;
@@ -148,7 +148,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
     [Trait("criterion", "AC-change-history-5")]
     public void No_route_changes_or_deletes_an_entry_and_no_server_code_can()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var routes = App
             .Services.GetRequiredService<EndpointDataSource>()
             .Endpoints.OfType<RouteEndpoint>()
@@ -220,7 +220,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
     [Trait("criterion", "AC-pagination-11")]
     public async Task A_numbered_page_of_a_bot_or_a_resource_holds_its_entries_newest_first_with_none_missing_or_repeated()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var facts = await FactApi.NewBotAsync(client);
         var history = new HistoryScene(client, facts.Bot);
@@ -339,7 +339,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
     [Trait("criterion", "AC-change-history-11")]
     public async Task A_push_is_recorded_with_the_version_and_the_result()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://127.0.0.1:1");
         await scene.FillAsync();
@@ -362,7 +362,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
     [Trait("criterion", "AC-change-history-11")]
     public async Task A_succeeded_push_is_recorded_with_the_version_and_the_result()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var id = PushScene.FreshId();
         await using var bot = await TestBot.StartAsync(id);
@@ -385,7 +385,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
     [Trait("criterion", "AC-change-history-12")]
     public async Task Creating_a_version_is_recorded_and_a_dry_run_or_a_refusal_is_not()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var scene = await PushScene.RegisterAsync(client, PushScene.FreshId(), "http://bot.internal");
         var history = new HistoryScene(client, scene.Bot);

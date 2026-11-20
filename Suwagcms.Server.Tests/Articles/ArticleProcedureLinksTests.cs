@@ -16,7 +16,7 @@ public sealed class ArticleProcedureLinksTests(TestDatabase database, ClassServe
 
     private async Task<Scene> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         var procedures = new ProcedureApi(client, new FactApi(client, articles.Bot));

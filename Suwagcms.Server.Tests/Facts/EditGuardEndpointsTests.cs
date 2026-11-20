@@ -14,7 +14,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
 
     private async Task<ProcedureApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var api = await ProcedureApi.NewBotAsync(App.CreateClient());
         Assert.Equal(HttpStatusCode.OK, (await api.Facts.Add("kind", Kind)).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await api.Facts.Add("rooms", Rooms)).StatusCode);

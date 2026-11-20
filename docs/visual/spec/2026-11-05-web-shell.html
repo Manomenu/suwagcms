@@ -406,6 +406,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <p>The id comes before <code>edit</code> so that the last part of an address never holds a dot that reads as a file name, as <code>customer.email</code> would. <code>?open=&lt;item&gt;</code>, which the CLI prints, and the older <code>/procedures/&lt;procedure&gt;</code> lead to the edit address.</p>
   <p>What says where a person is lives in the address, never in browser storage: the open item, the article filters, the selected step of the editor.</p>
   <p>Every field has an "i" in a circle beside its label, whose help says what the field does and when to use it. The persona's first text is the exception in form only: its section heading carries the help.</p>
+  <p>The frame of every page comes from suwfrontkit: the header, the panel with its collapsed strip and its side, the field with its help and how the help opens, the question before a deletion and its busy button, the error screen's frame. Their behaviour is the kit's and its tests guard it; this app guards only what it puts into them.</p>
 </section>
 
 <section data-role="acceptance">
@@ -415,7 +416,6 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-web-shell-2</code> The tabs appear only under the open bot and lead to that bot's screens, and an id that is not in the list has no tabs.</li>
     <li><code>AC-web-shell-3</code> The panel marks the open bot as the current page, and as current while one of its tabs is open, and marks only the current tab.</li>
     <li><code>AC-web-shell-4</code> The address alone decides the open bot and the current tab, as the table says; a malformed <code>%</code> in it does not break the page, and links encode the id.</li>
-    <li><code>AC-web-shell-5</code> The side of the panel is one setting: on either side, the row and the panel's border follow it.</li>
     <li><code>AC-web-shell-6</code> With no bot chosen, the page asks to choose a bot from the panel or to register one.</li>
     <li><code>AC-web-shell-7</code> The list, the form that adds and the edit screen have one form of address on every collection, as the table says, built in one place.</li>
     <li><code>AC-web-shell-8</code> An id with dots, or with characters that must be encoded, opens at its edit address and reads back the same.</li>
@@ -423,12 +423,11 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-web-shell-10</code> <code>?open=&lt;item&gt;</code> and the older <code>/procedures/&lt;procedure&gt;</code> lead to the edit address.</li>
     <li><code>AC-web-shell-11</code> Adding or editing shows only that item, with a way back to the list, and not the rest of the list.</li>
     <li><code>AC-web-shell-12</code> A form field cannot be written without its help: the shared field requires it, each form shows an "i" beside each label, and no form writes its own label or legend around that.</li>
-    <li><code>AC-web-shell-13</code> The help opens on hover, on keyboard focus and on a tap, Escape closes it, and its button has an accessible name.</li>
     <li><code>AC-web-shell-14</code> Every resource's list, with its row and the row's action, and its edit screen are one shared module, with no row markup of its own.</li>
     <li><code>AC-web-shell-15</code> The article filters and the selected step of the editor are in the address, so a reload keeps them.</li>
-    <li><code>AC-web-shell-16</code> The web app uses neither <code>localStorage</code> nor <code>sessionStorage</code>: what says where a person is goes in the address.</li>
+    <li><code>AC-web-shell-16</code> The web app's own code uses neither <code>localStorage</code> nor <code>sessionStorage</code>: what says where a person is goes in the address.</li>
     <li><code>AC-web-shell-17</code> A screen that fails to draw shows the error with Reload and a way back to the bots instead of a blank page; the panel stays, and opening another address clears the message.</li>
-    <li><code>AC-web-shell-18</code> While a save, an add, a registration or a deletion is on its way, its button is disabled, so a second click or Enter sends no second request.</li>
+    <li><code>AC-web-shell-18</code> While a save, an add or a registration is on its way, its button is disabled, so a second click or Enter sends no second request.</li>
   </ul>
 </section>
 <!-- CONTENT END -->

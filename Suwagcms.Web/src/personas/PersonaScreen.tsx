@@ -1,9 +1,9 @@
+import { Alert, ApiError } from "@maniumek/suwfrontkit";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
-import { ApiError, type Mistake } from "@/api/client";
+import { type Mistake, mistakesOf, refusalOf } from "@/api/client";
 import { useResourceHistory } from "@/api/history";
-import { Alert } from "@/design/alert";
-import { useLeaveGuard } from "@/api/leaveGuard";
+import { useLeaveGuard } from "@maniumek/suwfrontkit";
 
 import { fetchPersona, savePersona, type Persona } from "./api";
 import { bodyOf, formOf, isDirty, isEmpty, type FieldName, type PersonaForm } from "./personaForm";
@@ -68,12 +68,12 @@ export function PersonaScreen({ bot }: { bot: string }) {
                     setSaved(true);
                 })
                 .catch((error: unknown) => {
-                    setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
+                    setRefusal(refusalOf(error));
                 }),
         );
     }
 
-    const mistakes: Mistake[] = refusal?.mistakes ?? [];
+    const mistakes: Mistake[] = mistakesOf(refusal);
     return (
         <PersonaView
             bot={bot}

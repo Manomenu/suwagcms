@@ -13,7 +13,7 @@ public sealed class UsageEndpointsTests(TestDatabase database, ClassServer serve
 
     private async Task<ArticleApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await ArticleApi.NewBotAsync(App.CreateClient());
     }
 
@@ -50,7 +50,7 @@ public sealed class UsageEndpointsTests(TestDatabase database, ClassServer serve
     [Trait("criterion", "AC-delete-guard-7")]
     public async Task A_fact_lists_the_procedures_and_fields_that_name_it_and_a_procedure_lists_its_facts()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var api = await ProcedureApi.NewBotAsync(App.CreateClient());
         await api.Add("orderValuation", ProcedureApi.Valuation);
 

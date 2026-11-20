@@ -21,9 +21,8 @@
         "Facts",
         "Validation",
         "Bots",
-        "Health | Settings",
-        "Editing",
-        "Database"
+        "Settings",
+        "Editing"
       ],
       "references": ["Suwagcms.Contracts"],
       "internalsVisibleTo": ["Suwagcms.Gate", "Suwagcms.Server.Tests"]

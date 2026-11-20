@@ -1,38 +1,28 @@
-import { useEffect, useState } from "react";
+import { Alert } from "@maniumek/suwfrontkit";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 
 import { useAvailability } from "@/api/availability";
+import { messageOf } from "@/api/client";
 import { useKindHistory } from "@/api/history";
 import { addressOf, editHref, listHref, newHref, withListSearch } from "@/api/resourceAddress";
-import { Alert } from "@/design/alert";
 import { AvailabilityNotice } from "@/design/availabilityPanel";
 import { Page } from "@/design/page";
 import { BackToList } from "@/design/resourceEdit";
 
-import { fetchProcedures, type ProcedureList } from "./api";
+import { fetchProcedures } from "./api";
 import { NewProcedureForm } from "./NewProcedureForm";
 import { ProceduresView } from "./ProceduresView";
 
 export function ProceduresScreen({ bot }: { bot: string }) {
-    const [list, setList] = useState<ProcedureList | null>(null);
-    const [failure, setFailure] = useState<string | null>(null);
+    const procedures = useQuery({ queryKey: ["procedures", bot, "list"], queryFn: ({ signal }) => fetchProcedures(bot, signal) });
+    const list = procedures.data ?? null;
+    const failure = procedures.error === null ? null : messageOf(procedures.error);
     const [location, navigate] = useLocation();
     const search = useSearch();
     const availability = useAvailability(bot);
     const listed = addressOf(location, "procedures").screen === "list";
     const history = useKindHistory(bot, listed ? "procedures" : null);
-
-    useEffect(() => {
-        const controller = new AbortController();
-        fetchProcedures(bot, controller.signal)
-            .then(setList)
-            .catch((error: unknown) => {
-                if (!controller.signal.aborted) setFailure(error instanceof Error ? error.message : String(error));
-            });
-        return () => {
-            controller.abort();
-        };
-    }, [bot]);
 
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;

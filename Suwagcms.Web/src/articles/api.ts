@@ -1,12 +1,12 @@
-import { request } from "../api/client";
+import { dataOf } from "@maniumek/suwfrontkit";
+
+import { api } from "../api/client";
 import type { components } from "../api/openapi";
-import { resourceApi } from "../api/resourceApi";
+import type { ResourceApi } from "../api/resourceApi";
 
 export type Article = components["schemas"]["ArticleView"];
 export type SaveArticle = components["schemas"]["SaveArticle"];
 export type KnowledgeBase = components["schemas"]["KnowledgeBaseView"];
-
-type ProcedureList = components["schemas"]["ProcedureList"];
 
 export interface Filters {
     knowledgeBase: string;
@@ -14,20 +14,29 @@ export interface Filters {
     text: string;
 }
 
-export const articlesApi = resourceApi<Article, SaveArticle>("articles");
+export const articlesApi: ResourceApi<Article, SaveArticle> = {
+    collection: "articles",
+    list: (bot, signal) => dataOf(api.GET("/api/bots/{bot}/articles", { params: { path: { bot } }, signal })),
+    get: (bot, id, signal) => dataOf(api.GET("/api/bots/{bot}/articles/{id}", { params: { path: { bot, id } }, signal })),
+    save: (bot, id, body, ifRevision) =>
+        dataOf(api.PUT("/api/bots/{bot}/articles/{id}", { params: { path: { bot, id }, query: { ifRevision } }, body })),
+    remove: (bot, id, ifRevision) =>
+        dataOf(api.DELETE("/api/bots/{bot}/articles/{id}", { params: { path: { bot, id }, query: { ifRevision } } })),
+};
 
-export function fetchProcedures(bot: string, signal: AbortSignal): Promise<ProcedureList> {
-    return request<ProcedureList>(`/bots/${encodeURIComponent(bot)}/procedures`, { signal });
+export function fetchProcedures(bot: string, signal: AbortSignal) {
+    return dataOf(api.GET("/api/bots/{bot}/procedures", { params: { path: { bot } }, signal }));
 }
 
 export function fetchArticles(bot: string, filters: Filters, signal: AbortSignal): Promise<Article[]> {
-    const query = new URLSearchParams();
-    if (filters.knowledgeBase !== "") query.set("knowledgeBase", filters.knowledgeBase);
-    if (filters.language !== "") query.set("language", filters.language);
-    if (filters.text.trim() !== "") query.set("text", filters.text);
-    return articlesApi.list(bot, signal, query);
+    const query = {
+        ...(filters.knowledgeBase === "" ? {} : { knowledgeBase: filters.knowledgeBase }),
+        ...(filters.language === "" ? {} : { language: filters.language }),
+        ...(filters.text.trim() === "" ? {} : { text: filters.text }),
+    };
+    return dataOf(api.GET("/api/bots/{bot}/articles", { params: { path: { bot }, query }, signal }));
 }
 
 export function fetchKnowledgeBases(bot: string, signal: AbortSignal): Promise<KnowledgeBase[]> {
-    return resourceApi<KnowledgeBase, never>("knowledge-bases").list(bot, signal);
+    return dataOf(api.GET("/api/bots/{bot}/knowledge-bases", { params: { path: { bot } }, signal }));
 }

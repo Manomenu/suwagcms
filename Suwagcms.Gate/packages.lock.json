@@ -51,6 +51,19 @@
           "Microsoft.Extensions.Logging.Console": "10.0.10"
         }
       },
+      "grate.postgresql": {
+        "type": "Transitive",
+        "resolved": "2.1.6",
+        "contentHash": "krNCVLocLaEKSWkeFVf6JA+MHhh0FnDwdVWQs2O9wvIU35wkyx8hNzUMfo/jJ3CCM6k0eP14e3E3QlADtXE4sg==",
+        "dependencies": {
+          "Dapper": "2.1.79",
+          "Microsoft.Extensions.DependencyInjection": "10.0.10",
+          "Microsoft.Extensions.Hosting": "10.0.10",
+          "Microsoft.Extensions.Logging.Console": "10.0.10",
+          "Npgsql": "10.0.3",
+          "grate.core": "2.1.6"
+        }
+      },
       "JetBrains.Annotations": {
         "type": "Transitive",
         "resolved": "2026.2.0",
@@ -60,6 +73,14 @@
         "type": "Transitive",
         "resolved": "2.23.0",
         "contentHash": "nWArUZTdU7iqZLycLKWe0TDms48KKGE6pONH2terYNa8REXiqixrMOkf1sk5DHGMaUTqONU2YkS4SAXBhLStgw=="
+      },
+      "Microsoft.AspNetCore.OpenApi": {
+        "type": "Transitive",
+        "resolved": "10.0.12",
+        "contentHash": "7RnQ/UKn+kK3JDLmTpW+vVqNErWthGPAVAy1aIiBzv4ucQ6g9NFvOJUuT0PHcpvcJxGVxctMxj6t+NESWMrgHQ==",
+        "dependencies": {
+          "Microsoft.OpenApi": "[2.12.0, 3.0.0)"
+        }
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
@@ -422,6 +443,14 @@
         "resolved": "13.0.4",
         "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
       },
+      "Npgsql": {
+        "type": "Transitive",
+        "resolved": "10.0.3",
+        "contentHash": "7nb5YzXuvWWJxB0J8DiyL3we+X4FOctZrt0fIBnucOIaIevFEEwGQVZKtiu9olXdlNAK1eNgqSral6r/jlhI4w==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.0"
+        }
+      },
       "System.Diagnostics.EventLog": {
         "type": "Transitive",
         "resolved": "10.0.10",
@@ -538,10 +567,9 @@
         "type": "Project",
         "dependencies": {
           "Dapper": "[2.1.89, )",
-          "Microsoft.AspNetCore.OpenApi": "[10.0.12, )",
-          "Npgsql": "[10.0.3, )",
           "Suwagcms.Contracts": "[1.0.0, )",
-          "grate.postgresql": "[2.1.6, )"
+          "Suwbackkit.Postgres": "[0.1.0, )",
+          "Suwbackkit.Server": "[0.1.0, )"
         }
       },
       "Dapper": {
@@ -550,36 +578,23 @@
         "resolved": "2.1.89",
         "contentHash": "1VjFE664wnxvuhlgP8kS4PeFFF4jqD3VkbIHW6Zlc52zuibgcz5ICnIHcQXlTp6pURpPNGLV0ZpNe5x9KePJnA=="
       },
-      "grate.postgresql": {
+      "Suwbackkit.Postgres": {
         "type": "CentralTransitive",
-        "requested": "[2.1.6, )",
-        "resolved": "2.1.6",
-        "contentHash": "krNCVLocLaEKSWkeFVf6JA+MHhh0FnDwdVWQs2O9wvIU35wkyx8hNzUMfo/jJ3CCM6k0eP14e3E3QlADtXE4sg==",
+        "requested": "[0.1.0, )",
+        "resolved": "0.1.0",
+        "contentHash": "Zk3dcLAUFF8Hl0Gf7tRji5sKpMlouTvXHYY/yVmWZyn0gvhFXd3tBGuY4HLemKj7I9p1JGFV/K/d1ltk3TyhRQ==",
         "dependencies": {
-          "Dapper": "2.1.79",
-          "Microsoft.Extensions.DependencyInjection": "10.0.10",
-          "Microsoft.Extensions.Hosting": "10.0.10",
-          "Microsoft.Extensions.Logging.Console": "10.0.10",
           "Npgsql": "10.0.3",
-          "grate.core": "2.1.6"
+          "grate.postgresql": "2.1.6"
         }
       },
-      "Microsoft.AspNetCore.OpenApi": {
+      "Suwbackkit.Server": {
         "type": "CentralTransitive",
-        "requested": "[10.0.12, )",
-        "resolved": "10.0.12",
-        "contentHash": "7RnQ/UKn+kK3JDLmTpW+vVqNErWthGPAVAy1aIiBzv4ucQ6g9NFvOJUuT0PHcpvcJxGVxctMxj6t+NESWMrgHQ==",
+        "requested": "[0.1.0, )",
+        "resolved": "0.1.0",
+        "contentHash": "wJB2CYGd3mD+g+hDnEncvVgkVcs5CBAetHy7B1+ltvVG3yxirXB1XITcWAm3LCZ0ye/TuY6pLZM7vM7GcoRzbw==",
         "dependencies": {
-          "Microsoft.OpenApi": "[2.12.0, 3.0.0)"
-        }
-      },
-      "Npgsql": {
-        "type": "CentralTransitive",
-        "requested": "[10.0.3, )",
-        "resolved": "10.0.3",
-        "contentHash": "7nb5YzXuvWWJxB0J8DiyL3we+X4FOctZrt0fIBnucOIaIevFEEwGQVZKtiu9olXdlNAK1eNgqSral6r/jlhI4w==",
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.0"
+          "Microsoft.AspNetCore.OpenApi": "10.0.12"
         }
       },
       "System.CommandLine": {

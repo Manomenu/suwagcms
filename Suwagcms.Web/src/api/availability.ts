@@ -1,21 +1,19 @@
+import { ApiError, dataOf } from "@maniumek/suwfrontkit";
 import { useCallback, useEffect, useState } from "react";
 
-import { ApiError, request } from "./client";
+import { api, mistakesOf } from "./client";
 import type { components } from "./openapi";
 
 type AvailabilityView = components["schemas"]["AvailabilityView"];
-type AvailabilityAnswer = components["schemas"]["AvailabilityAnswer"];
 type AvailabilityDelivery = components["schemas"]["AvailabilityDelivery"];
 
 type AvailabilityKind = "article" | "procedure" | "action";
 
-function botPath(bot: string): string {
-    return `/bots/${encodeURIComponent(bot)}/availability`;
-}
-
 function messageOf(error: unknown): string {
-    if (error instanceof ApiError && error.mistakes.length > 0) {
-        return error.mistakes.map((mistake) => `${mistake.message} ${mistake.fix}`).join(" ");
+    if (error instanceof ApiError && mistakesOf(error).length > 0) {
+        return mistakesOf(error)
+            .map((mistake) => `${mistake.message} ${mistake.fix}`)
+            .join(" ");
     }
     return error instanceof Error ? error.message : String(error);
 }
@@ -36,7 +34,7 @@ export function useAvailability(bot: string): AvailabilityState {
 
     const load = useCallback(
         (ask: boolean, signal: AbortSignal) =>
-            request<AvailabilityView>(`${botPath(bot)}?ask=${ask ? "true" : "false"}`, { signal }).then((answer) => {
+            dataOf(api.GET("/api/bots/{bot}/availability", { params: { path: { bot }, query: { ask } }, signal })).then((answer) => {
                 setView(answer);
                 if (ask) setDelivery(answer.delivery);
             }),
@@ -55,8 +53,12 @@ export function useAvailability(bot: string): AvailabilityState {
 
     const turn = (kind: AvailabilityKind, id: string, off: boolean) => {
         setFailure(null);
-        const path = `${botPath(bot)}/${kind}/${encodeURIComponent(id)}/${off ? "off" : "on"}`;
-        request<AvailabilityAnswer>(path, { method: "POST" })
+        const params = { path: { bot, kind, id } };
+        dataOf(
+            off
+                ? api.POST("/api/bots/{bot}/availability/{kind}/{id}/off", { params })
+                : api.POST("/api/bots/{bot}/availability/{kind}/{id}/on", { params }),
+        )
             .then((answer) => {
                 setDelivery(answer.delivery);
                 return load(false, new AbortController().signal);
@@ -68,7 +70,7 @@ export function useAvailability(bot: string): AvailabilityState {
 
     const send = () => {
         setFailure(null);
-        request<AvailabilityDelivery>(`${botPath(bot)}/send`, { method: "POST" })
+        dataOf(api.POST("/api/bots/{bot}/availability/send", { params: { path: { bot } } }))
             .then(setDelivery)
             .catch((error: unknown) => {
                 setFailure(messageOf(error));

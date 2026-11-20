@@ -1,6 +1,6 @@
+import { Paper } from "@maniumek/suwfrontkit";
 import { useSaveForm } from "@/api/saveForm";
 import { FormFooter } from "@/design/formFooter";
-import { Paper } from "@/design/page";
 
 import { bodyOf, placeOf, placesOf, type ActionForm as ActionFormState } from "./actionForm";
 import { ActionFields } from "./ActionFields";

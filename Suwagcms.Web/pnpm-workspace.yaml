@@ -5,3 +5,4 @@ onlyBuiltDependencies:
   - esbuild
 minimumReleaseAgeExclude:
   - "@maniumek/suwgate"
+  - "@maniumek/suwfrontkit"

@@ -3,7 +3,6 @@ using Npgsql;
 using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
-using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;
 
@@ -87,9 +86,9 @@ internal static class ResourceStore
         ];
     }
 
-    public static async Task<List<StoredResource>?> ReadAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    public static async Task<List<StoredResource>?> ReadAsync(NpgsqlDataSource dataSource, string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await BotExistsAsync(connection, null, bot, cancellationToken)
             ? await LoadAsync(connection, null, bot, cancellationToken)
             : null;

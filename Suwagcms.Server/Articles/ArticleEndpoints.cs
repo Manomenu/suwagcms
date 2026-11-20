@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Articles;
 using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.References;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Articles;
@@ -32,13 +32,13 @@ internal static class ArticleEndpoints
 
     private static async Task<Results<Ok<List<ArticleView>>, ProblemHttpResult>> List(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken,
         string? knowledgeBase = null,
         string? text = null,
         string? language = null
     ) =>
-        await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
+        await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is { } stored
             ? TypedResults.Ok(ListOf(stored, knowledgeBase, text, language))
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The articles were not listed.");
 
@@ -59,12 +59,12 @@ internal static class ArticleEndpoints
     private static async Task<Results<Ok<ArticleView>, ProblemHttpResult>> Get(
         string bot,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
         var target = new ResourceRef(ResourceKind.Article, id);
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The article was not shown.");
         }
@@ -78,7 +78,7 @@ internal static class ArticleEndpoints
         string id,
         HttpRequest request,
         DefinitionEditor editor,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken,
         bool dryRun = false,
         int? ifRevision = null
@@ -97,7 +97,7 @@ internal static class ArticleEndpoints
                 ArticleMapping.Show(
                     record,
                     saved.Revisions[target],
-                    ArticleMapping.Languages(await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [])
+                    ArticleMapping.Languages(await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) ?? [])
                 )
             )
             : EditProblems.For(result, bot, Title);

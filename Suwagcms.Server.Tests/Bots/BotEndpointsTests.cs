@@ -15,7 +15,7 @@ public sealed class BotEndpointsTests(TestDatabase database, ClassServer server)
 
     private HttpClient Client()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return App.CreateClient();
     }
 

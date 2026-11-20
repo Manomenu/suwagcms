@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Sdk.Format.References;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Facts;
@@ -31,10 +31,10 @@ internal static class FactEndpoints
 
     private static async Task<Results<Ok<List<Fact>>, ProblemHttpResult>> List(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     ) =>
-        await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
+        await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is { } stored
             ? TypedResults.Ok(
                 stored.Where(item => item.Target.Kind == ResourceKind.GlobalFact).Select(item => FactMapping.Show(item, stored)).ToList()
             )
@@ -43,12 +43,12 @@ internal static class FactEndpoints
     private static async Task<Results<Ok<Fact>, ProblemHttpResult>> Get(
         string bot,
         string name,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
         var target = new ResourceRef(ResourceKind.GlobalFact, name);
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The fact was not shown.");
         }
@@ -62,7 +62,7 @@ internal static class FactEndpoints
         string name,
         HttpRequest request,
         DefinitionEditor editor,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken,
         bool dryRun = false,
         int? ifRevision = null
@@ -84,7 +84,7 @@ internal static class FactEndpoints
         {
             return EditProblems.For(result, bot, Title);
         }
-        var all = await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [];
+        var all = await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) ?? [];
         return TypedResults.Ok(FactMapping.Show(FactMapping.ToRecord(name, body), saved.Revisions[target], all));
     }
 
