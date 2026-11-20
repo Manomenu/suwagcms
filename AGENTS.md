@@ -8,7 +8,8 @@ this file is the one to edit. Setup: [docs/development.md](docs/development.md).
 - For people: a recipe in `justfile`, in a module of the whole repository beside it (`tmux-dev.just`), or in a tool's folder as `<folder>/mod.just`, with a one-line description; `just` lists them.
 - For agents: a script in `scripts/.internal/`; each answers `--help`. A recipe only calls the script. The gate is
   `suwgate` (`Suwagcms.Web/node_modules/.bin/suwgate`), configured in `suwgate.yml`; `suwgate dev` runs the local stack.
-- `suwgate check --quick` while working, `suwgate check` before calling a change done; it runs the browser tests too and needs
+- `suwgate check --quick` while working, and `suwgate step <step> [-- <tool args>]` runs one step while working (e.g. `suwgate step e2e -- --headed`
+  after changing anything a user clicks; `suwgate step` lists them); `suwgate check` before calling a change done; it runs the browser tests too and needs
   the Playwright browser, and gives a linked worktree its own test databases and ports.
 
 ## Git

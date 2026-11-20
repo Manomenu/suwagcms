@@ -14,9 +14,6 @@ exceptions:
   - guard: architecture/interfaces-have-two-implementations
     target: Suwagcms.Sdk.BotRuntime.IBotDefinitions
     reason: a public interface of the published SDK is a seam for the bots that use it; their stand-ins in tests are its other implementations, outside this repository
-  - guard: architecture/no-unused-types
-    target: Suwagcms.Sdk.Format.CamelCase
-    reason: its constant is used in the [GeneratedRegex] patterns of ResourceIds and SayPlaceholders; the compiler copies a const into the attribute, so the compiled code the guard reads never names the type
 settings:
   docs-paths:
     ignore: [Suwagcms.Web/node_modules/, NNNN_snake_case.sql]
