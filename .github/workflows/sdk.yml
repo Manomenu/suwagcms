@@ -18,7 +18,7 @@ env:
 
 jobs:
   pack:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 15
     steps:
       - name: Refuse anything but master
@@ -54,7 +54,7 @@ jobs:
 
   publish:
     needs: pack
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 10
     permissions:
       contents: read

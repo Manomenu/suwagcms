@@ -133,6 +133,10 @@ Browser storage: what a screen shows lives in the address, so a link and a refre
   `compose-ports` guard keeps.
 - CI pins every action, and suwgate's reusable gate workflow, by its commit; a step's name carries the version the commit is. The
   reusable workflow has no database service, so the gate job starts the database of `compose.yaml` in its command before the gate.
+  Every job runs on the repository variable `CI_RUNNER` when it is set, else on `ubuntu-24.04`: suwgate's self-hosted fallback
+  sets it while the account's Actions minutes are used up. On a self-hosted runner the `build` job shares the machine with the
+  development stack, so it is a compose project of its own (`COMPOSE_PROJECT_NAME`, `IMAGE_TAG`) and `compose.ci.yaml` drops the host ports of
+  the database, which the development stack holds; its `down --volumes` never reaches the development database.
 - The SDK's release workflow (`sdk.yml`) runs only by hand (`just sdk-publish`), because a version on nuget.org cannot be deleted;
   nuget.org's trusted-publishing policy names its file, so it is not renamed alone. Its publish job runs no code of the repository.
 - The CLI is a .NET tool named `suwagcms` on the base runtime only, though the SDK it references brings ASP.NET Core for bots. The SDK
