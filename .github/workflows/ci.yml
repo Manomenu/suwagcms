@@ -16,7 +16,7 @@ jobs:
   gate:
     permissions:
       contents: read
-    uses: Manomenu/suwgate/.github/workflows/gate.yml@3bb37d86a9a49435671ca893322d3e4adf06606c
+    uses: Manomenu/suwgate/.github/workflows/gate.yml@b62c463aa1a2e9edfb7a11daa66bd2531b55102a
     with:
       runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
       working-directory: Suwagcms.Web
