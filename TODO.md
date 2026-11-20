@@ -4,13 +4,10 @@
 
 - Lookups that went with the deleted scripts: the guardrails of one criterion (`just criteria AC-…`) and the tests that pin another
   repository's contract (`just contracts`); and moving the pin of `vdoc.py` (`just criteria-update`), which suwgate holds now.
-- `suwgate check` applying `suwgate dev checkout-env` to its .NET tests: then `just check` calls `suwgate check` alone and the server
-  tests' fixture keeps its refusal only as a guard.
-- The `e2e` step creating its own empty database: then `e2e.sh` and the skip in `suwgate.yml` go, and CI's e2e job calls the step.
+- Running the browser tests alone (`--headed`, `-g`): suwgate runs them only inside `suwgate check`, so `just e2e` went with the
+  app's own e2e script.
 - Proposed for suwgate (with the reasons in the pull request that moved this repository): the test-timing guard (`TestTimingTests`,
-  Manomenu/suwcrawlextract issue #2), a setting of `comments-csharp` for a project whose `///` docs are the API's documentation, `base`
-  in file names allowed where architecture/forbidden-type-names allows it in type names, and architecture/every-project-guarded
-  reading a project's `AssemblyName`. Each one that ships removes its exceptions from `suwgate.yml`.
+  Manomenu/suwcrawlextract issue #2). When it ships, `TestTimingTests` leaves `Suwagcms.Gate`.
 
 ## When the first spec's criteria need a strength check
 

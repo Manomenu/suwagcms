@@ -1,4 +1,3 @@
--- Why: format 4 has no knowledge on whenStalled, and a stored procedure must not keep words no screen shows and no version carries. The body is rebuilt key by key, never through jsonb, so the written order of an inform's points stays; the history keeps what was written then, as an entry is never changed.
 UPDATE resource
 SET body = (
     SELECT json_object_agg(

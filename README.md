@@ -507,9 +507,9 @@ calling a change done, the same CI runs; `just check-quick` while working, withi
 build, csharpier, the .NET guards, eslint, tsc and shellcheck only for what changed since the branch left `master`. It fails on: any
 compiler or analyzer warning, banned APIs, a layer used against its order, a folder or project off the lists the guards read, dead
 types and packages, vague names, any comment but a tool directive, `dynamic`, a test that leans on the real clock, browser storage,
-unpinned images, a stale API contract or generated types, an acceptance criterion without a guardrail, an unresolvable compose file.
-The full list, each with its fix: [docs/architecture.md, "What the gate forbids"](docs/architecture.md#what-the-gate-forbids).
-Browser tests run separately (`just e2e`), and `just up` starts the container stack and smoke-tests it.
+unpinned images, a stale API contract or generated types, an acceptance criterion without a guardrail, an unresolvable compose file,
+and (in the full gate) a browser test that fails. The full list, each with its fix: [docs/architecture.md, "What the gate forbids"](docs/architecture.md#what-the-gate-forbids).
+`just up` starts the container stack and smoke-tests it.
 
 </details>
 
