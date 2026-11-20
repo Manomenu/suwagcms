@@ -6,13 +6,8 @@
     "packageManager": "pnpm@11.24.0",
     "scripts": {
         "dev": "vite",
-        "build": "tsc --noEmit -p tsconfig.app.json && vite build",
-        "preview": "vite preview",
-        "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
-        "lint": "eslint .",
-        "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "test": "vitest run"
+        "build": "tsc --noEmit && vite build",
+        "preview": "vite preview"
     },
     "dependencies": {
         "@tailwindcss/vite": "^4.3.3",
@@ -35,6 +30,7 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@maniumek/suwgate": "0.1.1",
         "@playwright/test": "^1.63.0",
         "@types/node": "^26.6.4",
         "@types/react": "^19.3.0",

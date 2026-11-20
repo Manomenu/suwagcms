@@ -7,7 +7,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Personas;
 
-// Why: a bot has one persona from the start, so there is no list, add or delete, and its address holds no id.
 internal static class PersonaEndpoints
 {
     private const string Title = "The persona was not saved.";

@@ -1,4 +1,3 @@
-// A person works on the actions of one bot in the browser; the CMS never calls an action's URL, and a refusal keeps what was typed.
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 
@@ -7,7 +6,6 @@ import { testBots } from "../../e2e/bots";
 
 const { freshId, newBot } = testBots("actions");
 
-/** A bot on a real port that declares one code action, as the SDK would say it. */
 async function declaringBot(id: string): Promise<{ address: string; close: () => void }> {
     const server = createServer((request, response) => {
         response.setHeader("content-type", "application/json");
@@ -238,7 +236,6 @@ test("AC-action-block-19: the view of an action shows the procedures that use it
     await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
 });
 
-/** A bot that answers a test run as the SDK would, and counts what reached it. */
 async function runningBot(): Promise<{ address: string; runs: () => number; close: () => void }> {
     let runs = 0;
     const server = createServer((request, response) => {

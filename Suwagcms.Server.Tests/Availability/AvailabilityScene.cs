@@ -11,7 +11,6 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-// Why: a whole definition, so versions can be made, with an article that another article links to and one that nothing uses, reached by the CMS as a real bot; every test turns that article on or off.
 internal sealed class AvailabilityScene(PushScene push, TestBot bot, ArticleApi articles) : IAsyncDisposable
 {
     public const string Used = "cheaper";

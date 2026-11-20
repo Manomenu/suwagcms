@@ -6,7 +6,6 @@ namespace Suwagcms.Server.KnowledgeBases;
 
 internal static class KnowledgeBaseMapping
 {
-    // Why: a profile or results left out is kept empty, so the validator refuses it with its fix instead of the server choosing one.
     public static KnowledgeBase ToRecord(string id, SaveKnowledgeBase body) =>
         new()
         {

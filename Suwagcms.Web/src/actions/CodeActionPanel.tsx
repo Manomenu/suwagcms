@@ -27,7 +27,6 @@ function Fields({ title, fields }: { title: string; fields: Record<string, Actio
     );
 }
 
-/** A code action is the bot's: the page shows its contract with no editing controls, and says why. */
 export function CodeActionPanel({ action, onClose }: { action: ActionView; onClose: () => void }) {
     return (
         <Paper aria-label={`Code action ${action.id}`} role="region" className="flex flex-col gap-3">

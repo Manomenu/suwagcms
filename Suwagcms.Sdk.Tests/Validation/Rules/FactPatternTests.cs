@@ -9,7 +9,6 @@ namespace Suwagcms.Sdk.Tests.Validation.Rules;
 
 public sealed class FactPatternTests
 {
-    // Why: copied verbatim from the appraiser bot's facts.yaml, the definition this format must carry.
     private const string EmailRegex = @"[^@\s]+@[^@\s]+\.[^@\s]+";
     private const string LandRegisterRegex = "[A-Z0-9]{4}/[0-9]{8}/[0-9]";
 

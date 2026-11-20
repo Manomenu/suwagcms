@@ -9,7 +9,6 @@ internal static class LoopRules
         (left, right) => left.Kind != right.Kind ? left.Kind.CompareTo(right.Kind) : string.CompareOrdinal(left.Id, right.Id)
     );
 
-    // Why: only references between articles and procedures can loop; a fact is a dead end, and the steps of one procedure are not resources, so their loops never appear here.
     public static IEnumerable<Mistake> Loops(BotDefinition definition)
     {
         var nodes = definition
@@ -62,7 +61,6 @@ internal static class LoopRules
         );
     }
 
-    // Why: one cycle per edge that closes a loop in a depth-first walk in a fixed order, iterative so a long chain cannot overflow the stack; linear in the edges and the same input always gives the same cycles, each starting at its smallest node.
     internal static IReadOnlyList<IReadOnlyList<TNode>> Cycles<TNode>(IReadOnlyDictionary<TNode, List<TNode>> edges, IComparer<TNode> order)
         where TNode : notnull
     {

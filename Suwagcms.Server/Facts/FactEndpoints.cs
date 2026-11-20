@@ -84,7 +84,6 @@ internal static class FactEndpoints
         {
             return EditProblems.For(result, bot, Title);
         }
-        // Why: a save leaves the procedures untouched, so who uses the fact is read after it, outside the lock.
         var all = await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [];
         return TypedResults.Ok(FactMapping.Show(FactMapping.ToRecord(name, body), saved.Revisions[target], all));
     }

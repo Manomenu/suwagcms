@@ -35,7 +35,6 @@ internal static class PushStore
             );
     }
 
-    // Why: two answers can arrive out of order, so an older one never replaces a newer report.
     public static async Task ReportAsync(Pool pool, string bot, int? version, DateTimeOffset at, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);
@@ -103,7 +102,6 @@ internal static class PushStore
                         null,
                         JsonSerializer.SerializeToElement(error is null ? outcome.ToString() : $"{outcome}: {error}")
                     ),
-                    // Why: only a bot that moved left a version behind; a failed push names just the version it chose, as the entry's id.
                     .. outcome == PushOutcome.Succeeded && left != version
                         ?
                         [

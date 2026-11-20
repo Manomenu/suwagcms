@@ -9,7 +9,6 @@ using YamlDotNet.Serialization.EventEmitters;
 
 namespace Suwagcms.Cli.Versions;
 
-// Why: the first line of every file says it is a read-only export, so nobody takes it for a way to change anything.
 internal static class ExportYaml
 {
     private static readonly ISerializer Serializer = new SerializerBuilder()
@@ -51,7 +50,6 @@ internal static class ExportYaml
         return text.ToString();
     }
 
-    // Why: a text of several lines reads and greps best line by line, and the emitter falls back to a quoted form for what a block cannot hold; only a quoted form keeps the other line breaks of YAML, which any other form turns into another character.
     private sealed class LongTexts(IEventEmitter next) : ChainedEventEmitter(next)
     {
         public override void Emit(ScalarEventInfo eventInfo, IEmitter emitter)

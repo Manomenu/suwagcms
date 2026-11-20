@@ -7,7 +7,6 @@ namespace Suwagcms.Sdk.Validation.Rules;
 
 internal static class PersonaRules
 {
-    // Why: the limit stops a mistake, such as a whole document pasted into a field, and stands well above any real text.
     private const int LongestText = 20_000;
 
     public static IReadOnlyList<Rule> All { get; } = [new(MistakeCodes.PersonaTextTooLong, ValidationStage.Save, TooLong)];

@@ -2,13 +2,10 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <RootNamespace>Suwagcms.Cli</RootNamespace>
-    <!-- The command's name in its help text. -->
     <AssemblyName>suwagcms</AssemblyName>
-    <!-- Packed as a .NET tool: installing it gives the `suwagcms` command (just cli-install). -->
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>suwagcms</ToolCommandName>
     <PackageId>Suwagcms.Cli</PackageId>
-    <!-- Suwagcms.Sdk brings the ASP.NET Core framework for bots; the command needs only the base runtime. -->
     <DisableTransitiveFrameworkReferences>true</DisableTransitiveFrameworkReferences>
     <Description>The command line of Suwagcms.</Description>
   </PropertyGroup>
@@ -24,7 +21,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Suwagcms.Cli.Tests" />
-    <!-- The server's tests ask the command tree which commands exist, to tie every route to one. -->
     <InternalsVisibleTo Include="Suwagcms.Server.Tests" />
   </ItemGroup>
 </Project>

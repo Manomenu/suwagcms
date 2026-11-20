@@ -13,7 +13,6 @@ import { fetchProcedures, type ProcedureList } from "./api";
 import { NewProcedureForm } from "./NewProcedureForm";
 import { ProceduresView } from "./ProceduresView";
 
-/** Loads the procedures of the bot in the address when it opens, so procedures saved meanwhile from the CLI are found. */
 export function ProceduresScreen({ bot }: { bot: string }) {
     const [list, setList] = useState<ProcedureList | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
@@ -24,7 +23,6 @@ export function ProceduresScreen({ bot }: { bot: string }) {
     const history = useKindHistory(bot, listed ? "procedures" : null);
 
     useEffect(() => {
-        // StrictMode runs effects twice in development: abort the first request, ignore its result.
         const controller = new AbortController();
         fetchProcedures(bot, controller.signal)
             .then(setList)

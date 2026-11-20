@@ -1,0 +1,34 @@
+{
+  "projects": {
+    "Suwagcms.Sdk": { "internalsVisibleTo": ["Suwagcms.Sdk.Tests"] },
+    "Suwagcms.Sdk.Tests": { "references": ["Suwagcms.Sdk"] },
+    "Suwagcms.Contracts": { "references": ["Suwagcms.Sdk"] },
+    "Suwagcms.Cli": { "references": ["Suwagcms.Contracts"], "internalsVisibleTo": ["Suwagcms.Cli.Tests", "Suwagcms.Server.Tests"] },
+    "Suwagcms.Cli.Tests": { "references": ["Suwagcms.Cli"] },
+    "Suwagcms.Server": {
+      "layers": [
+        "Api",
+        "Changes | History",
+        "Renames",
+        "Usage",
+        "Articles",
+        "KnowledgeBases",
+        "Personas",
+        "Procedures",
+        "Actions",
+        "Versions",
+        "Availability",
+        "Facts",
+        "Validation",
+        "Bots",
+        "Health | Settings",
+        "Editing",
+        "Database"
+      ],
+      "references": ["Suwagcms.Contracts"],
+      "internalsVisibleTo": ["Suwagcms.Gate", "Suwagcms.Server.Tests"]
+    },
+    "Suwagcms.Server.Tests": { "references": ["Suwagcms.Server", "Suwagcms.Cli"] },
+    "Suwagcms.Gate": { "references": ["Suwagcms.Cli", "Suwagcms.Server"] }
+  }
+}

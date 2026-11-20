@@ -1,6 +1,5 @@
 namespace Suwagcms.Sdk.Format.Declaration;
 
-// Why: a parameter or a result is typed like a fact, so the rules of facts judge it; every field has a default so that a bad answer lists all its mistakes instead of stopping at the first.
 public sealed record CodeActionField
 {
     public string Name { get; init; } = "";

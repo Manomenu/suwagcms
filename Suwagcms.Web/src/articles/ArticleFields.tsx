@@ -12,7 +12,6 @@ import { HINTS, fieldOf, type ArticleForm, type FieldName } from "./articleForm"
 import { targetsFor } from "./articlePicker";
 import { LinkedTextEditor } from "./LinkedTextEditor";
 
-/** The fields of the article editor: content, llmGuide and description first, one under another at full width, each with a tooltip saying who reads it. */
 export function ArticleFields({
     form,
     bases,
@@ -128,7 +127,6 @@ export function ArticleFields({
     );
 }
 
-// Why: an author reads the whole description without scrolling inside it, so the box grows with its text from its starting height.
 function GrowingTextarea(props: ComponentProps<"textarea"> & { value: string }) {
     const ref = useRef<HTMLTextAreaElement>(null);
     useLayoutEffect(() => {

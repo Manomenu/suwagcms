@@ -6,13 +6,10 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Server.Editing;
 
-// Why: an entry holds the changed fields only, read off the stored form of the resource, so a new field of any kind is recorded without a line here.
 internal static class ChangeEntries
 {
-    // Why: the id or name is what an entry is filed under, so it is a change of its own only in the entry of a rename.
     private static readonly string[] Names = ["id", "name"];
 
-    // Why: both sides are matched by row, so a rename is one entry for its resource and a rewritten referrer one for itself, never a delete and an add.
     public static List<HistoryStore.Recorded> Of(
         Dictionary<ResourceRef, StoredResource> before,
         Dictionary<ResourceRef, StoredResource> after
@@ -30,7 +27,6 @@ internal static class ChangeEntries
             )
             .OfType<HistoryStore.Recorded>()
             .ToList();
-        // Why: a batch is what tells apart the entries of one file; a single entry has nothing to be told apart from.
         var batch = entries.Count > 1 ? Guid.NewGuid() : (Guid?)null;
         return [.. entries.Select(entry => entry with { Batch = batch })];
     }
@@ -65,7 +61,6 @@ internal static class ChangeEntries
         return resource?.Record is Persona ? PersonaFields(fields) : fields;
     }
 
-    // Why: each part of the scope is a text of its own, so an entry names the part and its lines, not one object holding all three.
     private static JsonObject PersonaFields(JsonObject stored)
     {
         var flat = new JsonObject();

@@ -11,10 +11,6 @@ import { bodyOf, fieldOf, isDirty, type ArticleForm as FormState } from "./artic
 import { ArticleFields } from "./ArticleFields";
 import { linkTargets } from "./articlePicker";
 
-/**
- * The form that adds or edits an article. A refusal shows each mistake beside its field and keeps everything typed. `revision`
- * is the latest one the screen knows of the article being edited (0 when adding). Leaving with unsaved changes asks first.
- */
 export function ArticleForm({
     bot,
     initial,
@@ -50,7 +46,6 @@ export function ArticleForm({
     const [targets, setTargets] = useState<LinkTarget[] | null>(null);
     const [targetsFailure, setTargetsFailure] = useState<string | null>(null);
 
-    // Why: the picker and the chips need every article of the bot, not the filtered list the screen shows, and the guide's picker its procedures too.
     useEffect(() => {
         const controller = new AbortController();
         Promise.all([

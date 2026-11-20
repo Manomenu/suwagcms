@@ -17,7 +17,6 @@ internal sealed class VersionApi(HttpClient client, ProcedureApi procedures)
     public static async Task<VersionApi> NewBotAsync(HttpClient client, string address = FactApi.NoBotAddress) =>
         new(client, await ProcedureApi.NewBotAsync(client, address));
 
-    // Why: the smallest state that passes the Version stage: the base procedure every conversation starts in.
     public async Task<VersionApi> Ready()
     {
         Assert.True((await Procedures.Add("conversation", ProcedureApi.Conversation)).IsSuccessStatusCode);

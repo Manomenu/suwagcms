@@ -29,7 +29,6 @@ internal static class FactSaveCommands
         Option<bool> NoPattern
     );
 
-    // Why: the options are left optional so that a missing one reaches the server, which reports every mistake at once.
     private static FactFields FieldOptions() =>
         new(
             new Option<string?>("--type") { Description = "enum, int or text. Changing the type of a fact drops its old constraints." },
@@ -162,7 +161,6 @@ internal static class FactSaveCommands
                     parsed.GetValue(fields.NoPattern)
                 );
                 var dry = parsed.GetValue(dryRun);
-                // Why: without --if-revision the edit still guards the fields it just read, so a change made in between is reported, never overwritten.
                 var answer = await ServerCall.PutAsync(
                     environment,
                     target.Address,
@@ -183,14 +181,12 @@ internal static class FactSaveCommands
         return command;
     }
 
-    // Why: an array option reads as an empty list when absent, and an edit must tell "not given" from "given".
     private static string[]? Given(ParseResult parsed, Option<string[]?> values) =>
         parsed.GetResult(values) is null ? null : parsed.GetValue(values);
 
     private static Option<string?>[] PatternOptions(FactFields fields) =>
         [fields.PatternRegex, fields.PatternMeans, fields.PatternExample, fields.PatternTellCustomer];
 
-    // Why: as with the other fields, what is not given stays, so a person can change the words without retyping the regex.
     private static TextPattern? PatternGiven(ParseResult parsed, FactFields fields, TextPattern? kept)
     {
         if (parsed.GetValue(fields.NoPattern))

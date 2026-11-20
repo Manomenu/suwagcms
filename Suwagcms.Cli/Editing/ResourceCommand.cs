@@ -4,7 +4,6 @@ using Suwagcms.Cli.Connection;
 
 namespace Suwagcms.Cli.Editing;
 
-// Why: deleting works alike for every resource; only what is named and how it reads in --json differ.
 internal static class ResourceCommand
 {
     public static Command Delete<TDocument>(

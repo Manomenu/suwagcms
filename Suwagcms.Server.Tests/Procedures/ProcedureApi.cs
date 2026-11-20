@@ -65,7 +65,6 @@ internal sealed class ProcedureApi(HttpClient client, FactApi facts)
          "steps":{"wait":{"listen":{},"next":"answer"},"answer":{"say":"Hello","next":"wait"}}}
         """;
 
-    // Why: the example of the spec, with all four blocks and rule-based next.
     public const string Valuation = """
         {"description":"The customer orders a valuation of a property.","firstStep":"ask",
          "steps":{

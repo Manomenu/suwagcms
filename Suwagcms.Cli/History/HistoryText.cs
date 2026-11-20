@@ -35,7 +35,6 @@ internal static class HistoryText
         return text.ToString().TrimEnd();
     }
 
-    // Why: a window with nothing in it belongs to one version, so "since that day" would be wrong: later changes exist and belong to later versions.
     public static string Window(HistoryPage page, int? number = null)
     {
         var note =
@@ -65,7 +64,6 @@ internal static class HistoryText
             parts.Add($"batch {batch.ToString()[..8]}");
         }
         text.Append(string.Join("  ", parts).TrimEnd()).Append(Environment.NewLine);
-        // Why: an add holds every field, which is the resource as `show` prints it; the line that it was added says enough.
         if (entry.Action == "added")
         {
             return;
@@ -93,7 +91,6 @@ internal static class HistoryText
             { } other => [other.GetRawText()],
         };
 
-    // Why: a long article changes in a line or two, so the lines both sides share at either end are left out.
     private static (IEnumerable<string> Removed, IEnumerable<string> Added) Differing(string[] old, string[] fresh)
     {
         var start = 0;

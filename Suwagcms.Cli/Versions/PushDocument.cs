@@ -3,7 +3,6 @@ using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Versions;
 
-// Why: --json prints this for all three ends of a push: pushed, unchanged (the bot already had it, nothing was sent) and failed.
 internal sealed record PushDocument(string Bot, string Result, int Version, int? BotHas, string? Reason, IReadOnlyList<Mistake> Mistakes)
 {
     public const string Pushed = "pushed";

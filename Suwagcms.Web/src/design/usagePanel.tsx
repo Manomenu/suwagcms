@@ -4,7 +4,6 @@ import { Alert } from "@/design/alert";
 import { Anchor } from "@/design/anchor";
 import { Paper } from "@/design/page";
 
-/** One reference as the panel needs it: the resource on the other end and the field of the referrer that holds it. */
 export interface UsageEntry {
     kind: string;
     id: string;
@@ -47,7 +46,6 @@ function Card({
     );
 }
 
-/** The "Used by" and, unless `showUses` is false for a kind that can refer to nothing, "Uses" panels of one resource; the list is loading when `usage` is null. `onFollow` may stop a link, as unsaved changes do. */
 export function UsagePanel({
     usage,
     failure,

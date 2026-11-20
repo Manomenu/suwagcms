@@ -18,7 +18,6 @@ internal static class Documents
         return Sign(document);
     }
 
-    // Why: a base in another language than the default, so the feed can be seen taking the language from it.
     public static JsonObject WithArticles(int number, params JsonObject[] articles)
     {
         var document = Make(number);
@@ -56,7 +55,6 @@ internal static class Documents
             ["maxLength"] = 10,
         };
 
-    // Why: a version needs the base procedure, so every document the tests push carries the smallest one.
     public static JsonObject Conversation() =>
         new()
         {

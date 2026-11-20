@@ -3,7 +3,6 @@ using Suwagcms.Sdk.Format.Facts;
 
 namespace Suwagcms.Sdk.Validation.Rules;
 
-// Why: a pattern on another type is one mistake, the foreign constraint, so these rules look only at a text fact's pattern.
 internal static class FactPatternRules
 {
     public static IEnumerable<Mistake> RegexMissing(GlobalFact fact)
@@ -94,7 +93,6 @@ internal static class FactPatternRules
         }
     }
 
-    // Why: an invalid maxLength has its own mistake, so an example is not measured against it.
     public static IEnumerable<Mistake> ExampleTooLong(GlobalFact fact)
     {
         if (

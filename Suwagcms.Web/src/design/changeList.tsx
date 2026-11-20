@@ -19,7 +19,6 @@ export interface WrittenPart {
     fields: WrittenField[];
 }
 
-/** One recorded change as the list needs it. */
 export interface ChangeLine {
     id: number | string;
     at: string;
@@ -32,7 +31,6 @@ export interface ChangeLine {
     written?: null | { fields: WrittenField[]; parts: WrittenPart[] };
 }
 
-// Why: an entry says what happened and a comparison the net result, so each keeps its own word, and the same colour means the same thing in both.
 const VARIANTS: Record<string, "success" | "primary" | "danger" | "neutral"> = {
     added: "success",
     edited: "primary",
@@ -86,7 +84,6 @@ function Part({ part }: { part: WrittenPart }) {
     );
 }
 
-/** The one row of a change: the action, the resource when the page lists several, what else is known of it, and the change below. */
 export function ChangeRow({
     action,
     resource,
@@ -159,16 +156,11 @@ function Entry({ line, hrefOf }: { line: ChangeLine; hrefOf: ((line: ChangeLine)
                           </>
                       ),
                   })}
-            // Why: an add holds every field, which is the resource itself, so it stays folded.
             {...(line.action === "added" ? { foldedAs: `${line.changes.length} ${line.changes.length === 1 ? "field" : "fields"}` } : {})}
         />
     );
 }
 
-/**
- * The entries newest first, under whatever name the page gives them. With no entries it says since when nothing has been recorded,
- * or what `empty` says, so it cannot read as "never changed".
- */
 export function ChangeList({
     entries,
     since,

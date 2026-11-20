@@ -48,7 +48,6 @@ internal sealed partial class VersionRuntime(
         [
             .. definition
                 .Articles.OrderBy(article => article.Id, StringComparer.Ordinal)
-                // Why: a version is held only after validation, which refuses an article whose base it does not have.
                 .Select(article => new FeedArticle(article, bases[article.KnowledgeBase], IsOff(number, ResourceKind.Article, article.Id))),
         ];
     }
@@ -107,7 +106,6 @@ internal sealed partial class VersionRuntime(
 
     public async Task<BotState> ReadStateAsync(CancellationToken cancellationToken) => Answer(await RefreshAsync(cancellationToken));
 
-    // Why: one at a time, so a read that began before a write cannot publish after the read that saw it and tell the bot's code of a change that never happened.
     public async Task<View> RefreshAsync(CancellationToken cancellationToken)
     {
         await refreshes.WaitAsync(cancellationToken);
@@ -190,7 +188,6 @@ internal sealed partial class VersionRuntime(
                     return (null, Conflict(choice.Number));
                 }
 
-                // Why: the SDK may have been upgraded since the version arrived, and a bot never runs what the validator of today has not checked.
                 var mistakes = VersionIntake.Check(held, botId, choice.Number, declaration);
                 if (mistakes.Count > 0)
                 {
@@ -228,7 +225,6 @@ internal sealed partial class VersionRuntime(
         }
         else
         {
-            // Why: the write succeeded, so the answer must already say so even though the store cannot be read back.
             var held = current.State.Held.Contains(number) ? current.State.Held : [.. current.State.Held, number];
             current = Publish(current with { State = current.State with { Current = number, Held = [.. held.Order()] } });
         }
@@ -259,7 +255,6 @@ internal sealed partial class VersionRuntime(
             var current = await RefreshAsync(cancellationToken);
             if (current.Error is not null && message.Number >= (current.State.Availability?.Number ?? 0))
             {
-                // Why: the write succeeded, so this instance and its answer already go by it even though the store cannot be read back.
                 current = Publish(current with { State = current.State with { Availability = message } });
             }
 
@@ -271,7 +266,6 @@ internal sealed partial class VersionRuntime(
         }
     }
 
-    // Why: keeping too much is safe, removing too much is not: nothing goes before the bot has reported once.
     private async Task SweepAsync(VersionStoreState state, CancellationToken cancellationToken)
     {
         if (state.InUse is null)
@@ -290,7 +284,6 @@ internal sealed partial class VersionRuntime(
 
     public void Dispose()
     {
-        // Why: the container disposes it once per service it is registered as, and a disposed source cannot be cancelled.
         if (!stopping.IsCancellationRequested)
         {
             stopping.Cancel();
@@ -326,7 +319,6 @@ internal sealed partial class VersionRuntime(
         return next;
     }
 
-    // Why: on its own task, so a slow or failing listener never holds up a route's answer or the next change; listeners may overlap and go by the number.
     private void Tell(Func<int, CancellationToken, Task> listener, int number, Action<ILogger, int, Exception> failed)
     {
         var token = stopping.Token;

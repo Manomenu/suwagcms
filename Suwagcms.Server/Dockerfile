@@ -1,8 +1,6 @@
-# Build context is the repo root: docker build -f Suwagcms.Server/Dockerfile -t suwagcms-server:local .
-# Why: global.json admits only the 10.0.1xx band, and 10.0.103 is the newest image Microsoft publishes in it; the build stage ships no runtime.
 FROM mcr.microsoft.com/dotnet/sdk:10.0.103-alpine3.23 AS build
 WORKDIR /src
-COPY .editorconfig global.json nuget.config Directory.Build.props Directory.Build.rsp Directory.Packages.props BannedSymbols.txt ./
+COPY .editorconfig global.json nuget.config Directory.Build.props Directory.Build.rsp Directory.Packages.props ./
 COPY Suwagcms.Sdk/Suwagcms.Sdk.csproj Suwagcms.Sdk/packages.lock.json Suwagcms.Sdk/
 COPY Suwagcms.Contracts/Suwagcms.Contracts.csproj Suwagcms.Contracts/packages.lock.json Suwagcms.Contracts/
 COPY Suwagcms.Server/Suwagcms.Server.csproj Suwagcms.Server/packages.lock.json Suwagcms.Server/

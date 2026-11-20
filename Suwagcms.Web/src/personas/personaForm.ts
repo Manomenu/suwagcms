@@ -2,7 +2,6 @@ import type { Mistake } from "@/api/client";
 
 import type { Persona, SavePersona } from "./api";
 
-// Why: the form holds each text exactly as written, so a refusal never loses a keystroke.
 export interface PersonaForm {
     personality: string;
     inScope: string;
@@ -12,7 +11,6 @@ export interface PersonaForm {
 
 export type FieldName = keyof PersonaForm;
 
-// Why: a person has to learn from the page what each section is for, and a tooltip says it without crowding the page.
 export const HINTS = {
     personality: "How the bot talks: its voice and manner. A version carries this text to the bot.",
     scope: "What the bot talks about, what it does not, and how it answers a request outside that. A version carries these texts to the bot.",
@@ -37,7 +35,6 @@ export function formOf(persona: Persona): PersonaForm {
     };
 }
 
-// Why: which text counts as empty is the server's to say, so every text goes as typed.
 export function bodyOf(form: PersonaForm): SavePersona {
     return {
         personality: form.personality,
@@ -53,7 +50,6 @@ export function isDirty(form: PersonaForm, saved: PersonaForm): boolean {
     return (Object.keys(form) as FieldName[]).some((name) => form[name] !== saved[name]);
 }
 
-// Why: null is for what no one field can fix, such as an out-of-date revision, which the page shows above the fields.
 export function fieldOf(mistake: Mistake): FieldName | null {
     return FIELDS[mistake.path] ?? null;
 }

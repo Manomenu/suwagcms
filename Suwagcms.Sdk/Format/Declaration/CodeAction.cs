@@ -12,7 +12,6 @@ public sealed record CodeAction
 
     public IReadOnlyList<CodeActionField> Results { get; init; } = [];
 
-    // Why: a declaration lists its fields and a definition names them by key, and the CMS keeps its copy in the definition's form, so a version stands on its own.
     public BotAction ToAction() =>
         new()
         {

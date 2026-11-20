@@ -47,7 +47,6 @@ internal static class KnowledgeBaseRules
         }
     }
 
-    // Why: the value must match exactly, in lowercase: accepting PL would need a rule for which spelling gets stored.
     private static IEnumerable<Mistake> Language(KnowledgeBase knowledgeBase)
     {
         if (!KnowledgeBaseLanguages.All.Contains(knowledgeBase.Language, StringComparer.Ordinal))
@@ -64,7 +63,6 @@ internal static class KnowledgeBaseRules
         }
     }
 
-    // Why: whether the bot serves the profile is known only from its declaration, which never stops a save, so any name is kept here and judged when a version is created.
     private static IEnumerable<Mistake> Embedding(KnowledgeBase knowledgeBase)
     {
         if (string.IsNullOrWhiteSpace(knowledgeBase.Embedding))
@@ -79,7 +77,6 @@ internal static class KnowledgeBaseRules
         }
     }
 
-    // Why: the bot's environment decides which profiles it serves, so this is the declaration's check at Version, never a rule at Save.
     public static IEnumerable<Mistake> UndeclaredProfiles(BotDefinition definition, IReadOnlyList<string> profiles)
     {
         var served = profiles.Count == 0 ? "none" : string.Join(", ", profiles);
@@ -117,7 +114,6 @@ internal static class KnowledgeBaseRules
         }
     }
 
-    // Why: a saved definition never holds a repeated title, so the base being saved is among those reported and each one names the others.
     private static IEnumerable<Mistake> Repeated(BotDefinition definition) =>
         definition
             .KnowledgeBases.Select((item, index) => (item, index))

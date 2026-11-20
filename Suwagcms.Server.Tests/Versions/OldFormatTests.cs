@@ -29,7 +29,6 @@ public sealed class OldFormatTests(TestDatabase database, ClassServer server) : 
         return (scene, bot);
     }
 
-    // Why: this CMS can no longer create a version in an older format, so one left from before is made the only way it can still exist: a row that was written then.
     private async Task MakeOldAsync(string bot, int number, int format = 1)
     {
         await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);

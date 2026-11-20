@@ -2,7 +2,7 @@ using Suwagcms.Sdk.BotRuntime.Versions;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime.Versions;
 
-public sealed class SharedStoreTests
+public sealed class FileVersionStoreTests
 {
     [Fact]
     [Trait("criterion", "AC-bot-runtime-sdk-10")]

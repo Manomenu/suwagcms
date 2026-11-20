@@ -1,4 +1,3 @@
-// A person creates a version of a bot in the browser; the bot is in the address, and a refusal lists every mistake.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -55,7 +54,6 @@ test("AC-version-create-1: Create version in the web makes the next version and 
     await expect(page.getByText(/Nothing has changed since version 1/)).toBeVisible();
 });
 
-/** A bot that keeps the contract of the SDK's routes and nothing else, so the page can be pushed to without a .NET bot beside the browser. */
 async function startBot(id: string): Promise<{ address: string; server: Server; has: () => number | null; documents: () => number }> {
     let current: number | null = null;
     let documents = 0;
@@ -133,7 +131,6 @@ test("AC-version-diff-10: a version's page compares it with a chosen one, keeps 
     await page.getByRole("row").filter({ hasText: "v3 ·" }).getByRole("button", { name: "Open" }).click();
     await page.getByLabel("Compare with…").selectOption("2");
     await expect(page.getByText("0 added · 0 removed · 1 changed")).toBeVisible();
-    // Why: the comparison and the entry in the panel below it draw this change with the same row.
     await expect(page.getByText("maxLength:")).toHaveCount(2);
     await expect(page).toHaveURL(`/bots/${bot}/versions/3?compare=2`);
 

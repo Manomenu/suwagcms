@@ -1,9 +1,7 @@
 namespace Suwagcms.Server.Tests;
 
-// Why: plain .NET only, so the gate compiles this same file and tests the decision without referencing a test project
 internal static class LinkedWorktree
 {
-    // Why: the fixture drops and recreates its database, so a worktree on the main checkout's name wipes the tests running there
     internal static void RefuseMainCheckoutDatabase(string? fromEnvironment, string testDirectory)
     {
         if (fromEnvironment is not null || !Contains(testDirectory))
@@ -12,12 +10,11 @@ internal static class LinkedWorktree
         }
         throw new InvalidOperationException(
             "TEST_CONNECTION_STRING is not set, and this is a linked git worktree, so the tests would use the main checkout's "
-                + "database suwagcms_test: run them after 'source scripts/.internal/checkout-env.sh' (bash or zsh), "
-                + "or run Suwagcms.Gate/scripts/check.sh"
+                + "database suwagcms_test, which the fixture drops and recreates under the tests running there: run them after "
+                + "eval \"$(Suwagcms.Web/node_modules/.bin/suwgate dev checkout-env)\", or run just check"
         );
     }
 
-    // Why: a linked worktree has a .git file pointing into the main repository's .git/worktrees/, the main checkout a .git directory
     private static bool Contains(string directory)
     {
         for (var current = new DirectoryInfo(directory); current is not null; current = current.Parent)

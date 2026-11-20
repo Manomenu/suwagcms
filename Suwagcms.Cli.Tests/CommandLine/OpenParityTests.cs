@@ -12,7 +12,6 @@ public sealed partial class OpenParityTests
     private const string Spans = "what it reaches spans several screens, and no one screen shows it all";
     private const string NotOfTheCms = "it concerns this machine or a local file, not a page of the CMS";
 
-    // Why: --open is refused on these only; a new command either opens its page or joins this list with its reason.
     private static readonly Dictionary<string, string> NoPage = new(StringComparer.Ordinal)
     {
         ["server"] = NotOfTheCms,
@@ -31,7 +30,6 @@ public sealed partial class OpenParityTests
         ["push"] = NoOneResource,
     };
 
-    // Why: the screens as the web app routes them, each with the command that lands on it, or the reason none does.
     private static readonly Dictionary<string, string> Screens = new(StringComparer.Ordinal)
     {
         ["/bots/:id/articles/*?"] = "articles list",

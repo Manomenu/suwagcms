@@ -1,4 +1,3 @@
-// A person registers a bot in the browser and works on it; the bot is in the address, so two tabs never share it.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -79,7 +78,6 @@ test("AC-bot-profiles-8: switching the profile in one tab changes neither anothe
     expect(changes).toEqual([]);
 });
 
-/** A bot that keeps the contract of the declaration route and nothing else, so the profile has someone to ask. */
 async function startDeclaringBot(id: string, blocks: () => string[]): Promise<{ address: string; server: Server }> {
     const server = createServer((_, response) => {
         response.writeHead(200, { "content-type": "application/json" }).end(

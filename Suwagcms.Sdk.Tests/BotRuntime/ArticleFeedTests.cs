@@ -24,7 +24,6 @@ public sealed class ArticleFeedTests
         return told;
     }
 
-    // Why: a listener set now is told the current number on a task queued after every tell before it, so once it hears, an extra tell would have shown
     private static async Task SettledAsync(IBotDefinitions definitions, int current)
     {
         var sentinel = Listen(definitions);
@@ -155,7 +154,6 @@ public sealed class ArticleFeedTests
         Documents.Sign(bad);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, (await bot.PutAsync(2, bad)).Status);
 
-        // Why: news runs on its own task, so a later version is what shows that nothing else was on its way.
         await bot.PutAsync(3, Documents.Make(3));
         await WaitAsync(() => told.Contains(3));
 

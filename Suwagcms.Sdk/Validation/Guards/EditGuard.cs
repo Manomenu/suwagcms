@@ -8,7 +8,6 @@ using Suwagcms.Sdk.Validation.Rules;
 
 namespace Suwagcms.Sdk.Validation.Guards;
 
-// Why: the rules judge the result of an edit and cannot tell what caused a break; this compares it with what was there and words the refusal for the edit that caused it, once per cause, so an author reads a cause with its list.
 public static class EditGuard
 {
     public static IReadOnlyList<Mistake> Reshape(BotDefinition before, BotDefinition after, IReadOnlyList<Mistake> mistakes)
@@ -77,7 +76,6 @@ public static class EditGuard
         return [.. kept, .. causes];
     }
 
-    // Why: a removed or retyped parameter or result breaks the steps that map it for one cause, the edit of the action, so it is said there once, with the steps listed.
     private static void ActionFieldsGone(BotDefinition after, BotAction was, BotAction action, List<Mistake> kept, List<Mistake> causes)
     {
         foreach (
@@ -133,7 +131,6 @@ public static class EditGuard
 
     private sealed record FactEdit(GlobalFact Was, GlobalFact Now, ResourceRef Owner, string Prefix, IReadOnlyList<FactUseIn> Uses);
 
-    // Why: a value or a bound as a step holds it, with the mistake a rule gives for it on the new definition.
     private sealed record Given(Procedure Procedure, Reference Use, string Path, string Code, string Value);
 
     private static bool Differs(GlobalFact was, GlobalFact now) =>
@@ -181,7 +178,6 @@ public static class EditGuard
         );
     }
 
-    // Why: a value can fall out for its length or for the pattern, and each has its own field and its own way out.
     private static IEnumerable<Mistake> TextNarrowed(FactEdit edit, List<Given> broken)
     {
         var tooLong = broken.Where(given => given.Value.EnumerateRunes().Count() > edit.Now.MaxLength).ToList();
@@ -245,7 +241,6 @@ public static class EditGuard
         {
             return;
         }
-        // Why: what no longer fits the new type has one cause, the change of type, so it is said once.
         kept.RemoveAll(mistake =>
             edit.Uses.Any(use =>
                 mistake.Resource == Resource(use.Procedure)

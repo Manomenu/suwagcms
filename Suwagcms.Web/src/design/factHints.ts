@@ -1,4 +1,3 @@
-// Why: a global fact, a local fact and an action's fields mean the same by these words, so what they say exists once.
 export const CONSTRAINT_HINTS = {
     values: "The only values allowed, separated by commas; at least two. Use this when the answer comes from a fixed list. 'other' cannot be one of them: a reply writes it for anything outside the list.",
     min: "The smallest whole number allowed. A smaller value is refused.",

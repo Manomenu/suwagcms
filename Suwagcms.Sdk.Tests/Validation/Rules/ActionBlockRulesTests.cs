@@ -159,7 +159,6 @@ public sealed class ActionBlockRulesTests
     public static TheoryData<ActionField, ActionField, string?> ParameterFits =>
         new()
         {
-            // Why: the fact is the source: all it can hold must fit the parameter.
             { Yes, Yes with { Values = ["yes", "no", "maybe"] }, null },
             { Yes with { Values = ["yes", "no", "maybe"] }, Yes, MistakeCodes.ActionMappingTooWide },
             { Number with { Min = 2, Max = 100 }, Number, null },
@@ -196,7 +195,6 @@ public sealed class ActionBlockRulesTests
     public static TheoryData<ActionField, ActionField, string?> ResultFits =>
         new()
         {
-            // Why: the result is the source: all it can hold must fit the fact.
             { Yes, Yes with { Values = ["yes", "no", "maybe"] }, null },
             { Yes with { Values = ["yes", "no", "maybe"] }, Yes, MistakeCodes.ActionMappingTooWide },
             { Number with { Min = 2 }, Number, null },

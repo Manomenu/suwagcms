@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace Suwagcms.Sdk.Format.Procedures;
 
-// Why: only braces around a fact name are a placeholder, so any other brace in a text stays plain; reading and renaming share the one pattern.
 internal static partial class SayPlaceholders
 {
     [GeneratedRegex(@"\{(" + CamelCase.Word + @"(?:\." + CamelCase.Word + @")*)\}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]

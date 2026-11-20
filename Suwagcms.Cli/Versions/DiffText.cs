@@ -19,7 +19,6 @@ internal static class DiffText
         return string.Join(Environment.NewLine, lines);
     }
 
-    // Why: a file of changes compared with the CMS writes what differs as a comparison of two versions does, so a person reads one form.
     public static IEnumerable<string> Differences(IReadOnlyList<FieldDifference> fields, IReadOnlyList<PartDifference> parts, string indent)
     {
         ArgumentNullException.ThrowIfNull(parts);

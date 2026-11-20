@@ -4,7 +4,6 @@ import { CONSTRAINT_HINTS, PATTERN_HINTS } from "@/design/factHints";
 import { Input } from "@/design/input";
 import { Select } from "@/design/select";
 
-/** Puts one input in its field. Each form has its own, since where a mistake shows differs on purpose: beside the field, or in the procedure's live list. */
 export type FieldWrapper<Name extends string> = (
     name: Name,
     label: string,
@@ -20,7 +19,6 @@ export interface ConstraintValues {
     maxLength: string;
 }
 
-/** The inputs of what a type constrains: an enum's values, an int's bounds, a text's length. Bounds are typed on a number pad. */
 export function ConstraintFields({
     form,
     field,
@@ -69,7 +67,6 @@ export interface PatternValues {
     patternTellCustomer: string;
 }
 
-/** The inputs of a text fact's pattern, the same on a global fact and on a local one. */
 export function PatternFields({
     form,
     field,

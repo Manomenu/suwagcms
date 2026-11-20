@@ -21,7 +21,6 @@ internal static class ActionMapping
     public static ActionView Show(StoredResource stored, IReadOnlyList<StoredResource> all, BotDeclaration? declaration) =>
         Show((BotAction)stored.Record, stored.Revision, all, declaration);
 
-    // Why: both marks come from comparing the copy with the last declaration, so asking again changes them without a write; a bot that declares nothing has said nothing about its code actions.
     public static ActionView Show(BotAction action, int revision, IEnumerable<StoredResource> all, BotDeclaration? declaration)
     {
         var declared = declaration?.CodeActions.Any(code => code.Id == action.Id) ?? false;
@@ -38,7 +37,6 @@ internal static class ActionMapping
         );
     }
 
-    // Why: the procedures that name the action come from the reference walker, the one place that knows where a definition names one.
     private static List<string> UsedBy(string id, IEnumerable<StoredResource> all) =>
         [
             .. ReferenceWalker

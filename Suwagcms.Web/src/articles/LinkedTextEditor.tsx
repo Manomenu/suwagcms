@@ -8,7 +8,6 @@ import "./articleEditor.css";
 import { extensionsOf } from "./articleEditor";
 import { openPicker, type LinkTarget } from "./articleLink";
 
-// Why: it grows with its text instead of scrolling inside, so an author sees the whole text; it reports Markdown only when the author changes the text, so a text that was opened and not touched is never rewritten.
 export function LinkedTextEditor({
     label,
     value,
@@ -28,7 +27,6 @@ export function LinkedTextEditor({
     onChange: (markdown: string) => void;
     onOpen: (id: string, kind: "article" | "procedure") => void;
 }) {
-    // Why: the editor is created once, so what it reads while it lives is kept in one object that every render brings up to date.
     const [live] = useState(() => ({ targets, selfId, onChange, onOpen }));
     useEffect(() => {
         Object.assign(live, { targets, selfId, onChange, onOpen });

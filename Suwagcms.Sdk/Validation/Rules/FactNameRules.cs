@@ -5,7 +5,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.Validation.Rules;
 
-// Why: a name must mean one thing inside a procedure, and these rules look at the result of a save, so the order of two saves never decides whether it does.
 internal static class FactNameRules
 {
     public static IReadOnlyList<Rule> All { get; } =

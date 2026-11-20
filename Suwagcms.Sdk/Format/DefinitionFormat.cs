@@ -13,7 +13,6 @@ internal static class DefinitionFormat
     {
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
         {
-            // Why: a bot on an older SDK must load a version that has a newer optional field.
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
             RespectNullableAnnotations = true,
             PropertyNameCaseInsensitive = false,

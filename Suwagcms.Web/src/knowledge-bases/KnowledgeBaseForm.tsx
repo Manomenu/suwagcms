@@ -9,10 +9,6 @@ import { Select } from "@/design/select";
 import { knowledgeBasesApi } from "./api";
 import { HINTS, fieldOf, mistakesFor, saveOf, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";
 
-/**
- * The form that adds a knowledge base or edits one. A refusal shows each mistake beside its field and keeps everything typed.
- * `revision` is the latest one the screen knows of the base being edited (0 when adding).
- */
 export function KnowledgeBaseForm({
     bot,
     initial,

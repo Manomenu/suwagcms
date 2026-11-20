@@ -14,7 +14,6 @@ import { contentOf, dateOf, numberOf, type BotStatus, type PushPlan, type PushRe
 import { comparisonLine, ComparisonRows } from "./comparison";
 import { otherVersions, statusView, whenOf } from "./pushStatus";
 
-/** The Resource kinds a mistake can name, and the screen that edits each; the bot as a whole (no conversation) is mended among the procedures. */
 const SCREENS: Record<Mistake["resource"]["kind"], string> = {
     GlobalFact: "facts",
     KnowledgeBase: "knowledge-bases",
@@ -33,7 +32,6 @@ function digestOf(sha256: string): string {
     return `${sha256.slice(0, 4)}…${sha256.slice(-4)}`;
 }
 
-/** The rollback's choice beside the main button: a version in a select, and the button that asks before pushing it. */
 function OtherVersion({ numbers, pushing, onPlan }: { numbers: number[]; pushing: boolean; onPlan: (number: number) => void }) {
     const [picked, setPicked] = useState<number | null>(null);
     const chosen = picked !== null && numbers.includes(picked) ? picked : numbers[0];
@@ -68,7 +66,6 @@ function OtherVersion({ numbers, pushing, onPlan }: { numbers: number[]; pushing
     );
 }
 
-/** The one question before a rollback: where the bot goes, what stays, and what going there changes. */
 function PushQuestion({ plan, onPush, onCancel }: { plan: PushPlan; onPush: (number: number) => void; onCancel: () => void }) {
     const version = Number(plan.version);
     return (
@@ -100,7 +97,6 @@ function PushQuestion({ plan, onPush, onCancel }: { plan: PushPlan; onPush: (num
     );
 }
 
-/** The Versions screen: create a version, the mistakes that stopped one with a link to each resource, the versions, newest first, and the version events under them. */
 export function VersionsView({
     bot,
     versions,

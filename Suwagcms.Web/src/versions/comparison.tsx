@@ -12,14 +12,12 @@ const KINDS: Record<ResourceDifference["kind"], string> = {
     Definition: "definition",
 };
 
-/** One line of counts for a comparison. */
 export function comparisonLine(comparison: VersionComparison): string {
     return comparison.resources.length === 0 && comparison.definition.length === 0
         ? "no differences"
         : `${Number(comparison.added)} added · ${Number(comparison.removed)} removed · ${Number(comparison.changed)} changed`;
 }
 
-/** Each field and resource a comparison finds changed, with the rows every list of changes draws. */
 export function ComparisonRows({ comparison }: { comparison: VersionComparison }) {
     if (comparison.definition.length === 0 && comparison.resources.length === 0) return null;
     return (

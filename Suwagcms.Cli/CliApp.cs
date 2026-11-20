@@ -19,7 +19,6 @@ using Suwagcms.Cli.Versions;
 
 namespace Suwagcms.Cli;
 
-// Why: the streams come in through the configuration, and the machine through the environment, so that the tests can run any command in process.
 internal static class CliApp
 {
     public static async Task<int> Run(string[] args, InvocationConfiguration configuration, CliEnvironment? environment = null)
@@ -37,7 +36,6 @@ internal static class CliApp
             var report = new Report(configuration.Output, configuration.Error, parsed.GetValue<bool>("--json"));
             return await report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
         }
-        // Why: the commands take the machine when they are built, and what the repository says is known only once the arguments are parsed.
         return await Create(machine with { Config = config }).Parse(args).InvokeAsync(configuration);
     }
 
@@ -71,7 +69,6 @@ internal static class CliApp
         return root;
     }
 
-    // Why: System.CommandLine ends a parse error with exit code 1, which here means "the server refused"; a wrong use is 2 and shows the usage.
     private static async Task<int> MisusedAsync(RootCommand root, ParseResult parsed, InvocationConfiguration configuration)
     {
         var path = new List<string>();

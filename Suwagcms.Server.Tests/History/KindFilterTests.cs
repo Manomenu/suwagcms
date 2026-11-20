@@ -7,12 +7,10 @@ using Suwagcms.Server.Tests.Versions;
 
 namespace Suwagcms.Server.Tests.History;
 
-// Why: the panel under each list screen reads the bot's history narrowed to one kind, so each kind's narrowing is its own promise.
 public sealed class KindFilterTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private TestApp App => server.App;
 
-    // Why: one change of every kind and a version created and pushed; the push fails, since nothing answers at that address, and is recorded all the same.
     private async Task<HistoryScene> EveryKind()
     {
         _ = database.Pool;

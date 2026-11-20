@@ -19,7 +19,6 @@ version="$1"
 
 cd "$ROOT"
 if [[ -f .env ]]; then
-    # Why: not exported: the key reaches the push below and nothing else
     # shellcheck disable=SC1091
     . ./.env
 fi

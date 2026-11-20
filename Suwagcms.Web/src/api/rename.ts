@@ -1,4 +1,3 @@
-// Why: every screen of a resource changes its id through the same route, so the call and what its answer means for the dialog exist once.
 import { ApiError, request } from "./client";
 import type { components } from "./openapi";
 
@@ -37,7 +36,6 @@ function refusalOf(error: unknown): { lines: { id: string; where: string }[]; mi
     return { lines: [], mistakes: [error instanceof Error ? error.message : String(error)] };
 }
 
-/** What the dialog asks of the server: a dry run for each id typed, then the change itself, both guarded by the revision the screen shows. */
 export function renamer(bot: string, collection: RenameCollection, id: string, ifRevision: number) {
     const answered = (newId: string, dryRun: boolean, signal?: AbortSignal) =>
         send(bot, collection, id, newId, ifRevision, dryRun, signal).then(

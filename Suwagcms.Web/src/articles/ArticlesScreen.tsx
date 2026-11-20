@@ -53,7 +53,6 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
     if (editor.items === null || bases === null) return <p className="text-muted-foreground">Loading articles…</p>;
 
-    // Why: a chip opens the article it links to in the same editor, after the same question about unsaved changes.
     function openLinked(id: string, kind: "article" | "procedure") {
         if (!editor.mayLeave()) return;
         if (kind === "procedure") navigate(`~${editHref(bot, "procedures", id)}`);
@@ -72,7 +71,6 @@ export function ArticlesScreen({ bot }: { bot: string }) {
                 filters={filters}
                 notice={notice}
                 onFilters={(next) => {
-                    // Why: each keystroke of a search is one list, so it replaces the address instead of filling Back with them.
                     setParams(Object.fromEntries(Object.entries(next).filter(([, value]) => value !== "")), { replace: true });
                 }}
                 onAdd={editor.add}

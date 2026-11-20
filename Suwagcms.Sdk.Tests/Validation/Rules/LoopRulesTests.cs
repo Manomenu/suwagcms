@@ -222,7 +222,6 @@ public sealed class LoopRulesTests
         const int articles = 8;
         for (var seed = 1; seed <= 25; seed++)
         {
-            // Why: a fixed generator, so a failing seed is the same on every machine.
             var state = (uint)seed;
             int Draw()
             {
@@ -257,7 +256,6 @@ public sealed class LoopRulesTests
             ];
         }
 
-        // Why: independent of the rule under test: an article nobody refers to may go, then the next one, until none is left.
         static bool CanAllBeDeleted(Dictionary<int, HashSet<int>> links)
         {
             var left = links.Keys.ToHashSet();

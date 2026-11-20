@@ -158,7 +158,6 @@ function ConditionRow({
     );
 }
 
-/** The conditions of one branch, all of which must hold: a fact and what it is compared with, never free text a model judges. */
 export function ConditionsEditor({
     when,
     facts,
@@ -212,7 +211,6 @@ export function ConditionsEditor({
     );
 }
 
-/** Reads a branch's conditions as a line of text, for a row that is folded. */
 export function conditionsText(when: Record<string, Condition>): string {
     return Object.entries(when)
         .map(([fact, condition]) => {

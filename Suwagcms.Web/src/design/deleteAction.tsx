@@ -4,11 +4,6 @@ import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
 import { Paper } from "@/design/page";
 
-/**
- * The one place a resource is deleted from: its edit screen, never a row of a list, where a slip while scanning would cost the
- * resource. It asks first. A resource something refers to cannot be deleted, so the button is disabled with the reason beside it;
- * a refusal only the server can give is written above it.
- */
 export function DeleteAction({
     noun,
     id,

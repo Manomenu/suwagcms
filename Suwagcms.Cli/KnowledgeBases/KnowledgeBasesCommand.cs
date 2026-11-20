@@ -205,7 +205,6 @@ internal static class KnowledgeBasesCommand
                     read.Body?.Deserialize<KnowledgeBaseView>(Web)
                     ?? throw new InvalidOperationException("the server sent no knowledge base");
                 var dry = parsed.GetValue(dryRun);
-                // Why: without --if-revision the edit still guards the revision it just read, so an edit made in between is reported, never overwritten.
                 var answer = await ServerCall.PutAsync(
                     environment,
                     target.Address,

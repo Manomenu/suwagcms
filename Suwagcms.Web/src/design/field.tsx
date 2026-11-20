@@ -3,12 +3,6 @@ import type { ReactNode } from "react";
 import { InfoTip } from "@/design/infoTip";
 import { Label } from "@/design/label";
 
-/**
- * One form field: its label with its help, the control, and the mistakes written beneath it. The control gets `props`, which tie it
- * to the label and mark it invalid for assistive technology. `hint` is required, so a field cannot be written without saying what it
- * is for. `action` is a button on the label row, right-aligned; `labelHidden` keeps the label for assistive technology where a
- * heading already says it and carries the help; fields side by side that should line up pass `action` too, `null` when they have no button, so the row is as tall as the button's.
- */
 export function Field({
     prefix,
     name,
@@ -64,7 +58,6 @@ export function Field({
     );
 }
 
-/** The heading of a group of controls, with its help. */
 export function Legend({ hint, children }: { hint: string; children: string }) {
     return (
         <legend className="flex items-center gap-1 text-sm font-medium">

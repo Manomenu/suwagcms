@@ -4,7 +4,6 @@ import { fetchDeclaration, type DeclarationStatus } from "@/api/declaration";
 
 import { DeclarationView } from "./DeclarationView";
 
-/** Asks the bot when its profile opens and when a person presses Ask again; the page never waits for the answer. */
 export function DeclarationPanel({ bot }: { bot: string }) {
     const [status, setStatus] = useState<DeclarationStatus | null>(null);
     const [asking, setAsking] = useState(true);
@@ -25,7 +24,6 @@ export function DeclarationPanel({ bot }: { bot: string }) {
     );
 
     useEffect(() => {
-        // StrictMode runs effects twice in development: abort the first request, ignore its result.
         const controller = new AbortController();
         ask(controller.signal);
         return () => {

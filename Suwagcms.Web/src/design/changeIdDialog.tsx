@@ -5,7 +5,6 @@ import { Field } from "@/design/field";
 import { Input } from "@/design/input";
 import { Paper } from "@/design/page";
 
-/** What the server answers for an id: each referrer's field that would be rewritten, or what refuses it. */
 interface IdAnswer {
     lines: { id: string; where: string }[];
     mistakes: string[];
@@ -13,10 +12,6 @@ interface IdAnswer {
 
 const QUIET_MS = 300;
 
-/**
- * Asks for a new id, and lists what would be rewritten before anything changes. The server's dry run says what is wrong with the id,
- * so the dialog holds no rule of its own; the change goes through only after an answer that refuses nothing.
- */
 export function ChangeIdDialog({
     noun,
     idWord = "id",
@@ -27,7 +22,6 @@ export function ChangeIdDialog({
     onCancel,
 }: {
     noun: string;
-    /** What the kind calls its id: a fact has a name. */
     idWord?: string;
     id: string;
     preview: (newId: string, signal: AbortSignal) => Promise<IdAnswer>;

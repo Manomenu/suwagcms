@@ -8,7 +8,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Validation;
 
-// Why: it belongs to no bot, stores nothing and contacts nothing, so a bot outside .NET gets the library's answer from what it sent, and nothing else.
 internal static class ValidationEndpoints
 {
     public static void MapValidation(this IEndpointRouteBuilder routes) =>

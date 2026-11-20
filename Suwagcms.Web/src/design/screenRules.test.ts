@@ -1,4 +1,3 @@
-// Why: these rules are about what the source of every screen does not contain, which no single screen's test can see.
 import { describe, expect, it } from "vitest";
 
 const sources = import.meta.glob<string>(
@@ -113,13 +112,11 @@ describe("the rules of every screen", () => {
         expect(sources["/src/procedures/ProcedureScreen.tsx"]).toContain("history={history}");
         expect(filesWith(/<ComparisonRows\b/).sort()).toEqual(["/src/versions/VersionView.tsx", "/src/versions/VersionsView.tsx"]);
         expect(filesWith(/"[−+] "|changedLines/)).toEqual(["/src/design/changeList.tsx"]);
-        // Why: a change-id preview lists its own rewritten lines, which are no lines of a change.
         expect(filesWith(/\.lines\b/).sort()).toEqual(["/src/design/changeIdDialog.tsx", "/src/design/changeList.tsx"]);
         expect(filesWith(/ComparisonPanel|ComparisonDetails|HistoryList/)).toEqual([]);
     });
 
     it("AC-change-history-34: every main screen hands the page frame its History panel, which the frame draws last", () => {
-        // Why: each tab of a bot but History, which is the history itself, is a main screen; a new tab must say where its panel comes from.
         const tabs = [...(sources["/src/shell/navigation.ts"] ?? "").matchAll(/id: "([\w-]+)"/g)].map((match) => match[1]);
         const panelOf: Record<string, string> = {
             facts: "/src/facts/FactsView.tsx",

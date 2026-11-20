@@ -1,4 +1,3 @@
-/** What a person typed in a number's field: null when empty or not a number, which the server then reports. */
 export function whole(text: string): number | null {
     const trimmed = text.trim();
     if (trimmed === "") return null;
@@ -6,7 +5,6 @@ export function whole(text: string): number | null {
     return Number.isNaN(number) ? null : number;
 }
 
-/** What a fact, a local fact or an action's field allows, in words. */
 export function constraintText(field: {
     type?: string | null;
     values?: string[] | null;

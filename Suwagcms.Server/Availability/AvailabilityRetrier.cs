@@ -3,7 +3,6 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Availability;
 
-// Why: a bot that was down when something was turned off gets the whole set once a minute until it confirms, with nobody opening a screen; it sleeps while nothing is due. What is pending lives in memory only: after a restart of the CMS the next change, push, send or read of the bot's status repairs it, because trying every bot at start would also reach bots nobody left behind.
 internal sealed partial class AvailabilityRetrier(
     Pool pool,
     AvailabilityRetries retries,
@@ -38,7 +37,6 @@ internal sealed partial class AvailabilityRetrier(
     {
         try
         {
-            // Why: scheduled before the bot is called, so the next try is a minute after this one began, and a confirmation takes it back.
             retries.Schedule(bot);
             if (await BotStore.FindAddressAsync(pool, bot, cancellationToken) is { } address)
             {
@@ -49,7 +47,6 @@ internal sealed partial class AvailabilityRetrier(
                 retries.Cancel(bot);
             }
         }
-        // Why: a database that is briefly away must not stop the retries of every bot, so this one is tried again.
         catch (Npgsql.NpgsqlException exception)
         {
             CouldNotRetry(logger, bot, exception);

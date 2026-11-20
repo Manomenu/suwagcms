@@ -114,7 +114,6 @@ internal static class ApplyCommand
     private static string PlainCounts(ChangesApplied applied) =>
         string.Create(CultureInfo.InvariantCulture, $"{applied.Added} added, {applied.Edited} edited, {applied.Deleted} deleted");
 
-    // Why: an unknown bot keeps the shared answer, which lists the bots; only a refused file says how many mistakes and where each one is.
     private static ServerAnswer WithHeading(ServerAnswer answer, bool dry)
     {
         if (answer.Mistakes.Count == 0 || !answer.Mistakes.Any(mistake => mistake.TryGetProperty("change", out _)))

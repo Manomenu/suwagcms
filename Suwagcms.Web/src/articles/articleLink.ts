@@ -1,7 +1,6 @@
 import type { Editor } from "@tiptap/core";
 import Mention, { type MentionOptions } from "@tiptap/extension-mention";
 
-// Why: a procedure has no title, so its id stands in for what the author sees.
 export interface LinkTarget {
     id: string;
     title: string;
@@ -13,25 +12,21 @@ export interface LinkTarget {
 type LinkKind = "article" | "procedure";
 
 interface ArticleLinkOptions extends MentionOptions {
-    /** The current title of an article, or undefined when this bot has no such article. */
     titleOf: (id: string) => string | undefined;
     onOpen: (id: string, kind: LinkKind) => void;
 }
 
 const LINK = /^\[([^\]\n]*)\]\(cms:\/\/(article|procedure)\/([A-Za-z0-9]+)\)/;
 
-/** A title as the label of a link: the brackets and line breaks that would end the label early become spaces. */
 export function labelOf(title: string): string {
     return title.replace(/[[\]\r\n]+/g, " ").trim();
 }
 
-// Why: the label is kept as stored, so opening and saving changes nothing; the chip shows an article's current title, or a procedure's id, which is all a procedure has.
 export const ArticleLink = Mention.extend<ArticleLinkOptions>({
     name: "articleLink",
 
     addOptions() {
         return {
-            // Why: the parent options carry the HTML attributes and the suggestion every mention has.
             ...(this.parent?.() as MentionOptions),
             titleOf: () => undefined,
             onOpen: () => undefined,
@@ -87,7 +82,6 @@ export const ArticleLink = Mention.extend<ArticleLinkOptions>({
     },
 });
 
-/** Puts the picker's trigger at the cursor, with the space before it that the picker needs to open. */
 export function openPicker(editor: Editor): void {
     const { $from } = editor.state.selection;
     const before = $from.parent.textBetween(Math.max(0, $from.parentOffset - 1), $from.parentOffset);

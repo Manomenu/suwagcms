@@ -644,7 +644,7 @@ flowchart LR
 </section>
 <section data-role="contract">
   <h2>Contract: the API and the addresses <span class="tag note">optional</span></h2>
-  <p>The API's contract is <code>Suwagcms.Server/openapi.json</code>. This adds one read-only route and one field only the web asks for, and changes nothing else.</p>
+  <p>The API's contract is <code>contract/openapi.json</code>. This adds one read-only route and one field only the web asks for, and changes nothing else.</p>
   <table>
     <tr><th>What</th><th>Behaviour</th></tr>
     <tr><td>a version's window, a new route of the form <code>GET /api/bots/{bot}/versions/{number}/window</code></td><td>Answers the entries of the window, newest first, one page at a time as the History routes do (<code>limit</code>, <code>before</code>, and <code>page</code>, which adds <code>total</code>), with <code>since</code> and <code>incomplete</code>, which says the window opens before history started. A bot or number it does not know is refused, naming the latest. It only reads, so the guard of <code>AC-change-history-5</code> still holds.</td></tr>

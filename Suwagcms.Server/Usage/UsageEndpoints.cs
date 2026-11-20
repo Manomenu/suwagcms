@@ -12,7 +12,6 @@ internal static class UsageEndpoints
     private const string Title = "The usage was not shown.";
     private const string Problem = "application/problem+json";
 
-    // Why: the route accepts only these segments, so the lookup cannot miss.
     private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
     {
         ["facts"] = ResourceKind.GlobalFact,

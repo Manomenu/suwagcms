@@ -157,7 +157,6 @@ internal static class VersionsCommand
                 var version = parsed.GetValue(number).ToString(CultureInfo.InvariantCulture);
                 if (parsed.GetValue(options.Open))
                 {
-                    // Why: beside the version, its window keeps its page under this name, as HISTORY_PAGE does in the web app.
                     var asked = parsed.GetValue(page) is { } wanted
                         ? string.Create(CultureInfo.InvariantCulture, $"?historyPage={wanted}")
                         : "";

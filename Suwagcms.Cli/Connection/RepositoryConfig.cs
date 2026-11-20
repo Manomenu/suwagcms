@@ -5,7 +5,6 @@ using YamlDotNet.Core;
 
 namespace Suwagcms.Cli.Connection;
 
-// Why: a repository that works with one CMS and one bot says so in a committed file, so anyone in it runs plain commands, with no variable and nothing saved on the machine.
 internal sealed record RepositoryConfig(string? SuwagcmsUrl, string? BotId)
 {
     public const string DirOption = "--dir";
@@ -16,7 +15,6 @@ internal sealed record RepositoryConfig(string? SuwagcmsUrl, string? BotId)
 
     private static readonly string[] Keys = [AddressKey, BotKey];
 
-    // Why: a folder named outright must hold the file, where the default folder may simply not exist in most places a command runs.
     public static (RepositoryConfig? Config, string? Problem) Find(string? dir, string workingDirectory)
     {
         if (dir is null && !Path.IsPathRooted(workingDirectory))

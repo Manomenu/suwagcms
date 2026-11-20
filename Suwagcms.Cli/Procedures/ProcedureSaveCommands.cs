@@ -115,7 +115,6 @@ internal static class ProcedureSaveCommands
                 var current =
                     read.Body?.Deserialize<ProcedureDetail>(Web) ?? throw new InvalidOperationException("the server sent no procedure");
                 var dry = parsed.GetValue(dryRun);
-                // Why: a file read from `show` carries its revision, so an edit of it is refused when someone saved in between; with neither, the edit guards the revision it just read.
                 var expected = parsed.GetValue(ifRevision) ?? Revision(document) ?? current.Revision;
                 var answer = await ServerCall.PutAsync(
                     environment,
@@ -150,7 +149,6 @@ internal static class ProcedureSaveCommands
     private static int? Revision(JsonObject document) =>
         document["revision"] is JsonValue value && value.TryGetValue<int>(out var revision) ? revision : null;
 
-    // Why: the address names the procedure and the server stores the revision, so the id and what `show` adds are not part of what is sent.
     private static JsonObject Body(JsonObject document)
     {
         var body = (JsonObject)document.DeepClone();

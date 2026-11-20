@@ -1,17 +1,14 @@
 import type { BotStatus } from "./api";
 
-/** What the screen says about the bot: one line, the notes under it, and the push it offers (null when there is none to offer). */
 export interface StatusView {
     headline: string;
     notes: string[];
     push: { label: string; number: number } | null;
-    /** What the bot reports and what is on offer, when both are versions of this CMS that can be compared. */
     compare: { from: number; to: number } | null;
     inUse: number[];
     problem: boolean;
 }
 
-/** The generated types allow a string for an int32; the server sends a number. */
 function whole(value: number | string | null): number | null {
     return value === null ? null : Number(value);
 }
@@ -20,7 +17,6 @@ export function whenOf(iso: string): string {
     return `${iso.slice(0, 16).replace("T", " ")} UTC`;
 }
 
-/** The rule of the rollback's select: every kept version except the latest, which the main button pushes, and the one the bot has; newest first. */
 export function otherVersions(kept: number[], status: BotStatus): number[] {
     const latest = whole(status.latest);
     const has = whole(status.has);
@@ -33,7 +29,6 @@ function lastKnown(status: BotStatus): string {
     return `Last known: ${known === null ? "none" : `v${known}`}, at ${whenOf(status.lastKnownAt)}.`;
 }
 
-/** The rules of the table in the spec: the number shown is the bot's own answer, never what the CMS last sent. */
 export function statusView(status: BotStatus): StatusView {
     const latest = whole(status.latest);
     const has = whole(status.has);

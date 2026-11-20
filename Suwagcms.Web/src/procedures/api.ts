@@ -1,4 +1,3 @@
-// This feature's HTTP calls, typed from the generated OpenAPI types — never a hand-written copy of a server model.
 import { request } from "../api/client";
 import type { components } from "../api/openapi";
 
@@ -26,22 +25,18 @@ export function fetchProcedure(bot: string, id: string, signal: AbortSignal): Pr
     return request<ProcedureDetail>(procedurePath(bot, id), { signal });
 }
 
-/** The facts the forms offer. The editor never decides what a fact may be used for beyond the lists it filters here. */
 export function fetchFacts(bot: string, signal: AbortSignal): Promise<Fact[]> {
     return request<Fact[]>(`/bots/${encodeURIComponent(bot)}/facts`, { signal });
 }
 
-/** The articles a block may name, of every knowledge base of the bot. */
 export function fetchArticles(bot: string, signal: AbortSignal): Promise<ArticleView[]> {
     return request<ArticleView[]>(`/bots/${encodeURIComponent(bot)}/articles`, { signal });
 }
 
-/** The bases a Knowledge section offers. */
 export function fetchKnowledgeBases(bot: string, signal: AbortSignal): Promise<KnowledgeBaseView[]> {
     return request<KnowledgeBaseView[]>(`/bots/${encodeURIComponent(bot)}/knowledge-bases`, { signal });
 }
 
-/** Saves a procedure, or with `dryRun` asks what saving it would answer and changes nothing. `ifRevision` 0 means "add". */
 export function saveProcedure(
     bot: string,
     id: string,
@@ -62,7 +57,6 @@ export function deleteProcedure(bot: string, id: string, ifRevision: number): Pr
     return request<undefined>(`${procedurePath(bot, id)}?ifRevision=${ifRevision}`, { method: "DELETE" });
 }
 
-/** The generated type allows a string for an int32; the server sends a number. */
 export function mistakesOf(procedure: ProcedureSummary): number {
     return Number(procedure.notReady);
 }

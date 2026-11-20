@@ -1,4 +1,3 @@
-// A person turns an article off and on in the browser, against a bot that answers as the SDK does, or that cannot be reached.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -6,7 +5,6 @@ import { testBots } from "../../e2e/bots";
 
 const { freshId } = testBots("avail");
 
-/** Answers the state and availability routes the way the SDK does, holding the last set it was told. */
 async function startBot(id: string): Promise<{ server: Server; address: string }> {
     let availability: unknown = { number: 0, off: [] };
     const server = createServer((request, response) => {

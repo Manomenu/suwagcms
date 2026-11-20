@@ -3,12 +3,10 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Server.Editing;
 
-// Why: the lists are computed from the definition by the walker, the same one the delete guard uses, so the panels, a refusal and the question before turning off cannot disagree.
 internal static class ResourceUsage
 {
     public static UsageView Of(IEnumerable<StoredResource> stored, ResourceRef target)
     {
-        // Why: a base lists its own articles on its screen, so that edge is no entry in these panels.
         var references = ReferenceWalker
             .From(ResourceKinds.Assemble(stored))
             .Where(reference => reference.To.Kind != ResourceKind.KnowledgeBase || reference.From.Kind != ResourceKind.Article)

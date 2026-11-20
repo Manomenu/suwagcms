@@ -40,7 +40,6 @@ internal sealed class KnowledgeBaseApi(HttpClient client, string bot)
         await client.GetFromJsonAsync<List<KnowledgeBaseView>>($"/api/bots/{Bot}/knowledge-bases", TestContext.Current.CancellationToken)
         ?? [];
 
-    // Why: a language left out is left out of the JSON too, so the server's default is what the test sees; the profile and results are required, so every body has them.
     public static string Body(string title, string? language = null) =>
         language is null
             ? $$"""{"title":"{{title}}",{{SearchFields}}}"""

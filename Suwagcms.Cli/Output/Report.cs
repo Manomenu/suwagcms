@@ -26,7 +26,6 @@ internal sealed class Report(TextWriter output, TextWriter error, bool json)
         return ExitCodes.Done;
     }
 
-    // Why: a failed push still has a result of its own to give, so --json shows that document instead of a bare error.
     public async Task<int> FailedWithAsync<T>(int exitCode, T document, string text)
     {
         if (json)

@@ -10,7 +10,6 @@ public sealed class ArticleLanguageTests(TestDatabase database, ClassServer serv
 {
     private TestApp App => server.App;
 
-    // Why: the bot has the bases offer and forValuers, both en, and oferta, which is pl.
     private async Task<ArticleApi> NewBot()
     {
         _ = database.Pool;

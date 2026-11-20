@@ -1,4 +1,3 @@
-// The state of the editor and how a save changes it. What the author sees is never replaced by a failed save: only a reload does that.
 import type { Mistake } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
@@ -11,7 +10,6 @@ type Notice = { kind: "refused"; mistakes: Mistake[] } | { kind: "stale"; messag
 
 export interface EditorState {
     draft: Draft;
-    /** The text of the draft as last saved or loaded; the draft differs from it exactly when there is something to save. */
     savedAs: string;
     revision: number;
     notReady: Mistake[];
@@ -21,10 +19,7 @@ export interface EditorState {
 export type SaveOutcome = { kind: "saved"; detail: ProcedureDetail } | { kind: "notSaved"; notice: Notice };
 
 export type Action =
-    | { type: "edited"; draft: Draft }
-    /** `sent` is the text of the draft the save carried: the author may have gone on editing while it was on its way. */
-    | { type: "saved"; outcome: SaveOutcome; sent: string }
-    | { type: "loaded"; detail: ProcedureDetail };
+    { type: "edited"; draft: Draft } | { type: "saved"; outcome: SaveOutcome; sent: string } | { type: "loaded"; detail: ProcedureDetail };
 
 export function loaded(detail: ProcedureDetail): EditorState {
     const draft = fromDetail(detail);
@@ -60,7 +55,6 @@ export function reduce(state: EditorState, action: Action): EditorState {
     }
 }
 
-/** Sorts the answer of a save: saved, refused with mistakes, based on an old revision, or failed. */
 export async function outcomeOf(answer: Promise<ProcedureDetail>): Promise<SaveOutcome> {
     try {
         return { kind: "saved", detail: await answer };

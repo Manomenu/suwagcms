@@ -1,6 +1,5 @@
 namespace Suwagcms.Server.Availability;
 
-// Why: only which bot is due and when is kept, never a message: each retry reads the whole set anew, so a newer change replaces what was pending.
 internal sealed class AvailabilityRetries(TimeProvider time)
 {
     public static readonly TimeSpan Every = TimeSpan.FromMinutes(1);
@@ -23,7 +22,6 @@ internal sealed class AvailabilityRetries(TimeProvider time)
         }
     }
 
-    // Why: a test moving a fake clock must know nothing is due, or the retrier could be between two steps when the clock jumps.
     public bool Idle
     {
         get
@@ -43,7 +41,6 @@ internal sealed class AvailabilityRetries(TimeProvider time)
         }
     }
 
-    // Why: the task that says a bot was scheduled is taken under the same lock as what is due, so a bot scheduled right after is never missed.
     public Round Take()
     {
         lock (gate)

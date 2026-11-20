@@ -50,7 +50,6 @@ function typedOf(name: string, fact: LocalFact): Typed {
     };
 }
 
-// Why: only the constraints of the chosen type are sent, since a constraint of another type is a mistake.
 function factOf(typed: Typed): LocalFact {
     const pattern = typed.type === "text" ? patternOf(typed) : null;
     return {
@@ -68,7 +67,6 @@ function summaryOf(fact: LocalFact): string {
     return `${constraintText({ ...fact, type: fact.type ?? "text" })} · ${fact.writableBy ?? "set"}`;
 }
 
-// Why: a local fact's mistakes show in the procedure's live list, so its fields only need their label.
 const field = (name: string, label: string, hint: string, control: (props: object) => ReactNode) => (
     <Field prefix="local-fact" name={name} label={label} hint={hint} errors={[]}>
         {control}
@@ -185,7 +183,6 @@ function LocalFactForm({
     );
 }
 
-/** The procedure's own facts: they change the draft like any other edit, so the live list of mistakes judges them and Save stores them. */
 export function LocalFactsPanel({ draft, edit }: { draft: Draft; edit: (change: (draft: Draft) => Draft) => void }) {
     const [open, setOpen] = useState<string | null>(null);
     const adding = open === "";

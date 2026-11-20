@@ -10,7 +10,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Availability;
 
-// Why: a row is known by the resource's stable uuid, so a rename cannot lose it; it holds no revision and is no part of a version, so a change here is not an edit.
 internal static class AvailabilityStore
 {
     internal enum Outcome
@@ -27,7 +26,6 @@ internal static class AvailabilityStore
 
     private sealed record ResourceRow(string Kind, string PublicId, bool Off);
 
-    // Why: the bot's lock puts this after or before any save or delete of the same bot; it is let go before anyone talks to the bot.
     public static async Task<(Outcome Result, IReadOnlyList<UsageLink> UsedBy)> ChangeAsync(
         Pool pool,
         string bot,
@@ -109,7 +107,6 @@ internal static class AvailabilityStore
         return (Outcome.Changed, usedBy);
     }
 
-    // Why: the number and the set are read under the bot's lock, so a message never pairs a new number with an old set, which would let it pass for the newer one.
     public static async Task<BotAvailability> ReadMessageAsync(Pool pool, string bot, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);

@@ -6,10 +6,6 @@ import { factsApi } from "./api";
 import { bodyOf, fieldOf, type FactForm as FactFormState } from "./factForm";
 import { FactFields } from "./FactFields";
 
-/**
- * The form that adds or edits a fact. A refusal shows each mistake beside its field and keeps everything typed. `revision`
- * is the latest one the screen knows of the fact being edited (0 when adding), so reloading and saving again is possible.
- */
 export function FactForm({
     bot,
     initial,

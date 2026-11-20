@@ -11,7 +11,6 @@ internal static class AvailabilityCommand
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    // Why: the words a person types for a kind, mapped to the kind its page is found by; the server has refused any other word before a page is asked for.
     private static readonly Dictionary<string, string> Pages = new(StringComparer.Ordinal)
     {
         ["article"] = "Article",
@@ -138,7 +137,6 @@ internal static class AvailabilityCommand
                 );
                 var dry = parsed.GetValue(dryRun);
                 var confirmed = yes is not null && parsed.GetValue(yes);
-                // Why: asking first is what puts the list before the change, and the server's dry run is the one source of the list and of every refusal.
                 if (dry || (yes is not null && !confirmed))
                 {
                     var (preview, previewFailure) = await CallAsync(target, path + "?dryRun=true", environment, cancellationToken);

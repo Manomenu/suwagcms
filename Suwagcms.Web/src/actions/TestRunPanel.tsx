@@ -10,7 +10,6 @@ import { Paper } from "@/design/page";
 
 import { implementationOf, runAction, type ActionTestAnswer, type ActionView } from "./api";
 
-/** What asking first says: the CMS cannot know what a code action does, so it asks as for any call that may do work; a GET runs at once. */
 function realCall(action: ActionView): string | null {
     const implementation = implementationOf(action);
     if (implementation === "code") return `the bot's code for ${action.id}`;
@@ -49,7 +48,6 @@ function Answer({ answer }: { answer: ActionTestAnswer }) {
     );
 }
 
-/** Tries a saved action through the bot. `unsaved` says the form holds changes, and a run always matches a stored action. */
 export function TestRunPanel({ bot, action, unsaved }: { bot: string; action: ActionView; unsaved: boolean }) {
     const names = Object.keys(action.parameters ?? {});
     const [values, setValues] = useState<Record<string, string>>({});

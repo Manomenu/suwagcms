@@ -100,7 +100,6 @@ internal static class ArticleRules
         }
     }
 
-    // Why: deleting a base while articles are in it ends up here, so the refusal lists each article that would be left without a base.
     private static IEnumerable<Mistake> UnknownKnowledgeBase(BotDefinition definition)
     {
         var known = definition.KnowledgeBases.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);

@@ -19,7 +19,6 @@ internal static class BotEndpoints
         routes.MapGet("/bots/{bot}/declaration", Declaration).Produces<Refusal>(StatusCodes.Status404NotFound, "application/problem+json");
     }
 
-    // Why: asking is the default because the answer is the bot's own; the editor reads the stored one, since opening a form must not wait on a bot.
     private static async Task<Results<Ok<DeclarationStatus>, ProblemHttpResult>> Declaration(
         string bot,
         DeclarationAsker asker,

@@ -5,7 +5,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Server.Editing;
 
-// Why: the working state stays sound through what the bot does: a copy in use stays, so a step never names nothing, and an existing HTTP action stays, because replacing it would silently change what procedures run.
 internal static class CodeActionAlignment
 {
     public static Dictionary<ResourceRef, StoredResource> Apply(Dictionary<ResourceRef, StoredResource> before, BotDeclaration declaration)
@@ -36,7 +35,6 @@ internal static class CodeActionAlignment
         return after;
     }
 
-    // Why: the database keeps a document's keys in its own order, which means nothing, so two copies are compared as data.
     private static bool Same(object stored, object wanted) =>
         JsonNode.DeepEquals(JsonNode.Parse(ResourceKinds.Write(stored)), JsonNode.Parse(ResourceKinds.Write(wanted)));
 }

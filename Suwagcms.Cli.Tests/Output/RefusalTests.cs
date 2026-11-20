@@ -11,7 +11,6 @@ public sealed class RefusalTests
           {"code":"reference.missing","path":"facts[2]","message":"No article has the id a-9.","fix":"Create the article or point at another."}]}
         """;
 
-    // Why: no command changes anything yet, so a read stands in; the refusal is read by the code every command shares.
     private static StubServer Refusing() => StubServer.Answering(HttpStatusCode.UnprocessableEntity, TwoMistakes);
 
     [Fact]

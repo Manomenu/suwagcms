@@ -26,7 +26,6 @@ using Suwagcms.Server.Procedures;
 
 namespace Suwagcms.Server.Changes;
 
-// Why: a request becomes the changes the editor knows, so a file has no rule of its own; what is wrong with its shape comes first and all at once, as an unreadable body does on a single save.
 internal static class ChangeList
 {
     public const string OtherBot = "changes.otherBot";
@@ -196,7 +195,6 @@ internal static class ChangeList
 
         var fields = change.DeepClone().AsObject();
         fields.Remove(verb);
-        // Why: a persona's id is not the writer's to give, so an `id` on one is an unknown field like any other.
         if (kind != ResourceKind.Persona)
         {
             fields.Remove(idField);
@@ -234,7 +232,6 @@ internal static class ChangeList
                 element,
                 ifRevision,
                 body => FactMapping.ToRecord(id, body),
-                // Why: every other field of an edit left out or null stays, and a pattern has no other way to be taken off in a file of changes.
                 (stored, body) =>
                     EditOverlay.OverFact(
                         stored,
@@ -283,7 +280,6 @@ internal static class ChangeList
             : (new ChangeItem(position, verb == Add ? "added" : "edited", kindWord, made), []);
     }
 
-    // Why: `add` is null for an edit, which merges what it gives with what is stored.
     private static (Change? Change, IReadOnlyList<Mistake> Mistakes) Made<TBody, TRecord>(
         Func<object, Change>? add,
         ResourceRef target,
@@ -305,7 +301,6 @@ internal static class ChangeList
             : (new Edit(target, stored => record(merged((TRecord)stored, body)), ifRevision), []);
     }
 
-    // Why: an edit of a persona replaces the whole of it, as its own command does, and works on one never saved, which has no row for an Edit to find; with replace it is a replacement like any other, so one that changes nothing leaves the persona as it is.
     private static (Change? Change, IReadOnlyList<Mistake> Mistakes) Replacing(
         ResourceRef target,
         JsonElement fields,

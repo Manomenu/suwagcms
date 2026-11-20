@@ -29,7 +29,6 @@ const HINTS = {
 
 const TYPES = ["text", "enum", "int"] as const;
 
-/** One field with the mistakes its place names written beneath it. */
 function Placed({
     place,
     label,
@@ -71,7 +70,6 @@ function Constraint({
         <div className={row.type === "int" ? "flex gap-2" : "contents"}>
             <ConstraintFields
                 form={row}
-                // Why: a row's cell is too narrow to say "separated by commas" in the label, and every label of a row must stay on one line to line up.
                 field={(name, label, hint, control) => (
                     <Placed place={`${at}.${name}`} label={name === "values" ? "Values" : label} hint={hint} mistakes={mistakes}>
                         {control}
@@ -246,7 +244,6 @@ function Headers({ headers, mistakes, onChange }: { headers: HeaderRow[]; mistak
     );
 }
 
-/** The fields of the action form; a mistake shows beside the field its path names. */
 export function ActionFields({
     form,
     mistakes,

@@ -1,10 +1,8 @@
-// What the list of mistakes shows. The mistakes come from the server's dry run; this file only words and sorts them.
 import { ApiError, type Mistake } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
 import type { Draft } from "./draft";
 
-/** The words of a refusal: the first mistake with its fix, since the response's own detail only counts them. */
 export function reasonOf(error: ApiError): string {
     const first = error.mistakes[0];
     return first === undefined ? error.message : `${first.message} ${first.fix}`;
@@ -16,7 +14,6 @@ export type Check =
     | { state: "stale"; message: string }
     | { state: "unreachable"; message: string };
 
-/** Turns the answer of a dry run into what the list shows. A refusal carries the mistakes that would refuse a save. */
 export async function checkOf(answer: Promise<ProcedureDetail>): Promise<Check> {
     try {
         return { state: "done", mistakes: (await answer).notReady };
@@ -33,7 +30,6 @@ export function consequenceOf(mistake: Mistake): string {
     return mistake.stage === "Save" ? "Refuses a save" : "Stops a version";
 }
 
-/** The place on the page a mistake belongs beside. A mistake with no place on the page goes at the top of the form, so nothing is lost. */
 export function placeOf(mistake: Mistake, procedure: string, draft: Draft): string {
     if (mistake.resource.kind !== "Procedure" || mistake.resource.id !== procedure) return "top";
     const path = mistake.path;
@@ -50,13 +46,11 @@ export function placeOf(mistake: Mistake, procedure: string, draft: Draft): stri
     return `step:${name}`;
 }
 
-/** The step to select for a place, so clicking a mistake opens the row it is about. */
 export function stepOfPlace(place: string): string | null {
     const match = /^(?:step|failure|unavailable|knowledge):([^:]+)/.exec(place);
     return match?.[1] ?? null;
 }
 
-/** The If or Else if row to unfold for a place, so clicking a mistake beside a branch opens that row and not its step. */
 export function conditionOfPlace(place: string): string | null {
     return /^branch:(.+)$/.exec(place)?.[1] ?? null;
 }

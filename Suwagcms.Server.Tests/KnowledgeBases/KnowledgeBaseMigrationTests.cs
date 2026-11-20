@@ -5,7 +5,6 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;
 
-// Why: the migration changes stored data, so it runs here on rows written before it, in a database of its own that holds every earlier migration.
 public sealed class KnowledgeBaseMigrationTests(TestDatabase database) : IAsyncLifetime
 {
     private const string Migration = "0015_knowledge_base_search_fields.sql";

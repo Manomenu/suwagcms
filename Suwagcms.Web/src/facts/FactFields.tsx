@@ -14,7 +14,6 @@ import { fieldOf, referrerPlace, type FactForm, type FieldName } from "./factFor
 const NAME_HINT =
     "The fact's id: how procedures refer to it. It may have dots, like customer.city. A global fact lives for the whole conversation. To change it later, use Change name.";
 
-/** The steps a refusal names, each a link to its procedure, written under the mistakes of the field. */
 function Referrers({ bot, mistakes }: { bot: string; mistakes: Mistake[] }) {
     const places = mistakes.flatMap((mistake) => mistake.related).filter((related) => related.resource.kind === "Procedure");
     if (places.length === 0) return null;
@@ -32,7 +31,6 @@ function Referrers({ bot, mistakes }: { bot: string; mistakes: Mistake[] }) {
     );
 }
 
-/** One field of the fact form with the mistakes its path names written beneath it, and the steps they name. */
 function Field({
     bot,
     field,
@@ -65,7 +63,6 @@ function Field({
     );
 }
 
-/** The fields of the fact form; a mistake shows beside the field its path names. */
 export function FactFields({
     bot,
     form,

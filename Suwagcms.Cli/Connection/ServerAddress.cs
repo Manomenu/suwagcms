@@ -1,6 +1,5 @@
 namespace Suwagcms.Cli.Connection;
 
-// Why: the address is that of the web app, which serves the API under /api the way the browser reaches it (Vite's proxy, nginx in the image).
 internal static class ServerAddress
 {
     public const string Variable = "SUWAGCMS_URL";

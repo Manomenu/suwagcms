@@ -8,14 +8,12 @@ import { Select } from "@/design/select";
 import { contentOf, dateOf, numberOf, type VersionComparison, type VersionDetail, type VersionSummary } from "./api";
 import { ComparisonRows, comparisonLine } from "./comparison";
 
-/** Where a comparison on the page stands: asked, answered, or refused in its place. */
 export interface ComparisonState {
     with: number;
     answer: VersionComparison | null;
     refusal: string | null;
 }
 
-/** Says there is no such version, with the way back, as a resource's unknown id does. */
 export function NoSuchVersion({ asked, onBack }: { asked: string; onBack: () => void }) {
     return (
         <div className="flex flex-col gap-4">
@@ -39,7 +37,6 @@ function Compare({
     onClose: () => void;
 }) {
     const others = versions.map(numberOf).filter((other) => other !== number);
-    // Why: with nothing to choose there is no select, but a comparison the address asked for still answers, or says why it cannot.
     if (others.length === 0 && comparison === null) return null;
     return (
         <Paper className="flex flex-col gap-3">
@@ -78,7 +75,6 @@ function Compare({
     );
 }
 
-/** A version's page: what it is, what differs from any other version, and what happened between the previous version and this one. */
 export function VersionView({
     bot,
     detail,

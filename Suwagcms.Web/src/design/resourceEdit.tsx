@@ -8,7 +8,6 @@ import { InfoTip } from "@/design/infoTip";
 import { Page, type HistoryPanelProps } from "@/design/page";
 import { UsagePanel } from "@/design/usagePanel";
 
-/** The way from a screen of one resource back to the list of them. */
 export function BackToList({ plural, onBack }: { plural: string; onBack: () => void }) {
     return (
         <div>
@@ -19,16 +18,10 @@ export function BackToList({ plural, onBack }: { plural: string; onBack: () => v
     );
 }
 
-/** Says what changing the id does, in the word a kind uses for it, beside the button. */
 function changeIdHelp(noun: string, idWord: string): string {
     return `Gives this ${noun} a new ${idWord} and rewrites every link and reference to it, all or nothing. You see what would change before anything does. Plain text naming it and versions already created stay as they are.`;
 }
 
-/**
- * The screen of one resource, and only of it, the same on every kind: a way back, the heading with its id and Change id, the kind's
- * own lines, Used by and Uses, `children` (the form and whatever the kind adds beside it), Delete and the history. `editable` false
- * takes Change id and Delete away, for a kind that may hold a resource that cannot be edited. `idWord` is what the kind calls its id.
- */
 export function ResourceEdit({
     noun,
     plural,

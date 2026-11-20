@@ -1,4 +1,3 @@
-// A person moves through a long list: the address says which page, on every list. The run's page size is 5 (playwright.config.ts).
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 
@@ -21,7 +20,6 @@ async function addBase(request: APIRequestContext, bot: string): Promise<void> {
     ).toBe(200);
 }
 
-// Why: a list screen also pages its History panel at the bottom, so the list's own controls are the ones outside it.
 function listPages(page: Page) {
     return page.locator('[aria-label="Pages"]:not([aria-label="History"] *)');
 }
@@ -285,7 +283,6 @@ test("AC-pagination-12: the History panel pages under historyPage: the list's pa
     let asked = false;
     page.on("dialog", (dialog) => {
         asked = true;
-        // Why: the reload below is meant to throw the typed text away, and it is the only question this test accepts.
         void dialog.accept();
     });
     const panel = page.getByRole("region", { name: "History" });

@@ -1,4 +1,3 @@
-// A person works on the knowledge bases of one bot in the browser; the bot is in the address, and a refusal keeps what was typed.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 

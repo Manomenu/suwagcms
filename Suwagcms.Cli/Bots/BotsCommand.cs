@@ -76,7 +76,6 @@ internal static class BotsCommand
 
     private static Command CreateAdd(GlobalOptions options, CliEnvironment environment)
     {
-        // Why: left optional so that a missing part reaches the server, which reports every mistake at once.
         var id = new Argument<string?>("id")
         {
             Description = "The bot's id: lowercase letters, digits and hyphens, starting with a letter. It does not change.",

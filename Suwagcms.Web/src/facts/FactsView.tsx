@@ -5,7 +5,6 @@ import { ResourceList } from "@/design/resourceList";
 import type { Fact } from "./api";
 import { constraintOf } from "./factForm";
 
-/** The list of a bot's facts. A fact's name is its id. */
 export function FactsView({
     bot,
     facts,

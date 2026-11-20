@@ -4,7 +4,6 @@ using Suwagcms.Cli.Output;
 
 namespace Suwagcms.Cli.Bots;
 
-// Why: every bot command starts the same way, with the output it was asked for and the server address it was given.
 internal sealed record BotCommandRun(Report Report, Uri? Address, string Problem)
 {
     public static BotCommandRun Start(ParseResult parsed, GlobalOptions options, CliEnvironment environment)

@@ -5,7 +5,6 @@ import { implementationOf, type ActionField, type ActionView, type SaveAction } 
 
 export type ListName = "parameters" | "results";
 
-/** One parameter or result as typed, as text, so that a refusal never loses a keystroke. */
 export interface FieldRow {
     name: string;
     type: string;
@@ -86,7 +85,6 @@ function fieldsOf(rows: FieldRow[]): Record<string, ActionField> | null {
     );
 }
 
-/** Only the constraints of each row's type are sent: the others are hidden, and a constraint of another type is a mistake. */
 export function bodyOf(form: ActionForm): SaveAction {
     return {
         description: form.description,
@@ -103,12 +101,10 @@ export function bodyOf(form: ActionForm): SaveAction {
     };
 }
 
-/** Where a mistake shows: the field its path names (`values[1]` is `values`); a resource that already exists shows beside the id. */
 export function placeOf(mistake: Mistake): string {
     return mistake.code === "resource.exists" ? "id" : mistake.path.replace(/\[\d+\]$/, "");
 }
 
-/** Every place the open form shows a mistake; a mistake with any other place is listed apart, so none is lost. */
 export function placesOf(form: ActionForm): string[] {
     const http = "implementation.http";
     const lists = (["parameters", "results"] as const).flatMap((list) =>

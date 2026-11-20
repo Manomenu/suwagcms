@@ -9,14 +9,12 @@ using Suwagcms.Server.Versions;
 
 namespace Suwagcms.Server.History;
 
-// Why: the routes only read: the record cannot be edited, and a guard in the tests fails when a route that writes it appears.
 internal static class HistoryEndpoints
 {
     private const string Title = "The history was not shown.";
     private const string Problem = "application/problem+json";
     private const int DefaultLimit = 50;
 
-    // Why: the route accepts only these segments, so the lookup cannot miss; a deleted resource is found the same way, since nothing here asks whether it still exists.
     private static readonly Dictionary<string, string> Kinds = new(StringComparer.Ordinal)
     {
         ["facts"] = ResourceKinds.Word(ResourceKind.GlobalFact),
@@ -43,7 +41,6 @@ internal static class HistoryEndpoints
         routes.MapGet("/bots/{bot}/versions/{number:int}/window", OfWindow).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
     }
 
-    // Why: `kind` narrows the bot's history to one kind of resource, every id of it, for the panel under that kind's list.
     private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfBot(
         string bot,
         Pool pool,
@@ -106,7 +103,6 @@ internal static class HistoryEndpoints
         return TypedResults.Ok(WrittenWhenPaged(answer, page));
     }
 
-    // Why: a numbered page is for a person reading, on the web or with `--page`; a script going on with `before` keeps entries exactly as they were recorded.
     private static HistoryPage WrittenWhenPaged(HistoryPage answer, int? page) =>
         page is null
             ? answer

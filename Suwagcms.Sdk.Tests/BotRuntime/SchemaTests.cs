@@ -116,7 +116,6 @@ public sealed class SchemaTests
         var schema =
             JsonNode.Parse(JsonSchemaExporter.GetJsonSchemaAsNode(BotRuntimeJson.Options, type).ToJsonString())
             ?? throw new InvalidOperationException("The exporter returned no schema.");
-        // Why: the exporter allows null for the root, but no route answers with null.
         if (schema["type"] is JsonArray types && types.Any(entry => entry?.GetValue<string>() == "object"))
         {
             schema["type"] = "object";

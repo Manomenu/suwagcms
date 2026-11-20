@@ -13,7 +13,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Actions;
 
-// Why: the bot makes the call, never the CMS, because only it has the secrets; this reads what it needs, lets go of the database and only then waits, so no save waits on a slow service, and it records nothing, because the answer is the whole value of a run.
 internal sealed class ActionTester(Pool pool, BotClient client, IOptions<PushOptions> options)
 {
     public const string ValueUnfit = "action.test.value";
@@ -21,7 +20,6 @@ internal sealed class ActionTester(Pool pool, BotClient client, IOptions<PushOpt
     public const string NotOffered = "notOffered";
     public const string OffNote = "This action is turned off: procedures will not run it until it is turned on.";
 
-    // Why: a code action has no timeout of its own, and the CMS still has to stop waiting.
     private const int CodeSeconds = 60;
 
     public async Task<(ActionTestAnswer? Answer, EditResult? Refusal)> RunAsync(

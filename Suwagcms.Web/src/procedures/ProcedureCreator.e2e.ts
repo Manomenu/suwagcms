@@ -1,4 +1,3 @@
-// A person edits a procedure in the browser: the list of steps, the forms, the mistakes beside their place, and the save.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -15,7 +14,6 @@ async function newBot(request: APIRequestContext): Promise<string> {
     ] as const) {
         expect((await request.put(`/api/bots/${id}/facts/${name}?ifRevision=0`, { data })).status()).toBe(200);
     }
-    // Why: a bot with no `conversation` always has that one mistake, which would hide whether the page is ready.
     await agentSaves(request, id, "conversation", CONVERSATION, 0);
     return id;
 }
@@ -152,7 +150,6 @@ test("AC-procedure-creator-23: the page has the shared edit screen's parts in th
 
     await expect(page.getByRole("button", { name: "Back to procedures" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Procedure orderValuation" })).toBeVisible();
-    // Why: the order on the page is the order in the document, since Save stays in view wherever the page has scrolled to.
     const parts = [
         page.getByRole("button", { name: "Change id" }),
         page.getByRole("region", { name: "Uses" }),

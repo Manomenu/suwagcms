@@ -1,4 +1,3 @@
-// Why: the article, procedure and action screens turn resources on and off through the same routes and read the same setting, so the calls and their hook exist once.
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError, request } from "./client";
@@ -30,7 +29,6 @@ export interface AvailabilityState {
     reload: () => void;
 }
 
-/** What a bot has on and off, as the CMS holds it, and whether the bot has it, from the bot's own answer; asking the bot does not hold up the rest of the screen. */
 export function useAvailability(bot: string): AvailabilityState {
     const [view, setView] = useState<AvailabilityView | null>(null);
     const [delivery, setDelivery] = useState<AvailabilityDelivery | null>(null);

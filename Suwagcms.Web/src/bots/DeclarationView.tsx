@@ -89,7 +89,6 @@ function Declared({ status }: { status: DeclarationStatus }) {
     );
 }
 
-/** What a bot supports, as it last said: the panel of its profile. Nothing on the profile depends on the bot having answered. */
 export function DeclarationView({
     status,
     asking,

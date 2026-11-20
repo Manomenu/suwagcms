@@ -1,5 +1,3 @@
-// The procedure as the editor holds it, and every edit of it. The editor holds no rule of the format: it only keeps the draft in the
-// shape the server accepts, and the server's dry run says what is wrong with it.
 import type { Fact, ProcedureDetail, SaveProcedure } from "./api";
 import {
     armsOf,
@@ -37,7 +35,6 @@ export interface Condition {
 export type ConditionKind = keyof Condition;
 
 export interface Rule {
-    /** Absent on the default rule, which is always the last. */
     when?: Record<string, Condition>;
     to: string;
 }
@@ -53,7 +50,6 @@ interface Instruction {
     knowledge?: KnowledgeEntry[];
 }
 
-/** A whenStalled is an instruction alone: knowledge belongs on an inform. */
 export interface StallInstruction {
     instruction: string;
 }
@@ -67,18 +63,12 @@ export interface Step {
     collect?: string[];
     say?: string;
     assign?: Record<string, string>;
-    /** The id of the procedure this step starts. */
     start?: string;
     inform?: Inform;
-    /** The id of the action this step runs; "" until one is chosen. */
     action?: string;
-    /** Parameter name to the fact that gives its value. */
     with?: Record<string, string>;
-    /** Result name to the fact it writes. */
     results?: Record<string, string>;
-    /** Held only by a step under Not connected: the place of a row in the list says where any other step goes. */
     onFailure?: string;
-    /** Held only by a step under Not connected, as onFailure is. */
     onUnavailable?: string;
     next?: string | Rule[];
 }
@@ -87,12 +77,9 @@ export type LocalFact = NonNullable<SaveProcedure["localFacts"]>[string];
 
 export interface Draft {
     description: string;
-    /** The steps in reading order: this, not the steps, says what comes after what. */
     list: StepList;
-    /** Steps no path from the first step reaches, kept as stored until moved into the list. */
     notConnected: string[];
     whenStalled: StallInstruction | null;
-    /** Left out when the author chose nothing, so a save does not write a choice nobody made. */
     whenInterrupted?: string;
     steps: Record<string, Step>;
     localFacts: Record<string, LocalFact>;
@@ -175,7 +162,6 @@ export function fromDetail(detail: ProcedureDetail): Draft {
     };
 }
 
-/** What a save sends. Two equal drafts give equal text, so it also tells whether anything changed. */
 export function toSave(draft: Draft): SaveProcedure {
     const links = linksOf(draft.list);
     return {
@@ -229,7 +215,6 @@ const EMPTY_BLOCK: Record<BlockName, Step> = {
     action: { action: "" },
 };
 
-/** Adds a step at the end of a list, above a Next: or End row if the list has one. Its name comes from its block and is free to change. */
 export function addStep(draft: Draft, ref: ListRef, block: BlockName): { draft: Draft; name: string } {
     const name = uniqueName(draft, block);
     return {
@@ -246,19 +231,15 @@ export function setListEnd(draft: Draft, ref: ListRef, last: ListEnd): Draft {
     return { ...draft, list: changeList(draft.list, ref, (one) => ({ ...one, last })) };
 }
 
-/** End says a step has no next, which is what the end of a list already means when nothing follows, so it is only offered where a row would. */
 export function canEnd(draft: Draft, ref: ListRef): boolean {
-    // Why: an empty When unavailable means none, so an End with no step above it would say nothing.
     if (ref?.arm === "unavailable" && listAt(draft.list, ref).rows.length === 0) return false;
     return ref !== null && fallOf(draft.list, ref) !== null;
 }
 
-/** An If hangs on the step above it, so only a step with no If and no branches of its own can take one. */
 export function canTakeIf(row: StepRow | undefined): boolean {
     return row !== undefined && row.branches === undefined;
 }
 
-/** A new If comes with its Else. On an action it takes the place of the fixed next, keeping what that branch held as its Else. */
 export function addIf(draft: Draft, name: string): Draft {
     return {
         ...draft,
@@ -269,7 +250,6 @@ export function addIf(draft: Draft, name: string): Draft {
     };
 }
 
-/** How many steps removing an If or a branch takes with it: the author is asked first when there are any. */
 export function stepsInBranches(row: StepRow | undefined): number {
     return (row?.branches ?? []).flatMap((branch) => namesIn(branch.list)).length;
 }
@@ -295,7 +275,6 @@ export function removeIf(draft: Draft, name: string): Draft {
     };
 }
 
-/** Adds a branch before the Else, whose rule must stay last. */
 export function addElseIf(draft: Draft, name: string): Draft {
     return {
         ...draft,
@@ -315,7 +294,6 @@ export function addElse(draft: Draft, name: string): Draft {
     };
 }
 
-/** Removes a branch and its steps. With only the Else left there is nothing to choose, so its rows simply follow the step. */
 export function removeBranch(draft: Draft, name: string, index: number): Draft {
     const row = findRow(draft.list, name);
     const branch = row?.branches?.[index];
@@ -359,7 +337,6 @@ export function setConditions(draft: Draft, name: string, index: number, when: R
     };
 }
 
-/** An action's On failure, opened by the author; empty, it goes on below. */
 export function openFailure(draft: Draft, name: string): Draft {
     return {
         ...draft,
@@ -371,7 +348,6 @@ export function openFailure(draft: Draft, name: string): Draft {
     };
 }
 
-/** Renames a step and every place that points at it. A taken or empty name changes nothing. */
 export function renameStep(draft: Draft, from: string, to: string): Draft {
     if (to === from || to === "" || to in draft.steps || !(from in draft.steps)) return draft;
     const again = (name: string) => (name === from ? to : name);
@@ -400,7 +376,6 @@ export function renameStep(draft: Draft, from: string, to: string): Draft {
     };
 }
 
-/** Why a step cannot be deleted yet, if so: an If needs the step above it, and what hangs there is the author's to remove first. */
 export function whyNotDeletable(row: StepRow | undefined): string | null {
     if (row === undefined) return null;
     if (row.branches) return "Remove the If below this step first: an If needs a step above it.";
@@ -410,7 +385,6 @@ export function whyNotDeletable(row: StepRow | undefined): string | null {
     return null;
 }
 
-/** Deletes a step: the rows around it join up. A Next: row naming it stays, and the server's dry run says what that leaves to fix. */
 export function deleteStep(draft: Draft, name: string): Draft {
     const row = findRow(draft.list, name);
     if (whyNotDeletable(row) !== null) return draft;
@@ -434,7 +408,6 @@ export function moveBranch(draft: Draft, name: string, index: number, direction:
     return { ...draft, list: swapBranch(draft.list, name, index, direction) };
 }
 
-/** Moves a Not connected step to the end of the main list; its place says where it goes now, so what it stored goes. */
 export function connectStep(draft: Draft, name: string): Draft {
     const { next: _next, onFailure: _onFailure, onUnavailable: _onUnavailable, ...block } = draft.steps[name] ?? {};
     return {
@@ -450,7 +423,6 @@ export function setBlock(draft: Draft, name: string, change: Partial<Step>): Dra
     return { ...draft, steps: { ...draft.steps, [name]: { ...draft.steps[name], ...change } } };
 }
 
-/** Which kinds of condition a fact takes: `range` only for a whole number; `oneOf` offers an enum's values. */
 export function conditionKinds(fact: Pick<Fact, "type"> | undefined): ConditionKind[] {
     return fact?.type === "int" ? ["oneOf", "range", "known"] : ["oneOf", "known"];
 }
@@ -463,7 +435,6 @@ export function kindOf(condition: Condition): ConditionKind {
     return condition.range ? "range" : condition.known !== undefined ? "known" : "oneOf";
 }
 
-/** What a step of this procedure sees: the bot's facts and the procedure's own, which only it can name. */
 export function factsSeen(draft: Draft, facts: Fact[]): Fact[] {
     const local = Object.entries(draft.localFacts).map(([name, fact]) => ({
         name,
@@ -481,22 +452,18 @@ export function factsSeen(draft: Draft, facts: Fact[]): Fact[] {
     return [...facts, ...local];
 }
 
-/** Adds a local fact, or replaces it; the server's dry run says what is wrong with it. */
 export function setLocalFact(draft: Draft, name: string, fact: LocalFact): Draft {
     return { ...draft, localFacts: { ...draft.localFacts, [name]: fact } };
 }
 
-/** Removes a local fact; steps that still use it are for the server's dry run to list. */
 export function removeLocalFact(draft: Draft, name: string): Draft {
     return { ...draft, localFacts: Object.fromEntries(Object.entries(draft.localFacts).filter(([other]) => other !== name)) };
 }
 
-/** The facts a collect may use: a fact only a procedure assigns is not asked of the customer. */
 export function collectable(facts: Fact[]): Fact[] {
     return facts.filter((fact) => fact.writableBy !== "assign");
 }
 
-/** An article an entry may name: the id is what is stored, the title what the author sees, and the base decides where it may be picked. */
 export interface LinkableArticle {
     id: string;
     title: string;
@@ -508,12 +475,10 @@ export interface LinkableBase {
     title: string;
 }
 
-/** The text of a whenStalled as typed: emptying it removes the instruction. */
 export function withStallText(text: string): StallInstruction | null {
     return text === "" ? null : { instruction: text };
 }
 
-/** The bases an instruction can still name, since a second entry for one is a mistake. */
 export function basesOffered(bases: LinkableBase[], knowledge: KnowledgeEntry[], keep?: string): LinkableBase[] {
     return bases.filter((one) => one.id === keep || !knowledge.some((entry) => entry.knowledgeBase === one.id));
 }
@@ -522,18 +487,15 @@ export function articlesOf(articles: LinkableArticle[], knowledgeBase: string): 
     return articles.filter((article) => article.knowledgeBase === knowledgeBase);
 }
 
-/** An article belongs to one base, so changing the base clears them; the queries are only text and stay. */
 export function withBase(entry: KnowledgeEntry, knowledgeBase: string): KnowledgeEntry {
     const { articles: _, ...rest } = entry;
     return { ...rest, knowledgeBase };
 }
 
-/** The procedures a start may target: not the base of every conversation, and not the procedure itself, which would be a loop. */
 export function startable(procedures: string[], self: string): string[] {
     return procedures.filter((id) => id !== "conversation" && id !== self);
 }
 
-/** What a form lists: what it offers, then whatever the step already names, so opening a procedure never hides what is stored. */
 export function withStored(offered: string[], stored: string[]): string[] {
     return [...offered, ...stored.filter((name) => !offered.includes(name))];
 }
@@ -554,7 +516,6 @@ function holds(target: ContractField, source: ContractField): boolean {
     return true;
 }
 
-/** The facts a row of an action step offers: every value the source can hold must fit the target, so a parameter takes from a fact and a result writes to one. */
 export function factsThatFit(kind: "with" | "results", field: ContractField, facts: Fact[]): Fact[] {
     return facts.filter((fact) => (kind === "with" ? holds(field, fact) : holds(fact, field)));
 }
@@ -569,7 +530,6 @@ export function addPoint(points: Record<string, string>): Record<string, string>
     return { ...points, [freePointName(points)]: "" };
 }
 
-// Why: a name another point already has is not taken, because the map could not hold both.
 export function renamePoint(points: Record<string, string>, name: string, newName: string): Record<string, string> {
     if (newName in points) return points;
     return Object.fromEntries(Object.entries(points).map(([key, text]) => [key === name ? newName : key, text]));

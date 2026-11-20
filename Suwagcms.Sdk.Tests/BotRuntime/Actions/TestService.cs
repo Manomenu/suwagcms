@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime.Actions;
 
-// Why: a real service on a real port, so the runner is tried over HTTP as a bot would run it, and what arrived is what is asserted.
 internal sealed class TestService : IAsyncDisposable
 {
     internal sealed record Received(string Method, string PathAndQuery, string Body, Dictionary<string, string> Headers);

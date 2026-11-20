@@ -12,7 +12,6 @@ import { Select } from "@/design/select";
 
 import type { Article, Filters, KnowledgeBase } from "./api";
 
-/** The list of a bot's articles, with its filters. */
 export function ArticlesView({
     bot,
     history,

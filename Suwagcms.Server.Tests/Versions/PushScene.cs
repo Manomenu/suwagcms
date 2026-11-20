@@ -12,7 +12,6 @@ using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 
 namespace Suwagcms.Server.Tests.Versions;
 
-// Why: a bot of the CMS registered at a given address, with a whole definition in it, so a push has something real to send.
 internal sealed class PushScene(HttpClient client, string bot)
 {
     private int changes;
@@ -58,7 +57,6 @@ internal sealed class PushScene(HttpClient client, string bot)
         );
     }
 
-    // Why: a version is refused while nothing has changed, so each new version needs a change of its own.
     public async Task ChangeAsync() => Assert.True((await Facts.Add($"extra.n{++changes}", FactApi.Text())).IsSuccessStatusCode);
 
     public async Task<VersionSummary> CreateAsync()

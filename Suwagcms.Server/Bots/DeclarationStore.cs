@@ -36,7 +36,6 @@ internal static class DeclarationStore
             )
         );
 
-    // Why: two answers can arrive out of order, so an older one never replaces a newer one; null clears what is stored, with the time the bot said so.
     public static async Task StoreAsync(Pool pool, string bot, string? declaration, DateTimeOffset at, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);

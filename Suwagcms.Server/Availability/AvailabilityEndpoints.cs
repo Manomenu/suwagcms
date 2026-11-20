@@ -19,7 +19,6 @@ internal static class AvailabilityEndpoints
     private const string WhatCanBeOff =
         "Only an article, a procedure or an action can be turned off; facts and knowledge bases have no availability.";
 
-    // Why: the words a person types for a kind; any other word is refused with this list, so the route does not narrow it.
     private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
     {
         ["article"] = ResourceKind.Article,
@@ -41,7 +40,6 @@ internal static class AvailabilityEndpoints
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
     }
 
-    // Why: asking is the default because only the bot can say what it has; a screen that only lists may skip the wait.
     private static async Task<Results<Ok<AvailabilityView>, ProblemHttpResult>> Show(
         string bot,
         Pool pool,
@@ -130,7 +128,6 @@ internal static class AvailabilityEndpoints
             return Missing(target, bot, title);
         }
         var address = await BotStore.FindAddressAsync(pool, bot, cancellationToken) ?? "";
-        // Why: the set goes out also when nothing changed, which repairs a missed message; a dry run touches neither the CMS nor the bot.
         var delivery = dryRun
             ? new AvailabilityDelivery(
                 AvailabilityDeliveryState.NotAsked,

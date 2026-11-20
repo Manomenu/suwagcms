@@ -4,7 +4,6 @@ namespace Suwagcms.Sdk.BotRuntime.Versions;
 
 internal sealed class StorePoller(VersionRuntime runtime, TimeSpan interval) : BackgroundService
 {
-    // Why: a restarted bot has its version again before it serves a request, without any push.
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
         await runtime.RefreshAsync(cancellationToken);

@@ -36,7 +36,6 @@ public static class DefinitionValidator
 
     public static IReadOnlyList<Mistake> ValidateJson(string json, ValidationStage stage) => ValidateJson(json, stage, Rules);
 
-    // Why: what a bot cannot run is checked only at Version: the working state may be unfinished, and the bot may change without anyone editing it.
     public static IReadOnlyList<Mistake> Validate(BotDefinition definition, ValidationStage stage, BotDeclaration? declaration)
     {
         var mistakes = Validate(definition, stage);
@@ -48,7 +47,6 @@ public static class DefinitionValidator
     public static IReadOnlyList<Mistake> ValidateJson(string json, ValidationStage stage, BotDeclaration? declaration)
     {
         var mistakes = ValidateJson(json, stage);
-        // Why: a document that cannot be read as this format has no steps or format version to hold against the bot.
         if (
             stage != ValidationStage.Version
             || mistakes.Any(mistake => mistake.Code is MistakeCodes.FormatInvalid or MistakeCodes.FormatVersion)
@@ -167,7 +165,6 @@ public static class DefinitionValidator
         ];
     }
 
-    // Why: System.Text.Json accepts null list items even with nullable annotations respected.
     private static string? NullItemPath(JsonElement root)
     {
         foreach (var list in ListNames)
@@ -190,7 +187,6 @@ public static class DefinitionValidator
         return null;
     }
 
-    // Why: an older document cannot be fixed by a newer SDK, and a version the CMS keeps cannot be edited at all.
     private static Mistake OtherVersion(int found) =>
         found > DefinitionFormat.Version
             ? UnknownVersion(found.ToString(CultureInfo.InvariantCulture))

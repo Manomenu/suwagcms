@@ -95,7 +95,6 @@ internal static class PersonaCommand
                     return await target.FailedAsync(read, cancellationToken);
                 }
                 var dry = parsed.GetValue(dryRun);
-                // Why: a file read from `show` carries its revision, so an edit of it is refused when someone saved in between; with neither, the edit guards the revision it just read.
                 var expected = parsed.GetValue(ifRevision) ?? Revision(document) ?? ViewOf(read).Revision;
                 document.Remove("revision");
                 var answer = await ServerCall.PutAsync(

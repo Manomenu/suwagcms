@@ -1,4 +1,3 @@
-// Why: the form of a procedure and the form of a step say the same about the same fields, so what they say exists once.
 export const PROCEDURE_HINTS = {
     steps: "What the procedure does, top to bottom. Each step goes on to the row below it. An If chooses by a fact, and after it every branch goes on to the row below the If unless it ends in Next: or End.",
     newId: "The procedure's id: how other procedures and articles refer to it. One camelCase word, like orderValuation. To change it later, use Change id on its page.",

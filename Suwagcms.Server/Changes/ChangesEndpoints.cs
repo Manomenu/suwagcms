@@ -93,7 +93,6 @@ internal static class ChangesEndpoints
         return new ChangeApplied(item.Position, action, item.Kind, target.Id, now?.Revision, changed?.Fields ?? [], changed?.Parts ?? []);
     }
 
-    // Why: the rules name a resource and not a position; a mistake on a resource the file does not name has no position to give.
     private static ChangeMistake Placed(Mistake mistake, List<ChangeItem> items) =>
         ChangeList.At(items.Find(item => item.Change.Target == mistake.Resource)?.Position, mistake);
 

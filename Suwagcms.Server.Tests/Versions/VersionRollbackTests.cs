@@ -23,7 +23,6 @@ public sealed class VersionRollbackTests(TestDatabase database, ClassServer serv
         return (scene, bot);
     }
 
-    // Why: pushed one after the other with nothing reported as in use, so the bot still holds both and runs the second.
     private static async Task TwoHeldAsync(PushScene scene)
     {
         await scene.PushAsync((await scene.CreateAsync()).Number);

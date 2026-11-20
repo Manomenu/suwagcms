@@ -19,7 +19,6 @@ internal static class ArticleMapping
             Description = body.Description ?? "",
         };
 
-    // Why: an article has no language of its own, so it is read off its knowledge base, which the stored resources hold.
     public static Dictionary<string, string> Languages(IEnumerable<StoredResource> stored) =>
         stored
             .Where(item => item.Target.Kind == ResourceKind.KnowledgeBase)
@@ -43,7 +42,6 @@ internal static class ArticleMapping
             revision
         );
 
-    // Why: the text filter is for authors finding an article they know, so it reads the title, id and description and never the content.
     public static bool Matches(
         Article article,
         string? knowledgeBase,

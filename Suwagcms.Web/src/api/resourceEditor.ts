@@ -13,11 +13,6 @@ function messageOf(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-/**
- * What a screen listing one kind of resource keeps. The address says what is open, so a reload or a sent link lands on the same
- * screen. The list is loaded when the screen opens, so resources added meanwhile from the CLI or another tab are found. An older
- * link, `?open=<id>`, which the CLI still prints, is replaced by the edit address.
- */
 export function useResourceEditor<View extends { revision: number | string }, Save>({
     bot,
     api,
@@ -30,11 +25,8 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     bot: string;
     api: ResourceApi<View, Save>;
     idOf: (view: View) => string;
-    /** The collection whose Used by and Uses lists to show; null when the kind has none. */
     usage: UsageCollection | null;
-    /** How to fetch the list, when the screen narrows it. */
     list?: (signal: AbortSignal) => Promise<View[]>;
-    /** A narrowed list may not hold the open resource, so only what was opened tells its revision. */
     revisionOfOpened?: boolean;
     onRenamed?: () => void;
 }) {
@@ -76,7 +68,6 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     }, [fetchList]);
 
     useEffect(() => {
-        // StrictMode runs effects twice in development: abort the first request, ignore its result.
         const controller = new AbortController();
         fetchList(controller.signal)
             .then(setItems)
@@ -109,7 +100,6 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
         fetchOpened(wanted, controller.signal);
         return () => {
             controller.abort();
-            // Why: a form starts from what it is given, so it must never open on what was read the last time.
             setOpened(null);
         };
     }, [wanted, fetchOpened]);
@@ -118,7 +108,6 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
         if (openParam !== null) navigate(editHref(bot, api.collection, openParam), { replace: true });
     }, [openParam, navigate, bot, api.collection]);
 
-    // Why: replacing the address keeps Back from reopening what was just saved or deleted.
     function close() {
         setDeleteFailure(null);
         navigate(withSearch(listHref(bot, api.collection)), { replace: true });
@@ -148,16 +137,13 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
         failure,
         item,
         reload,
-        /** Opens another resource, or reads the open one again. */
         openById: (other: string) => {
             if (other === wanted) fetchOpened(other, new AbortController().signal);
             else navigate(withSearch(editHref(bot, api.collection, other)));
         },
         close,
         isOpen: address.screen !== "list",
-        /** The changes of this kind of resource, for the panel under its list. */
         listHistory,
-        // Why: opening another form would throw away what was typed, so it asks first, as leaving the screen does.
         add: () => {
             if (mayLeave()) navigate(withSearch(newHref(bot, api.collection)));
         },

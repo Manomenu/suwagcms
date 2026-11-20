@@ -7,7 +7,6 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Availability;
 
-// Why: whether a bot has the setting comes only from the bot's own answer; this holds no lock or transaction while it waits, so a slow bot holds up nobody's editing, and what was not delivered is retried by AvailabilityRetrier, besides a person sending again and each later change, push or read of the bot's status.
 internal sealed class AvailabilitySender(Pool pool, BotClient client, AvailabilityRetries retries)
 {
     private const string SendAgain = "Check that the bot is running, then send again.";
@@ -18,14 +17,12 @@ internal sealed class AvailabilitySender(Pool pool, BotClient client, Availabili
         return await DeliverAsync(bot, address, message, cancellationToken);
     }
 
-    // Why: a bot never told anything has nothing to catch up on, and a bot on an older SDK can still take a version.
     public async Task<AvailabilityDelivery?> CatchUpAsync(string bot, string address, CancellationToken cancellationToken)
     {
         var message = await AvailabilityStore.ReadMessageAsync(pool, bot, cancellationToken);
         return message.Number == 0 ? null : await DeliverAsync(bot, address, message, cancellationToken);
     }
 
-    // Why: with nothing ever turned off there is nothing the bot could lack, so a bot that is down says nothing here, and opening a screen does not wait on it.
     public async Task<AvailabilityDelivery> AskAsync(string bot, string address, CancellationToken cancellationToken)
     {
         var number = await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken);
@@ -42,7 +39,6 @@ internal sealed class AvailabilitySender(Pool pool, BotClient client, Availabili
     )
     {
         var reply = await client.PutAvailabilityAsync(address, message, cancellationToken);
-        // Why: a newer change may have been made while this one travelled, and the bot's number is judged against what the CMS holds now.
         var delivery = Judge(bot, address, await AvailabilityStore.ReadNumberAsync(pool, bot, cancellationToken), reply);
         if (delivery.State == AvailabilityDeliveryState.Confirmed)
         {

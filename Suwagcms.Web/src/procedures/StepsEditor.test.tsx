@@ -126,7 +126,6 @@ describe("the form of a procedure", () => {
         expect(shown).toContain("hours");
     });
 
-    // Why: the words are the validator's and are proved against the real server in the browser test; here only the place counts.
     it("AC-procedure-creator-44: End with a mistake shows it beside its branch", () => {
         const html = form({
             check: {

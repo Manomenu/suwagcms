@@ -15,7 +15,6 @@ import { AppShell } from "./shell/AppShell";
 import { VersionScreen } from "./versions/VersionScreen";
 import { VersionsScreen } from "./versions/VersionsScreen";
 
-/** Puts the page together from features. */
 export function App() {
     const pageSize = useAskedPageSize();
     return (

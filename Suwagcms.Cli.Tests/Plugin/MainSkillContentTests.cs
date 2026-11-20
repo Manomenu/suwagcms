@@ -4,7 +4,6 @@ namespace Suwagcms.Cli.Tests.Plugin;
 
 public sealed class MainSkillContentTests
 {
-    // Why: what the skill must say, as the section that says it and the words that section must hold.
     private static readonly (string Topic, string Section, string[] Words)[] Required =
     [
         ("how to install the CLI", "Install", ["dotnet tool install -g Suwagcms.Cli"]),

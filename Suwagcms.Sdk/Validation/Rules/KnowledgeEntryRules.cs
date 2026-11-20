@@ -31,7 +31,6 @@ internal static class KnowledgeEntryRules
         }
     }
 
-    // Why: every instruction has one shape, so the rules read each entry the same way.
     private static IEnumerable<EntryAt> Entries(Procedure procedure) =>
         Instructions(procedure)
             .SelectMany(found => found.Entries.Select((entry, index) => new EntryAt(Index(found.Path, index), found.Where, entry)));
@@ -154,7 +153,6 @@ internal static class KnowledgeEntryRules
             );
     }
 
-    // Why: a bot's code decides this, so it is the declaration's check at Version and never a rule at Save, as an undeclared block is.
     public static IEnumerable<Mistake> Undeclared(BotDefinition definition) =>
         definition
             .Procedures.OrderBy(procedure => procedure.Id, StringComparer.Ordinal)
@@ -173,7 +171,6 @@ internal static class KnowledgeEntryRules
                     )
             );
 
-    // Why: a named article reaches the model whole, with no query to cut it by, so the bot says how much one instruction may hold; its content and guide are what it delivers, and an article named twice counts once.
     public static IEnumerable<Mistake> NamedArticlesTooLong(BotDefinition definition, int limit)
     {
         var lengths = definition

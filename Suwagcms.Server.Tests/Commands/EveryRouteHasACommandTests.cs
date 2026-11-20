@@ -10,7 +10,6 @@ using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 
 namespace Suwagcms.Server.Tests.Commands;
 
-// Why: "anything the web can do, the CLI can do" is enforced here, in the server's tests because the gate project is protected.
 public sealed partial class EveryRouteHasACommandTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private TestApp App => server.App;
@@ -22,7 +21,6 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
         public static Coverage NoCommand(string reason) => new([], reason);
     }
 
-    // Why: words as typed after `suwagcms`; a new route is added here in the change that adds it, with its command.
     private static readonly Dictionary<string, Coverage> Routes = new()
     {
         ["GET /api/health"] = Coverage.Cli("status"),
@@ -76,7 +74,6 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
         ["POST /api/bots/{bot}/availability/{kind}/{id}/on"] = Coverage.Cli("availability on"),
     };
 
-    // Why: a route's query parameter is something the web can ask for, so its option is part of the promise; the name it has on a command, when not the parameter's own.
     private static readonly Dictionary<string, string> OptionOfParameter = new(StringComparer.Ordinal)
     {
         ["ask"] = "--stored",
@@ -114,7 +111,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
 
     private static List<(string Route, string Parameter)> QueryParameters()
     {
-        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "Suwagcms.Server", "openapi.json")));
+        using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(RepositoryRoot(), "contract", "openapi.json")));
         return
         [
             .. document

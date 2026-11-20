@@ -9,7 +9,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
-// Why: the one place that writes a version's document, so its order and form are fixed and its digest comes only from the SDK's function.
 internal static class VersionDocument
 {
     private static readonly JsonSerializerOptions Compact = new() { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
@@ -30,7 +29,6 @@ internal static class VersionDocument
             ["actions"] = Kind(all, ResourceKind.Action),
             ["procedures"] = Kind(all, ResourceKind.Procedure),
         };
-        // Why: an optional member that is simply absent keeps the document of a bot without a persona as it always was, digest included.
         if (ResourceKinds.PersonaOf(all) is { } persona)
         {
             document["persona"] = JsonNode.Parse(ResourceKinds.Write(persona));
@@ -52,7 +50,6 @@ internal static class VersionDocument
         ];
     }
 
-    // Why: resources are put in ordinal order of their ids whatever order they were saved or loaded in, so equal states give equal documents.
     private static JsonArray Kind(List<StoredResource> all, ResourceKind kind) =>
         new([
             .. all.Where(item => item.Target.Kind == kind)

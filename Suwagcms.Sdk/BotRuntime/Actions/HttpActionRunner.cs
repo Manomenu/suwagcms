@@ -7,14 +7,12 @@ using Suwagcms.Sdk.Format.Facts;
 
 namespace Suwagcms.Sdk.BotRuntime.Actions;
 
-// Why: the definition is a public format, and without one runner two bots could send the same action differently; there are no retries, since a repeated POST may do the work twice.
 public sealed class HttpActionRunner(Func<string, string?>? findSecret = null, TimeProvider? time = null) : IDisposable
 {
     public const int AnswerStartLength = 2000;
 
     private const string Mask = "***";
 
-    // Why: an answer outside 2xx is a failure, redirects included, so the client must not follow one by itself.
     private readonly HttpClient http = new(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan };
     private readonly Func<string, string?> find = findSecret ?? ActionSecrets.FromEnvironment;
     private readonly TimeProvider clock = time ?? TimeProvider.System;
@@ -135,7 +133,6 @@ public sealed class HttpActionRunner(Func<string, string?>? findSecret = null, T
                             ? secrets.GetValueOrDefault(match.Groups[1].Value[ActionTemplates.SecretPrefix.Length..]) ?? ""
                             : match.Value
                 );
-            // Why: Content-Type and the like live on the content, and a request without one simply has no such header.
             if (!request.Headers.TryAddWithoutValidation(name, value))
             {
                 request.Content?.Headers.Remove(name);
@@ -235,7 +232,6 @@ public sealed class HttpActionRunner(Func<string, string?>? findSecret = null, T
             ElapsedMs = elapsed,
         };
 
-    // Why: a service can repeat what it was sent, so a secret's value is taken out of everything before the answer leaves here, and before the cut so that half a secret cannot stay.
     private static ActionOutcome Masked(ActionOutcome outcome, List<string> secrets)
     {
         var answer = Hidden(outcome.AnswerStart, secrets);

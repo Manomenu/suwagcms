@@ -12,7 +12,6 @@ using Suwagcms.Sdk.Format.Declaration;
 
 namespace Suwagcms.Server.Tests;
 
-// Why: a bot built only on the SDK (its setup call, its route call and a store), listening on a real port, so the CMS reaches it as it reaches any bot.
 internal sealed class TestBot : IAsyncDisposable
 {
     private Func<Task>? stop;
@@ -48,19 +47,14 @@ internal sealed class TestBot : IAsyncDisposable
 
     public string Address => $"http://127.0.0.1:{Port}";
 
-    // Why: lets a test hold, slow or change the push that reaches the bot, which the bot's own routes cannot do.
     public Func<HttpContext, Task>? OnPush { get; set; }
 
-    // Why: lets a test answer the route that makes a held version current as a bot on an older SDK or a faulty bot would; a hook that starts no answer lets the route run.
     public Func<HttpContext, Task>? OnCurrent { get; set; }
 
-    // Why: lets a test answer the declaration route as a bot outside the SDK could: wrongly, slowly, or not at all.
     public Func<HttpContext, Task>? OnDeclaration { get; set; }
 
-    // Why: lets a test answer the test route as a bot on an older SDK or a stuck bot would.
     public Func<HttpContext, Task>? OnActionTest { get; set; }
 
-    // Why: a test proves that an operation contacts no bot by counting what reached it.
     public int Requests => Volatile.Read(ref requests);
 
     public IBotDefinitions Definitions =>
@@ -142,7 +136,6 @@ internal sealed class TestBot : IAsyncDisposable
 
     public async ValueTask DisposeAsync() => await StopAsync();
 
-    // Why: a request sent straight to the bot, as another process would, without the CMS knowing of it.
     public static async Task<HttpStatusCode> PutDirectAsync(string address, int number, string document)
     {
         using var http = new HttpClient();

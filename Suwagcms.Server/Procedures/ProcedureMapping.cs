@@ -36,7 +36,6 @@ internal static class ProcedureMapping
     public static ProcedureDetail Show(StoredResource stored, IReadOnlyList<Mistake> notReady) =>
         Show((Procedure)stored.Record, stored.Revision, notReady);
 
-    // Why: the mistakes of one procedure, and those of the bot as a whole, which any save of a procedure leaves unsolved too.
     public static List<Mistake> Of(IEnumerable<Mistake> notReady, string procedure) =>
         [
             .. notReady.Where(mistake =>

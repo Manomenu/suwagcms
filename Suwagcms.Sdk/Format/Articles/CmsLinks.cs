@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 
 namespace Suwagcms.Sdk.Format.Articles;
 
-// Why: the one reader of cms:// links in Markdown, so the walker, the rules and every later feature agree on what is a link and what is code.
 internal static partial class CmsLinks
 {
     public const string ArticlePrefix = "cms://article/";
@@ -11,7 +10,6 @@ internal static partial class CmsLinks
 
     public static IEnumerable<CmsLink> In(string markdown)
     {
-        // Why: a save checks every article of the bot, and nearly all texts hold no cms link, so they are not scanned.
         if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
         {
             yield break;
@@ -27,7 +25,6 @@ internal static partial class CmsLinks
         }
     }
 
-    // Why: only the id inside a link's target changes, found by position in the original text, so every other byte stays as it was.
     public static string Rewrite(string markdown, string prefix, string oldId, string newId)
     {
         if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
@@ -43,7 +40,6 @@ internal static partial class CmsLinks
         return result.ToString();
     }
 
-    // Why: a title holding a closing bracket or a line break cannot be a Markdown label, so that link keeps the label it has and stays a link.
     public static string Relabel(string markdown, IReadOnlyDictionary<string, string> titles)
     {
         if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
@@ -70,7 +66,6 @@ internal static partial class CmsLinks
         return result.Append(markdown, copied, markdown.Length - copied).ToString();
     }
 
-    // Why: a cms:// address is the system's word and must never reach a customer, so each link becomes text a model may repeat; code keeps what it shows, as it is no link.
     public static string ForModel(string markdown, Func<string, string?> procedureDescription)
     {
         if (!markdown.Contains("cms:", StringComparison.OrdinalIgnoreCase))
@@ -111,7 +106,6 @@ internal static partial class CmsLinks
         return new CmsLink(label, target, CmsLinkForm.Malformed, string.Empty);
     }
 
-    // Why: a fenced block and a code span are text in Markdown, so they are blanked before links are looked for; every character keeps its place, so a position found here holds in the original.
     private static string WithoutCode(string markdown)
     {
         var kept = new List<string>();

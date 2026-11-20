@@ -8,7 +8,6 @@ namespace Suwagcms.Cli.Personas;
 
 internal static class PersonaText
 {
-    // Why: the form `edit --file` takes back, built from what the server sent; the revision comes last because a text ending in several line breaks must end in its block, whatever the output adds after the last line.
     public static string Shown(PersonaView persona, string bot)
     {
         ArgumentNullException.ThrowIfNull(persona);

@@ -9,7 +9,6 @@ import { Checklist } from "./Checklist";
 import { articlesOf, basesOffered, withBase, withStored, type KnowledgeEntry, type LinkableArticle, type LinkableBase } from "./draft";
 import { PROCEDURE_HINTS } from "./hints";
 
-/** What the page shows beside a place, so a form need not know how mistakes are kept. */
 export type Beside = (place: string) => ReactNode;
 
 function ArticleChecklist({
@@ -47,7 +46,6 @@ function Queries({ queries, onChange }: { queries: string[]; onChange: (queries:
         <fieldset className="flex flex-col gap-1">
             <Legend hint={PROCEDURE_HINTS.searchQueries}>Search queries</Legend>
             {queries.map((query, index) => (
-                // Why: a query has no identity but its place in the list, and the list only changes through these controls.
                 <div key={index} className="flex items-center gap-1">
                     <Input
                         aria-label={`Search query ${index + 1}`}
@@ -85,10 +83,6 @@ function Queries({ queries, onChange }: { queries: string[]; onChange: (queries:
     );
 }
 
-/**
- * What the model reads before following an instruction, one entry per base. It shows only for a bot that declares it reads knowledge,
- * or when the instruction already holds some: a save never drops what it did not touch, and hiding it would hide its mistake.
- */
 export function KnowledgeForm({
     owner,
     show,

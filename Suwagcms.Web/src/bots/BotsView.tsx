@@ -29,7 +29,6 @@ function MissingBot({ id }: { id: string }) {
     );
 }
 
-// Why: the bot comes from the address, never from the server or from storage, so two tabs can show two bots.
 export function BotsView({
     bots,
     openId,

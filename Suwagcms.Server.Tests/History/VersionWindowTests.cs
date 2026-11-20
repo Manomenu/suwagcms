@@ -60,7 +60,6 @@ public sealed class VersionWindowTests(TestDatabase database, ClassServer server
         await versions.Created();
         await facts.Add("c.after", FactApi.Text());
         await other.Created();
-        // Why: the window goes by the order entries were recorded, so entries that share a time must fall apart just the same.
         await Execute("UPDATE change_entry SET at = now() WHERE bot_id = @bot", new { bot = versions.Bot });
 
         var (first, second, third) = (await Window(versions.Bot, 1), await Window(versions.Bot, 2), await Window(versions.Bot, 3));
@@ -154,7 +153,6 @@ public sealed class VersionWindowTests(TestDatabase database, ClassServer server
         Assert.False((await Window(versions.Bot, 1)).Incomplete, "a bot registered after history started has its beginning recorded");
         Assert.False((await Window(versions.Bot, 2)).Incomplete);
 
-        // Why: a version older than history has no `created` entry, which is all that tells it apart.
         await Execute("DELETE FROM change_entry WHERE bot_id = @bot AND kind = 'version' AND public_id = '1'", new { bot = versions.Bot });
         await Execute("UPDATE bot SET created_at = '2000-01-01' WHERE id = @bot", new { bot = versions.Bot });
 
@@ -299,7 +297,6 @@ public sealed class VersionWindowTests(TestDatabase database, ClassServer server
         Assert.Equal(0, run.ExitCode);
         using var printed = JsonDocument.Parse(run.Output);
         var page = printed.RootElement;
-        // Why: the command leaves out what is null, so `next`, a `revision` or a `batch` may be absent; nothing else may ever appear.
         Assert.Equal(["entries", "since"], page.EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal));
         string[] recorded = ["action", "at", "batch", "changes", "id", "kind", "resourceId", "revision"];
         foreach (var entry in page.GetProperty("entries").EnumerateArray())

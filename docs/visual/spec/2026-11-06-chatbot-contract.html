@@ -567,7 +567,7 @@ sequenceDiagram
 
 <section data-role="contract">
   <h2>Contract <span class="tag">optional</span></h2>
-  <p>The name of the contract is <code>suwagcms-bot</code>. Its generated artifacts are the two JSON schemas the SDK carries, <code>definition-format.schema.json</code> and <code>bot-runtime.schema.json</code>; the CMS's own HTTP API has <code>Suwagcms.Server/openapi.json</code> and is no part of what a bot talks to.</p>
+  <p>The name of the contract is <code>suwagcms-bot</code>. Its generated artifacts are the two JSON schemas the SDK carries, <code>definition-format.schema.json</code> and <code>bot-runtime.schema.json</code>; the CMS's own HTTP API has <code>contract/openapi.json</code> and is no part of what a bot talks to.</p>
   <h3>Compatibility</h3>
   <ul>
     <li><b>Format version is a whole number, and both sides must have the same.</b> It is <code>5</code>, since a <code>say</code> text may show a fact's value and an action step may name an <code>onUnavailable</code> step; it was <code>4</code> when <code>whenStalled</code> lost its <code>knowledge</code>, which nobody asked for and no bot read, <code>3</code> when a knowledge base's <code>embedding</code> and <code>results</code> became required (<code>knowledge-bases</code>), and <code>2</code> when <code>context</code> became <code>knowledge</code>, and <code>procedure-creator</code> says what happens to an older format. A reader refuses any other, so a version the CMS keeps in format 4 can be neither pushed nor rolled back to: a new one is created from the working state.</li>
