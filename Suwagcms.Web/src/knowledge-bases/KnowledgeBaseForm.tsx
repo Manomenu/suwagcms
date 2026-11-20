@@ -17,7 +17,6 @@ export function KnowledgeBaseForm({
     onSaved,
     onReload,
     onCancel,
-    onDirtyChange,
 }: {
     bot: string;
     initial: FormState;
@@ -26,14 +25,12 @@ export function KnowledgeBaseForm({
     onSaved: () => void;
     onReload: () => void;
     onCancel: () => void;
-    onDirtyChange: (dirty: boolean) => void;
 }) {
     const saving = useSaveForm({
         initial,
         save: (form: FormState) => knowledgeBasesApi.save(bot, form.id, saveOf(form), revision),
         onSaved,
         onCancel,
-        onDirtyChange,
     });
     const { form, change, submit } = saving;
 

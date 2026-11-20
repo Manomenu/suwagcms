@@ -65,7 +65,7 @@ export function ResourceEdit({
     onChanged: (newId: string) => void;
     usage: Pick<ComponentProps<typeof UsagePanel>, "usage" | "failure" | "hrefOf" | "onFollow"> | null;
     showUses?: boolean;
-    onDelete: () => void;
+    onDelete: () => Promise<void>;
     history: HistoryPanelProps;
     notice?: ReactNode;
     panel?: ReactNode;

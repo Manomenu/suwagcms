@@ -14,6 +14,7 @@ export function PersonaView({
     revision,
     empty,
     saved,
+    saving,
     failure,
     mistakes,
     outOfDate,
@@ -27,6 +28,7 @@ export function PersonaView({
     revision: number;
     empty: boolean;
     saved: boolean;
+    saving: boolean;
     failure: string | null;
     mistakes: Mistake[];
     outOfDate: boolean;
@@ -62,7 +64,9 @@ export function PersonaView({
                 <>
                     {saved && <span className="text-sm text-success">Saved</span>}
                     <span className="text-sm text-muted-foreground">revision {revision}</span>
-                    <Button onClick={onSave}>Save</Button>
+                    <Button onClick={onSave} disabled={saving}>
+                        Save
+                    </Button>
                 </>
             }
         >

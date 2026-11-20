@@ -104,7 +104,7 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
 
     const remove = () => {
         setDeleteFailure(null);
-        deleteProcedure(bot, id, state.revision)
+        return deleteProcedure(bot, id, state.revision)
             .then(() => {
                 navigate(withListSearch(listHref(bot, "procedures"), params.toString()), { replace: true });
             })

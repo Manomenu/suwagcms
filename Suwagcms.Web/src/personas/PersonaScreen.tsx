@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 import { ApiError, type Mistake } from "@/api/client";
 import { useResourceHistory } from "@/api/history";
@@ -17,6 +17,7 @@ export function PersonaScreen({ bot }: { bot: string }) {
     const [loadFailure, setLoadFailure] = useState<string | null>(null);
     const [refusal, setRefusal] = useState<ApiError | null>(null);
     const [saved, setSaved] = useState(false);
+    const [saving, startSaving] = useTransition();
     const revision = persona === null ? 0 : Number(persona.revision);
     const history = useResourceHistory(bot, "persona", PERSONA_ID, revision);
     useLeaveGuard(
@@ -60,14 +61,16 @@ export function PersonaScreen({ bot }: { bot: string }) {
     function save(current: PersonaForm) {
         setSaved(false);
         setRefusal(null);
-        savePersona(bot, bodyOf(current), revision)
-            .then((answer) => {
-                show(answer);
-                setSaved(true);
-            })
-            .catch((error: unknown) => {
-                setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
-            });
+        startSaving(() =>
+            savePersona(bot, bodyOf(current), revision)
+                .then((answer) => {
+                    show(answer);
+                    setSaved(true);
+                })
+                .catch((error: unknown) => {
+                    setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
+                }),
+        );
     }
 
     const mistakes: Mistake[] = refusal?.mistakes ?? [];
@@ -78,6 +81,7 @@ export function PersonaScreen({ bot }: { bot: string }) {
             revision={revision}
             empty={isEmpty(persona)}
             saved={saved}
+            saving={saving}
             failure={refusal !== null && mistakes.length === 0 ? refusal.message : null}
             mistakes={mistakes}
             outOfDate={mistakes.some((mistake) => mistake.code === "resource.stale")}

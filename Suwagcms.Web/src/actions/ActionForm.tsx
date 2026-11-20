@@ -14,7 +14,6 @@ export function ActionForm({
     onSaved,
     onReload,
     onCancel,
-    onDirtyChange,
     testRun,
 }: {
     bot: string;
@@ -24,7 +23,6 @@ export function ActionForm({
     onSaved: () => void;
     onReload: () => void;
     onCancel: () => void;
-    onDirtyChange: (dirty: boolean) => void;
     testRun?: (unsaved: boolean) => React.ReactNode;
 }) {
     const saving = useSaveForm({
@@ -32,7 +30,6 @@ export function ActionForm({
         save: (form: ActionFormState) => actionsApi.save(bot, form.id, bodyOf(form), revision),
         onSaved,
         onCancel,
-        onDirtyChange,
     });
     const { form, change, submit, mistakes } = saving;
 

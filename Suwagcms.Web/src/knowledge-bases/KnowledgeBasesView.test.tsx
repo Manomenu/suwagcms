@@ -68,7 +68,6 @@ describe("the language of a knowledge base", () => {
                 onSaved={() => undefined}
                 onReload={() => undefined}
                 onCancel={() => undefined}
-                onDirtyChange={() => undefined}
             />,
         );
     }
@@ -118,7 +117,6 @@ describe("the embedding profile and results of a knowledge base", () => {
                 onSaved={() => undefined}
                 onReload={() => undefined}
                 onCancel={() => undefined}
-                onDirtyChange={() => undefined}
             />,
         );
     }

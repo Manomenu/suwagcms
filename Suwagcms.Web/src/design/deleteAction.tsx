@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { Alert } from "@/design/alert";
 import { Button } from "@/design/button";
@@ -15,9 +15,10 @@ export function DeleteAction({
     id: string;
     usedBy: number;
     failure: string | null;
-    onDelete: () => void;
+    onDelete: () => Promise<void>;
 }) {
     const [asking, setAsking] = useState(false);
+    const [deleting, startDeleting] = useTransition();
     return (
         <div className="flex flex-col gap-2">
             {failure !== null && <Alert variant="destructive">{failure}</Alert>}
@@ -25,7 +26,7 @@ export function DeleteAction({
                 <Button
                     type="button"
                     variant="destructive"
-                    disabled={usedBy > 0}
+                    disabled={usedBy > 0 || deleting}
                     onClick={() => {
                         setAsking(true);
                     }}
@@ -67,7 +68,7 @@ export function DeleteAction({
                                 variant="destructive"
                                 onClick={() => {
                                     setAsking(false);
-                                    onDelete();
+                                    startDeleting(onDelete);
                                 }}
                             >
                                 Delete {noun}

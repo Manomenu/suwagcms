@@ -14,7 +14,6 @@ export function FactForm({
     onSaved,
     onReload,
     onCancel,
-    onDirtyChange,
 }: {
     bot: string;
     initial: FactFormState;
@@ -23,14 +22,12 @@ export function FactForm({
     onSaved: () => void;
     onReload: () => void;
     onCancel: () => void;
-    onDirtyChange: (dirty: boolean) => void;
 }) {
     const saving = useSaveForm({
         initial,
         save: (form: FactFormState) => factsApi.save(bot, form.name, bodyOf(form), revision),
         onSaved,
         onCancel,
-        onDirtyChange,
     });
     const { form, change, submit, mistakes } = saving;
 

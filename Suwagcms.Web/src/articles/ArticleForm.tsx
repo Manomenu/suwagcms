@@ -20,7 +20,6 @@ export function ArticleForm({
     onSaved,
     onReload,
     onCancel,
-    onDirtyChange,
     onOpenArticle,
 }: {
     bot: string;
@@ -31,7 +30,6 @@ export function ArticleForm({
     onSaved: () => void;
     onReload: () => void;
     onCancel: () => void;
-    onDirtyChange: (dirty: boolean) => void;
     onOpenArticle: (id: string, kind: "article" | "procedure") => void;
 }) {
     const saving = useSaveForm({
@@ -39,7 +37,6 @@ export function ArticleForm({
         save: (form: FormState) => articlesApi.save(bot, form.id, bodyOf(form, initial), revision),
         onSaved,
         onCancel,
-        onDirtyChange,
         same: (form, before) => !isDirty(form, before),
     });
     const { form, change, submit, mistakes } = saving;

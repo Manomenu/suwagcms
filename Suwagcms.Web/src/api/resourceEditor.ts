@@ -3,7 +3,7 @@ import { useLocation, useSearch, useSearchParams } from "wouter";
 
 import { ApiError } from "./client";
 import { useKindHistory, useResourceHistory } from "./history";
-import { DISCARD_QUESTION, mayLeave, useLeaveGuard } from "./leaveGuard";
+import { mayLeave, useLeaveGuardActive } from "./leaveGuard";
 import { renamer } from "./rename";
 import { addressOf, editHref, listHref, newHref, withListSearch } from "./resourceAddress";
 import { revisionOf, type ResourceApi } from "./resourceApi";
@@ -35,12 +35,11 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     const [opened, setOpened] = useState<{ id: string; item: View | null } | null>(null);
     const [deleteFailure, setDeleteFailure] = useState<{ id: string; message: string } | null>(null);
     const [changingId, setChangingId] = useState(false);
-    const [dirty, setDirty] = useState(false);
     const [location, navigate] = useLocation();
     const search = useSearch();
     const [params] = useSearchParams();
     const openParam = params.get("open");
-    useLeaveGuard(dirty, DISCARD_QUESTION);
+    const dirty = useLeaveGuardActive();
 
     const address = addressOf(location, api.collection);
     const wanted = address.screen === "edit" ? address.id : null;
@@ -54,18 +53,17 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     const listHistory = useKindHistory(bot, address.screen === "list" ? api.collection : null);
     const changer = useMemo(() => renamer(bot, api.collection, id ?? "", revision), [bot, api.collection, id, revision]);
 
-    const withSearch = (href: string) => (openParam !== null ? href : withListSearch(href, search));
+    const withSearch = (href: string) => withListSearch(href, search);
 
     const fetchList = useCallback((signal: AbortSignal) => list?.(signal) ?? api.list(bot, signal), [list, api, bot]);
 
-    const reload = useCallback(() => {
-        const controller = new AbortController();
-        fetchList(controller.signal)
+    const reload = () => {
+        fetchList(new AbortController().signal)
             .then(setItems)
             .catch((error: unknown) => {
                 setFailure(messageOf(error));
             });
-    }, [fetchList]);
+    };
 
     useEffect(() => {
         const controller = new AbortController();
@@ -104,10 +102,6 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
         };
     }, [wanted, fetchOpened]);
 
-    useEffect(() => {
-        if (openParam !== null) navigate(editHref(bot, api.collection, openParam), { replace: true });
-    }, [openParam, navigate, bot, api.collection]);
-
     function close() {
         setDeleteFailure(null);
         navigate(withSearch(listHref(bot, api.collection)), { replace: true });
@@ -116,7 +110,8 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     function remove(view: View) {
         const removed = idOf(view);
         setDeleteFailure(null);
-        api.remove(bot, removed, revisionOf(view))
+        return api
+            .remove(bot, removed, revisionOf(view))
             .then(() => {
                 close();
                 reload();
@@ -133,6 +128,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
     }
 
     return {
+        redirect: openParam === null ? null : editHref(bot, api.collection, openParam),
         items,
         failure,
         item,
@@ -160,7 +156,6 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
             },
             onReload: reload,
             onCancel: close,
-            onDirtyChange: setDirty,
         },
         panels: {
             onBack: () => {
@@ -192,9 +187,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
                               if (!mayLeave()) event.preventDefault();
                           },
                       },
-            onDelete: () => {
-                if (item !== null) remove(item);
-            },
+            onDelete: () => (item === null ? Promise.resolve() : remove(item)),
             history,
         },
     };

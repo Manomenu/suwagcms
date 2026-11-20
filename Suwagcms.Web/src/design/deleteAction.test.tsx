@@ -1,11 +1,14 @@
+// @vitest-environment jsdom
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DeleteAction } from "./deleteAction";
 
 function action(usedBy: number, failure: string | null = null): string {
     return renderToStaticMarkup(
-        <DeleteAction noun="fact" id="customer.city" usedBy={usedBy} failure={failure} onDelete={() => undefined} />,
+        <DeleteAction noun="fact" id="customer.city" usedBy={usedBy} failure={failure} onDelete={() => Promise.resolve()} />,
     );
 }
 
@@ -30,5 +33,30 @@ describe("DeleteAction", () => {
 
         expect(html).not.toContain("alertdialog");
         expect(html).toContain("&#x27;priceList&#x27; is in the knowledge base");
+    });
+
+    it("AC-web-shell-18: while a deletion is on its way, Delete is disabled, so it cannot be asked for twice", () => {
+        const onDelete = vi.fn(() => new Promise<void>(() => undefined));
+        const container = document.createElement("div");
+        document.body.append(container);
+        const root = createRoot(container);
+        act(() => {
+            root.render(<DeleteAction noun="fact" id="customer.city" usedBy={0} failure={null} onDelete={onDelete} />);
+        });
+        const button = (text: string) => [...container.querySelectorAll("button")].find((one) => one.textContent === text);
+
+        act(() => {
+            button("Delete")?.click();
+        });
+        act(() => {
+            button("Delete fact")?.click();
+        });
+
+        expect(onDelete).toHaveBeenCalledTimes(1);
+        expect(button("Delete")?.disabled).toBe(true);
+        act(() => {
+            root.unmount();
+        });
+        container.remove();
     });
 });

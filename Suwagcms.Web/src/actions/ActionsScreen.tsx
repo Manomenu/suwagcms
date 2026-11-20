@@ -1,3 +1,5 @@
+import { Redirect } from "wouter";
+
 import { useAvailability } from "@/api/availability";
 import { useResourceEditor } from "@/api/resourceEditor";
 import { Alert } from "@/design/alert";
@@ -21,6 +23,7 @@ export function ActionsScreen({ bot }: { bot: string }) {
         onRenamed: availability.reload,
     });
 
+    if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     if (editor.failure !== null) return <Alert variant="destructive">{editor.failure}</Alert>;
     if (editor.items === null) return <p className="text-muted-foreground">Loading actions…</p>;
 

@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useState, useTransition } from "react";
 
 import { ApiError, type Mistake } from "./client";
-import { DISCARD_QUESTION } from "./leaveGuard";
+import { DISCARD_QUESTION, useLeaveGuard } from "./leaveGuard";
 
 export interface SaveForm<Form> {
     form: Form;
     change: (change: Partial<Form>) => void;
     submit: (event: React.SyntheticEvent) => void;
+    pending: boolean;
     refusal: ApiError | null;
     mistakes: Mistake[];
     forgetRefusal: () => void;
@@ -23,26 +24,19 @@ export function useSaveForm<Form>({
     save,
     onSaved,
     onCancel,
-    onDirtyChange,
     same = sameJson,
 }: {
     initial: Form;
     save: (form: Form) => Promise<unknown>;
     onSaved: () => void;
     onCancel: () => void;
-    onDirtyChange: (dirty: boolean) => void;
     same?: (form: Form, initial: Form) => boolean;
 }): SaveForm<Form> {
     const [form, setForm] = useState(initial);
     const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const [pending, startSaving] = useTransition();
     const dirty = !same(form, initial);
-
-    useEffect(() => {
-        onDirtyChange(dirty);
-        return () => {
-            onDirtyChange(false);
-        };
-    }, [dirty, onDirtyChange]);
+    useLeaveGuard(dirty, DISCARD_QUESTION);
 
     return {
         form,
@@ -52,12 +46,15 @@ export function useSaveForm<Form>({
         submit: (event) => {
             event.preventDefault();
             setRefusal(null);
-            save(form)
-                .then(onSaved)
-                .catch((error: unknown) => {
-                    setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
-                });
+            startSaving(() =>
+                save(form)
+                    .then(onSaved)
+                    .catch((error: unknown) => {
+                        setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
+                    }),
+            );
         },
+        pending,
         refusal,
         mistakes: refusal?.mistakes ?? [],
         forgetRefusal: () => {

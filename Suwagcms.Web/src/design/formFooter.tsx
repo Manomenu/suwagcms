@@ -10,7 +10,12 @@ export function FormFooter({
     reloadLabel,
     onReload,
 }: {
-    saving: { refusal: { message: string; mistakes: ShownMistake[] } | null; forgetRefusal: () => void; cancel: () => void };
+    saving: {
+        pending: boolean;
+        refusal: { message: string; mistakes: ShownMistake[] } | null;
+        forgetRefusal: () => void;
+        cancel: () => void;
+    };
     loose: ShownMistake[];
     editing: boolean;
     reloadLabel: string;
@@ -27,7 +32,9 @@ export function FormFooter({
                 </Alert>
             )}
             <StickyActions>
-                <Button type="submit">{editing ? "Save" : "Add"}</Button>
+                <Button type="submit" disabled={saving.pending}>
+                    {editing ? "Save" : "Add"}
+                </Button>
                 {moved && (
                     <Button
                         type="button"
