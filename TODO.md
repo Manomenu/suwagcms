@@ -4,8 +4,6 @@
 
 - Lookups that went with the deleted scripts: the guardrails of one criterion (`just criteria AC-…`) and the tests that pin another
   repository's contract (`just contracts`); and moving the pin of `vdoc.py` (`just criteria-update`), which suwgate holds now.
-- Running the browser tests alone (`--headed`, `-g`): suwgate runs them only inside `suwgate check`, so `just e2e` went with the
-  app's own e2e script.
 
 ## When the first spec's criteria need a strength check
 
