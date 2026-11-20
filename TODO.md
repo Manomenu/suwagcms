@@ -6,8 +6,6 @@
   repository's contract (`just contracts`); and moving the pin of `vdoc.py` (`just criteria-update`), which suwgate holds now.
 - Running the browser tests alone (`--headed`, `-g`): suwgate runs them only inside `suwgate check`, so `just e2e` went with the
   app's own e2e script.
-- Proposed for suwgate (with the reasons in the pull request that moved this repository): the test-timing guard (`TestTimingTests`,
-  Manomenu/suwcrawlextract issue #2). When it ships, `TestTimingTests` leaves `Suwagcms.Gate`.
 
 ## When the first spec's criteria need a strength check
 
