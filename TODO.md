@@ -15,3 +15,8 @@ First check that the `mtp` runner fills `coveredBy` per test.
 The first fake in tests (WireMock for an external API, a mail catcher, e2e seed data) brings a
 test environment of its own: a folder with its compose file and scripts, and a `just` module;
 `db.sh` moves there. Until then the gate needs only the one PostgreSQL container from `db.sh`.
+
+## When suwgate is ready: move the gate to it and offer this repo's own guards
+
+- Replace the gate glue (the check script and the repository guards) with `suwgate check` from the public suwgate project (GitHub Manomenu/suwgate; npm @maniumek/suwgate; NuGet Suwgate.Architecture and Suwgate.Database), configured in suwgate.yml.
+- Before moving, review the guards and checks this repo has beyond the template, and propose the generic ones for suwgate, so every app gets them.
