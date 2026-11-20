@@ -10,7 +10,6 @@ public sealed partial class SdkReleaseTests
     private const string WorkflowPath = ".github/workflows/sdk.yml";
     private const string NothingStarted = "Nothing was started";
 
-    // Why: the scripts run for real, against a throwaway repository with its remote and a stand-in gh, so a refusal is proven by what reaches gh
     private const string ThrowawayCheckout = """
         set -euo pipefail
         unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE

@@ -61,7 +61,6 @@ internal static class BotMistakes
     private static bool IsAbsoluteWebAddress(string? address) =>
         Uri.TryCreate(address?.Trim(), UriKind.Absolute, out var parsed) && parsed.Scheme is "http" or "https" && parsed.Host.Length > 0;
 
-    // Why: the SDK's mistake has no bot kind, and a bot is the owner of a definition, so the definition kind names it.
     private static Mistake Make(string code, string id, string path, string message, string fix) =>
         new(code, ValidationStage.Save, new ResourceRef(ResourceKind.Definition, id), path, message, fix, []);
 }

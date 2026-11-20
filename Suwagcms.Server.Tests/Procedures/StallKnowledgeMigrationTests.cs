@@ -5,7 +5,6 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
-// Why: the migration changes stored data, so it runs here on rows written before it, in a database of its own that holds every earlier migration.
 public sealed class StallKnowledgeMigrationTests(TestDatabase database) : IAsyncLifetime
 {
     private const string Migration = "0016_drop_when_stalled_knowledge.sql";

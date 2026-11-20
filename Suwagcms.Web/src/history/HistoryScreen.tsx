@@ -27,7 +27,6 @@ function ResourceHistory({ bot, collection, id }: { bot: string; collection: His
     );
 }
 
-/** Every change to the bot in the address, or with `?kind=<collection>&id=<id>` to one resource, which stays readable after it is deleted. */
 export function HistoryScreen({ bot }: { bot: string }) {
     const [params] = useSearchParams();
     const collection = params.get("kind");

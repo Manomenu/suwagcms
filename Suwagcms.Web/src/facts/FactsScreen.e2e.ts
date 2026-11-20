@@ -1,4 +1,3 @@
-// A person works on the facts of one bot in the browser; the bot is in the address, and a refusal keeps what was typed.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 
@@ -82,7 +81,6 @@ test("AC-global-facts-11: saving an edit of a fact that changed meanwhile is ref
     await expect(page.getByLabel("Description")).toHaveValue("Marta's text");
     await page.getByRole("button", { name: "Reload the facts" }).click();
     await expect(page.getByLabel("Description")).toHaveValue("Marta's text");
-    // Why: the reload's answer shows nowhere on this screen, so Save is pressed until it is based on it.
     await expect(async () => {
         await page.getByRole("button", { name: "Save" }).click();
         await expect(page.getByRole("row").filter({ hasText: "customer.city" })).toContainText("Marta's text", { timeout: 1000 });

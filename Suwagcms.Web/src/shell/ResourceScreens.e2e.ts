@@ -1,4 +1,3 @@
-// A person moves between a resource's list and its edit screen: the address says which one is open, on every kind.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 
@@ -124,7 +123,6 @@ test("AC-web-shell-13: the help opens on hover and on focus, and Escape closes i
 
     await help.hover();
     await expect(tip).toContainText("Who may write the fact");
-    // Why: Radix keeps the help open while the pointer may be on its way to it, until a move lands outside that way.
     await page.mouse.move(0, 0, { steps: 15 });
     await expect(tip).toHaveCount(0);
 

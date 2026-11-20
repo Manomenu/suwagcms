@@ -1,6 +1,5 @@
 namespace Suwagcms.Cli.Tests.Plugin;
 
-// Why: a skill is Markdown with a front matter of `key: value` lines between two `---` lines and `## ` sections; nothing more is read from it.
 internal static class SkillText
 {
     public static Dictionary<string, string> FrontMatter(string text)

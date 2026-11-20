@@ -3,7 +3,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.Validation.Guards;
 
-// Why: a delete is guarded by the missing-reference rule on the definition left behind; this only words its findings for the resource at fault, once per removed resource, so a client lists every referrer at once.
 public static class DeleteGuard
 {
     public static IReadOnlyList<Mistake> Reshape(

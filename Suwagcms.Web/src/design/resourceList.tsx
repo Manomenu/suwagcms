@@ -11,10 +11,6 @@ export interface Column<Row> {
     cell: (row: Row) => ReactNode;
 }
 
-/**
- * The list screen of a resource: its heading, the button that adds one, whatever the kind shows above the list, one table of a
- * page of rows, which only open a resource, and the History panel of the kind's changes at the bottom. A kind passes its own columns; what is done to a resource is done on its edit screen.
- */
 export function ResourceList<Row>({
     title,
     addLabel,

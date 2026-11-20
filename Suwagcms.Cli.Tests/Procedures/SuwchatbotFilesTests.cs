@@ -7,7 +7,6 @@ using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Tests.Procedures;
 
-// Why: this repository cannot read Suwchatbot's, so these are copies of its AppraiserBot/BotFiles at master b80c000; its scope-policy.yaml lists become one text per part, one rule per line.
 public sealed class SuwchatbotFilesTests
 {
     private const int FormatVersion = 5;

@@ -12,10 +12,6 @@ export interface Paging {
     onMove: (page: number) => void;
 }
 
-/**
- * The rows of a list with Previous, the position and Next under them. With one page the controls are neither seen nor reached and
- * keep their space, so nothing below moves when a list grows past one page. Moving brings the top of the list back into view.
- */
 export function Paginated({ paging, children }: { paging: Paging; children: ReactNode }) {
     const top = useRef<HTMLDivElement>(null);
     if (paging.failure !== null) return <Alert variant="destructive">{paging.failure}</Alert>;

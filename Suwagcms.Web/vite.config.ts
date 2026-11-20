@@ -1,22 +1,18 @@
-/// <reference types="vitest/config" />
 import path from "node:path";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
     plugins: [react(), tailwindcss()],
     resolve: { alias: { "@": path.resolve(import.meta.dirname, "./src") } },
-    // No test has a time limit: a loaded machine makes a test slower, never wrong, and the gate's step limit still stops a hang.
     test: { testTimeout: 0, hookTimeout: 0 },
     server: {
         port: 3330,
         strictPort: true,
-        // Same contract as nginx in the image: the browser only ever talks to this origin, and /api goes to the server.
         proxy: {
             "/api": {
-                // The end-to-end tests run their own server next to yours (e2e.sh).
                 target: process.env["API_PROXY_TARGET"] ?? "http://127.0.0.1:6330",
                 changeOrigin: true,
             },

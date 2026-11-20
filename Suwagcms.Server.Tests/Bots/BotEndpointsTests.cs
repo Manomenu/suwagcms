@@ -64,7 +64,6 @@ public sealed class BotEndpointsTests(TestDatabase database, ClassServer server)
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(["bot.addressInvalid", "bot.idInvalid", "bot.nameMissing"], Codes(mistakes));
         Assert.All(mistakes, mistake => Assert.False(string.IsNullOrWhiteSpace(mistake.GetProperty("fix").GetString())));
-        // Why: other test classes register bots at the same time, so the whole list cannot be compared before and after.
         Assert.DoesNotContain(await Listed(client), bot => bot.Id == "Not Valid" || bot.Address == "rzeczoznawca.internal");
     }
 

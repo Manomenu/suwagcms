@@ -24,7 +24,6 @@ internal static class BotStore
         );
     }
 
-    // Why: the primary key decides between two registrations of one id at the same moment; false means the id was taken.
     public static async Task<bool> AddAsync(Pool pool, Bot bot, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);

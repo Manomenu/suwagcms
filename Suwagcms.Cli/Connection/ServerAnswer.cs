@@ -12,11 +12,9 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
 
     public static ServerAnswer Refused(IReadOnlyList<JsonElement> mistakes) => new(ExitCodes.Refused, Describe(mistakes, null), mistakes);
 
-    // Why: a link to each related resource is added when the caller knows the web app's address, which the answer does not.
     public static string Describe(IReadOnlyList<JsonElement> mistakes, Func<string, string, string?>? link) =>
         string.Join(Environment.NewLine, mistakes.Select(mistake => Describe(mistake, link)));
 
-    // Why: the server states a mistake as code, path, message and fix; whatever of them it sends is shown, the fix last.
     private static string Describe(JsonElement mistake, Func<string, string, string?>? link)
     {
         var code = Text(mistake, "code");
@@ -56,11 +54,9 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
         }
     }
 
-    // Why: a code ending in inUse (fact.type.inUse, fact.enum.valueInUse) names what its related list uses, so a new one needs no change here; reference.missing names what still refers to the thing deleted.
     private static bool ListsUsers(string? code) =>
         code == "reference.missing" || (code?.EndsWith("inUse", StringComparison.OrdinalIgnoreCase) ?? false);
 
-    // Why: inside a procedure a place is a step and a block, which is how an author finds it; any other place is shown as the server names it.
     private static string Where(string? location)
     {
         if (location is null)

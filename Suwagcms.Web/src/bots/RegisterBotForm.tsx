@@ -10,7 +10,6 @@ import { MistakeItems } from "@/design/mistakeItems";
 
 import { registerBot } from "./api";
 
-/** The form that registers a bot; a refusal shows every mistake with its fix, and nothing is registered. */
 export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot: Bot) => void; onCancel: () => void }) {
     const [id, setId] = useState("");
     const [name, setName] = useState("");

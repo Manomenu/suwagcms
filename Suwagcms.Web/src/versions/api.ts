@@ -1,4 +1,3 @@
-// This feature's HTTP calls, typed from the generated OpenAPI types — never a hand-written copy of a server model.
 import { request } from "../api/client";
 import type { components } from "../api/openapi";
 
@@ -28,15 +27,12 @@ export function createVersion(bot: string): Promise<VersionCreated> {
     return request<VersionCreated>(versionsPath(bot), { method: "POST" });
 }
 
-/** The generated type allows a string for an int32; the server sends a number. */
 export function numberOf(version: VersionSummary): number {
     return Number(version.number);
 }
 
-// Why: the API takes a version as a 32-bit number, so anything longer in an address is no version at all rather than a refused request.
 const LARGEST_NUMBER = 2_147_483_647;
 
-/** The version an address asks for: a whole number, 1 or more; anything else is none. */
 export function versionNumberOf(raw: string | null): number | null {
     if (raw === null || !/^[1-9]\d*$/.test(raw)) return null;
     const number = Number(raw);

@@ -2,7 +2,6 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-// Why: tells whether a timer is armed and not yet fired, which is how the test sees the retrier asleep until its next try.
 internal sealed class WatchedClock(DateTimeOffset start) : FakeTimeProvider(start)
 {
     private int armed;
@@ -22,7 +21,6 @@ internal sealed class WatchedClock(DateTimeOffset start) : FakeTimeProvider(star
             dueTime,
             period
         );
-        // Why: counted only once the clock holds the timer; counted before, a test could move the clock first and the timer would start its wait after the jump.
         watched.Arm();
         return watched;
     }
@@ -35,8 +33,11 @@ internal sealed class WatchedClock(DateTimeOffset start) : FakeTimeProvider(star
 
         private int phase = Fresh;
 
-        // Why: set right after the clock makes the inner timer, before the wrapper is handed to anyone.
-        public ITimer Inner { get; set; } = null!;
+        public ITimer Inner
+        {
+            get => field ?? throw new InvalidOperationException("the clock sets the inner timer before it hands the wrapper out");
+            set;
+        }
 
         public void Arm()
         {

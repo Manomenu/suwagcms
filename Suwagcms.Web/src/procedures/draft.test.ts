@@ -41,7 +41,6 @@ import {
 import { findRow } from "./list";
 import { isDirty, loaded } from "./state";
 
-// What the server sends for the spec's example: steps in the order its database keeps them, absent fields as null.
 const detail = {
     id: "orderValuation",
     description: "The customer orders a valuation of a property.",

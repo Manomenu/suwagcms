@@ -6,7 +6,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Server.Versions;
 
-// Why: the files come only from the frozen document and carry no date, so exporting a version twice gives the same files.
 internal static class VersionExportSplitter
 {
     private static readonly (string List, ResourceKind Kind, string Folder, string Key)[] Kinds =
@@ -41,7 +40,6 @@ internal static class VersionExportSplitter
         return new VersionExport(bot, number, files);
     }
 
-    // Why: a list the export has no folder for yet stays in version.yaml, so a version's content is never lost from its export.
     private static JsonObject WithEnvelopeFirst(JsonObject root)
     {
         var inFolders = Kinds.Select(kind => kind.List).Append(PersonaMember).ToHashSet(StringComparer.Ordinal);

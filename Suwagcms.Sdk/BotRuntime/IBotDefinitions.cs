@@ -15,7 +15,6 @@ public interface IBotDefinitions
 
     void OnAvailabilityChanged(Func<int, CancellationToken, Task> listener);
 
-    // Why: the version is asked for because an older version may hold a resource under its former id; the setting itself is one and the same on every version.
     bool IsOff(int version, ResourceKind kind, string id);
 
     Task ReportInUseAsync(IReadOnlyCollection<int> numbers, CancellationToken cancellationToken = default);

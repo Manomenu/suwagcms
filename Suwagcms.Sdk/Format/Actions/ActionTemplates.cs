@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace Suwagcms.Sdk.Format.Actions;
 
-// Why: the rules that refuse a definition and the runner that fills it must read {name} and {secret:NAME} alike, so the patterns exist once.
 internal static partial class ActionTemplates
 {
     public const string SecretPrefix = "secret:";

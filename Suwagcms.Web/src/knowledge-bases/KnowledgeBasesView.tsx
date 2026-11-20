@@ -4,7 +4,6 @@ import { ResourceList } from "@/design/resourceList";
 
 import type { KnowledgeBase } from "./api";
 
-/** The list of a bot's knowledge bases. */
 export function KnowledgeBasesView({
     bot,
     history,

@@ -1,4 +1,3 @@
-// Why: the fact, article and procedure screens all ask the same question of the same route, so the call and its hook exist once.
 import { useEffect, useState } from "react";
 
 import { request } from "./client";
@@ -14,7 +13,6 @@ function fetchUsage(bot: string, collection: UsageCollection, id: string, signal
     return request<Usage>(`/bots/${encodeURIComponent(bot)}/${collection}/${encodeURIComponent(id)}/usage`, { signal });
 }
 
-/** Where the web app shows a resource: its edit screen. */
 export function usageHref(bot: string, link: UsageLink): string {
     const collection =
         link.kind === "procedure" ? "procedures" : link.kind === "fact" ? "facts" : link.kind === "action" ? "actions" : "articles";
@@ -26,7 +24,6 @@ export interface UsageState {
     failure: string | null;
 }
 
-/** Loads the used-by and uses lists of one resource; `id` null loads nothing. A changed `revision` asks again, as a save does. */
 export function useUsage(bot: string, collection: UsageCollection, id: string | null, revision = 0): UsageState {
     const key = `${bot}/${collection}/${id ?? ""}/${revision}`;
     const [answer, setAnswer] = useState<{ key: string; usage: Usage | null; failure: string | null } | null>(null);
@@ -47,6 +44,5 @@ export function useUsage(bot: string, collection: UsageCollection, id: string | 
         };
     }, [bot, collection, id, revision, key]);
 
-    // Why: an answer for another resource or revision is stale, so it reads as "still loading" instead of showing the wrong lists.
     return answer?.key === key ? { usage: answer.usage, failure: answer.failure } : { usage: null, failure: null };
 }

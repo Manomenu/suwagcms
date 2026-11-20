@@ -4,7 +4,6 @@ import { labelOf, type LinkTarget } from "./articleLink";
 
 const LIMIT = 20;
 
-// Why: conversation cannot be started, so it is never offered.
 export function linkTargets(
     articles: { id: string; title: string; knowledgeBase: string }[],
     procedures: { id: string; description: string }[],
@@ -23,12 +22,10 @@ export function linkTargets(
     ];
 }
 
-// Why: only the guide may hold a link to a procedure, because a customer reads content.
 export function targetsFor(field: "content" | "llmGuide", targets: LinkTarget[]): LinkTarget[] {
     return field === "llmGuide" ? targets : targets.filter((target) => target.kind !== "procedure");
 }
 
-// Why: a procedure may share its id with the article being edited, and it is not that article.
 export function matching(targets: LinkTarget[], query: string, selfId: string): LinkTarget[] {
     const needle = query.trim().toLowerCase();
     return targets
@@ -52,7 +49,6 @@ interface Item {
     description: string;
 }
 
-/** The suggestion of the link: `@` after a space or at a line start opens a list of this bot's articles under the cursor. */
 export function pickerOf(targets: () => LinkTarget[], selfId: () => string): Omit<SuggestionOptions<Item>, "editor"> {
     return {
         char: "@",

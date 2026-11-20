@@ -9,7 +9,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Bots;
 
-// Why: the one place that turns a bot's answer, or its absence, into what the CMS holds; it holds no lock or transaction while it waits on the bot.
 internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider time, DefinitionEditor editor)
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
@@ -24,7 +23,6 @@ internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider
     public async Task<DeclarationStatus?> AskAsync(string bot, CancellationToken cancellationToken) =>
         await AskAsync(bot, listCannotRun: true, cancellationToken);
 
-    // Why: a push checks one version itself, so it does not pay for reading the whole working state.
     public async Task<DeclarationStatus?> AskForPushAsync(string bot, CancellationToken cancellationToken) =>
         await AskAsync(bot, listCannotRun: false, cancellationToken);
 
@@ -39,7 +37,6 @@ internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider
         {
             case BotClient.Reply.Silent silent:
                 return await StatusAsync(bot, row, DeclarationAsk.Unreachable, silent.Reason, [], listCannotRun, cancellationToken);
-            // Why: a bot on an SDK older than this route has nothing to say, which is what declaring nothing means.
             case BotClient.Reply.Answer { Status: StatusCodes.Status404NotFound }:
                 return await StoredAnswerAsync(bot, row.Address, null, listCannotRun, cancellationToken);
             case BotClient.Reply.Answer { Status: StatusCodes.Status200OK } answer:
@@ -146,7 +143,6 @@ internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider
             )
             : null;
 
-    // Why: what the bot stopped declaring matters to the authors of the procedures that use it, long before anyone creates a version.
     private async Task<IReadOnlyList<Mistake>> CannotRunAsync(string bot, BotDeclaration declaration, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);
@@ -155,7 +151,6 @@ internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider
         [
             .. DeclarationValidator
                 .CheckDefinition(ResourceKinds.Assemble(resources), declaration)
-                // Why: a missing or partial persona is no step the bot cannot run, and creating a version says it where it can be filled in.
                 .Where(mistake =>
                     mistake.Code
                         is not (MistakeCodes.DeclarationFormatVersion or MistakeCodes.PersonaRequired or MistakeCodes.PersonaIncomplete)

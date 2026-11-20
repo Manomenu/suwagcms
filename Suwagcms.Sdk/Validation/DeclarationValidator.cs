@@ -10,7 +10,6 @@ using Suwagcms.Sdk.Validation.Rules;
 
 namespace Suwagcms.Sdk.Validation;
 
-// Why: a bot's code decides what it declares, so nothing here runs at Save: one deployment of a bot must never stop anyone from saving.
 public static class DeclarationValidator
 {
     public static (BotDeclaration? Declaration, IReadOnlyList<Mistake> Mistakes) ParseJson(string? json)
@@ -53,7 +52,6 @@ public static class DeclarationValidator
         }
     }
 
-    // Why: System.Text.Json accepts null list items even with nullable annotations respected.
     private static bool HasNullItem(BotDeclaration declaration) =>
         declaration.CodeActions.Any(action =>
             action is null || action.Parameters.Any(field => field is null) || action.Results.Any(field => field is null)
@@ -80,7 +78,6 @@ public static class DeclarationValidator
             : [.. mistakes, .. Format(declaration), .. declaration.CodeActions.SelectMany(Action), .. Repeated(declaration)];
     }
 
-    // Why: the blocks of a format the CMS does not read cannot be judged, so a format mismatch is the only thing said about them.
     public static IReadOnlyList<Mistake> CheckDefinition(BotDefinition definition, BotDeclaration? declaration)
     {
         ArgumentNullException.ThrowIfNull(definition);
@@ -204,7 +201,6 @@ public static class DeclarationValidator
             );
         }
 
-        // Why: the CMS knows only the blocks of its own format, so another format's names are stored as the bot said them.
         if (declaration.FormatVersion == DefinitionFormat.Version)
         {
             foreach (var block in declaration.Blocks.Where(block => !Block.Names.Contains(block, StringComparer.Ordinal)))
@@ -264,7 +260,6 @@ public static class DeclarationValidator
         }
     }
 
-    // Why: the CMS keeps a code action's fields by name, so a name that is no name, or is said twice, cannot be kept; the answer is refused and the last good one stands.
     private static IEnumerable<Mistake> FieldNames(CodeAction action, string list, IReadOnlyList<CodeActionField> fields)
     {
         foreach (
@@ -292,7 +287,6 @@ public static class DeclarationValidator
         }
     }
 
-    // Why: a field is typed like a fact, so the rules of facts judge it and it fails with their codes.
     private static IEnumerable<Mistake> Fields(CodeAction action, string list, IReadOnlyList<CodeActionField> fields)
     {
         var facts = new BotDefinition

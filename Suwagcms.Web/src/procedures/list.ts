@@ -1,25 +1,17 @@
-// The list an author edits and the graph the format stores. The format has no list and the bot none: a graph is rebuilt into one
-// canonical list when a procedure opens, and every save builds the graph back from the list. A row is a step; a list may end in a
-// `Next:` row naming any step, or in End, which only says the step above has no next.
 import type { Condition, Rule, Step } from "./draft";
 
 export type ListEnd = null | "end" | { next: string };
 
 export interface Branch {
-    /** Absent on Else, the rule without a condition. */
     when?: Record<string, Condition>;
     list: StepList;
 }
 
 export interface StepRow {
     name: string;
-    /** The rules of this step: the format has no If step, so an If always hangs on the step above it. */
     branches?: Branch[];
-    /** An action's onFailure; absent while none is set, which is a mistake of its own. */
     failure?: StepList;
-    /** An action's onUnavailable. Absent or empty, the step has none and a turned-off action goes as on failure. */
     unavailable?: StepList;
-    /** An action's fixed next, once it has a failure branch to go beside. */
     success?: StepList;
 }
 
@@ -50,7 +42,6 @@ function known(steps: Record<string, Step>, name: string): boolean {
     return Object.hasOwn(steps, name);
 }
 
-/** The edges that go back to a step still on the path from the first one: following them would never end, and no two branches meet there. */
 function backEdges(steps: Record<string, Step>, first: string): Set<string> {
     const back = new Set<string>();
     const state = new Map<string, "open" | "done">([[first, "open"]]);
@@ -76,7 +67,6 @@ function backEdges(steps: Record<string, Step>, first: string): Set<string> {
     return back;
 }
 
-/** Rebuilds the one canonical list of a graph. Every graph the format allows has one: what cannot follow on the page becomes a Next: row. */
 export function listOf(firstStep: string | null, steps: Record<string, Step>): { list: StepList; notConnected: string[] } {
     if (firstStep === null || !known(steps, firstStep)) return { list: emptyList(), notConnected: Object.keys(steps).sort() };
     const back = backEdges(steps, firstStep);
@@ -96,7 +86,6 @@ export function listOf(firstStep: string | null, steps: Record<string, Step>): {
         return seen;
     };
 
-    // The first step, in reading order, that two or more branches lead to; a later one reached from it is not the first.
     const continuationOf = (targets: string[], stop: string | null, outer: Set<string>): string | null => {
         const reached = targets.map(reach);
         const order = [...new Set(reached.flat())];
@@ -134,7 +123,6 @@ export function listOf(firstStep: string | null, steps: Record<string, Step>): {
             if (failure !== undefined) row.failure = walk(failure, inner, deeper);
             if (unavailable !== undefined) {
                 const list = walk(unavailable, inner, deeper);
-                // Why: an empty branch means none, so one that goes straight on below says where with a Next: row.
                 row.unavailable = list.rows.length === 0 && list.last === null ? { rows: [], last: { next: unavailable } } : list;
             }
             if (rules !== null) {
@@ -167,12 +155,10 @@ function headOf(list: StepList, fall: string | null): string | null {
     return list.rows[0]?.name ?? afterEnd(list.last, fall);
 }
 
-/** The first step of the graph a list builds. */
 export function firstStepOf(list: StepList): string | null {
     return headOf(list, null);
 }
 
-/** Builds the graph back: what follows a row on the page is its next, so nobody ever writes one. */
 export function linksOf(list: StepList): Record<string, Links> {
     const out: Record<string, Links> = {};
     const build = (one: StepList, fall: string | null) => {
@@ -193,7 +179,6 @@ export function linksOf(list: StepList): Record<string, Links> {
             if (row.branches) {
                 links.next = row.branches.map((branch) => ({
                     ...(branch.when === undefined ? {} : { when: branch.when }),
-                    // Why: a rule needs a target, so a branch with nowhere to go stays blank for the server to refuse beside it.
                     to: headOf(branch.list, after) ?? "",
                 }));
                 for (const branch of row.branches) build(branch.list, after);
@@ -209,10 +194,8 @@ export function linksOf(list: StepList): Record<string, Links> {
     return out;
 }
 
-/** Says which list a row or a control belongs to: the top one, or an arm of a step's row. */
 export type ListRef = null | { step: string; arm: Arm };
 
-/** The arms of a row in reading order. */
 export function armsOf(row: StepRow): { arm: Arm; list: StepList }[] {
     return [
         ...(row.failure ? [{ arm: "failure" as const, list: row.failure }] : []),
@@ -229,7 +212,6 @@ function withArm(row: StepRow, arm: Arm, list: StepList): StepRow {
     return { ...row, branches: (row.branches ?? []).map((branch, at) => (at === arm ? { ...branch, list } : branch)) };
 }
 
-/** Every step a list holds, however deep. */
 export function namesIn(list: StepList): string[] {
     return list.rows.flatMap((row) => [row.name, ...armsOf(row).flatMap((arm) => namesIn(arm.list))]);
 }
@@ -270,7 +252,6 @@ export function changeList(list: StepList, ref: ListRef, change: (one: StepList)
     return changeRow(list, ref.step, (row) => {
         const arm = armsOf(row).find((other) => other.arm === ref.arm);
         if (arm) return withArm(row, arm.arm, change(arm.list));
-        // Why: When unavailable is shown empty on every action, so its first step opens it.
         return ref.arm === "unavailable" ? withArm(row, "unavailable", change(emptyList())) : row;
     });
 }
@@ -287,7 +268,6 @@ function ownerOf(list: StepList, name: string, ref: ListRef = null): { ref: List
     return null;
 }
 
-/** Where the end of a list goes when nothing else is said: the row after the If around it, looking outward. */
 export function fallOf(list: StepList, ref: ListRef): string | null {
     if (ref === null) return null;
     const owner = ownerOf(list, ref.step);
@@ -296,7 +276,6 @@ export function fallOf(list: StepList, ref: ListRef): string | null {
     return around.rows[owner.index + 1]?.name ?? afterEnd(around.last, fallOf(list, owner.ref));
 }
 
-/** A step moves by one place in reading order, into and out of branches, with whatever hangs on it. It never touches a Next: or End row. */
 export function moveRow(list: StepList, name: string, direction: "up" | "down"): StepList {
     const from = ownerOf(list, name);
     if (from === null) return list;
@@ -342,7 +321,6 @@ function ifNeighbour(list: StepList, name: string, direction: "up" | "down"): St
     return rows[from.index + (direction === "up" ? -1 : 1)];
 }
 
-/** An If hangs on the step above it, so it can only join a neighbour with nothing of its own in that place. */
 export function canMoveIf(list: StepList, name: string, direction: "up" | "down"): boolean {
     const neighbour = ifNeighbour(list, name, direction);
     if (neighbour === undefined || neighbour.branches !== undefined) return false;
@@ -350,7 +328,6 @@ export function canMoveIf(list: StepList, name: string, direction: "up" | "down"
     return success === undefined || (success.rows.length === 0 && (success.last === null || success.last === "end"));
 }
 
-/** Moves an If, with its branches and the steps in them, onto the neighbouring step. The steps of the list keep their order. */
 export function moveIf(list: StepList, name: string, direction: "up" | "down"): StepList {
     const moving = findRow(list, name);
     const neighbour = ifNeighbour(list, name, direction);
@@ -364,13 +341,11 @@ export function moveIf(list: StepList, name: string, direction: "up" | "down"): 
     );
 }
 
-/** Whether a branch can swap with its neighbour: only those with a condition can, since the Else stays last. */
 export function canSwapBranch(row: StepRow, index: number, direction: "up" | "down"): boolean {
     const other = row.branches?.[index + (direction === "up" ? -1 : 1)];
     return row.branches?.[index]?.when !== undefined && other?.when !== undefined;
 }
 
-/** Order decides which condition wins, so swapping with the first turns a branch into the If. Each branch keeps its own steps. */
 export function swapBranch(list: StepList, name: string, index: number, direction: "up" | "down"): StepList {
     return changeRow(list, name, (row) => {
         const at = index + (direction === "up" ? -1 : 1);
@@ -384,7 +359,6 @@ export function swapBranch(list: StepList, name: string, index: number, directio
     });
 }
 
-/** Takes a row out; the rows around it join up, since nobody wrote their next. */
 export function withoutRow(list: StepList, name: string): StepList {
     const from = ownerOf(list, name);
     return from === null ? list : changeList(list, from.ref, (one) => ({ ...one, rows: one.rows.filter((row) => row.name !== name) }));

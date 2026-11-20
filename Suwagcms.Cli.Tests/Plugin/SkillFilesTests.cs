@@ -7,7 +7,6 @@ public sealed class SkillFilesTests
 
     private static readonly string[] Keys = ["name", "description"];
 
-    // Why: the same check the real skills go through, so that a test can hand it a skill that lacks something.
     private static List<string> Lacks(string text)
     {
         var matter = SkillText.FrontMatter(text);

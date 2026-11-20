@@ -5,20 +5,17 @@ import { Badge } from "@/design/badge";
 import { Button } from "@/design/button";
 import { Paper } from "@/design/page";
 
-/** One thing that uses the resource, as the "Used by" panel lists it. */
 interface UsedByEntry {
     kind: string;
     id: string;
     field: string;
 }
 
-/** Whether the bot has the setting, from its own answer. */
 interface Delivery {
     state: string;
     reason?: string | null;
 }
 
-/** Says so loudly when the bot does not have the setting, because off is often an emergency and nobody should believe it too early. */
 export function AvailabilityNotice({
     delivery,
     failure,
@@ -45,12 +42,10 @@ export function AvailabilityNotice({
     );
 }
 
-/** The state of one resource in a list. */
 export function AvailabilityBadge({ off }: { off: boolean }) {
     return <Badge variant={off ? "danger" : "neutral"}>{off ? "off" : "on"}</Badge>;
 }
 
-/** Lists what uses the resource before it goes off; being in use never stops it, because no reference breaks. */
 export function TurnOffDialog({
     id,
     usedBy,
@@ -100,7 +95,6 @@ export function TurnOffDialog({
     );
 }
 
-/** The switch of one resource. Turning off waits until the "Used by" list is loaded, so the question always shows it; turning on asks nothing. */
 export function AvailabilityPanel({
     id,
     off,

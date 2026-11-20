@@ -48,7 +48,6 @@ internal static class ArticlesCommand
             environment,
             async (target, parsed, cancellationToken) =>
             {
-                // Why: the screen reads its filters from the same words the route takes.
                 var filter = Query(parsed.GetValue(knowledgeBase), parsed.GetValue(language), parsed.GetValue(text));
                 if (parsed.GetValue(options.Open))
                 {

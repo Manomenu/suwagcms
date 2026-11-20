@@ -41,7 +41,6 @@ internal static class ProcedureSamples
 
     public static IReadOnlyList<GlobalFact> Facts { get; } = [Kind, Floors, Samples.CityFact, Flag];
 
-    // Why: the procedure of the spec's own example, with all four blocks, every condition kind, a default rule and a loop back to its listen.
     public static Procedure All { get; } =
         new()
         {
@@ -117,7 +116,6 @@ internal static class ProcedureSamples
             Steps = new Dictionary<string, ProcedureStep> { ["only"] = step },
         };
 
-    // Why: one definition that breaks every rule of the procedure model, so the shape test sees that each rule can fire.
     public static string EveryMistake { get; } =
         new JsonObject
         {

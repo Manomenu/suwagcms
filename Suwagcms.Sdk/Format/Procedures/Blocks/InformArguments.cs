@@ -6,6 +6,5 @@ public sealed record InformArguments
 
     public IReadOnlyList<KnowledgeEntry>? Knowledge { get; init; }
 
-    // Why: name to what must be said, in the order written; the bot checks each name was told, so a point is named and an order is kept.
     public IReadOnlyDictionary<string, string?>? Points { get; init; }
 }

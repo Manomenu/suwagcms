@@ -169,7 +169,6 @@ internal static class ProcedureShapeRules
         }
     }
 
-    // Why: the base of every conversation cannot be interrupted away, so a value here would promise what never happens.
     private static IEnumerable<Mistake> WhenInterruptedOnConversation(Procedure procedure)
     {
         if (procedure.Id == Procedure.ConversationId && procedure.WhenInterrupted is not null)

@@ -154,10 +154,7 @@ public sealed partial class VersionPushTests(TestDatabase database, ClassServer 
             {
                 await Task.Delay(Timeout.InfiniteTimeSpan, context.RequestAborted);
             }
-            catch (OperationCanceledException)
-            {
-                // Why: the CMS gave up, which is what the test waits for.
-            }
+            catch (OperationCanceledException) { }
         };
 
         var result = await scene.PushAsync(second.Number);
@@ -202,7 +199,6 @@ public sealed partial class VersionPushTests(TestDatabase database, ClassServer 
         var store = new InMemoryVersionStore();
         var id = PushScene.FreshId();
         await using var first = await TestBot.StartAsync(id, store);
-        // Why: the second instance answers as another bot id, so the CMS can hold an address for each instance of the one store.
         var otherId = PushScene.FreshId();
         await using var second = await TestBot.StartAsync(otherId, store);
         var scene = await PushScene.RegisterAsync(client, id, first.Address);

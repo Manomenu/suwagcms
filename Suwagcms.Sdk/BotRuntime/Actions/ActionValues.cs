@@ -3,7 +3,6 @@ using Suwagcms.Sdk.Format.Facts;
 
 namespace Suwagcms.Sdk.BotRuntime.Actions;
 
-// Why: the CMS checks values before it bothers a bot and the runner before it sends anything, so both give the same words.
 public static class ActionValues
 {
     public static IReadOnlyList<ActionValueUnfit> Check(BotAction action, IReadOnlyDictionary<string, string> values)

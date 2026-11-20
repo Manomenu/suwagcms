@@ -8,7 +8,6 @@ import { Textarea } from "@/design/textarea";
 
 import { HINTS, fieldOf, type FieldName, type PersonaForm } from "./personaForm";
 
-// Why: one page for both parts, because both answer one question: who is this bot.
 export function PersonaView({
     bot,
     form,

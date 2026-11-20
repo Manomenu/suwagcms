@@ -8,7 +8,6 @@ public sealed record StartBlock(string Target) : Block
 
     public override IEnumerable<BlockFact> Facts => [];
 
-    // Why: a blank target is work still to do, and conversation is refused by a rule of its own, so neither is an edge that a loop or a missing-target rule should also report.
     public override IEnumerable<BlockTarget> Targets =>
         string.IsNullOrWhiteSpace(Target) || Target == Procedure.ConversationId
             ? []

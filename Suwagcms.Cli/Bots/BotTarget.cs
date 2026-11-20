@@ -5,14 +5,12 @@ using Suwagcms.Cli.Output;
 
 namespace Suwagcms.Cli.Bots;
 
-// Why: every command on a bot's resources starts the same way: the output asked for, the server address, and the bot, which a resource belongs to.
 internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, CliEnvironment Machine)
 {
     public string CollectionPath(string collection) => $"api/bots/{Uri.EscapeDataString(Bot)}/{collection}";
 
     public string ItemPath(string collection, string id) => $"{CollectionPath(collection)}/{Uri.EscapeDataString(id)}";
 
-    // Why: the web app opens a fact, a knowledge base, an article or an action in its list from ?open=<id>, and a procedure in its editor.
     private string? LinkTo(string kind, string id) =>
         kind switch
         {
@@ -55,7 +53,6 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
         return (new BotTarget(run, address, chosen.Id, environment), ExitCodes.Done);
     }
 
-    // Why: a refusal for an unknown bot says which bots exist, as `suwagcms use` does, so the next command is right.
     public async Task<int> FailedAsync(ServerAnswer answer, CancellationToken cancellationToken)
     {
         var unknownBot = answer.Mistakes.Any(mistake =>
@@ -71,7 +68,6 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
             }
             : answer with
             {
-                // Why: a command may put its own heading above the mistakes, so only their lines get the links.
                 Message =
                     answer.Mistakes.Count == 0
                         ? answer.Message

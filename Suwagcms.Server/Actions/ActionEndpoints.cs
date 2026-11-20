@@ -8,7 +8,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Actions;
 
-// Why: the CMS only holds the definition: nothing here calls an action's URL, because the bot runs actions and only it has the secrets.
 internal static class ActionEndpoints
 {
     private const string Title = "The action was not saved.";
@@ -123,7 +122,6 @@ internal static class ActionEndpoints
         {
             return EditProblems.For(result, bot, Title);
         }
-        // Why: a save leaves the procedures untouched, so who uses the action is read after it, outside the lock.
         var all = await ResourceStore.ReadAsync(pool, bot, cancellationToken) ?? [];
         var declaration = (await DeclarationStore.FindAsync(pool, bot, cancellationToken))?.Parsed;
         return TypedResults.Ok(ActionMapping.Show(record, saved.Revisions[target], all, declaration));

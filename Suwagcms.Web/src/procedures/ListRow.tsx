@@ -5,42 +5,33 @@ import { Button } from "@/design/button";
 type Direction = "up" | "down";
 
 interface Fold {
-    /** The accessible name of the toggle, such as `Open step ask`. */
     label: string;
     open: boolean;
-    /** False keeps the row open, for a row that would otherwise hide what it still needs, such as an If with no condition. */
     canFold: boolean;
     title?: string | undefined;
     onToggle: () => void;
 }
 
 interface Move {
-    /** What moves, in the accessible names `Move <what> up` and `Move <what> down`. */
     what: string;
     can: (direction: Direction) => boolean;
     onMove: (direction: Direction) => void;
 }
 
 interface Remove {
-    /** The accessible name of the X, such as `Remove this If`. */
     label: string;
-    /** The steps that go with the row: with any, the X asks first. */
     steps: number;
     onRemove: () => void;
 }
 
 export interface ListRowProps {
-    /** The kind of row, as `data-row`. */
     kind: string;
     tag: string;
     tone: string;
     number?: number;
-    /** What the row lets an author edit in place, before its text, such as a step's name. */
     name?: ReactNode | undefined;
     text?: ReactNode | undefined;
-    /** Given, the text is the toggle that folds the row. */
     fold?: Fold | undefined;
-    /** Muted words or a control after the text. */
     note?: ReactNode | undefined;
     move?: Move | undefined;
     remove?: Remove | undefined;
@@ -51,7 +42,6 @@ function Tag({ tone, children }: { tone: string; children: ReactNode }) {
     return <span className={`inline-flex shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${tone}`}>{children}</span>;
 }
 
-/** Asks once before the X takes steps with it, in the place of the X itself, since the page has no other dialog. */
 function RemoveControl({ label, steps, onRemove }: Remove) {
     const [asking, setAsking] = useState(false);
     if (asking) {
@@ -95,10 +85,6 @@ function chevron(fold: Fold): string {
     return fold.open ? "before:content-['▾']" : "before:content-['▸']";
 }
 
-/**
- * The one frame of every row of the steps list: number, tag, editable name, text or fold toggle, ↑ ↓ and X, each in its
- * own place. A control a kind of row lacks leaves its place empty, so the rows line up.
- */
 export function ListRow({ kind, tag, tone, number, name, text, fold, note, move, remove, data }: ListRowProps) {
     const open = fold?.open === true;
     return (

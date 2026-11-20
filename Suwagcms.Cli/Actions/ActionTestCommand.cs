@@ -14,7 +14,6 @@ internal static class ActionTestCommand
     private const string Success = "success";
     private const string Failure = "failure";
 
-    // Why: a run waits as long as the action may take, up to its limit of 60 seconds, plus the way to the bot, where every other call of the CLI gives up after ten.
     private static readonly TimeSpan Wait = TimeSpan.FromSeconds(70);
 
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
@@ -96,7 +95,6 @@ internal static class ActionTestCommand
         return command;
     }
 
-    // Why: the CMS cannot know what a code action does, so it asks as for any call that may do work; a GET runs at once.
     private static string? Asks(JsonElement action)
     {
         var implementation = action.GetProperty("implementation");

@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 import { fetchBots, type Bot } from "@/api/bots";
 
-// Why: reloading on every address change shows a bot registered from the content, the CLI or another tab; the old list stays meanwhile.
 export function useBots(pathname: string): { bots: Bot[] | null; failure: string | null } {
     const [bots, setBots] = useState<Bot[] | null>(null);
     const [failure, setFailure] = useState<string | null>(null);

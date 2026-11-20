@@ -1,6 +1,6 @@
 using Suwagcms.Server.Tests;
 
-namespace Suwagcms.Gate.Repository;
+namespace Suwagcms.Gate;
 
 public sealed class LinkedWorktreeTests : IDisposable
 {
@@ -15,7 +15,7 @@ public sealed class LinkedWorktreeTests : IDisposable
 
         var refusal = Assert.Throws<InvalidOperationException>(() => LinkedWorktree.RefuseMainCheckoutDatabase(null, TestDirectory));
 
-        Assert.Contains("source scripts/.internal/checkout-env.sh", refusal.Message, StringComparison.Ordinal);
+        Assert.Contains("suwgate dev checkout-env", refusal.Message, StringComparison.Ordinal);
     }
 
     [Fact]

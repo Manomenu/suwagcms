@@ -6,7 +6,6 @@ namespace Suwagcms.Sdk.Validation.Rules;
 
 internal static class ProcedureMistake
 {
-    // Why: one rule per code, so a code that never fires is found by the test that every rule has a mistake.
     public static Rule For(string code, ValidationStage stage, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
         new(
             code,

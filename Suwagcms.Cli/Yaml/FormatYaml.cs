@@ -6,10 +6,8 @@ using YamlDotNet.RepresentationModel;
 
 namespace Suwagcms.Cli.Yaml;
 
-// Why: every file the CLI reads is YAML or JSON and the server takes JSON, so all of them become one JSON document by one rule, whose meaning does not depend on the command reading it or the format it was written in.
 internal static class FormatYaml
 {
-    // Why: only the top of a file differs from command to command; a list's items count as a top, since a file of changes or a definition lists whole resources.
     public static JsonNode? Parse(string text, IReadOnlySet<string> topNumbers)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -43,7 +41,6 @@ internal static class FormatYaml
         }
     }
 
-    // Why: YAML writes 42 and true unquoted, and only the bounds of a range, of a local fact or of an action's parameter or result, a timeout, known, what the top of a file names, and a declaration's declaresNothing and knowledge mean a number or a boolean; every other plain scalar is the text it spells. Where a field stands decides it, since a key of a mapping can be any name an author chose; FieldTypesTests walks the contracts and fails for a field this misses.
     private static JsonNode? Scalar(YamlScalarNode scalar, string key, string parent, string grandparent, IReadOnlySet<string> topNumbers)
     {
         var value = scalar.Value ?? "";
@@ -56,7 +53,6 @@ internal static class FormatYaml
             return key switch
             {
                 "listen" => new JsonObject(),
-                // Why: a block left empty is work still to do, which a save lists; a null would make it no block at all.
                 "start" or "instruction" => "",
                 _ => parent == "points" ? "" : null,
             };
@@ -77,7 +73,6 @@ internal static class FormatYaml
             : value;
     }
 
-    // Why: the YAML a person reads and the JSON the server sent are one structure, so the text is built from the JSON and never from the records.
     public static object? Plain(JsonElement element, bool keepNulls) =>
         element.ValueKind switch
         {

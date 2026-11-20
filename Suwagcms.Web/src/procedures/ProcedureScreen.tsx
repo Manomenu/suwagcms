@@ -44,13 +44,11 @@ interface Loaded {
     offered: OfferedBlocks;
 }
 
-// Why: every conversation is based on this procedure, so the server refuses to rename it, delete it or turn it off.
 const BASE_PROCEDURE = "conversation";
 
 function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: Loaded; onBack: () => void }) {
     const [state, dispatch] = useReducer(reduce, initial.detail, stateOf);
     const [params, setParams] = useSearchParams();
-    // Why: the selected step is in the address, so a reload or a sent link opens the same step.
     const selected = params.get("step");
     const setSelected = (step: string | null) => {
         setParams(
@@ -228,7 +226,6 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
     );
 }
 
-/** The edit page of one procedure: everything the form offers is read when it opens, so what was saved meanwhile is found. */
 export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
     const [loaded, setLoaded] = useState<Loaded | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
@@ -237,7 +234,6 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
     const search = useSearch();
 
     useEffect(() => {
-        // StrictMode runs effects twice in development: abort the first request, ignore its result.
         const controller = new AbortController();
         Promise.all([
             fetchProcedure(bot, id, controller.signal),
@@ -245,7 +241,6 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
             fetchProcedures(bot, controller.signal),
             fetchArticles(bot, controller.signal),
             fetchKnowledgeBases(bot, controller.signal),
-            // Why: the last answer, not a new ask: opening a form must not wait on a bot.
             fetchDeclaration(bot, controller.signal, false),
             fetchActions(bot, controller.signal),
         ])

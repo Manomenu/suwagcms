@@ -7,12 +7,10 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;
 
-// Why: an entry is written on the connection and in the transaction of the change it records, so a change can never exist unrecorded, and this store has no statement that alters an entry.
 internal static class HistoryStore
 {
     public const string VersionKind = "version";
 
-    // Why: no entry has an id this low, so an upper bound of it lists nothing, for a version older than history.
     private const long NothingListed = 0;
 
     private const string Listed = """
@@ -38,7 +36,6 @@ internal static class HistoryStore
         Guid? Resource = null
     );
 
-    // Why: what one read lists; Only is one kind of resource, every id of it; After and Through are ids, since a window goes by the order entries were recorded and two can share a time.
     private sealed record Listing(string Bot, string? Kind, string? Id, long? After, long? Through, string? Only = null);
 
     private sealed record CreatedRow(string Number, long Id);
@@ -85,7 +82,6 @@ internal static class HistoryStore
             )
         );
 
-    // Why: one row more than the page says whether another page exists without a second query, and only a numbered page pays for a count; null means the bot is unknown.
     public static async Task<HistoryPage?> ReadAsync(
         Pool pool,
         string bot,
@@ -113,7 +109,6 @@ internal static class HistoryStore
         );
     }
 
-    // Why: the entries from the previous version's creation, not counting it, through this version's own, found by their ids; a version older than history has no such entry, so nothing is listed.
     public static async Task<HistoryPage> ReadWindowAsync(
         Pool pool,
         string bot,

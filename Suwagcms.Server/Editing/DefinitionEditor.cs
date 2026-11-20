@@ -7,7 +7,6 @@ using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;
 
-// Why: every write of every resource goes through here, so the lock, the revisions, the whole-definition check and the rollback exist once.
 internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
 {
     public async Task<EditResult> ApplyAsync(string bot, IReadOnlyList<Change> changes, bool dryRun, CancellationToken cancellationToken)
@@ -23,7 +22,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         var before = (await ResourceStore.LoadAsync(connection, transaction, bot, cancellationToken)).ToDictionary(item => item.Target);
 
-        // Why: an add of a code action's id, whatever revision it expects, is told what the id belongs to rather than only that it is taken.
         var readOnly = changes.Where(change => before.GetValueOrDefault(change.Target)?.Record is BotAction { IsCode: true }).ToList();
         if (readOnly.Count > 0)
         {
@@ -32,7 +30,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
 
         var twice = Twice(changes);
         var unmet = Unmet(changes, before, twice);
-        // Why: a list based on an old read has no result worth judging, so what is out of date comes before the rules, every piece of it at once; one piece alone keeps its own answer, a conflict or a 404.
         if (twice.Count == 0 && unmet.Count == 1)
         {
             return unmet[0];
@@ -54,14 +51,12 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         {
             return codeRefused;
         }
-        // Why: one pass at the Version stage finds both kinds, since it runs every Save rule too; only the Save ones refuse. The order is fixed so that a list means the same in any order.
         var assembled = ResourceKinds.Assemble(
             after
                 .Values.OrderBy(item => ResourceKinds.Column(item.Target.Kind), StringComparer.Ordinal)
                 .ThenBy(item => item.Target.Id, StringComparer.Ordinal)
         );
         var found = DefinitionValidator.Validate(assembled, ValidationStage.Version);
-        // Why: an edit is judged by the rules on its result and only worded for its cause, so the same break is refused however it came about.
         var edited = EditGuard.Reshape(
             ResourceKinds.Assemble(before.Values),
             assembled,
@@ -69,7 +64,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         );
         if (edited.Count > 0)
         {
-            // Why: a delete that leaves references behind is refused by the same rule as a typo, worded for the resource being deleted.
             var removed = changes.OfType<Remove>().Select(change => change.Target).ToList();
             return new EditResult.Refused(DeleteGuard.Reshape(assembled, removed, edited));
         }
@@ -91,7 +85,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         };
     }
 
-    // Why: the bot has already changed and a refusal would only hide that, so this step judges nothing; it holds the bot's lock, so it runs in turn with any save, and reads the stored declaration under it, so two answers arriving out of order cannot leave the older one in force.
     public async Task AlignCodeActionsAsync(string bot, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);
@@ -118,7 +111,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
     {
         var revisions = new Dictionary<ResourceRef, int>();
         var now = time.GetUtcNow();
-        // Why: a row is known by its Id, so a renamed resource stays the same row, with what hangs on that row, and only its public id changes.
         var known = before.Values.Select(item => item.Id).ToHashSet();
         var rows = after.Values.ToDictionary(item => item.Id);
         foreach (var gone in before.Values.Where(item => !rows.ContainsKey(item.Id)).Where(_ => !dryRun))
@@ -144,7 +136,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         }
         if (!dryRun)
         {
-            // Why: a resource is followed by its row, so a change of id, whoever asked for it, is a rename: a version may still hold the old id.
             foreach (var was in before.Values.Where(item => rows.TryGetValue(item.Id, out var row) && row.Target != item.Target))
             {
                 await ResourceStore.RememberFormerIdAsync(connection, transaction, bot, was, cancellationToken);
@@ -158,7 +149,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         return revisions;
     }
 
-    // Why: what the bot's code controls has one source, so no save may touch it, whichever door the save came through; the declaration is read only when a list changes an action.
     private static async Task<EditResult.Refused?> CodeGuardAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
@@ -169,7 +159,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         CancellationToken cancellationToken
     )
     {
-        // Why: a stored code action never reaches here, so what is left is a save that would write one, or take an id the bot declares.
         var ofActions = changes.Where(change => change.Target.Kind == ResourceKind.Action).ToList();
         if (ofActions.Count == 0)
         {
@@ -193,7 +182,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         return mistakes.Count == 0 ? null : new EditResult.Refused(mistakes);
     }
 
-    // Why: the outcome of two changes to one resource would depend on their order, and a list means the same in any order; positions count from 1, as a file is read.
     private static Dictionary<ResourceRef, List<int>> Twice(IReadOnlyList<Change> changes) =>
         changes
             .Select((change, index) => (change.Target, Position: index + 1))
@@ -201,7 +189,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
             .Where(group => group.Count() > 1)
             .ToDictionary(group => group.Key, group => group.Select(item => item.Position).ToList());
 
-    // Why: expected revisions are checked against the state found under the lock, before any change is applied, so a stale edit loses to no mistake. A resource named twice is refused for that alone: judged against the state before the list, a delete of what the list adds would only say "missing".
     private static List<EditResult> Unmet(
         IReadOnlyList<Change> changes,
         Dictionary<ResourceRef, StoredResource> before,
@@ -224,7 +211,6 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
         return unmet;
     }
 
-    // Why: a new id in the wrong form makes every link rewritten to it malformed too; that has one cause, so it is said once.
     private static IEnumerable<Mistake> WithoutEchoes(List<Mistake> mistakes, IReadOnlyList<Change> changes, List<Reference> rewritten)
     {
         var renamed = changes.OfType<Rename>().Select(rename => rename.NewTarget).ToList();

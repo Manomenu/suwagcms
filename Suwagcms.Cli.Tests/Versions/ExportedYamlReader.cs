@@ -5,7 +5,6 @@ using YamlDotNet.RepresentationModel;
 
 namespace Suwagcms.Cli.Tests.Versions;
 
-// Why: reads an exported file back as any YAML reader would, by the rules of YAML and with no knowledge of the format, so a test proves nothing was lost.
 internal static class ExportedYamlReader
 {
     public static JsonNode? Read(string text)

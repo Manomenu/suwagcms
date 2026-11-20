@@ -8,7 +8,6 @@ internal static partial class CommandList
     [GeneratedRegex(@"^- `suwagcms ([^`]+)`", RegexOptions.Multiline, matchTimeoutMilliseconds: 1000)]
     private static partial Regex ListedLine();
 
-    // Why: a line names a command by its words up to the first argument or option, so `suwagcms server <url>` names `server`.
     public static IReadOnlyList<string> Listed(string skillText) =>
         [
             .. ListedLine()
@@ -17,7 +16,6 @@ internal static partial class CommandList
                 .Order(StringComparer.Ordinal),
         ];
 
-    // Why: a command that only groups others (`facts` of `facts get`) needs no line of its own; the ones it groups do.
     public static IReadOnlyList<string> RunnableInCli() =>
         [
             .. All(CliApp.Create(CliEnvironment.Real()))
@@ -35,7 +33,6 @@ internal static partial class CommandList
         return new CommandDifferences([.. runnable.Except(listed)], [.. listed.Except(existing)]);
     }
 
-    // Why: the lines say what an agent can pass, so an option is looked for on its command's line, or where a line or a paragraph sends the reader.
     public static IReadOnlyList<string> Unnamed(string skillText, IEnumerable<(string Words, IReadOnlyList<string> Options)> commands)
     {
         var section = SkillText.Section(skillText, "Commands").Split('\n');

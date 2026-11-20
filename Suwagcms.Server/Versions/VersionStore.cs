@@ -42,7 +42,6 @@ internal static class VersionStore
         sha256 AS Sha256
         """;
 
-    // Why: a read outside the write path needs no lock, since a version is written whole and never changes; null means the bot is unknown.
     public static async Task<List<VersionSummary>?> ListAsync(Pool pool, string bot, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);
@@ -113,7 +112,6 @@ internal static class VersionStore
         );
     }
 
-    // Why: the latest version's number and digest, read under the bot's lock, are all that decides the next number and whether anything changed.
     public static async Task<Latest?> LatestAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,

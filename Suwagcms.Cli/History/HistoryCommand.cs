@@ -15,7 +15,6 @@ internal static class HistoryCommand
 
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    // Why: the words a person types for a resource, mapped to the collection the API and the web serve it from.
     private static readonly Dictionary<string, string> Collections = new(StringComparer.Ordinal)
     {
         ["fact"] = "facts",
@@ -81,7 +80,6 @@ internal static class HistoryCommand
             {
                 var word = parsed.GetValue(kind);
                 var narrowed = parsed.GetValue(only);
-                // Why: a bot has one persona, so its history is asked for by the kind alone.
                 var resource = word == PersonaWord ? PersonaWord : parsed.GetValue(id);
                 if (parsed.GetValue(options.Open))
                 {
@@ -142,7 +140,6 @@ internal static class HistoryCommand
             }
         });
 
-    // Why: the changes of one kind are shown under that kind's own screen, so `--kind --open` opens it; a resource's page is its history, filtered on the bot's History page, because a deleted resource has no screen of its own to open.
     private static Uri PageOf(BotTarget target, string? word, string? resource, int? number)
     {
         var parts = new List<string>();

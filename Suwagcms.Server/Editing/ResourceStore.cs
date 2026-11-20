@@ -41,7 +41,6 @@ internal static class ResourceStore
             )
         );
 
-    // Why: a stored declaration was judged when it arrived, so what cannot be read now counts as none; null means the bot declares nothing.
     public static async Task<BotDeclaration?> DeclaredAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction? transaction,
@@ -88,7 +87,6 @@ internal static class ResourceStore
         ];
     }
 
-    // Why: a read outside the write path needs no lock, since a save commits all its rows at once; null means the bot is unknown.
     public static async Task<List<StoredResource>?> ReadAsync(Pool pool, string bot, CancellationToken cancellationToken)
     {
         await using var connection = await pool.OpenAsync(cancellationToken);
@@ -149,7 +147,6 @@ internal static class ResourceStore
             )
         );
 
-    // Why: a version keeps the id it was created with, so a switch must also reach the versions holding this one; they are those up to the latest now, and none when there is no version yet.
     public static async Task RememberFormerIdAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,
@@ -175,7 +172,6 @@ internal static class ResourceStore
             )
         );
 
-    // Why: deleting or renaming a resource that is off changes the set the bot should hold, so the number goes up and the page says the bot does not have it yet, with no bot called from a save.
     public static async Task CountAvailabilityChangeAsync(
         NpgsqlConnection connection,
         NpgsqlTransaction transaction,

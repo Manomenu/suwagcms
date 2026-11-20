@@ -9,7 +9,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
-// Why: it reads the two documents as data, not as records, so a field the format gains later shows as a difference without a change here.
 internal static class VersionComparer
 {
     private const string PersonaMember = "persona";
@@ -58,7 +57,6 @@ internal static class VersionComparer
         );
     }
 
-    // Why: an entry and a comparison are written by this one code, so given the same old and new text they cannot disagree; the entry stays as it was recorded.
     public static WrittenChange Written(string kind, IReadOnlyList<FieldChange> changes)
     {
         var old = new JsonObject();
@@ -110,7 +108,6 @@ internal static class VersionComparer
             .OfType<JsonObject>()
             .ToDictionary(item => item[key]?.GetValue<string>() ?? throw new InvalidOperationException($"A resource has no {key}."));
 
-    // Why: one resource's stored form against another, as a comparison of two versions tells them apart, so a file of changes compared with the CMS reads like a diff; null when they do not differ.
     public static ResourceDifference? Between(ResourceKind kind, string id, string? before, string? after)
     {
         var was = before is null ? null : Parse(before);
@@ -154,7 +151,6 @@ internal static class VersionComparer
             : new ResourceDifference(kind, id, Difference.Changed, Fields(was, now, ""), []);
     }
 
-    // Why: one member, not a list, and its texts are what a person wrote line by line, so even a persona added or removed says its lines.
     private static IEnumerable<ResourceDifference> PersonaDifference(JsonNode? before, JsonNode? after)
     {
         if (JsonNode.DeepEquals(before, after))
@@ -176,7 +172,6 @@ internal static class VersionComparer
     private static string? PersonaText(JsonNode? persona, string path) =>
         path.Split('.').Aggregate(persona, (node, name) => node?[name])?.GetValue<string>();
 
-    // Why: `whole` is an entry's way: its record is all that is left of a part added or deleted, so unlike a comparison it keeps what the part held.
     private static IEnumerable<PartDifference> Parts(string part, JsonNode? before, JsonNode? after, bool whole = false)
     {
         var old = Named(before);
@@ -203,7 +198,6 @@ internal static class VersionComparer
         }
     }
 
-    // Why: steps are a map by name and local facts a list with a name in each, and both read as named parts.
     private static Dictionary<string, JsonNode?> Named(JsonNode? parts) =>
         parts switch
         {

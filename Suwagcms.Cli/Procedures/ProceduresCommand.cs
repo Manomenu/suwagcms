@@ -95,7 +95,6 @@ internal static class ProceduresCommand
         return command;
     }
 
-    // Why: the mistakes ride along as YAML comments, so the text is still a file that `edit --file` accepts back.
     private static string Yaml(JsonElement body, ProcedureDetail procedure)
     {
         var yaml = ProcedureYaml.From(JsonWithout(body, "notReady"));

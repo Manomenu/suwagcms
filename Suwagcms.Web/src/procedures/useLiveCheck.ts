@@ -6,10 +6,6 @@ import { checkOf, type Check } from "./mistakes";
 
 const QUIET_MS = 400;
 
-/**
- * Asks the server what saving the draft would answer, a moment after the last change: the same PUT with `dryRun`, so the list
- * can never disagree with a save. The previous answer stays on screen until the next one comes.
- */
 export function useLiveCheck(bot: string, id: string, revision: number, draft: Draft): Check {
     const [check, setCheck] = useState<Check>({ state: "checking" });
     const body = JSON.stringify(toSave(draft));

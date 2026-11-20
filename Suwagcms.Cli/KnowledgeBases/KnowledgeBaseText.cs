@@ -5,7 +5,6 @@ namespace Suwagcms.Cli.KnowledgeBases;
 
 internal static class KnowledgeBaseText
 {
-    // Why: a bot with no bases prints nothing, so a script can tell "none" from a line it has to parse.
     public static string Table(IReadOnlyList<KnowledgeBaseView> bases)
     {
         ArgumentNullException.ThrowIfNull(bases);

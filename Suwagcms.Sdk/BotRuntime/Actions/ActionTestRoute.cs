@@ -5,7 +5,6 @@ using Suwagcms.Sdk.Format.Facts;
 
 namespace Suwagcms.Sdk.BotRuntime.Actions;
 
-// Why: a test run uses the runner a conversation uses, so it proves what a conversation will do; it writes nothing, so it changes neither the bot's version nor its store.
 internal sealed class ActionTestRoute(
     HttpActionRunner runner,
     Func<string, IReadOnlyDictionary<string, string>, CancellationToken, Task<ActionOutcome>>? runCode,

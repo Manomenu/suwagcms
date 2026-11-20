@@ -1,4 +1,3 @@
-// A person works on the articles of one bot in the browser; the bot is in the address, and a refusal or a stale edit keeps what was typed.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 
@@ -71,7 +70,6 @@ test("AC-articles-1: an article created in the web is listed in its base and is 
     expect(await listed.json()).toMatchObject([{ id: "priceList", content: "What a valuation costs." }]);
 });
 
-// Why: the starting height of each text box (Tailwind's h-48, 12rem); a box grows from it and never shrinks below it.
 const STARTING_HEIGHT = 192;
 const TEXTS = ["#article-content", "#article-llmGuide", "#article-description"];
 
@@ -217,7 +215,6 @@ test("AC-articles-7: saving an edit of an article that changed meanwhile is refu
     await expect(page.getByLabel(/^description/)).toHaveValue("Marta's text");
     await page.getByRole("button", { name: "Reload the article" }).click();
     await expect(page.getByLabel(/^description/)).toHaveValue("Marta's text");
-    // Why: the reload's answer shows nowhere on this screen, so Save is pressed until it is based on it.
     await expect(async () => {
         await page.getByRole("button", { name: "Save" }).click();
         await expect(page.getByRole("row").filter({ hasText: "priceList" })).toContainText("Marta's text", { timeout: 1000 });
@@ -473,7 +470,6 @@ test("AC-article-links-5: clicking a chip opens its article, and deleting a chip
 
     await page.getByRole("textbox", { name: "content" }).click();
     await page.keyboard.press("Control+End");
-    // Why: the editor learns the caret from a selectionchange event, so a Backspace in the same frame acts on the old caret and deletes nothing.
     await page.evaluate(() => new Promise(requestAnimationFrame));
     await page.keyboard.press("Backspace");
     await expect(page.locator("[data-article-link]")).toHaveCount(0);

@@ -40,7 +40,6 @@ import { ListRow } from "./ListRow";
 import { ConditionsEditor, conditionsText } from "./RuleEditor";
 import { StepForm } from "./StepForm";
 
-/** The writer's word for each block: Ask because a collect lists facts, and Tell because an inform has the model word the points. */
 export const BLOCK_LABELS: Record<BlockName, string> = {
     listen: "Listen",
     collect: "Ask",
@@ -72,7 +71,6 @@ export function blockOf(step: Step): BlockName | null {
     return null;
 }
 
-/** What a row says of its step when it is not open. */
 export function rowText(step: Step): string {
     if (step.listen) return "Wait for the next message";
     if (step.collect) return step.collect.length === 0 ? "No facts yet" : step.collect.join(", ");
@@ -105,7 +103,6 @@ export interface StepsProps {
     beside: Beside;
     edit: (change: (draft: Draft) => Draft) => void;
     onSelect: (step: string | null) => void;
-    /** The If and Else if rows unfolded, as `step:branch`. Unlike a step, several can be open at once, each on its own. */
     openConditions: readonly string[];
     onConditionOpen: (row: string, open: boolean) => void;
     onLeave: (href: string) => void;
@@ -191,7 +188,6 @@ function NextRow({ last, props, list: ref }: { last: { next: string }; props: St
     );
 }
 
-/** The end of the main list is the format's own end, so its End writes nothing and stays; a branch's End is the author's. */
 function EndRow({ props, list: ref }: { props: StepsProps; list: ListRef }) {
     return (
         <ListRow
@@ -214,7 +210,6 @@ function EndRow({ props, list: ref }: { props: StepsProps; list: ListRef }) {
     );
 }
 
-/** The one control at the end of a list: it adds what the bot declares, and an If, a Next: or an End where each can stand. */
 function AddStep({ list: ref, props, label }: { list: ListRef; props: StepsProps; label: string }) {
     const { draft, offered, edit, onSelect } = props;
     const one = listAt(draft.list, ref);
@@ -259,7 +254,6 @@ function AddStep({ list: ref, props, label }: { list: ListRef; props: StepsProps
 function StepsOf({ list: ref, props, label }: { list: ListRef; props: StepsProps; label: string }) {
     const one: StepList = listAt(props.draft.list, ref);
     const last: ListEnd = one.last;
-    // Why: nothing after an End can run, so the list's menu sits above it.
     const ends = last === "end" || (ref === null && last === null);
     return (
         <div className="flex flex-col gap-1">
@@ -287,7 +281,6 @@ function BranchView({ row, index, props }: { row: StepRow; index: number; props:
     const label = branch.when === undefined ? "Else" : index === 0 ? "If" : "Else if";
     const key = `${row.name}:${String(index)}`;
     const hasCondition = Object.keys(branch.when ?? {}).length > 0;
-    // Why: a row with no condition cannot fold, or an If would again show nothing to set one with.
     const open = branch.when !== undefined && (!hasCondition || openConditions.includes(key));
     return (
         <div className="flex flex-col gap-1" data-branch={label} data-place={`branch:${row.name}:${index}`}>
@@ -361,7 +354,6 @@ function BranchView({ row, index, props }: { row: StepRow; index: number; props:
                         facts={facts}
                         onChange={(when) => {
                             edit((current) => setConditions(current, row.name, index, when));
-                            // Why: choosing the first fact gives the row a condition, and it must not fold under the hand that is setting it.
                             if (!openConditions.includes(key)) onConditionOpen(key, true);
                         }}
                     />
@@ -575,7 +567,6 @@ function RowView({ row, number, props }: { row: StepRow; number: number; props: 
     );
 }
 
-/** The steps of a procedure as a page reads them: a numbered list, an If with its indented branches, and what nothing leads to. */
 export function StepsEditor(props: StepsProps) {
     const { draft, edit, beside } = props;
     return (

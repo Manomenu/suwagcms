@@ -159,7 +159,6 @@ function AssignForm({
 }
 
 function StartForm({ target, offered, onChange }: { target: string; offered: string[]; onChange: (start: string) => void }) {
-    // Why: a target the step already names stays visible even when it is not offered, so opening a procedure never hides what is stored.
     const options = offered.includes(target) || target === "" ? offered : [target, ...offered];
     return (
         <Field prefix="step" name="start" label="Start this procedure" hint={PROCEDURE_HINTS.start} errors={[]}>
@@ -190,7 +189,6 @@ function PointsForm({ points, onChange }: { points: Record<string, string>; onCh
         <fieldset className="flex flex-col gap-2">
             <Legend hint={PROCEDURE_HINTS.points}>Points the customer must hear</Legend>
             {entries.map(([name, text], index) => (
-                // Why: a point's name is what is being typed, so its place in the list is what keeps the field focused.
                 <div key={index} className="flex items-start gap-1">
                     <Input
                         aria-label={`Name of point ${index + 1}`}
@@ -312,7 +310,6 @@ function MappingRows({
             {names.map((name) => {
                 const picked = mapped[name] ?? "";
                 const offered = factsThatFit(kind, fields[name] ?? {}, facts).map((fact) => fact.name);
-                // Why: a fact the step already names stays visible even when it no longer fits, so opening a procedure never hides what is stored.
                 const options = picked === "" || offered.includes(picked) ? offered : [...offered, picked];
                 return (
                     <label key={name} className="flex items-center gap-1 text-sm">
@@ -404,7 +401,6 @@ function ActionStepForm({
     );
 }
 
-/** The form of an open row: what its block holds. Every control writes into the draft; none of them judges it. */
 export function StepForm({
     bot,
     id,

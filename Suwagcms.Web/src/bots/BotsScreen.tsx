@@ -8,10 +8,6 @@ import { BotsView, profilePath } from "./BotsView";
 import { DeclarationPanel } from "./DeclarationPanel";
 import { RegisterBotForm } from "./RegisterBotForm";
 
-/**
- * Loads the bots when it opens, so a bot registered meanwhile from the CLI or another tab is found. A new `key` (another
- * bot in the address) opens it afresh.
- */
 export function BotsScreen({ openId }: { openId: string | null }) {
     const [bots, setBots] = useState<Bot[] | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
@@ -19,7 +15,6 @@ export function BotsScreen({ openId }: { openId: string | null }) {
     const [, navigate] = useLocation();
 
     useEffect(() => {
-        // StrictMode runs effects twice in development: abort the first request, ignore its result.
         const controller = new AbortController();
         fetchBots(controller.signal)
             .then(setBots)

@@ -11,7 +11,6 @@ internal static class RenameCommand
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    // Why: the words a person types for a resource, mapped to the collection the API serves it from and the kind a page is found by.
     private static readonly Dictionary<string, (string Collection, string Kind)> Kinds = new(StringComparer.Ordinal)
     {
         ["fact"] = ("facts", "GlobalFact"),

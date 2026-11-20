@@ -3,10 +3,6 @@ import { Button } from "@/design/button";
 import { MistakeItems, type ShownMistake } from "@/design/mistakeItems";
 import { StickyActions } from "@/design/stickyActions";
 
-/**
- * The end of a resource's form: a refusal no field shows, the save button, and Cancel. A resource that moved on since it was
- * opened offers `reloadLabel`.
- */
 export function FormFooter({
     saving,
     loose,

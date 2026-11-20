@@ -44,7 +44,6 @@ internal static class FactRules
         For(MistakeCodes.FactConstraintForeign, ForeignConstraints),
     ];
 
-    // Why: one rule per code, so a code that never fires is found by the test that every rule has a mistake.
     private static Rule For(string code, Func<GlobalFact, IEnumerable<Mistake>> check) =>
         new(
             code,
@@ -52,7 +51,6 @@ internal static class FactRules
             definition => definition.Facts.SelectMany(check).Concat(Locals(definition, check)).Concat(ActionFields(definition, check))
         );
 
-    // Why: a parameter or a result is typed by the same rules as a fact, with the same codes; a code action's are the bot's, and a declaration is judged when it arrives.
     private static IEnumerable<Mistake> ActionFields(BotDefinition definition, Func<GlobalFact, IEnumerable<Mistake>> check) =>
         definition
             .Actions.Where(action => !action.IsCode)
@@ -92,7 +90,6 @@ internal static class FactRules
                 []
             ));
 
-    // Why: a local fact has the same rules with the same codes; only where the mistake sits differs, inside its procedure.
     private static IEnumerable<Mistake> Locals(BotDefinition definition, Func<GlobalFact, IEnumerable<Mistake>> check) =>
         definition.Procedures.SelectMany(procedure =>
             procedure.Locals.SelectMany(local =>
@@ -234,7 +231,6 @@ internal static class FactRules
                         )
                 );
 
-    // Why: a bot writes one value per line of a reply and stores it in a text column, so a line break or a NUL could never be set.
     private static IEnumerable<Mistake> UnusableValues(GlobalFact fact) =>
         fact.Type != FactTypes.Enum
             ? []
@@ -251,7 +247,6 @@ internal static class FactRules
                     )
                 );
 
-    // Why: a reply writes 'other' for a value outside the list, so in every bot it means "none of these" and cannot be a value.
     private static IEnumerable<Mistake> ReservedValues(GlobalFact fact) =>
         fact.Type != FactTypes.Enum
             ? []

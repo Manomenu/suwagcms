@@ -10,7 +10,6 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
-// Why: creating a version takes the bot's lock the editor takes and loads the definition the way it does, so the version holds a state that really existed.
 internal sealed class VersionCreator(Pool pool, TimeProvider time)
 {
     public const string Unchanged = "version.unchanged";
@@ -31,7 +30,6 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
         }
         var resources = await ResourceStore.LoadAsync(connection, transaction, bot, cancellationToken);
 
-        // Why: creating a version never calls a bot, so it trusts the last answer; a push asks again, and the bot validates what it loads.
         var declared = await DeclarationStore.FindAsync(connection, transaction, bot, cancellationToken);
         var mistakes = DefinitionValidator.Validate(ResourceKinds.Assemble(resources), ValidationStage.Version, declared?.Parsed);
         if (mistakes.Count > 0)
@@ -40,7 +38,6 @@ internal sealed class VersionCreator(Pool pool, TimeProvider time)
         }
 
         var latest = await VersionStore.LatestAsync(connection, transaction, bot, cancellationToken);
-        // Why: the digest covers the number, so the working state is written once under the latest number to compare it with that version.
         if (latest is { } last && VersionDocument.Write(bot, last.Number, resources).Sha256 == last.Sha256)
         {
             return (null, new EditResult.Refused([NothingChanged(bot, last.Number)]));

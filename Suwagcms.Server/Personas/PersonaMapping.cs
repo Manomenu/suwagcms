@@ -11,7 +11,6 @@ internal static class PersonaMapping
 {
     public static readonly ResourceRef Target = new(ResourceKind.Persona, Persona.PublicId);
 
-    // Why: white space is the only thing changed in a text, and only to say it is empty: the rest is kept as written, so an empty part is left out of a version.
     public static Persona ToRecord(SavePersona body)
     {
         ArgumentNullException.ThrowIfNull(body);
@@ -24,7 +23,6 @@ internal static class PersonaMapping
         return new Persona { Personality = Written(body.Personality), Scope = scope == new PersonaScope() ? null : scope };
     }
 
-    // Why: the strict reader names an unknown field at the top only, and a typo inside the scope must be named just the same.
     public static (SavePersona? Body, IReadOnlyList<Mistake> Mistakes) Read(JsonElement root, ResourceRef target)
     {
         var (body, mistakes) = StrictBody.Read<SavePersona>(root, target);

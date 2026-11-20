@@ -11,14 +11,12 @@ using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
 
-// Why: a push reads what it needs, lets go of the database, calls the bot, and only then records; so no lock or transaction ever waits on a bot.
 internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAsker asker, AvailabilitySender availability, TimeProvider time)
 {
     internal sealed record Rejected(int Status, Mistake Mistake);
 
     private sealed record Target(PushStore.Registered Registered, VersionDetail Version);
 
-    // Why: Left is what the bot's own answer names, and Refused stands for every way a push ends before it reaches the bot.
     private sealed record Route(PushWay Way, int? Left, PushResult? Refused);
 
     public async Task<(PushResult? Result, Rejected? Rejected)> PushAsync(string bot, int number, CancellationToken cancellationToken)
@@ -37,7 +35,6 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
             _ => await DeliverAsync(bot, number, target, route.Way, cancellationToken),
         };
 
-        // Why: the record must survive a caller that gives up while the bot was answering, since the bot may have taken the version.
         await PushStore.RecordAsync(
             pool,
             bot,
@@ -112,7 +109,6 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
         {
             return new Route(PushWay.Send, null, Judge(bot, registered, number, reply).Result);
         }
-        // Why: a bot whose state cannot be read is sent the document, and its answer to that says what is wrong.
         var state = reply is BotClient.Reply.Answer { Status: StatusCodes.Status200OK } answer ? BotClient.StateIn(answer) : null;
         if (state is not null && state.Bot != bot)
         {
@@ -127,7 +123,6 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
         return new Route(way, state?.Current, await CannotRunAsync(bot, number, target.Version, cancellationToken));
     }
 
-    // Why: a dry run chooses too, and only a real push may change what the bot has; a push that needs nothing changes nothing, so it sends nothing either.
     private async Task<(PushResult Result, bool Reported)> DeliverAsync(
         string bot,
         int number,
@@ -168,11 +163,9 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
         var reply = await client.PutCurrentAsync(target.Registered.Address, number, target.Version.Version.Sha256, cancellationToken);
         return reply switch
         {
-            // Why: the bot removed the version after it was asked, and sending the document is the way to a version a bot does not hold.
             BotClient.Reply.Answer { Status: StatusCodes.Status409Conflict } answer
                 when BotClient.RefusalIn(answer)?.Mistakes.Any(mistake => mistake.Code == MistakeCodes.VersionNotHeld) == true =>
                 await SendAsync(bot, number, target, cancellationToken),
-            // Why: a bot on an SDK older than this route can take a version it does not hold, but has no way to go back to one it holds.
             BotClient.Reply.Answer
             {
                 Status: StatusCodes.Status404NotFound or StatusCodes.Status405MethodNotAllowed or StatusCodes.Status501NotImplemented,
@@ -192,7 +185,6 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
         };
     }
 
-    // Why: the same comparison the page and `suwagcms diff` give, from what the bot reports; a number this CMS never created has nothing to compare with.
     private async Task<VersionComparison?> ChangesAsync(
         string bot,
         int? left,
@@ -204,7 +196,6 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
             ? VersionComparer.Compare(bot, from, number, before.Document, version.Document)
             : null;
 
-    // Why: the whole set goes first, which repairs a missed change, and a new version never runs without it.
     private async Task<PushResult?> AvailabilityMissedAsync(string bot, string address, int number, CancellationToken cancellationToken) =>
         await availability.CatchUpAsync(bot, address, cancellationToken) is { State: not AvailabilityDeliveryState.Confirmed } delivery
             ? Failed(
@@ -218,7 +209,6 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
             )
             : null;
 
-    // Why: a push is judged by what the bot declares at this moment; a bot that gives no good answer is left to its own validation, which the push reaches next.
     private async Task<PushResult?> CannotRunAsync(string bot, int number, VersionDetail version, CancellationToken cancellationToken)
     {
         if (await asker.AskForPushAsync(bot, cancellationToken) is not { Ask: DeclarationAsk.Answered, Declaration: { } declaration })
@@ -306,7 +296,6 @@ internal sealed class VersionPusher(Pool pool, BotClient client, DeclarationAske
                 )
             : "";
 
-    // Why: the page lists attempts as text, so the bot's own reasons are kept with the failure.
     private static string? Recorded(PushResult result) =>
         result.Outcome == PushOutcome.Succeeded
             ? null

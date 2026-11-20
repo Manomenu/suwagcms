@@ -18,7 +18,6 @@ internal static class CompareText
             $"{applied.Added} added, {applied.Replaced} replaced, {applied.Unchanged} unchanged, {applied.Edited} edited, {applied.Deleted} deleted"
         );
 
-    // Why: only what would change is shown in full, since a seed of hundreds of resources is mostly unchanged and the count says so.
     public static string Of(ChangesApplied applied)
     {
         ArgumentNullException.ThrowIfNull(applied);

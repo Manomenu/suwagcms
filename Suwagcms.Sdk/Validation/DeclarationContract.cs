@@ -7,12 +7,10 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.Validation;
 
-// Why: what the bot's code controls is reported at Version and never at Save: the definition's copy of a code action is compared with what the bot says now, on id, parameters and results, leaving descriptions aside so a rewording does not stop a rollback.
 internal static class DeclarationContract
 {
     public static IEnumerable<Mistake> Check(BotDefinition definition, BotDeclaration declaration)
     {
-        // Why: the validate route takes a declaration nobody has judged yet, so a repeated id or field must not stop it; the answer's own check names those.
         var declared = declaration
             .CodeActions.DistinctBy(action => action.Id, StringComparer.Ordinal)
             .ToDictionary(action => action.Id, action => action.ToAction(), StringComparer.Ordinal);

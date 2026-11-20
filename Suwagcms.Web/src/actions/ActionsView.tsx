@@ -8,7 +8,6 @@ import { ResourceList } from "@/design/resourceList";
 
 import { isCode, type ActionView } from "./api";
 
-/** One list of the bot's actions, HTTP and code. */
 export function ActionsView({
     bot,
     history,

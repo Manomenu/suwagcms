@@ -11,7 +11,6 @@ import { PersonaView } from "./PersonaView";
 
 const PERSONA_ID = "persona";
 
-// Why: a refusal keeps what was typed, so only the person's own reload may replace it.
 export function PersonaScreen({ bot }: { bot: string }) {
     const [persona, setPersona] = useState<Persona | null>(null);
     const [form, setForm] = useState<PersonaForm | null>(null);
@@ -43,7 +42,6 @@ export function PersonaScreen({ bot }: { bot: string }) {
     );
 
     useEffect(() => {
-        // Why: StrictMode runs effects twice in development, so the first request is aborted and its result ignored.
         const controller = new AbortController();
         load(controller.signal);
         return () => {

@@ -6,7 +6,6 @@ import { bodyOf, placeOf, placesOf, type ActionForm as ActionFormState } from ".
 import { ActionFields } from "./ActionFields";
 import { actionsApi } from "./api";
 
-/** The form that adds or edits an action. A refusal shows each mistake beside its field and keeps everything typed. */
 export function ActionForm({
     bot,
     initial,

@@ -18,7 +18,6 @@ function sameJson<Form>(form: Form, initial: Form): boolean {
     return JSON.stringify(form) === JSON.stringify(initial);
 }
 
-/** What a form that saves a resource keeps: what was typed, which a refusal never loses, and the refusal itself. Cancelling with unsaved changes asks first. */
 export function useSaveForm<Form>({
     initial,
     save,

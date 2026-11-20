@@ -31,7 +31,6 @@ function MistakeNote({ mistake }: { mistake: Mistake }) {
     );
 }
 
-/** Says how many mistakes there are; each jumps to its place, so a long page need not be searched. */
 function MistakeCount({
     done,
     mistakes,
@@ -75,7 +74,6 @@ function MistakeCount({
     );
 }
 
-/** The kind's form of the shared edit screen: the procedure's settings, its steps, and Save at the end, as on every kind. */
 export function ProcedureForm({
     check,
     dirty,

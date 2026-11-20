@@ -10,7 +10,6 @@ public sealed class ProceduresTests : IDisposable
 {
     private static readonly string[] OnBot = ["--server", "http://cms.internal", "--bot", "rzeczoznawca"];
 
-    // Why: the spec's own example, with all four blocks, every condition kind and a loop back to a listen.
     private const string Yaml = """
         id: orderValuation
         description: The customer orders a valuation of a property.
@@ -78,7 +77,6 @@ public sealed class ProceduresTests : IDisposable
         return document ?? throw new InvalidOperationException(problem);
     }
 
-    // Why: the server answers a save with the procedure it stored and its revision, so the stub echoes the body the command sent.
     private static (HttpStatusCode, string) Echo(string sent, string id, int revision = 1, string notReady = "[]")
     {
         var body = JsonNode.Parse(sent) as JsonObject ?? [];
@@ -87,7 +85,6 @@ public sealed class ProceduresTests : IDisposable
         {
             detail[key] = value?.DeepClone();
         }
-        // Why: the server writes every field of the format, a missing one as null, and the CLI must print a file that reads back the same.
         foreach (var field in new[] { "firstStep", "whenStalled" })
         {
             detail[field] ??= null;
@@ -115,7 +112,6 @@ public sealed class ProceduresTests : IDisposable
         return (HttpStatusCode.OK, detail.ToJsonString());
     }
 
-    // Why: a test reads a path of the sent document and wants a failure that names the missing step of the path, not a null reference.
     private static JsonNode At(JsonNode? node, params string[] path)
     {
         var current = node;
@@ -231,7 +227,6 @@ public sealed class ProceduresTests : IDisposable
         return document;
     }
 
-    // Why: a text that starts with a brace is a flow mapping in YAML unless quoted, so both a quoted and an inner placeholder must survive.
     private const string Booking = """
         id: booking
         description: Books a valuation.

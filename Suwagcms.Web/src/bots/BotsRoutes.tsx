@@ -2,7 +2,6 @@ import { Route, Switch } from "wouter";
 
 import { BotsScreen } from "./BotsScreen";
 
-/** The routes under `/bots`: the list, and one bot's profile at `/bots/<id>`. */
 export function BotsRoutes() {
     return (
         <Switch>

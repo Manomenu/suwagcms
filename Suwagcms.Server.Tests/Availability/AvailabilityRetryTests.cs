@@ -7,7 +7,6 @@ using Suwagcms.Server.Availability;
 
 namespace Suwagcms.Server.Tests.Availability;
 
-// Why: the retrier's clock is a fake one here, so a minute passes when the test says so and a retry that should not happen cannot hide behind a slow run. Only the retrier runs on it: a bot call in flight keeps its real timeout, so moving the clock never cuts one short.
 public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private static readonly TimeSpan Minute = TimeSpan.FromMinutes(1);
@@ -32,7 +31,6 @@ public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer se
         return await AvailabilityScene.StartAsync(factory.CreateClient());
     }
 
-    // Why: the bot refuses the first `refusals` messages it is sent and takes the rest, and every message is counted.
     private void Refuse(AvailabilityScene scene, int refusals) =>
         scene.Bot.OnPush = context =>
         {
@@ -46,7 +44,6 @@ public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer se
 
     private int Puts => Volatile.Read(ref puts);
 
-    // Why: the deadline only stops a broken run from hanging; what is waited for is certain to come, however slow the machine.
     private static async Task Until(Func<Task<bool>> done)
     {
         var deadline = TimeProvider.System.GetUtcNow().AddSeconds(60);
@@ -59,8 +56,8 @@ public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer se
 
     private Task UntilPuts(int count) => Until(() => Task.FromResult(Puts >= count));
 
-    // Why: at rest the retrier is either waiting on its timer or has nothing due; in between it may be reading the clock, and a jump then would move its next try.
-    private Task Settled() => Until(() => Task.FromResult(clock.Waiting || retries!.Idle));
+    private Task Settled() =>
+        Until(() => Task.FromResult(clock.Waiting || (retries ?? throw new InvalidOperationException("the test started no retrier")).Idle));
 
     private async Task Pass(TimeSpan passing)
     {
@@ -68,7 +65,6 @@ public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer se
         clock.Advance(passing);
     }
 
-    // Why: a retry can only start from a timer that fired, so once the retrier is at rest again after the clock moved, a put that has not come never will.
     private async Task NoPutAfter(TimeSpan passing)
     {
         await Settled();

@@ -27,7 +27,6 @@ internal static class ProcedureText
     public static string Readiness(int count) =>
         count == 0 ? "ready" : string.Create(CultureInfo.InvariantCulture, $"{count} mistake{(count == 1 ? "" : "s")} before a version");
 
-    // Why: a save never refuses for these, so the answer says them in the same words every time: the code, what is wrong, and the fix.
     public static string Mistakes(string head, IReadOnlyList<Mistake> mistakes)
     {
         ArgumentNullException.ThrowIfNull(mistakes);

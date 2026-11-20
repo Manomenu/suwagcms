@@ -22,7 +22,6 @@ type Graph = Record<string, Step>;
 
 const when = (fact: string, value: string) => ({ [fact]: { oneOf: [value] } });
 
-/** A list as lines, so a test reads like the page: two spaces per level of indent. */
 function lines(list: StepList, indent = ""): string[] {
     const out: string[] = [];
     list.rows.forEach((row, index) => {
@@ -363,7 +362,6 @@ describe("moving an If", () => {
     });
 });
 
-/** A small seeded generator, so a failure names a graph that can be run again. */
 function generator(seed: number) {
     let state = seed;
     return (limit: number) => {
@@ -381,7 +379,6 @@ function randomGraph(seed: number): { first: string | null; steps: Graph } {
         const shape = pick(4);
         if (shape === 0) return rules;
         if (shape === 1) return [{ to: any() }];
-        // Why: the format allows a default anywhere, and a default that is not last must stay where it is.
         const at = shape === 2 ? rules.length : pick(rules.length);
         return [...rules.slice(0, at), { to: any() }, ...rules.slice(at)];
     };
@@ -405,7 +402,6 @@ function randomGraph(seed: number): { first: string | null; steps: Graph } {
     return { first: pick(10) === 0 ? null : (names[0] ?? "s0"), steps };
 }
 
-/** A lone default is the same as a fixed next, and is written as one. */
 function nextAsSaved(next: Step["next"]): Step["next"] {
     return Array.isArray(next) && next.length === 1 && next[0]?.when === undefined ? next[0]?.to : next;
 }

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Suwagcms.Server.Tests.Actions;
 
-// Why: the other system an action calls, on a real port, so a test sees what really arrived and from where.
 internal sealed class FakeService
 {
     private readonly WebApplication app;
@@ -39,7 +38,6 @@ internal sealed class FakeService
         return service;
     }
 
-    // Why: a test may stop the service early to see no connection, and its scene stops it again at the end.
     public async Task StopAsync()
     {
         if (!stopped)

@@ -4,7 +4,6 @@ using System.Text;
 
 namespace Suwagcms.Cli.Articles;
 
-// Why: a long Markdown text comes from a file or from stdin, and is read as bytes so that the text the CMS stores is the text the author wrote.
 internal sealed record TextInput(Option<string?> Text, Option<string?> File, string Field)
 {
     public const string FromStandardInput = "-";
@@ -34,7 +33,6 @@ internal sealed record TextInput(Option<string?> Text, Option<string?> File, str
             ? $"Only one text can be read from stdin: give {string.Join(" or ", inputs.Select(input => input.File.Name))} as a file for the other."
             : null;
 
-    // Why: the value is null when no text was given, and a file that cannot be read comes back as a problem instead of throwing.
     public async Task<(string? Value, string? Problem)> ReadAsync(
         ParseResult parsed,
         CliEnvironment environment,
@@ -70,6 +68,5 @@ internal sealed record TextInput(Option<string?> Text, Option<string?> File, str
         }
     }
 
-    // Why: GetString keeps a byte order mark and File.ReadAllText would drop it; the text is stored exactly as the file holds it.
     private static string Decode(byte[] bytes) => new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetString(bytes);
 }

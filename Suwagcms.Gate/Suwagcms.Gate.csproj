@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="TngTech.ArchUnitNET.xUnitV3" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Update="Suwgate.Architecture" IncludeAssets="all" />
+    <PackageReference Include="Suwgate.Database" />
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
 
@@ -17,14 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Suwagcms.Gate.Design" />
-    <Using Include="Suwagcms.Gate.Code" />
-    <Using Include="Suwagcms.Gate.Repository" />
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- Why: the gate tests the fixture's decision without referencing a test project, which the reference rules do not allow -->
   <ItemGroup>
-    <Compile Include="../Suwagcms.Server.Tests/LinkedWorktree.cs" Link="Repository/LinkedWorktree.cs" />
+    <Compile Include="../Suwagcms.Server.Tests/LinkedWorktree.cs" Link="LinkedWorktree.cs" />
   </ItemGroup>
 </Project>

@@ -3,17 +3,14 @@ using Suwagcms.Contracts.Versions;
 
 namespace Suwagcms.Server.Versions;
 
-// Why: a long text is compared by lines, so a price changed inside an article reads as that line and not as the whole article.
 internal static class LineComparer
 {
     private const int Around = 2;
 
-    // Why: two whole articles that differ everywhere would need a table of 25 million cells; past this size they read as removed and added, which is still true.
     private const int LargestTable = 4_000_000;
 
     public static IReadOnlyList<TextLine> Compare(string? before, string? after)
     {
-        // Why: a text that is not there has no lines, where an empty text has one empty line; a new text must not read as an empty line removed.
         var old = before?.Split('\n') ?? [];
         var fresh = after?.Split('\n') ?? [];
         var start = 0;

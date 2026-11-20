@@ -11,7 +11,6 @@ public sealed class InformBlockTests(TestDatabase database, ClassServer server) 
 
     private sealed record Scene(ArticleApi Articles, ProcedureApi Procedures);
 
-    // Why: a bot with two bases and one article in the second, so "any knowledge base of this bot" is what is tried.
     private async Task<Scene> NewBot()
     {
         _ = database.Pool;

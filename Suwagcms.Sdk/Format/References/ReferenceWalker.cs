@@ -4,7 +4,6 @@ using Suwagcms.Sdk.Format.Procedures;
 
 namespace Suwagcms.Sdk.Format.References;
 
-// Why: the one place that knows where a definition names another resource, so a rule, a delete guard and a rename never each learn it separately.
 public static class ReferenceWalker
 {
     public static IEnumerable<Reference> From(BotDefinition definition)
@@ -28,7 +27,6 @@ public static class ReferenceWalker
                 yield return new Reference(from, path, new ResourceRef(ResourceKind.Article, link.Id), null);
             }
         }
-        // Why: only the guide may hold a link to a procedure, and conversation is refused by a rule of its own, so neither is an edge that a loop or a missing-target rule should also report.
         foreach (
             var link in CmsLinks
                 .In(article.LlmGuide)
@@ -39,7 +37,6 @@ public static class ReferenceWalker
         }
     }
 
-    // Why: a local fact is contained in its procedure, so a use of one is no reference to another resource and is invisible outside.
     public static IEnumerable<Reference> From(Procedure procedure)
     {
         ArgumentNullException.ThrowIfNull(procedure);
@@ -47,7 +44,6 @@ public static class ReferenceWalker
             .Where(reference => reference.To.Kind != ResourceKind.GlobalFact || !procedure.Locals.ContainsKey(reference.To.Id));
     }
 
-    // Why: every fact a step names, local or global, for the rules that check a use against the fact it means, and the action it runs, which has no use of a fact to say.
     public static IEnumerable<Reference> Uses(Procedure procedure)
     {
         ArgumentNullException.ThrowIfNull(procedure);
@@ -73,7 +69,6 @@ public static class ReferenceWalker
         }
     }
 
-    // Why: a rename rewrites exactly what the walker finds, so every edge is known to both in this one file; an edge left out here stays pointing at the old id and is refused as a missing reference.
     public static Article Rewrite(Article article, ResourceRef target, string newId)
     {
         ArgumentNullException.ThrowIfNull(article);
@@ -169,7 +164,6 @@ public static class ReferenceWalker
         };
     }
 
-    // Why: a search query is text that names nothing, so a rename only ever rewrites an entry's base and articles.
     private static Procedure RewriteKnowledge(Procedure procedure, Func<KnowledgeEntry, KnowledgeEntry> rewrite) =>
         procedure with
         {

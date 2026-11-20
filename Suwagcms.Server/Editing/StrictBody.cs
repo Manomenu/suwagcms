@@ -6,7 +6,6 @@ using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Server.Editing;
 
-// Why: the validator skips unknown fields so that old bots load new versions, but a save names a typo instead of dropping it silently.
 internal static class StrictBody
 {
     public const string UnknownField = "save.unknownField";

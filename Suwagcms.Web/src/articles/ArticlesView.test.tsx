@@ -173,7 +173,6 @@ describe("ArticleFields", () => {
         const html = fields([mistake("article.llmGuide.missing", "llmGuide"), mistake("article.title.missing", "title")]);
 
         expect(fieldHtml(html, "llmGuide")).toContain("the message the fix");
-        // Why: the editor itself exists only in a browser, so the page marks its wrapper and the browser test checks the textbox.
         expect(fieldHtml(html, "llmGuide")).toContain('data-invalid="true"');
         expect(fieldHtml(html, "title")).toContain("the message the fix");
         expect(fieldHtml(html, "content")).not.toContain("the message");

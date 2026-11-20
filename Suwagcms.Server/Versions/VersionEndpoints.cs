@@ -31,7 +31,6 @@ internal static class VersionEndpoints
         routes.MapGet("/bots/{bot}/versions/{number:int}/push-plan", PushPlan).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
     }
 
-    // Why: it reads two frozen documents and neither the working state nor the bot, so the answer is the same for ever.
     private static async Task<Results<Ok<VersionComparison>, ProblemHttpResult>> Diff(
         string bot,
         int from,
@@ -65,7 +64,6 @@ internal static class VersionEndpoints
         );
     }
 
-    // Why: it only reads the frozen document; writing the files to a folder is the client's business, and nothing takes them back.
     private static async Task<Results<Ok<VersionExport>, ProblemHttpResult>> Export(
         string bot,
         int number,
@@ -98,7 +96,6 @@ internal static class VersionEndpoints
             : NotPushed(rejected ?? throw new InvalidOperationException("a push gave neither a result nor a refusal"));
     }
 
-    // Why: a read like the page's status, so it answers what a push would do while changing neither the bot nor the record of attempts.
     private static async Task<Results<Ok<PushPlan>, ProblemHttpResult>> PushPlan(
         string bot,
         int number,
@@ -143,7 +140,6 @@ internal static class VersionEndpoints
         return await MissingAsync(pool, bot, number, "The version was not shown.", cancellationToken);
     }
 
-    // Why: an unknown bot and an unknown number are told apart, since the fix differs.
     internal static async Task<ProblemHttpResult> MissingAsync(
         Pool pool,
         string bot,

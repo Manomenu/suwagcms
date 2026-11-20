@@ -11,7 +11,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Cli.Versions;
 
-// Why: the export goes one way: the CMS is the single source of truth, so this command only reads from it, and no command takes the files back.
 internal static class ExportCommand
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
@@ -134,7 +133,6 @@ internal static class ExportCommand
             {
                 var path = Path.Combine(root, file.Path);
                 Directory.CreateDirectory(Path.GetDirectoryName(path) ?? root);
-                // Why: two ids that differ only in case are one file on some systems, and one must not silently replace the other.
                 await using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
                 await stream.WriteAsync(NoMark.GetBytes(ExportYaml.Text(export, file)), cancellationToken);
             }
@@ -162,14 +160,12 @@ internal static class ExportCommand
         );
     }
 
-    // Why: a path that only stays inside by passing through `..` is no file named by its id, so it is refused with the ones that leave.
     private static bool Inside(string root, ExportedFile file)
     {
         var path = Path.Combine(root, file.Path);
         return path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal) && Path.GetFullPath(path) == path;
     }
 
-    // Why: a file left over from another version would read as part of this one, and deleting a person's files is not this command's business.
     private static string? FolderProblem(string folder)
     {
         try

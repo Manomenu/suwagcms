@@ -41,7 +41,6 @@ internal static class ProcedureFactRules
                 MistakeCodes.ReferenceMissing,
                 reference.Path,
                 $"{Where(reference)} in '{procedure.Id}' names fact '{reference.To.Id}', which this procedure does not see.",
-                // Why: braces in a say may have been meant as plain text, and the way to keep them so is not obvious.
                 reference.Use == FactUse.Say
                     ? $"{known} To send the braces as written, put a space inside them: {{ {reference.To.Id} }}."
                     : known
@@ -157,7 +156,6 @@ internal static class ProcedureFactRules
         {
             yield return string.Create(CultureInfo.InvariantCulture, $"range of '{fact.Name}' has min {range.Min} above max {range.Max}.");
         }
-        // Why: a bound the fact cannot reach means the condition says more than it can ever hold, so any such bound is a mistake, not only a range wholly outside.
         else if (range.Min < fact.Min || range.Min > fact.Max || range.Max < fact.Min || range.Max > fact.Max)
         {
             yield return string.Create(
@@ -201,7 +199,6 @@ internal static class ProcedureFactRules
             )
         );
 
-    // Why: inside a procedure a short name means its own local fact first; the name clash rule keeps that from hiding a global one.
     private static GlobalFact? Fact(BotDefinition definition, Procedure procedure, string name) =>
         procedure.Locals.TryGetValue(name, out var local) ? local.Named(name) : definition.Facts.FirstOrDefault(fact => fact.Name == name);
 

@@ -6,7 +6,6 @@ using YamlDotNet.Core;
 
 namespace Suwagcms.Cli.Changes;
 
-// Why: the YAML is only the CLI's form of the request, so the file becomes the JSON the server takes and every rule about its contents stays on the server.
 internal static class ChangeFile
 {
     private static readonly HashSet<string> TopNumbers = new(["ifRevision", "min", "max", "maxLength", "results"], StringComparer.Ordinal);
@@ -57,7 +56,6 @@ internal static class ChangeFile
                 $"'{name}' has no `changes` list: write `changes:` with a list of `add: <kind>`, `edit: <kind>` and `delete: <kind>`."
             );
         }
-        // Why: `changes:` with nothing under it reads as null, and it says the same as an empty list.
         document["changes"] ??= new JsonArray();
         return (document, "");
     }

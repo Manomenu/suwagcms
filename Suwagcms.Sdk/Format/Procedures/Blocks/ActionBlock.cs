@@ -3,7 +3,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.Format.Procedures.Blocks;
 
-// Why: the mapping lives in the step and never in the action, so one action serves many procedures and every mapping can be checked against the types on both sides.
 public sealed record ActionBlock(
     string ActionId,
     IReadOnlyDictionary<string, string> Parameters,

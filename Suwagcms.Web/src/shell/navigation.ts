@@ -17,7 +17,6 @@ export interface Navigation {
 }
 
 function decode(part: string): string {
-    // Why: a malformed % in the address must show the page, not crash the frame.
     try {
         return decodeURIComponent(part);
     } catch {

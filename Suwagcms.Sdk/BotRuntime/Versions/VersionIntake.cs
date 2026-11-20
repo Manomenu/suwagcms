@@ -11,9 +11,7 @@ internal static class VersionIntake
 {
     public static IReadOnlyList<Mistake> Check(string json, string botId, int number, BotDeclaration? declaration = null)
     {
-        // Why: the bot's own declaration judges what it loads, so a version that needs what the bot no longer has is refused here too, whatever the CMS believed when it made it.
         var content = DefinitionValidator.ValidateJson(json, ValidationStage.Version, declaration);
-        // Why: without a readable formatVersion the document is not an object of this format, so its envelope says nothing.
         if (content.Any(mistake => mistake.Code is MistakeCodes.FormatInvalid or MistakeCodes.FormatVersion))
         {
             return content;

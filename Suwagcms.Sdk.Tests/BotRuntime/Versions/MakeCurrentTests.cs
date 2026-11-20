@@ -88,7 +88,6 @@ public sealed class MakeCurrentTests
             Documents.Fact("y")
         );
         Documents.Sign(stale);
-        // Why: what today's validator refuses can only be in the store if an earlier SDK accepted it, so the test puts it there itself.
         await store.WriteVersionAsync(12, stale.ToJsonString(), TestContext.Current.CancellationToken);
         await store.WriteCurrentAsync(14, TestContext.Current.CancellationToken);
         var before = BotHost.Describe(await bot.StateAsync());

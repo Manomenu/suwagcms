@@ -15,7 +15,6 @@ using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 
 namespace Suwagcms.Server.Tests.Changes;
 
-// Why: one fresh bot and the two ways a file reaches it, the request and the real command, so a test can compare either with what a resource then reads back as.
 internal sealed class ChangeScene(HttpClient client, string bot)
 {
     public string Bot { get; } = bot;
@@ -92,7 +91,6 @@ internal sealed class ChangeScene(HttpClient client, string bot)
             : "absent";
     }
 
-    // Why: every row as stored, so "nothing changed" also means its revision and its time did not move.
     public async Task<List<string>> RowsAsync(Pool pool)
     {
         await using var connection = await pool.OpenAsync(TestContext.Current.CancellationToken);

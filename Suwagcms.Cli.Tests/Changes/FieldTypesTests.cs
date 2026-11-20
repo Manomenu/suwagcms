@@ -17,21 +17,18 @@ using Suwagcms.Sdk.Format.Procedures;
 
 namespace Suwagcms.Cli.Tests.Changes;
 
-// Why: YAML has no types and the CLI types a scalar by where it stands, so walking the contracts the server reads makes a new numeric or boolean field fail here until the reader knows its place.
 public sealed class FieldTypesTests
 {
     private const string AnyName = "someName";
 
     private const string Item = "[]";
 
-    // Why: these types are written by a converter of their own, so the wire is not their properties.
     private static readonly Dictionary<Type, Func<string[], IEnumerable<Leaf>>> Wires = new()
     {
         [typeof(NextSteps)] = path => Leaves(typeof(IReadOnlyList<Transition>), path),
         [typeof(ActionImplementation)] = path => Leaves(typeof(HttpCall), [.. path, "http"]),
     };
 
-    // Why: the kinds of a file of changes and the save each one's fields are read as, as the server's ChangeList maps them.
     private static readonly (string Kind, Type Save)[] Saves =
     [
         ("fact", typeof(SaveFact)),
@@ -101,7 +98,6 @@ public sealed class FieldTypesTests
         _ = root;
         ArgumentNullException.ThrowIfNull(path);
         var segments = path.Split('\n');
-        // Why: a file that starts with a brace is read as JSON, so the top stays in block style.
         var file = Write($"{segments[0]}: {Flow(segments[1..], isBoolean)}\n");
 
         var (document, problem, _) = await DefinitionFile.ReadAsync(file, TestContext.Current.CancellationToken);
@@ -119,7 +115,6 @@ public sealed class FieldTypesTests
         );
     }
 
-    // Why: flow style is still plain scalars to YAML, and it nests any path on one line.
     private static string Flow(string[] segments, bool isBoolean) =>
         segments.Length == 0 ? (isBoolean ? "true" : "7")
         : segments[0] == Item ? $"[{Flow(segments[1..], isBoolean)}]"

@@ -13,7 +13,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Server.Editing;
 
-// Why: the one place that knows which kinds are stored and where each lands in a definition; a new kind is a line in each method.
 internal static class ResourceKinds
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
@@ -50,7 +49,6 @@ internal static class ResourceKinds
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
 
-    // Why: the word a file of changes and the history use for a kind, the one a person reads.
     public static string Word(ResourceKind kind) =>
         kind switch
         {
@@ -84,7 +82,6 @@ internal static class ResourceKinds
         };
     }
 
-    // Why: a persona cleared keeps its row and its revision, and an empty one is no persona: a version holds none and a bot that requires one is told so.
     public static Persona? PersonaOf(IEnumerable<StoredResource> resources) =>
         resources
             .Where(item => item.Target.Kind == ResourceKind.Persona)
@@ -116,7 +113,6 @@ internal static class ResourceKinds
 
     public static string Write(object record) => JsonSerializer.Serialize(record, Json);
 
-    // Why: two records are the same when their stored forms are, read as data: what the save fills in for a field left out is in both, and the order of a map's keys counts for nothing.
     public static bool Same(object record, object other) =>
         JsonNode.DeepEquals(JsonNode.Parse(Write(record)), JsonNode.Parse(Write(other)));
 

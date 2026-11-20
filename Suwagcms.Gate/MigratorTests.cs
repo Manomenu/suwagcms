@@ -1,9 +1,8 @@
 using Npgsql;
 using Suwagcms.Server.Database;
 
-namespace Suwagcms.Gate.Repository;
+namespace Suwagcms.Gate;
 
-// Why: a migration that already ran is never edited, and grate is what enforces it; this proves the repository's own setup of it still does.
 public sealed class MigratorTests : IAsyncLifetime
 {
     private static readonly string Base =

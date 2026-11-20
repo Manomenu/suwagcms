@@ -19,7 +19,6 @@ export type FieldName =
     | "pattern.example"
     | "pattern.tellCustomer";
 
-/** What the person typed, as text, so that a refusal never loses a keystroke. */
 export interface FactForm extends PatternForm {
     name: string;
     type: string;
@@ -64,7 +63,6 @@ export function formOf(fact: Fact): FactForm {
     };
 }
 
-/** Only the constraints of the chosen type are sent: the others are hidden, and a constraint of another type is a mistake. */
 export function bodyOf(form: FactForm): SaveFact {
     return {
         type: form.type,
@@ -78,14 +76,12 @@ export function bodyOf(form: FactForm): SaveFact {
     };
 }
 
-/** The field a mistake belongs beside: its path names it (`values[1]` is `values`); null when no field does. */
 export function fieldOf(mistake: Mistake): FieldName | null {
     if (mistake.code === "resource.exists") return "name";
     const root = mistake.path.replace(/\[\d+\]$/, "");
     return FIELDS.find((field) => field === root) ?? null;
 }
 
-/** A place inside a procedure as an author finds it: the step and the block; any other place as the server names it. */
 export function referrerPlace(location: string): string {
     const match = /^steps\.([^.]+)\.([^.[]+)/.exec(location);
     if (match === null) return location;

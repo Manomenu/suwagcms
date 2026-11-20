@@ -35,7 +35,6 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
         return Sorted(node);
     }
 
-    // Why: the database keeps a document's keys in its own order, which means nothing, and null is a field left out.
     private static string Sorted(JsonNode? node) =>
         node switch
         {

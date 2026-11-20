@@ -62,7 +62,6 @@ public sealed class PackedBotTests
     [Trait("criterion", "AC-article-search-feed-1")]
     public async Task A_bot_built_on_the_packed_package_takes_a_version_without_a_restart_reports_it_and_answers_what_it_declares()
     {
-        // Why: packing and publishing cost about 10 s, over the quick gate's budget; CI always runs this, a machine when the SDK changes.
         var passed = RepositoryFiles.Path($".artifacts/packed-bot-{InputsHash()}");
         if (Environment.GetEnvironmentVariable("CI") is null && File.Exists(passed))
         {
@@ -75,7 +74,6 @@ public sealed class PackedBotTests
         var published = Path.Combine(bot, "out");
         Directory.CreateDirectory(packages);
         Directory.CreateDirectory(bot);
-        // Why: a nuget.config of its own so that only the package packed here is the source, and no file above the scratch folder applies.
         await File.WriteAllTextAsync(
             Path.Combine(bot, "nuget.config"),
             $"""<configuration><packageSources><clear /><add key="local" value="{packages}" /></packageSources></configuration>""",
@@ -95,10 +93,8 @@ public sealed class PackedBotTests
             "-v",
             "q"
         );
-        // Why: every local pack has the same version, so the machine's package cache would hand back an older pack of the SDK.
         await RunAsync(bot, Path.Combine(scratch.Path, "cache"), "publish", "-o", published, "--nologo", "-v", "q", "-nodeReuse:false");
 
-        // Why: the first run has the default file store, the second a store the bot's code passes in.
         await CheckPackedBotAsync(published, []);
         await CheckPackedBotAsync(published, ["--own-store"]);
         Directory.CreateDirectory(Path.GetDirectoryName(passed) ?? RepositoryFiles.Root);

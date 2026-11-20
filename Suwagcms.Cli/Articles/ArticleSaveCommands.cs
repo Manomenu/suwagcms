@@ -22,7 +22,6 @@ internal static class ArticleSaveCommands
         Option<string?> Description
     );
 
-    // Why: the options are left optional so that a missing one reaches the server, which reports every mistake at once.
     private static ArticleFields FieldOptions() =>
         new(
             new Option<string?>("--kb")
@@ -201,7 +200,6 @@ internal static class ArticleSaveCommands
                     )
                 );
                 var dry = parsed.GetValue(dryRun);
-                // Why: without --if-revision the edit still guards the fields it just read, so a change made in between is reported, never overwritten.
                 var answer = await ServerCall.PutAsync(
                     environment,
                     target.Address,

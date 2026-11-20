@@ -15,7 +15,6 @@ internal sealed class ArticleApi(HttpClient client, string bot)
 
     public KnowledgeBaseApi KnowledgeBases { get; } = new(client, bot);
 
-    // Why: most tests need a bot that already has the two bases offer and forValuers.
     public static async Task<ArticleApi> NewBotAsync(HttpClient client)
     {
         var api = new ArticleApi(client, (await FactApi.NewBotAsync(client)).Bot);
@@ -45,7 +44,6 @@ internal sealed class ArticleApi(HttpClient client, string bot)
     public async Task<List<ArticleView>> List(string query = "") =>
         await client.GetFromJsonAsync<List<ArticleView>>($"/api/bots/{Bot}/articles{query}", TestContext.Current.CancellationToken) ?? [];
 
-    // Why: JSON text is built by the serializer, so a text with quotes, newlines or non-ASCII letters is sent as written.
     public static string Body(
         string knowledgeBase = "offer",
         string title = "Price list",

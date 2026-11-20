@@ -10,7 +10,6 @@ using Suwagcms.Sdk.BotRuntime.Versions;
 
 namespace Suwagcms.Server.Bots;
 
-// Why: the one place the CMS talks to a bot's routes; it holds no lock and no transaction, since a slow bot must never hold up anyone's editing.
 internal sealed class BotClient(HttpClient http, IOptions<PushOptions> options, TimeProvider time)
 {
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
@@ -60,7 +59,6 @@ internal sealed class BotClient(HttpClient http, IOptions<PushOptions> options, 
             cancellationToken
         );
 
-    // Why: a person waits on the page for this, and the bot only writes it to its store, so it needs no more than reading the state does.
     public async Task<Reply> PutAvailabilityAsync(string address, BotAvailability availability, CancellationToken cancellationToken) =>
         await SendAsync(
             address,

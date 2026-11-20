@@ -2,7 +2,6 @@ using System.Globalization;
 
 namespace Suwagcms.Server.Settings;
 
-// Why: a mistyped number stops the server at start, because guessing would leave every list a different length from what the owner set.
 internal static class PageSize
 {
     public const string Variable = "PAGINATION_PAGE_SIZE";

@@ -16,7 +16,6 @@ public sealed record KnowledgeBase
 
     public string Language { get; init; } = KnowledgeBaseLanguages.English;
 
-    // Why: only the name of a profile; its model, address and key live in the bot's environment, so a version can be exported and read by anyone.
     public required string Embedding { get; init; }
 
     public required int Results { get; init; }

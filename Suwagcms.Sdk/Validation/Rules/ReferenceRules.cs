@@ -17,7 +17,6 @@ internal static class ReferenceRules
         new(MistakeCodes.LinkProcedureConversation, ValidationStage.Save, LinksToConversation),
     ];
 
-    // Why: facts, articles and procedures share the one code, so a client treats a name that points at nothing the same way wherever it is written.
     private static IEnumerable<Mistake> MissingTargets(BotDefinition definition) =>
         ProcedureFactRules
             .MissingFacts(definition)
@@ -84,14 +83,12 @@ internal static class ReferenceRules
             ? $"{reference.Path} of '{reference.From.Id}' links to {DeleteGuard.Noun(reference.To.Kind)} '{reference.To.Id}', which this bot does not have."
             : $"{Holder(reference)} names {DeleteGuard.Noun(reference.To.Kind)} '{reference.To.Id}', which this bot does not have.";
 
-    // Why: the path of a reference in a procedure says which block holds it, so one sentence serves every block.
     private static string Holder(Reference reference)
     {
         var parts = reference.Path.Split('.');
         return $"'{(parts.Length > 3 && parts[3].StartsWith("knowledge", StringComparison.Ordinal) ? "knowledge" : parts[2])}' of step '{parts[1]}' in '{reference.From.Id}'";
     }
 
-    // Why: a link's id is judged by the link's own form, and a collect or a rule names a fact it then finds missing; an id an author writes for a target has to have the right form before it can be looked up, and saying so beats saying it is missing.
     public static bool WrongName(Reference reference) =>
         reference.From.Kind == ResourceKind.Procedure
         && reference.To.Kind is ResourceKind.Article or ResourceKind.Procedure

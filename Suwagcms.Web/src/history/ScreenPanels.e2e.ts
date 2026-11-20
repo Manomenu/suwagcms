@@ -1,4 +1,3 @@
-// A person sees, at the bottom of each main screen, the changes of what that screen is about and nothing else.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import { testBots } from "../../e2e/bots";
 
@@ -41,7 +40,6 @@ test("AC-change-history-37: the Versions panel shows a created and a pushed vers
     const bot = await newBot(request);
     await addConversation(request, bot);
     expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
-    // Why: the test bot's address answers nothing, so the push fails, and a failed push is a version event all the same.
     expect((await request.post(`/api/bots/${bot}/versions/1/push`)).status()).toBe(200);
 
     await page.goto(`/bots/${bot}/versions`);
@@ -49,7 +47,6 @@ test("AC-change-history-37: the Versions panel shows a created and a pushed vers
     await expect(panel.locator("li [data-slot=badge]")).toHaveText(["pushed", "created"], { ignoreCase: true });
     await expect(panel).not.toContainText("conversation");
 
-    // Why: a version is refused while nothing has changed since the last one.
     const fact = { type: "text", description: "The city", maxLength: 80 };
     expect((await request.put(`/api/bots/${bot}/facts/customer.city?ifRevision=0`, { data: fact })).status()).toBe(200);
     await page.getByRole("button", { name: "Create version" }).click();

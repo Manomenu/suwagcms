@@ -39,7 +39,6 @@ internal static class FactMapping
             UsedBy(fact.Name, all)
         );
 
-    // Why: the procedures that name the fact come from the reference walker, the one place that knows where a definition names a fact.
     private static List<string> UsedBy(string fact, IEnumerable<StoredResource> all) =>
         [
             .. ReferenceWalker

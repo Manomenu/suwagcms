@@ -1,4 +1,3 @@
-// Why: the panel is how a person reaches every screen, so the bot-first rule is proven in a real browser.
 import { expect, test } from "@playwright/test";
 import { freshId } from "../../e2e/bots";
 

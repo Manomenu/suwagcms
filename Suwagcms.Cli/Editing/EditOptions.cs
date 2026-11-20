@@ -3,7 +3,6 @@ using System.Globalization;
 
 namespace Suwagcms.Cli.Editing;
 
-// Why: every command that changes a resource takes the same two guards and sends them the same way.
 internal static class EditOptions
 {
     public static Option<int?> IfRevision() =>
@@ -38,7 +37,6 @@ internal static class EditOptions
             }
         });
 
-    // Why: a command that saves one resource opens it afterwards, and a dry run saves nothing, so there would be nothing new to see.
     public static void OpenWhatItSaves(Command command, GlobalOptions options, Option<bool> dryRun)
     {
         RefuseOpenWithJson(command, options);

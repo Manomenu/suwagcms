@@ -4,7 +4,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.Validation.Rules;
 
-// Why: what the CMS controls is refused at Save; a code action's contract is the bot's, and a Save mistake from a declaration would stop every save of the bot, so these rules leave it alone.
 internal static partial class ActionRules
 {
     private const string Sample = "CRM_TOKEN";
@@ -31,7 +30,6 @@ internal static partial class ActionRules
         ForHttp(MistakeCodes.ActionSecretLiteral, Literals),
     ];
 
-    // Why: a character a header cannot hold would let a value start another header of the request.
     [GeneratedRegex("^[!#$%&'*+.^_`|~0-9A-Za-z-]+$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex HeaderName();
 
@@ -99,7 +97,6 @@ internal static partial class ActionRules
         }
     }
 
-    // Why: {name} is filled in at run time, so a URL is judged with something ordinary in its place.
     private static Uri? Parsed(HttpCall http) =>
         Uri.TryCreate(ActionTemplates.Placeholder().Replace(http.Address, "x"), UriKind.Absolute, out var uri)
         && uri.Scheme is "http" or "https"

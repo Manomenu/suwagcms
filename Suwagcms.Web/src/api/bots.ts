@@ -1,4 +1,3 @@
-// Why: the bots screen and the shell's panel both read the bots, and one feature cannot import another.
 import type { components } from "./openapi";
 import { request } from "./client";
 

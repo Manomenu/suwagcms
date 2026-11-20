@@ -1,6 +1,5 @@
 import { Legend } from "@/design/field";
 
-/** A list to tick. What is ticked keeps its order, the one the author ticked it in, and anything already stored stays listed. */
 export function Checklist({
     legend,
     hint,

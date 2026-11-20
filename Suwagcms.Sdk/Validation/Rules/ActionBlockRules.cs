@@ -6,7 +6,6 @@ using Suwagcms.Sdk.Format.Procedures.Blocks;
 
 namespace Suwagcms.Sdk.Validation.Rules;
 
-// Why: a mapping is judged by what its source can hold, not by live values, so a value that could never be written is a mistake now and not a failed conversation later. What the CMS controls refuses a save; a code action's contract is the bot's, so the same mapping is a Version mistake there, and a new declaration can never stop a save.
 internal static class ActionBlockRules
 {
     public static IReadOnlyList<Rule> All { get; } =
@@ -31,7 +30,6 @@ internal static class ActionBlockRules
         ProcedureMistake.For(MistakeCodes.StepActionUnmappedParameter, ValidationStage.Version, Unmapped),
     ];
 
-    // Why: a name that points at nothing is one code wherever it is written, so the reference rule reports this together with missing facts.
     public static IEnumerable<Mistake> MissingMappedFields(BotDefinition definition) =>
         definition.Procedures.SelectMany(procedure => Mappings(definition, procedure, code: false, MissingFields));
 
@@ -134,7 +132,6 @@ internal static class ActionBlockRules
         }
     }
 
-    // Why: every value the source can hold must fit the target.
     private static bool Fits(ActionField source, ActionField target) =>
         source.Type switch
         {

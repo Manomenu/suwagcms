@@ -53,7 +53,6 @@ public sealed class ActionsTests : IDisposable
     private static HttpResponseMessage Json(string json, HttpStatusCode status = HttpStatusCode.OK) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
-    // Why: what the server would read: the sent bodies, keyed by the address and method.
     private static StubServer Recording(List<(string Method, string Path, string Body)> sent, string answer = Shown) =>
         new(request =>
         {

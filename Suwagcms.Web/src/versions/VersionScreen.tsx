@@ -15,7 +15,6 @@ function messageOf(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-/** The page of one version in the address; what it is compared with is in the address too, so a reload and a sent link keep it. */
 export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
     const number = versionNumberOf(asked);
     const [detail, setDetail] = useState<VersionDetail | null>(null);
@@ -84,7 +83,6 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
             bot={bot}
             detail={detail}
             versions={versions}
-            // Why: an answer about another version reads as still asked, so the wrong comparison is never shown beside the select.
             comparison={
                 compared === null ? null : comparison?.with === compared ? comparison : { with: compared, answer: null, refusal: null }
             }

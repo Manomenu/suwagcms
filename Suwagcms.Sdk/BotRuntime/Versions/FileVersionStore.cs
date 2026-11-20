@@ -8,7 +8,6 @@ public sealed class FileVersionStore(string directory) : IVersionStore
 {
     private const string StateFile = "state.json";
 
-    // Why: static, so that no store owns a disposable; stores of different directories wait for each other, which costs next to nothing.
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
     public async Task<VersionStoreState> ReadStateAsync(CancellationToken cancellationToken)
@@ -46,7 +45,6 @@ public sealed class FileVersionStore(string directory) : IVersionStore
             }
             catch (IOException)
             {
-                // Why: a document without a pointer to it would show up as held although the write failed.
                 if (!existed)
                 {
                     File.Delete(VersionPath(number));
@@ -157,7 +155,6 @@ public sealed class FileVersionStore(string directory) : IVersionStore
             cancellationToken
         );
 
-    // Why: a crash in the middle of a write must leave the old file, never half of the new one.
     private static async Task WriteAtomicallyAsync(string path, string content, CancellationToken cancellationToken)
     {
         var temporary = path + ".tmp";

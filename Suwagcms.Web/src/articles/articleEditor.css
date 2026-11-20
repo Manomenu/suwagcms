@@ -1,4 +1,3 @@
-/* Why: Tailwind's preflight strips headings, lists, tables and code, and the editor shows them as rich text. */
 .article-editor > * + * {
     margin-top: 0.5rem;
 }

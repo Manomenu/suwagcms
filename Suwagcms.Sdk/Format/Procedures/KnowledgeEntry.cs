@@ -3,7 +3,6 @@ using Suwagcms.Sdk.Format.References;
 
 namespace Suwagcms.Sdk.Format.Procedures;
 
-// Why: a bot has several knowledge bases, so what the model should read names its base; an article is a reference that cannot miss, and a query is text only the bot's search can answer, so the CMS stores it and never runs it.
 public sealed record KnowledgeEntry
 {
     public string KnowledgeBase { get; init; } = "";

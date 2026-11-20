@@ -22,10 +22,6 @@ import {
 } from "./api";
 import { VersionsView } from "./VersionsView";
 
-/**
- * Where an address of an earlier kind now leads, null when it is of today's: `suwagcms export --open` arrives as ?open=<n> and
- * `suwagcms diff --open` as ?from=<n>&to=<n>, and a link kept from before them still works.
- */
 function earlierAddress(bot: string, params: URLSearchParams): string | null {
     const open = params.get("open");
     const from = params.get("from");
@@ -41,7 +37,6 @@ function earlierAddress(bot: string, params: URLSearchParams): string | null {
     return withListSearch(versionsHref(bot), rest.toString());
 }
 
-/** Loads the versions of the bot in the address when it opens, so versions created meanwhile from the CLI are found. */
 export function VersionsScreen({ bot }: { bot: string }) {
     const [versions, setVersions] = useState<VersionSummary[] | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
@@ -55,7 +50,6 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const [, navigate] = useLocation();
     const toFirstPage = useToFirstPage();
     const earlier = earlierAddress(bot, params);
-    // Why: creating and pushing add a version event, which is on the panel's newest page; 0 would read as "not loaded yet".
     const [events, setEvents] = useState(1);
     const history = useKindHistory(bot, earlier === null ? "versions" : null, events);
 
@@ -67,14 +61,12 @@ export function VersionsScreen({ bot }: { bot: string }) {
                 if (!used.aborted) setFailure(error instanceof Error ? error.message : String(error));
             };
             fetchVersions(bot, used).then(setVersions).catch(fail);
-            // The bot is asked every time the page loads: what it has is its own answer, never a remembered one.
             fetchStatus(bot, used).then(setStatus).catch(fail);
         },
         [bot],
     );
 
     useEffect(() => {
-        // StrictMode runs effects twice in development: abort the first request, ignore its result.
         const controller = new AbortController();
         load(controller.signal);
         return () => {
@@ -132,7 +124,6 @@ export function VersionsScreen({ bot }: { bot: string }) {
                 setRefused(null);
                 createVersion(bot)
                     .then(() => {
-                        // Why: the new version is the first row, and it is what the person came for.
                         toFirstPage();
                         setEvents((was) => was + 1);
                         load();

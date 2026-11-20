@@ -218,7 +218,6 @@ public sealed class RenameEndpointsTests(TestDatabase database, ClassServer serv
         await scene.AddArticle("wycena", "[a](cms://article/cennik)");
         var trigger = "rename_fails_" + scene.Bot;
         await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
-        // Why: the renamed row is written after its referrers, so failing on it proves the referrer already written is rolled back.
         await connection.ExecuteAsync(
             $"""
             CREATE FUNCTION {trigger}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'no'; END $$;

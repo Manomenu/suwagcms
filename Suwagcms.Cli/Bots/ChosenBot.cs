@@ -2,7 +2,6 @@ using Suwagcms.Cli.Connection;
 
 namespace Suwagcms.Cli.Bots;
 
-// Why: the active bot lives in the client; the server keeps none, so two agents and two tabs never switch each other's bot.
 internal sealed record ChosenBot(string Id, string Source)
 {
     public const string Variable = "SUWAGCMS_BOT";

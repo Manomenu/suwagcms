@@ -18,7 +18,6 @@ internal static class ActionsCommand
 
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
-    // Why: what `show` adds to the format, which the file of an edit may carry back and the server does not take.
     private static readonly string[] ShownOnly = ["id", "revision", "usedBy", "alsoDeclared", "noLongerDeclared"];
 
     public static Command Create(GlobalOptions options, CliEnvironment environment) =>
@@ -175,7 +174,6 @@ internal static class ActionsCommand
                 {
                     return await target.FailedAsync(read, cancellationToken);
                 }
-                // Why: a file read from `show` carries its revision, so an edit of it is refused when someone saved in between; with neither, the edit guards the revision it just read.
                 var expected = parsed.GetValue(ifRevision) ?? Revision(document) ?? Action(read.Body ?? default).Revision;
                 var dry = parsed.GetValue(dryRun);
                 var answer = await ServerCall.PutAsync(

@@ -1,9 +1,7 @@
-// A text fact's pattern as a form holds it, shared by the form of a global fact and of a local one.
 import type { components } from "./openapi";
 
 export type TextPattern = components["schemas"]["TextPattern"];
 
-/** A pattern as typed. Regex, means and example all empty is no pattern, so emptying them is how a person clears one. */
 export interface PatternForm {
     patternRegex: string;
     patternMeans: string;

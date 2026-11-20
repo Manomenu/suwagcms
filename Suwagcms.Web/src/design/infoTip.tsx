@@ -1,10 +1,6 @@
 import { useId, useState } from "react";
 import { Tooltip } from "radix-ui";
 
-/**
- * The "i" in a circle beside a label: its help opens on hover, on keyboard focus and on a tap, and Escape closes it. `about` names
- * the button; it is text inside the button, not `aria-label`, so that finding a field by its label never finds its help too.
- */
 export function InfoTip({ about, help }: { about: string; help: string }) {
     const [open, setOpen] = useState(false);
     const descriptionId = useId();
@@ -15,7 +11,6 @@ export function InfoTip({ about, help }: { about: string; help: string }) {
                     <button
                         type="button"
                         aria-describedby={descriptionId}
-                        // Why: a touch screen has no hover, and Radix closes a tooltip on a click; default prevented, the tap opens it.
                         onClick={(event) => {
                             event.preventDefault();
                             setOpen(true);

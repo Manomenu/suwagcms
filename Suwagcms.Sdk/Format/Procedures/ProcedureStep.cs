@@ -4,7 +4,6 @@ using Suwagcms.Sdk.Format.Procedures.Blocks;
 
 namespace Suwagcms.Sdk.Format.Procedures;
 
-// Why: the wire has one property per block so that a step with two blocks, or an unknown one, can be read and refused with a fix.
 public sealed record ProcedureStep
 {
     public ListenArguments? Listen { get; init; }
@@ -20,15 +19,12 @@ public sealed record ProcedureStep
     public InformArguments? Inform { get; init; }
     public string? Action { get; init; }
 
-    // Why: parameter name to the fact that gives its value; every parameter must be mapped before a version, since a call without its input is broken.
     public IReadOnlyDictionary<string, string>? With { get; init; }
 
-    // Why: result name to the fact it writes; a result left unmapped is ignored, since a result nobody needs is harmless.
     public IReadOnlyDictionary<string, string>? Results { get; init; }
 
     public string? OnFailure { get; init; }
 
-    // Why: a turned-off service is not a failure, so the customer can be told something other than to try again; without it the step takes OnFailure.
     public string? OnUnavailable { get; init; }
 
     public NextSteps? Next { get; init; }

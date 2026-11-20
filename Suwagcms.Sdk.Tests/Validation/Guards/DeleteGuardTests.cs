@@ -28,7 +28,6 @@ public sealed class DeleteGuardTests
             Articles = articles,
         };
 
-    // Why: what the write path does for a delete: the definition without the resource, validated, and the findings worded for the delete.
     private static IReadOnlyList<Mistake> Deleting(BotDefinition after, params ResourceRef[] removed) =>
         DeleteGuard.Reshape(after, removed, DefinitionValidator.Validate(after, ValidationStage.Save));
 
