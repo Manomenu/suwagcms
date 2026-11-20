@@ -15,7 +15,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database, ClassServer ser
 
     private async Task<PersonaApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await PersonaApi.NewBotAsync(App.CreateClient());
     }
 
@@ -182,7 +182,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database, ClassServer ser
     [Trait("criterion", "AC-bot-persona-11")]
     public async Task A_bot_that_does_not_exist_has_no_persona_to_show_or_save()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var nobody = new PersonaApi(client, "no-such-bot");
 

@@ -12,7 +12,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
 
     private Task<ChangeScene> NewScene()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return ChangeScene.NewAsync(App.CreateClient());
     }
 
@@ -128,7 +128,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
     public async Task A_replacement_the_edit_guard_refuses_refuses_the_whole_file_and_nothing_changes(bool dryRun)
     {
         var scene = await SceneHolding(Held);
-        var before = await scene.RowsAsync(database.Pool);
+        var before = await scene.RowsAsync(database.DataSource);
 
         var response = await scene.Post(
             ChangeScene.File(
@@ -142,7 +142,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(["fact.type.inUse"], Codes(await ChangeScene.JsonOf(response)));
-        Assert.Equal(before, await scene.RowsAsync(database.Pool));
+        Assert.Equal(before, await scene.RowsAsync(database.DataSource));
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
             ChangeScene.AddArticle("alfa", "oferta"),
             ChangeScene.AddArticle("beta", "oferta")
         );
-        var before = await scene.RowsAsync(database.Pool);
+        var before = await scene.RowsAsync(database.DataSource);
 
         var response = await scene.Post(
             ChangeScene.File(
@@ -166,14 +166,14 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(["reference.loop"], Codes(await ChangeScene.JsonOf(response)));
-        Assert.Equal(before, await scene.RowsAsync(database.Pool));
+        Assert.Equal(before, await scene.RowsAsync(database.DataSource));
     }
 
     [Fact]
     [Trait("criterion", "AC-batch-apply-24")]
     public async Task A_replacement_of_a_code_action_the_bot_declares_is_refused_with_the_whole_file()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         using var client = App.CreateClient();
         var id = PushScene.FreshId();
         await using var bot = await TestBot.StartAsync(
@@ -188,13 +188,13 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
         await PushScene.RegisterAsync(client, id, bot.Address);
         (await client.GetAsync($"/api/bots/{id}/declaration", TestContext.Current.CancellationToken)).EnsureSuccessStatusCode();
         var scene = new ChangeScene(client, id);
-        var before = await scene.RowsAsync(database.Pool);
+        var before = await scene.RowsAsync(database.DataSource);
 
         var response = await scene.Post(ChangeScene.File(AddAction("lookupPolicy"), ChangeScene.AddFact("customer.city")), replace: true);
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(["action.code.readOnly"], Codes(await ChangeScene.JsonOf(response)));
-        Assert.Equal(before, await scene.RowsAsync(database.Pool));
+        Assert.Equal(before, await scene.RowsAsync(database.DataSource));
     }
 
     [Fact]
@@ -204,8 +204,8 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
         var scene = await NewScene();
         var file = ChangeScene.File([.. Held, """{"edit":"persona","personality":"Calm.\n"}"""]);
         Assert.Equal(HttpStatusCode.OK, (await scene.Post(file, replace: true)).StatusCode);
-        var rows = await scene.RowsAsync(database.Pool);
-        var entries = await scene.HistoryCountAsync(database.Pool);
+        var rows = await scene.RowsAsync(database.DataSource);
+        var entries = await scene.HistoryCountAsync(database.DataSource);
 
         var again = await scene.Post(file, replace: true);
 
@@ -213,8 +213,8 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
         var answer = await ChangeScene.JsonOf(again);
         Assert.All(Outcomes(answer), outcome => Assert.Equal(("unchanged", 1), (outcome.Action, outcome.Revision)));
         Assert.Equal(6, answer.GetProperty("unchanged").GetInt32());
-        Assert.Equal(rows, await scene.RowsAsync(database.Pool));
-        Assert.Equal(entries, await scene.HistoryCountAsync(database.Pool));
+        Assert.Equal(rows, await scene.RowsAsync(database.DataSource));
+        Assert.Equal(entries, await scene.HistoryCountAsync(database.DataSource));
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
             ChangeScene.AddBase("oferta"),
             ChangeScene.AddArticle("cennik", "oferta")
         );
-        var before = await scene.RowsAsync(database.Pool);
+        var before = await scene.RowsAsync(database.DataSource);
 
         var response = await scene.Post(ChangeScene.File(ChangeScene.AddFact("customer.city", "New")), replace: true);
 
@@ -235,7 +235,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
         var notMentioned = (await ChangeScene.JsonOf(response)).GetProperty("notMentioned").EnumerateArray().ToList();
         var left = Assert.Single(notMentioned);
         Assert.Equal(("fact", "customer.street"), (left.GetProperty("kind").GetString(), left.GetProperty("id").GetString()));
-        var after = await scene.RowsAsync(database.Pool);
+        var after = await scene.RowsAsync(database.DataSource);
         Assert.Equal(before.Count, after.Count);
         Assert.Equal(
             before.Where(row => !row.Contains("customer.city", StringComparison.Ordinal)),
@@ -275,7 +275,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
                 )
             ).ExitCode
         );
-        var rows = await scene.RowsAsync(database.Pool);
+        var rows = await scene.RowsAsync(database.DataSource);
 
         var same = await scene.CliAsync(Seed, "--compare");
         Assert.Equal(("", 0), (same.Error, same.ExitCode));
@@ -319,7 +319,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
         Assert.Contains("fact.type.inUse", refused.Error, StringComparison.Ordinal);
 
         Assert.Equal(2, (await scene.CliAsync(Seed, "--compare", "--dry-run")).ExitCode);
-        Assert.Equal(rows, await scene.RowsAsync(database.Pool));
+        Assert.Equal(rows, await scene.RowsAsync(database.DataSource));
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
                 )
             ).ExitCode
         );
-        var rows = await scene.RowsAsync(database.Pool);
+        var rows = await scene.RowsAsync(database.DataSource);
         const string restyled = """
             # The same seed, written another way.
             changes:
@@ -379,6 +379,6 @@ public sealed class ReplaceTests(TestDatabase database, ClassServer server) : IC
         Assert.Equal(("", 0), (compared.Error, compared.ExitCode));
         Assert.Contains("The same: applying the file would change nothing, 3 unchanged.", compared.Output, StringComparison.Ordinal);
         Assert.Contains("0 replaced, 3 unchanged", replaced.Output, StringComparison.Ordinal);
-        Assert.Equal(rows, await scene.RowsAsync(database.Pool));
+        Assert.Equal(rows, await scene.RowsAsync(database.DataSource));
     }
 }

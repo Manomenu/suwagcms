@@ -3,16 +3,15 @@ using Suwagcms.Sdk.Format.Actions;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Sdk.Validation.Guards;
-using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;
 
-internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
+internal sealed class DefinitionEditor(NpgsqlDataSource dataSource, TimeProvider time)
 {
     public async Task<EditResult> ApplyAsync(string bot, IReadOnlyList<Change> changes, bool dryRun, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(changes);
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
 
         await ResourceStore.LockBotAsync(connection, transaction, bot, cancellationToken);
@@ -87,7 +86,7 @@ internal sealed class DefinitionEditor(Pool pool, TimeProvider time)
 
     public async Task AlignCodeActionsAsync(string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await ResourceStore.LockBotAsync(connection, transaction, bot, cancellationToken);
         if (await ResourceStore.DeclaredAsync(connection, transaction, bot, cancellationToken) is not { } declaration)

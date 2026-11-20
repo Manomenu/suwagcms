@@ -1,6 +1,8 @@
-import { request } from "../api/client";
+import { dataOf } from "@maniumek/suwfrontkit";
+
+import { api } from "../api/client";
 import type { components } from "../api/openapi";
-import { resourceApi } from "../api/resourceApi";
+import type { ResourceApi } from "../api/resourceApi";
 
 export type ActionView = components["schemas"]["ActionView"];
 export type SaveAction = components["schemas"]["SaveAction"];
@@ -24,11 +26,16 @@ export function isCode(action: ActionView): boolean {
     return implementationOf(action) === "code";
 }
 
-export const actionsApi = resourceApi<ActionView, SaveAction>("actions");
+export const actionsApi: ResourceApi<ActionView, SaveAction> = {
+    collection: "actions",
+    list: (bot, signal) => dataOf(api.GET("/api/bots/{bot}/actions", { params: { path: { bot } }, signal })),
+    get: (bot, id, signal) => dataOf(api.GET("/api/bots/{bot}/actions/{id}", { params: { path: { bot, id } }, signal })),
+    save: (bot, id, body, ifRevision) =>
+        dataOf(api.PUT("/api/bots/{bot}/actions/{id}", { params: { path: { bot, id }, query: { ifRevision } }, body })),
+    remove: (bot, id, ifRevision) =>
+        dataOf(api.DELETE("/api/bots/{bot}/actions/{id}", { params: { path: { bot, id }, query: { ifRevision } } })),
+};
 
 export function runAction(bot: string, id: string, values: Record<string, string>): Promise<ActionTestAnswer> {
-    return request<ActionTestAnswer>(`/bots/${encodeURIComponent(bot)}/actions/${encodeURIComponent(id)}/test`, {
-        method: "POST",
-        body: JSON.stringify({ values }),
-    });
+    return dataOf(api.POST("/api/bots/{bot}/actions/{id}/test", { params: { path: { bot, id } }, body: { values } }));
 }

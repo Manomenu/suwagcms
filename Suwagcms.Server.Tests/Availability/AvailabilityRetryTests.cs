@@ -18,7 +18,7 @@ public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer se
 
     private async Task<AvailabilityScene> SceneAsync()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         retries = new AvailabilityRetries(clock);
         var factory = App.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>

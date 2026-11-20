@@ -1,9 +1,7 @@
+import { Alert, Button, Paper, Select } from "@maniumek/suwfrontkit";
 import { historyHref, type HistoryState } from "@/api/history";
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
-import { Page, Paper } from "@/design/page";
+import { Page } from "@/design/page";
 import { BackToList } from "@/design/resourceEdit";
-import { Select } from "@/design/select";
 
 import { contentOf, dateOf, numberOf, type VersionComparison, type VersionDetail, type VersionSummary } from "./api";
 import { ComparisonRows, comparisonLine } from "./comparison";

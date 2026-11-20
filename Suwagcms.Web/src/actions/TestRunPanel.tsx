@@ -1,12 +1,6 @@
+import { Alert, ApiError, Badge, Button, Field, Input, Paper } from "@maniumek/suwfrontkit";
+import { mistakesOf, refusalOf } from "@/api/client";
 import { useState } from "react";
-
-import { ApiError } from "@/api/client";
-import { Alert } from "@/design/alert";
-import { Badge } from "@/design/badge";
-import { Button } from "@/design/button";
-import { Field } from "@/design/field";
-import { Input } from "@/design/input";
-import { Paper } from "@/design/page";
 
 import { implementationOf, runAction, type ActionTestAnswer, type ActionView } from "./api";
 
@@ -65,14 +59,14 @@ export function TestRunPanel({ bot, action, unsaved }: { bot: string; action: Ac
         runAction(bot, action.id, Object.fromEntries(Object.entries(values).filter(([, value]) => value !== "")))
             .then(setAnswer)
             .catch((error: unknown) => {
-                setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
+                setRefusal(refusalOf(error));
             })
             .finally(() => {
                 setRunning(false);
             });
     }
 
-    const mistakes = refusal?.mistakes ?? [];
+    const mistakes = mistakesOf(refusal);
     return (
         <Paper aria-label="Test run" role="region" className="flex flex-col gap-3">
             <h3 className="font-semibold">Test run</h3>

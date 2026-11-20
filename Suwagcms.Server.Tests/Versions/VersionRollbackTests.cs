@@ -14,7 +14,7 @@ public sealed class VersionRollbackTests(TestDatabase database, ClassServer serv
 
     private async Task<(PushScene Scene, TestBot Bot)> FilledAsync()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var id = PushScene.FreshId();
         var bot = await TestBot.StartAsync(id);

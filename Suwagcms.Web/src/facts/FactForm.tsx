@@ -1,6 +1,6 @@
+import { Paper } from "@maniumek/suwfrontkit";
 import { useSaveForm } from "@/api/saveForm";
 import { FormFooter } from "@/design/formFooter";
-import { Paper } from "@/design/page";
 
 import { factsApi } from "./api";
 import { bodyOf, fieldOf, type FactForm as FactFormState } from "./factForm";

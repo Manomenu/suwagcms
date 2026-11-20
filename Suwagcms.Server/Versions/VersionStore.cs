@@ -1,7 +1,6 @@
 using Dapper;
 using Npgsql;
 using Suwagcms.Contracts.Versions;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
@@ -42,9 +41,9 @@ internal static class VersionStore
         sha256 AS Sha256
         """;
 
-    public static async Task<List<VersionSummary>?> ListAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    public static async Task<List<VersionSummary>?> ListAsync(NpgsqlDataSource dataSource, string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         if (!await ResourceStore.BotExistsAsync(connection, null, bot, cancellationToken))
         {
             return null;
@@ -59,9 +58,14 @@ internal static class VersionStore
         return [.. rows.Select(Summary)];
     }
 
-    public static async Task<VersionDetail?> FindAsync(Pool pool, string bot, int number, CancellationToken cancellationToken)
+    public static async Task<VersionDetail?> FindAsync(
+        NpgsqlDataSource dataSource,
+        string bot,
+        int number,
+        CancellationToken cancellationToken
+    )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var row = await connection.QuerySingleOrDefaultAsync<StoredVersion>(
             new CommandDefinition(
                 $"SELECT document AS Document, {Counts} FROM bot_version WHERE bot_id = @bot AND number = @number",
@@ -88,9 +92,9 @@ internal static class VersionStore
             );
     }
 
-    public static async Task<int?> LatestNumberAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    public static async Task<int?> LatestNumberAsync(NpgsqlDataSource dataSource, string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await connection.QuerySingleOrDefaultAsync<int?>(
             new CommandDefinition(
                 "SELECT max(number) FROM bot_version WHERE bot_id = @bot",
@@ -100,9 +104,9 @@ internal static class VersionStore
         );
     }
 
-    public static async Task<bool> ExistsAsync(Pool pool, string bot, int number, CancellationToken cancellationToken)
+    public static async Task<bool> ExistsAsync(NpgsqlDataSource dataSource, string bot, int number, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await connection.ExecuteScalarAsync<bool>(
             new CommandDefinition(
                 "SELECT EXISTS (SELECT 1 FROM bot_version WHERE bot_id = @bot AND number = @number)",

@@ -20,12 +20,13 @@ const RESOURCE_FEATURE = /^\/src\/(facts|knowledge-bases|articles|procedures|act
 
 describe("the rules of every screen", () => {
     it("the source is really read", () => {
-        expect(Object.keys(sources)).toContain("/src/design/field.tsx");
-        expect(filesWith(/export function Field/)).toEqual(["/src/design/field.tsx"]);
+        expect(Object.keys(sources)).toContain("/src/design/page.tsx");
+        expect(filesWith(/export function Page\b/)).toEqual(["/src/design/page.tsx"]);
     });
 
-    it("AC-web-shell-12: no form writes its own legend, Label or ⓘ: Field and Legend from design/field require the help", () => {
+    it("AC-web-shell-12: no form writes its own legend, Label or ⓘ: Field and Legend of the kit require the help", () => {
         expect(filesWith(/<legend|<Label\b|ⓘ/, inDesign)).toEqual([]);
+        expect(filesWith(/import \{[^}]*\b(Field|Legend)\b[^}]*\} from "(?!@maniumek\/suwfrontkit")/)).toEqual([]);
     });
 
     it("AC-web-shell-12: a raw label only wraps a checkbox, a radio or a row beside its InfoTip or under a Legend", () => {
@@ -86,13 +87,10 @@ describe("the rules of every screen", () => {
 
     it("AC-pagination-9: every list draws its controls with the one module, and nothing else moves between pages", () => {
         const moves = />\s*(Previous|Next)( page)?\s*<|["'`](Previous|Next)( page)?["'`]/;
-        expect(filesWith(moves)).toEqual(["/src/design/pagination.tsx"]);
+        expect(filesWith(moves)).toEqual([]);
         expect(filesWith(/older changes|load more|show more/i)).toEqual([]);
-        expect(filesWith(/<Paginated\b/).sort()).toEqual([
-            "/src/design/changeList.tsx",
-            "/src/design/resourceList.tsx",
-            "/src/versions/VersionsView.tsx",
-        ]);
+        expect(filesWith(/<Paginated\b/).sort()).toEqual(["/src/design/changeList.tsx", "/src/versions/VersionsView.tsx"]);
+        expect(sources["/src/design/resourceList.tsx"]).toContain("{ paging }");
         expect(filesWith(/usePagedRows\(/).sort()).toEqual([
             "/src/actions/ActionsView.tsx",
             "/src/articles/ArticlesView.tsx",
@@ -101,7 +99,6 @@ describe("the rules of every screen", () => {
             "/src/procedures/ProceduresView.tsx",
             "/src/versions/VersionsView.tsx",
         ]);
-        expect(sources["/src/design/pagination.tsx"]).not.toMatch(/history/i);
         expect(sources["/src/api/pagination.ts"]).not.toMatch(/history/i);
     });
 
@@ -133,23 +130,28 @@ describe("the rules of every screen", () => {
                 /<(Page|ResourceList)\b[^>]*\bhistory=\{history\}/,
             );
         }
-        expect(sources["/src/design/resourceList.tsx"]).toMatch(/<Page\b[^>]*\bhistory=\{history\}/);
-        expect(sources["/src/design/resourceEdit.tsx"]).toContain("{...(editedId === null ? {} : { history })}");
+        expect(sources["/src/design/resourceList.tsx"]).toContain("below={<HistoryPanel {...history} />}");
+        expect(sources["/src/design/resourceEdit.tsx"]).toContain("below={editedId === null ? undefined : <HistoryPanel {...history} />}");
         expect(sources["/src/versions/VersionView.tsx"]).toMatch(/<Page\b[^>]*\bhistory=\{\{/);
         expect(sources["/src/design/page.tsx"]).toMatch(
-            /\{children\}\s*\{history !== undefined && <HistoryPanel \{\.\.\.history\} \/>\}\s*<\/div>/,
+            /\{children\}\s*\{history !== undefined && <HistoryPanel \{\.\.\.history\} \/>\}\s*<\/Frame>/,
         );
     });
 
     it("AC-change-history-35: the History panel is one shared part of the page frame, never a copy", () => {
-        expect(filesWith(/<HistoryPanel\b|function HistoryPanel|aria-label="History"/)).toEqual(["/src/design/page.tsx"]);
-        expect(sources["/src/design/page.tsx"]).not.toMatch(/export function HistoryPanel/);
+        expect(filesWith(/function HistoryPanel|aria-label="History"/)).toEqual(["/src/design/page.tsx"]);
+        expect(filesWith(/<HistoryPanel\b/).sort()).toEqual([
+            "/src/design/page.tsx",
+            "/src/design/resourceEdit.tsx",
+            "/src/design/resourceList.tsx",
+        ]);
         expect(filesWith(/<ChangeList\b/, (path) => path === "/src/history/HistoryScreen.tsx")).toEqual(["/src/design/page.tsx"]);
         expect(filesWith(/(?<!~)\/bots\/[^`]*\/(history|window)`|\["HistoryPage"\]/)).toEqual(["/src/api/history.ts"]);
     });
 
     it("AC-change-history-37: each screen asks for the history of what it is about", () => {
-        expect(sources["/src/api/history.ts"]).toContain('collection === null ? "" : `&kind=${collection}`');
+        expect(sources["/src/api/history.ts"]).toContain("query: kind === null ? { limit, page } : { limit, page, kind }");
+        expect(sources["/src/api/history.ts"]).toContain("botHistory(bot, collection)");
         const editor = sources["/src/api/resourceEditor.ts"];
         expect(editor).toContain('useKindHistory(bot, address.screen === "list" ? api.collection : null)');
         expect(editor).toContain("useResourceHistory(bot, api.collection, id, revision)");
@@ -169,12 +171,13 @@ describe("the rules of every screen", () => {
 
     it("AC-pagination-12: the panel asks for as many entries as the server's page size, never a number of its own", () => {
         expect(filesWith(/[?&]limit=\d/)).toEqual([]);
-        expect(sources["/src/api/history.ts"]).toContain("?limit=${size}&page=${page}");
+        expect(sources["/src/api/history.ts"]).toContain("source.pageOf(size, page, signal)");
+        expect(filesWith(/\blimit: \d/)).toEqual([]);
     });
 
-    it("AC-delete-guard-20: Delete has one place: DeleteAction, which only the edit screens use", () => {
-        expect(filesWith(/>\s*Delete\s*</)).toEqual(["/src/design/deleteAction.tsx"]);
-        expect(filesWith(/<DeleteAction\b/).sort()).toEqual(["/src/design/resourceEdit.tsx"]);
+    it("AC-delete-guard-20: Delete has one place: the deletion of the kit's ResourceEdit, which only the edit screens use", () => {
+        expect(filesWith(/>\s*Delete\s*</)).toEqual([]);
+        expect(filesWith(/\bdeletion\b/).sort()).toEqual(["/src/design/resourceEdit.tsx"]);
     });
 
     it("AC-web-shell-7: an address of a resource is built only in api/resourceAddress", () => {

@@ -1,8 +1,6 @@
+import { Button, Field } from "@maniumek/suwfrontkit";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { useEffect, useState } from "react";
-
-import { Button } from "@/design/button";
-import { Field } from "@/design/field";
 
 import "./articleEditor.css";
 import { extensionsOf } from "./articleEditor";

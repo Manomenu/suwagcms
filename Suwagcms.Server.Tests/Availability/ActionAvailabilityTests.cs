@@ -37,7 +37,7 @@ public sealed class ActionAvailabilityTests(TestDatabase database, ClassServer s
 
     private async Task<(AvailabilityScene Scene, ActionApi Actions)> SceneAsync(BotCapabilities? declares = null)
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var scene = await AvailabilityScene.StartAsync(client, declares: declares);
         var actions = new ActionApi(client, scene.Id);

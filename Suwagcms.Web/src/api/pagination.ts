@@ -1,10 +1,9 @@
+import { dataOf } from "@maniumek/suwfrontkit";
+import { useQuery } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
 import { useSearchParams } from "wouter";
 
-import { request } from "./client";
-import type { components } from "./openapi";
-
-type ServerSettings = components["schemas"]["ServerSettings"];
+import { api, messageOf } from "./client";
 
 interface PageSize {
     size: number | null;
@@ -14,21 +13,15 @@ interface PageSize {
 export const PageSizeContext = createContext<PageSize>({ size: null, failure: null });
 
 export function useAskedPageSize(): PageSize {
-    const [answer, setAnswer] = useState<PageSize>({ size: null, failure: null });
-    useEffect(() => {
-        const controller = new AbortController();
-        request<ServerSettings>("/settings", { signal: controller.signal })
-            .then((settings) => {
-                setAnswer({ size: Number(settings.pageSize), failure: null });
-            })
-            .catch((error: unknown) => {
-                if (!controller.signal.aborted) setAnswer({ size: null, failure: error instanceof Error ? error.message : String(error) });
-            });
-        return () => {
-            controller.abort();
-        };
-    }, []);
-    return answer;
+    const settings = useQuery({
+        queryKey: ["settings"],
+        queryFn: ({ signal }) => dataOf(api.GET("/api/settings", { signal })),
+        staleTime: Infinity,
+    });
+    return {
+        size: settings.data === undefined ? null : Number(settings.data.pageSize),
+        failure: settings.error === null ? null : messageOf(settings.error),
+    };
 }
 
 export interface Paging {

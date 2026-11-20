@@ -1,9 +1,5 @@
+import { Button, Input, Legend, Select } from "@maniumek/suwfrontkit";
 import type { ReactNode } from "react";
-
-import { Button } from "@/design/button";
-import { Legend } from "@/design/field";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
 
 import { Checklist } from "./Checklist";
 import { articlesOf, basesOffered, withBase, withStored, type KnowledgeEntry, type LinkableArticle, type LinkableBase } from "./draft";

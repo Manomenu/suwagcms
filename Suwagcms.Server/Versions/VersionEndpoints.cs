@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
@@ -35,21 +35,21 @@ internal static class VersionEndpoints
         string bot,
         int from,
         int to,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
-        var before = await VersionStore.FindAsync(pool, bot, from, cancellationToken);
-        var after = await VersionStore.FindAsync(pool, bot, to, cancellationToken);
+        var before = await VersionStore.FindAsync(dataSource, bot, from, cancellationToken);
+        var after = await VersionStore.FindAsync(dataSource, bot, to, cancellationToken);
         if (before is not null && after is not null)
         {
             return TypedResults.Ok(VersionComparer.Compare(bot, from, to, before.Document, after.Document));
         }
-        if (await VersionStore.ListAsync(pool, bot, cancellationToken) is null)
+        if (await VersionStore.ListAsync(dataSource, bot, cancellationToken) is null)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The versions were not compared.");
         }
-        var latest = await VersionStore.LatestNumberAsync(pool, bot, cancellationToken);
+        var latest = await VersionStore.LatestNumberAsync(dataSource, bot, cancellationToken);
         var missing = new (int Number, VersionDetail? Found)[] { (from, before), (to, after) }
             .Where(side => side.Found is null)
             .Select(side => side.Number)
@@ -67,12 +67,12 @@ internal static class VersionEndpoints
     private static async Task<Results<Ok<VersionExport>, ProblemHttpResult>> Export(
         string bot,
         int number,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     ) =>
-        await VersionStore.FindAsync(pool, bot, number, cancellationToken) is { } found
+        await VersionStore.FindAsync(dataSource, bot, number, cancellationToken) is { } found
             ? TypedResults.Ok(VersionExportSplitter.Split(bot, number, found.Document))
-            : await MissingAsync(pool, bot, number, "The version was not exported.", cancellationToken);
+            : await MissingAsync(dataSource, bot, number, "The version was not exported.", cancellationToken);
 
     private static async Task<Results<Ok<BotStatus>, ProblemHttpResult>> Status(
         string bot,
@@ -119,35 +119,35 @@ internal static class VersionEndpoints
 
     private static async Task<Results<Ok<List<VersionSummary>>, ProblemHttpResult>> List(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     ) =>
-        await VersionStore.ListAsync(pool, bot, cancellationToken) is { } versions
+        await VersionStore.ListAsync(dataSource, bot, cancellationToken) is { } versions
             ? TypedResults.Ok(versions)
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The versions were not listed.");
 
     private static async Task<Results<Ok<VersionDetail>, ProblemHttpResult>> Get(
         string bot,
         int number,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
-        if (await VersionStore.FindAsync(pool, bot, number, cancellationToken) is { } found)
+        if (await VersionStore.FindAsync(dataSource, bot, number, cancellationToken) is { } found)
         {
             return TypedResults.Ok(found);
         }
-        return await MissingAsync(pool, bot, number, "The version was not shown.", cancellationToken);
+        return await MissingAsync(dataSource, bot, number, "The version was not shown.", cancellationToken);
     }
 
     internal static async Task<ProblemHttpResult> MissingAsync(
-        Pool pool,
+        NpgsqlDataSource dataSource,
         string bot,
         int number,
         string title,
         CancellationToken cancellationToken
     ) =>
-        await VersionStore.ListAsync(pool, bot, cancellationToken) is null
+        await VersionStore.ListAsync(dataSource, bot, cancellationToken) is null
             ? EditProblems.For(new EditResult.UnknownBot(), bot, title)
             : TypedResults.Problem(
                 title: title,
@@ -155,7 +155,10 @@ internal static class VersionEndpoints
                 statusCode: StatusCodes.Status404NotFound,
                 extensions: new Dictionary<string, object?>
                 {
-                    ["mistakes"] = new[] { NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(pool, bot, cancellationToken)) },
+                    ["mistakes"] = new[]
+                    {
+                        NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(dataSource, bot, cancellationToken)),
+                    },
                 }
             );
 

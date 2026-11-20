@@ -31,7 +31,7 @@
         "Suwagcms.slnx": "global.json, nuget.config, Directory.Build.props, Directory.Build.rsp, Directory.Packages.props",
         "*.csproj": "packages.lock.json, stryker-config.json",
         "appsettings.json": "appsettings.*.json",
-        "package.json": "pnpm*, .npm*, eslint*, .eslint*, prettier*, .prettier*, knip.config.ts, tsconfig*.json, vite.config.ts, index.html, components.json",
+        "package.json": "pnpm*, .npm*, eslint*, .eslint*, prettier*, .prettier*, knip.config.ts, tsconfig*.json, vite.config.ts, index.html",
         "*.ts": "${capture}.js, ${capture}.*.ts",
         "*.tsx": "${capture}.ts, ${capture}.*.ts, ${capture}.*.tsx"
     }

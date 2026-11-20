@@ -1,11 +1,11 @@
 using System.Text.Json;
 using Dapper;
+using Npgsql;
 using Suwagcms.Contracts.Availability;
 using Suwagcms.Contracts.History;
 using Suwagcms.Contracts.Usage;
 using Suwagcms.Sdk.BotRuntime.Availability;
 using Suwagcms.Sdk.Format.References;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Availability;
@@ -27,7 +27,7 @@ internal static class AvailabilityStore
     private sealed record ResourceRow(string Kind, string PublicId, bool Off);
 
     public static async Task<(Outcome Result, IReadOnlyList<UsageLink> UsedBy)> ChangeAsync(
-        Pool pool,
+        NpgsqlDataSource dataSource,
         string bot,
         ResourceRef target,
         bool off,
@@ -36,7 +36,7 @@ internal static class AvailabilityStore
         CancellationToken cancellationToken
     )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await ResourceStore.LockBotAsync(connection, transaction, bot, cancellationToken);
         if (!await ResourceStore.BotExistsAsync(connection, transaction, bot, cancellationToken))
@@ -107,9 +107,9 @@ internal static class AvailabilityStore
         return (Outcome.Changed, usedBy);
     }
 
-    public static async Task<BotAvailability> ReadMessageAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    public static async Task<BotAvailability> ReadMessageAsync(NpgsqlDataSource dataSource, string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await ResourceStore.LockBotAsync(connection, transaction, bot, cancellationToken);
         var number = await connection.ExecuteScalarAsync<int>(
@@ -149,22 +149,22 @@ internal static class AvailabilityStore
         };
     }
 
-    public static async Task<int> ReadNumberAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    public static async Task<int> ReadNumberAsync(NpgsqlDataSource dataSource, string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         return await connection.ExecuteScalarAsync<int>(
             new CommandDefinition("SELECT availability_number FROM bot WHERE id = @bot", new { bot }, cancellationToken: cancellationToken)
         );
     }
 
     public static async Task<List<AvailabilityItem>> ListAsync(
-        Pool pool,
+        NpgsqlDataSource dataSource,
         string bot,
         IReadOnlyCollection<ResourceKind> kinds,
         CancellationToken cancellationToken
     )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await connection.QueryAsync<ResourceRow>(
             new CommandDefinition(
                 """

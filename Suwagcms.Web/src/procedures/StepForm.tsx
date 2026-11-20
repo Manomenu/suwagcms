@@ -1,11 +1,7 @@
+import { Button, Field, Input, Legend, Select, Textarea } from "@maniumek/suwfrontkit";
 import { Link } from "wouter";
 
 import { listHref } from "@/api/resourceAddress";
-import { Button } from "@/design/button";
-import { Field, Legend } from "@/design/field";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
-import { Textarea } from "@/design/textarea";
 
 import type { ActionView, Fact } from "./api";
 import { Checklist } from "./Checklist";

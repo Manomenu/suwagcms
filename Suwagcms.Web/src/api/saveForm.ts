@@ -1,7 +1,7 @@
+import { mayLeave, useLeaveGuard, type ApiError } from "@maniumek/suwfrontkit";
 import { useState, useTransition } from "react";
 
-import { ApiError, type Mistake } from "./client";
-import { DISCARD_QUESTION, useLeaveGuard } from "./leaveGuard";
+import { mistakesOf, refusalOf, type Mistake } from "./client";
 
 export interface SaveForm<Form> {
     form: Form;
@@ -36,7 +36,7 @@ export function useSaveForm<Form>({
     const [refusal, setRefusal] = useState<ApiError | null>(null);
     const [pending, startSaving] = useTransition();
     const dirty = !same(form, initial);
-    useLeaveGuard(dirty, DISCARD_QUESTION);
+    useLeaveGuard(dirty);
 
     return {
         form,
@@ -50,19 +50,19 @@ export function useSaveForm<Form>({
                 save(form)
                     .then(onSaved)
                     .catch((error: unknown) => {
-                        setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
+                        setRefusal(refusalOf(error));
                     }),
             );
         },
         pending,
         refusal,
-        mistakes: refusal?.mistakes ?? [],
+        mistakes: mistakesOf(refusal),
         forgetRefusal: () => {
             setRefusal(null);
         },
         dirty,
         cancel: () => {
-            if (!dirty || window.confirm(DISCARD_QUESTION)) onCancel();
+            if (mayLeave()) onCancel();
         },
     };
 }

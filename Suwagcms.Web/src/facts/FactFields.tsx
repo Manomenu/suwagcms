@@ -1,13 +1,11 @@
+import { Anchor, Field as DesignField, Input, Select } from "@maniumek/suwfrontkit";
+import { Link } from "wouter";
 import type { ReactNode } from "react";
 
 import type { Mistake } from "@/api/client";
 import { usageHref } from "@/api/usage";
-import { Anchor } from "@/design/anchor";
 import { ConstraintFields, PatternFields } from "@/design/constraintFields";
 import { FACT_HINTS } from "@/design/factHints";
-import { Field as DesignField } from "@/design/field";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
 
 import { fieldOf, referrerPlace, type FactForm, type FieldName } from "./factForm";
 
@@ -21,8 +19,10 @@ function Referrers({ bot, mistakes }: { bot: string; mistakes: Mistake[] }) {
         <ul aria-label="Used by" className="flex flex-col gap-1 pl-4 text-sm">
             {places.map((place) => (
                 <li key={`${place.resource.id}:${place.location}`}>
-                    <Anchor href={usageHref(bot, { kind: "procedure", id: place.resource.id, field: place.location })}>
-                        {place.resource.id}
+                    <Anchor asChild>
+                        <Link href={usageHref(bot, { kind: "procedure", id: place.resource.id, field: place.location })}>
+                            {place.resource.id}
+                        </Link>
                     </Anchor>{" "}
                     <span className="text-muted-foreground">{referrerPlace(place.location)}</span>
                 </li>

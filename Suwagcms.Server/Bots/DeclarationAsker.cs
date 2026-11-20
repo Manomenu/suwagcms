@@ -1,21 +1,21 @@
 using System.Globalization;
 using System.Text.Json;
+using Npgsql;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Sdk.Validation;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Bots;
 
-internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider time, DefinitionEditor editor)
+internal sealed class DeclarationAsker(NpgsqlDataSource dataSource, BotClient client, TimeProvider time, DefinitionEditor editor)
 {
     private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
 
     public async Task<DeclarationStatus?> ReadStoredAsync(string bot, CancellationToken cancellationToken)
     {
-        return await DeclarationStore.FindAsync(pool, bot, cancellationToken) is { } row
+        return await DeclarationStore.FindAsync(dataSource, bot, cancellationToken) is { } row
             ? await StatusAsync(bot, row, DeclarationAsk.NotAsked, null, [], true, cancellationToken)
             : null;
     }
@@ -28,7 +28,7 @@ internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider
 
     private async Task<DeclarationStatus?> AskAsync(string bot, bool listCannotRun, CancellationToken cancellationToken)
     {
-        if (await DeclarationStore.FindAsync(pool, bot, cancellationToken) is not { } row)
+        if (await DeclarationStore.FindAsync(dataSource, bot, cancellationToken) is not { } row)
         {
             return null;
         }
@@ -93,7 +93,7 @@ internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider
     {
         var text = declaration is null ? null : JsonSerializer.Serialize(declaration, Web);
         var at = time.GetUtcNow();
-        await DeclarationStore.StoreAsync(pool, bot, text, at, cancellationToken);
+        await DeclarationStore.StoreAsync(dataSource, bot, text, at, cancellationToken);
         await editor.AlignCodeActionsAsync(bot, cancellationToken);
         return await StatusAsync(
             bot,
@@ -145,7 +145,7 @@ internal sealed class DeclarationAsker(Pool pool, BotClient client, TimeProvider
 
     private async Task<IReadOnlyList<Mistake>> CannotRunAsync(string bot, BotDeclaration declaration, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var resources = await ResourceStore.LoadAsync(connection, null, bot, cancellationToken);
         return
         [

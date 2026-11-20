@@ -1,10 +1,10 @@
+import { Alert, ApiError } from "@maniumek/suwfrontkit";
+import { mistakesOf } from "@/api/client";
 import { useEffect, useState } from "react";
 import { useLocation, useSearch, useSearchParams } from "wouter";
 
-import { ApiError } from "@/api/client";
 import { useVersionWindow } from "@/api/history";
 import { versionsHref, withListSearch } from "@/api/resourceAddress";
-import { Alert } from "@/design/alert";
 
 import { fetchComparison, fetchVersion, fetchVersions, versionNumberOf, type VersionDetail, type VersionSummary } from "./api";
 import { NoSuchVersion, VersionView, type ComparisonState } from "./VersionView";
@@ -52,7 +52,7 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
             })
             .catch((error: unknown) => {
                 if (controller.signal.aborted) return;
-                const refusal = error instanceof ApiError ? (error.mistakes[0]?.message ?? error.message) : messageOf(error);
+                const refusal = error instanceof ApiError ? (mistakesOf(error)[0]?.message ?? error.message) : messageOf(error);
                 setComparison({ with: compared, answer: null, refusal });
             });
         return () => {

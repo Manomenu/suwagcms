@@ -12,7 +12,7 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
 
     private Task<ChangeScene> NewScene()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return ChangeScene.NewAsync(App.CreateClient());
     }
 
@@ -90,7 +90,7 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
     {
         var scene = await NewScene();
         await scene.Facts.Add("customer.city", FactApi.Text("Before"));
-        var before = await scene.RowsAsync(database.Pool);
+        var before = await scene.RowsAsync(database.DataSource);
 
         var run = await scene.CliAsync(
             """
@@ -113,7 +113,7 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
         Assert.Equal(1, run.ExitCode);
         Assert.Contains("change 3, fact 'order.bad'", run.Error, StringComparison.Ordinal);
         Assert.Contains("fact.description.missing", run.Error, StringComparison.Ordinal);
-        Assert.Equal(before, await scene.RowsAsync(database.Pool));
+        Assert.Equal(before, await scene.RowsAsync(database.DataSource));
     }
 
     [Fact]
@@ -295,12 +295,12 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
     {
         var scene = await NewScene();
         await scene.Facts.Add("order.left", FactApi.Text("Left alone"));
-        var left = (await scene.RowsAsync(database.Pool)).Single();
+        var left = (await scene.RowsAsync(database.DataSource)).Single();
 
         var response = await scene.Post(ChangeScene.File(ChangeScene.AddFact("customer.city"), ChangeScene.AddBase("oferta")));
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains(left, await scene.RowsAsync(database.Pool));
+        Assert.Contains(left, await scene.RowsAsync(database.DataSource));
     }
 
     [Fact]
@@ -309,11 +309,11 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
     {
         var scene = await NewScene();
         await scene.Facts.Add("customer.city", FactApi.Text());
-        var before = await scene.RowsAsync(database.Pool);
+        var before = await scene.RowsAsync(database.DataSource);
         var good = ChangeScene.File(ChangeScene.AddFact("order.first"), """{"edit":"fact","name":"customer.city","description":"New"}""");
 
         var dry = await ChangeScene.JsonOf(await scene.Post(good, dryRun: true));
-        Assert.Equal(before, await scene.RowsAsync(database.Pool));
+        Assert.Equal(before, await scene.RowsAsync(database.DataSource));
         var real = await ChangeScene.JsonOf(await scene.Post(good));
 
         Assert.True(dry.GetProperty("dryRun").GetBoolean());
@@ -362,7 +362,7 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
         var scene = await NewScene();
         await scene.Facts.Add("customer.city", FactApi.Text("One"));
         await scene.Facts.Put("customer.city", FactApi.Text("Two"));
-        var before = await scene.RowsAsync(database.Pool);
+        var before = await scene.RowsAsync(database.DataSource);
 
         var response = await scene.Post(
             ChangeScene.File(
@@ -375,7 +375,7 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
         var mistake = Assert.Single(Mistakes(await ChangeScene.JsonOf(response)));
         Assert.Equal("resource.stale", mistake.GetProperty("code").GetString());
         Assert.Contains("it is now revision 2", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
-        Assert.Equal(before, await scene.RowsAsync(database.Pool));
+        Assert.Equal(before, await scene.RowsAsync(database.DataSource));
     }
 
     [Fact]

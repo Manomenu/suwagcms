@@ -1,10 +1,10 @@
+using Npgsql;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Availability;
 
 internal sealed partial class AvailabilityRetrier(
-    Pool pool,
+    NpgsqlDataSource dataSource,
     AvailabilityRetries retries,
     IServiceProvider services,
     TimeProvider time,
@@ -38,7 +38,7 @@ internal sealed partial class AvailabilityRetrier(
         try
         {
             retries.Schedule(bot);
-            if (await BotStore.FindAddressAsync(pool, bot, cancellationToken) is { } address)
+            if (await BotStore.FindAddressAsync(dataSource, bot, cancellationToken) is { } address)
             {
                 await services.GetRequiredService<AvailabilitySender>().SendAsync(bot, address, cancellationToken);
             }

@@ -1,13 +1,9 @@
+import { Alert, ApiError, Button, Field, Input, Paper } from "@maniumek/suwfrontkit";
+import { mistakesOf, refusalOf } from "@/api/client";
 import { useState } from "react";
 import { useLocation, useSearch } from "wouter";
 
-import { ApiError } from "@/api/client";
 import { editHref, withListSearch } from "@/api/resourceAddress";
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
-import { Field } from "@/design/field";
-import { Input } from "@/design/input";
-import { Paper } from "@/design/page";
 
 import { saveProcedure } from "./api";
 import { PROCEDURE_HINTS } from "./hints";
@@ -30,7 +26,7 @@ export function NewProcedureForm({ bot, onCancel }: { bot: string; onCancel: () 
                             navigate(withListSearch(editHref(bot, "procedures", id), search), { replace: true });
                         })
                         .catch((error: unknown) => {
-                            setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
+                            setRefusal(refusalOf(error));
                         });
                 }}
             >
@@ -58,9 +54,11 @@ export function NewProcedureForm({ bot, onCancel }: { bot: string; onCancel: () 
                 </Field>
                 {refusal !== null && (
                     <Alert variant="destructive">
-                        {refusal.mistakes.length === 0
+                        {mistakesOf(refusal).length === 0
                             ? refusal.message
-                            : refusal.mistakes.map((mistake) => `${mistake.message} ${mistake.fix}`).join(" ")}
+                            : mistakesOf(refusal)
+                                  .map((mistake) => `${mistake.message} ${mistake.fix}`)
+                                  .join(" ")}
                     </Alert>
                 )}
                 <div className="flex gap-2">

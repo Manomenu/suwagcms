@@ -22,7 +22,7 @@ public sealed class ValidateEndpointTests(TestDatabase database, ClassServer ser
 
     private HttpClient Client()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return App.CreateClient();
     }
 

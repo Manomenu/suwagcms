@@ -1,10 +1,7 @@
+import { Field, Input, Paper, Select } from "@maniumek/suwfrontkit";
 import { useSaveForm } from "@/api/saveForm";
 import { LANGUAGES } from "@/api/languages";
-import { Field } from "@/design/field";
-import { Input } from "@/design/input";
 import { FormFooter } from "@/design/formFooter";
-import { Paper } from "@/design/page";
-import { Select } from "@/design/select";
 
 import { knowledgeBasesApi } from "./api";
 import { HINTS, fieldOf, mistakesFor, saveOf, type FieldName, type KnowledgeBaseForm as FormState } from "./knowledgeBaseForm";

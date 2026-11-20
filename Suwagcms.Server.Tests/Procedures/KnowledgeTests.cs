@@ -14,7 +14,7 @@ public sealed class KnowledgeTests(TestDatabase database, ClassServer server) : 
 
     private async Task<Scene> NewBot(bool withArticle = true)
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         if (withArticle)
@@ -156,7 +156,7 @@ public sealed class KnowledgeTests(TestDatabase database, ClassServer server) : 
     [Trait("criterion", "AC-instruction-context-7")]
     public async Task A_query_is_saved_with_no_call_to_the_bot_and_reads_back_byte_for_byte()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         using var listening = new TcpListener(IPAddress.Loopback, 0);
         listening.Start();

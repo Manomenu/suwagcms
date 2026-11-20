@@ -1,32 +1,21 @@
-import type { components } from "./openapi";
+import { ApiError, createApi } from "@maniumek/suwfrontkit";
 
-const BASE = import.meta.env.VITE_API_BASE ?? "/api";
+import type { components, paths } from "./openapi";
 
 export type Mistake = components["schemas"]["Mistake"];
 
-export class ApiError extends Error {
-    readonly mistakes: Mistake[];
-    readonly status: number;
+export const api = createApi<paths>();
 
-    constructor(message: string, mistakes: Mistake[] = [], status = 0) {
-        super(message);
-        this.mistakes = mistakes;
-        this.status = status;
-    }
+export function mistakesOf(error: ApiError | null): Mistake[] {
+    const mistakes = error?.problem["mistakes"];
+    return Array.isArray(mistakes) ? (mistakes as Mistake[]) : [];
 }
 
-export async function toError(response: Response): Promise<ApiError> {
-    const body = (await response.json().catch(() => null)) as { detail?: unknown; mistakes?: unknown } | null;
-    const detail = typeof body?.detail === "string" ? body.detail : null;
-    const mistakes = Array.isArray(body?.mistakes) ? (body.mistakes as Mistake[]) : [];
-    return new ApiError(detail ?? `${response.status} ${response.statusText}`, mistakes, response.status);
+export function refusalOf(error: unknown): ApiError {
+    if (error instanceof ApiError) return error;
+    return new ApiError(0, { detail: error instanceof Error ? error.message : String(error) });
 }
 
-export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const response = await fetch(`${BASE}${path}`, {
-        ...init,
-        headers: init.body === undefined ? {} : { "content-type": "application/json" },
-    });
-    if (!response.ok) throw await toError(response);
-    return (response.status === 204 ? undefined : await response.json()) as T;
+export function messageOf(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
 }

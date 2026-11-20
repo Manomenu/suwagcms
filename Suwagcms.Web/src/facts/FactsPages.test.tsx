@@ -47,7 +47,7 @@ describe("a list divided into pages", () => {
         const html = view("?page=2");
 
         expect(html).toContain("Page 2 of 3");
-        expect(html.match(/>Edit</g)).toHaveLength(20);
+        expect(html.match(/<button[^>]*>Edit</g)).toHaveLength(20);
         expect(html).toContain(">customer.field21<");
         expect(html).toContain(">customer.field40<");
         expect(html).not.toContain(">customer.field20<");

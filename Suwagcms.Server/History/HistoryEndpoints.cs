@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.History;
 using Suwagcms.Sdk.Format.References;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Settings;
 using Suwagcms.Server.Versions;
@@ -43,7 +43,7 @@ internal static class HistoryEndpoints
 
     private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfBot(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken,
         int limit = DefaultLimit,
         long? before = null,
@@ -53,7 +53,7 @@ internal static class HistoryEndpoints
     {
         if (kind is null)
         {
-            return await PageAsync(bot, null, pool, limit, before, page, cancellationToken);
+            return await PageAsync(bot, null, dataSource, limit, before, page, cancellationToken);
         }
         if (!Kinds.TryGetValue(kind, out var only))
         {
@@ -63,36 +63,36 @@ internal static class HistoryEndpoints
                 statusCode: StatusCodes.Status400BadRequest
             );
         }
-        return await PageAsync(bot, null, pool, limit, before, page, cancellationToken, only);
+        return await PageAsync(bot, null, dataSource, limit, before, page, cancellationToken, only);
     }
 
     private static Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfResource(
         string bot,
         string kind,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken,
         int limit = DefaultLimit,
         long? before = null,
         int? page = null
-    ) => PageAsync(bot, (Kinds[kind], id), pool, limit, before, page, cancellationToken);
+    ) => PageAsync(bot, (Kinds[kind], id), dataSource, limit, before, page, cancellationToken);
 
     private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfWindow(
         string bot,
         int number,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken,
         int limit = DefaultLimit,
         long? before = null,
         int? page = null
     )
     {
-        if (!await VersionStore.ExistsAsync(pool, bot, number, cancellationToken))
+        if (!await VersionStore.ExistsAsync(dataSource, bot, number, cancellationToken))
         {
-            return await VersionEndpoints.MissingAsync(pool, bot, number, Title, cancellationToken);
+            return await VersionEndpoints.MissingAsync(dataSource, bot, number, Title, cancellationToken);
         }
         var answer = await HistoryStore.ReadWindowAsync(
-            pool,
+            dataSource,
             bot,
             number,
             Math.Clamp(limit, 1, PageSize.Most),
@@ -114,14 +114,14 @@ internal static class HistoryEndpoints
     private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> PageAsync(
         string bot,
         (string Kind, string Id)? resource,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         int limit,
         long? before,
         int? page,
         CancellationToken cancellationToken,
         string? only = null
     ) =>
-        await HistoryStore.ReadAsync(pool, bot, resource, Math.Clamp(limit, 1, PageSize.Most), before, page, cancellationToken, only)
+        await HistoryStore.ReadAsync(dataSource, bot, resource, Math.Clamp(limit, 1, PageSize.Most), before, page, cancellationToken, only)
             is { } answer
             ? TypedResults.Ok(WrittenWhenPaged(answer, page))
             : EditProblems.For(new EditResult.UnknownBot(), bot, Title);

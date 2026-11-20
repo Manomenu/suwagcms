@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using Suwagcms.Contracts.Actions;
 using Suwagcms.Sdk.BotRuntime.Actions;
 using Suwagcms.Sdk.Format.Actions;
@@ -8,12 +9,11 @@ using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Availability;
 using Suwagcms.Server.Bots;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Actions;
 
-internal sealed class ActionTester(Pool pool, BotClient client, IOptions<PushOptions> options)
+internal sealed class ActionTester(NpgsqlDataSource dataSource, BotClient client, IOptions<PushOptions> options)
 {
     public const string ValueUnfit = "action.test.value";
     public const string Unreachable = "unreachable";
@@ -30,7 +30,7 @@ internal sealed class ActionTester(Pool pool, BotClient client, IOptions<PushOpt
     )
     {
         var target = new ResourceRef(ResourceKind.Action, id);
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return (null, new EditResult.UnknownBot());
         }
@@ -56,7 +56,7 @@ internal sealed class ActionTester(Pool pool, BotClient client, IOptions<PushOpt
                 ])
             );
         }
-        var registered = await DeclarationStore.FindAsync(pool, bot, cancellationToken);
+        var registered = await DeclarationStore.FindAsync(dataSource, bot, cancellationToken);
         var address = registered?.Address ?? throw new InvalidOperationException("the bot was found a moment ago");
         var seconds =
             (action.Implementation?.Http is { } http ? http.TimeoutSeconds ?? HttpCall.DefaultTimeoutSeconds : CodeSeconds)
@@ -67,7 +67,7 @@ internal sealed class ActionTester(Pool pool, BotClient client, IOptions<PushOpt
             ["values"] = new JsonObject(values.Select(value => KeyValuePair.Create<string, JsonNode?>(value.Key, value.Value))),
         };
         var answer = Judged(bot, address, await client.TestActionAsync(address, request.ToJsonString(), seconds, cancellationToken));
-        var off = (await AvailabilityStore.ListAsync(pool, bot, [ResourceKind.Action], cancellationToken)).Any(item =>
+        var off = (await AvailabilityStore.ListAsync(dataSource, bot, [ResourceKind.Action], cancellationToken)).Any(item =>
             item.Id == id && item.Off
         );
         return (off ? answer with { Note = OffNote } : answer, null);

@@ -1,9 +1,5 @@
+import { Alert, Badge, Button, Paper } from "@maniumek/suwfrontkit";
 import { useState } from "react";
-
-import { Alert } from "@/design/alert";
-import { Badge } from "@/design/badge";
-import { Button } from "@/design/button";
-import { Paper } from "@/design/page";
 
 interface UsedByEntry {
     kind: string;

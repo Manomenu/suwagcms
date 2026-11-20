@@ -1,10 +1,11 @@
-import { ApiError, type Mistake } from "@/api/client";
+import { ApiError } from "@maniumek/suwfrontkit";
+import { type Mistake, mistakesOf } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
 import type { Draft } from "./draft";
 
 export function reasonOf(error: ApiError): string {
-    const first = error.mistakes[0];
+    const first = mistakesOf(error)[0];
     return first === undefined ? error.message : `${first.message} ${first.fix}`;
 }
 
@@ -18,7 +19,7 @@ export async function checkOf(answer: Promise<ProcedureDetail>): Promise<Check> 
     try {
         return { state: "done", mistakes: (await answer).notReady };
     } catch (error) {
-        if (error instanceof ApiError && error.status === 422) return { state: "done", mistakes: error.mistakes };
+        if (error instanceof ApiError && error.status === 422) return { state: "done", mistakes: mistakesOf(error) };
         if (error instanceof ApiError && error.status === 409) return { state: "stale", message: reasonOf(error) };
         if (error instanceof ApiError && error.status !== 0)
             return { state: "unreachable", message: `The server answered: ${reasonOf(error)}` };

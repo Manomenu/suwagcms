@@ -1,8 +1,9 @@
+import { ApiError } from "@maniumek/suwfrontkit";
+import { mistakesOf } from "@/api/client";
 import type { Mistake } from "@/api/client";
 
 import type { ProcedureDetail } from "./api";
 import { revisionOfProcedure } from "./api";
-import { ApiError } from "@/api/client";
 import { reasonOf } from "./mistakes";
 import { fromDetail, toSave, type Draft } from "./draft";
 
@@ -60,7 +61,7 @@ export async function outcomeOf(answer: Promise<ProcedureDetail>): Promise<SaveO
         return { kind: "saved", detail: await answer };
     } catch (error) {
         if (error instanceof ApiError && error.status === 422)
-            return { kind: "notSaved", notice: { kind: "refused", mistakes: error.mistakes } };
+            return { kind: "notSaved", notice: { kind: "refused", mistakes: mistakesOf(error) } };
         if (error instanceof ApiError && error.status === 409)
             return { kind: "notSaved", notice: { kind: "stale", message: reasonOf(error) } };
         return {

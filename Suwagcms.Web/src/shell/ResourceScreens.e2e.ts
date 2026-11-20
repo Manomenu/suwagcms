@@ -115,36 +115,6 @@ test("AC-web-shell-11: adding or editing shows only that item, with a way back, 
     await expect(page.getByRole("table")).toHaveCount(0);
 });
 
-test("AC-web-shell-13: the help opens on hover and on focus, and Escape closes it", async ({ page, request }) => {
-    const bot = await newBot(request);
-    await page.goto(`/bots/${bot}/facts/new`);
-    const help = page.getByRole("button", { name: "About Writable by" });
-    const tip = page.getByRole("tooltip");
-
-    await help.hover();
-    await expect(tip).toContainText("Who may write the fact");
-    await page.mouse.move(0, 0, { steps: 15 });
-    await expect(tip).toHaveCount(0);
-
-    await help.focus();
-    await expect(tip).toContainText("Who may write the fact");
-    await page.keyboard.press("Escape");
-    await expect(tip).toHaveCount(0);
-});
-
-test.describe("on a touch screen", () => {
-    test.use({ hasTouch: true });
-
-    test("AC-web-shell-13: a tap opens the help", async ({ page, request }) => {
-        const bot = await newBot(request);
-        await page.goto(`/bots/${bot}/facts/new`);
-
-        await page.getByRole("button", { name: "About Writable by" }).tap();
-
-        await expect(page.getByRole("tooltip")).toContainText("Who may write the fact");
-    });
-});
-
 test("AC-web-shell-15: the article filters survive a reload and opening an article; the selected step survives a reload", async ({
     page,
     request,

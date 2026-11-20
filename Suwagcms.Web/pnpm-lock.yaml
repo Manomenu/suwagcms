@@ -8,9 +8,15 @@ importers:
 
   .:
     dependencies:
+      '@maniumek/suwfrontkit':
+        specifier: 0.5.1
+        version: 0.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwindcss@4.3.4)
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.4(vite@7.3.7(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.33.0)(yaml@2.9.1))
+      '@tanstack/react-query':
+        specifier: ^5.108.1
+        version: 5.108.1(@types/react@19.3.0)(react@19.3.1)
       '@tiptap/core':
         specifier: ^3.32.2
         version: 3.32.2(@tiptap/pm@3.32.2)
@@ -35,24 +41,15 @@ importers:
       '@tiptap/suggestion':
         specifier: ^3.32.2
         version: 3.32.2(@floating-ui/dom@1.8.0)(@tiptap/core@3.32.2(@tiptap/pm@3.32.2))(@tiptap/pm@3.32.2)
-      class-variance-authority:
-        specifier: ^0.7.1
-        version: 0.7.1
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      radix-ui:
-        specifier: ^1.8.1
-        version: 1.8.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      lucide-react:
+        specifier: ^1.76.0
+        version: 1.76.0(@types/react@19.3.0)(react@19.3.1)
       react:
         specifier: ^19.3.0
         version: 19.3.1
       react-dom:
         specifier: ^19.3.0
         version: 19.3.1(react@19.3.1)
-      tailwind-merge:
-        specifier: ^3.7.0
-        version: 3.7.0
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.4
@@ -500,6 +497,9 @@ packages:
   '@floating-ui/utils@0.2.12':
     resolution: {integrity: sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww==}
 
+  '@fontsource-variable/inter@5.3.0':
+    resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
+
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
     engines: {node: '>=18.18.0'}
@@ -544,6 +544,17 @@ packages:
 
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
+
+  '@maniumek/suwfrontkit@0.5.1':
+    resolution: {integrity: sha512-fwyscjSnuVCuN/omhFIE+XbnJbj7zQquLjC1xRPgsczhx+TVazhlP1h0UGpDz27y/EjU2cY82Z2JSGspftNSYQ==}
+    peerDependencies:
+      '@xyflow/react': ^13.0.2
+      react: ^19.3.0
+      react-dom: ^19.3.0
+      tailwindcss: ^4.3.0
+    peerDependenciesMeta:
+      '@xyflow/react':
+        optional: true
 
   '@maniumek/suwgate@0.6.0':
     resolution: {integrity: sha512-UXQlTx1TEb1H6Y3lDfedKuqpM1KBR8YO6MdYc+/bGicqXJoRMwbnwy86Y+HULaEnenynPQXHmUXr0xYFM+4Mng==}
@@ -1753,6 +1764,18 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@tanstack/query-core@5.108.1':
+    resolution: {integrity: sha512-GBX6Xsc9E+9eVLLxuM7orQNbssQjpruOCbocBYwT78MjxOWT5I+CWdvEo0N+UM6+oCZEKxuSud1oFLvE3OEmIg==}
+
+  '@tanstack/react-query@5.108.1':
+    resolution: {integrity: sha512-8/p7fpIdmUiKIukQ5ddAMUUSKC7Z8CcgUOBR2r3WqRvMg9Lzc4CXeoFchjfATKvqi23SyYFvesDdOULrvyunNg==}
+    peerDependencies:
+      '@types/react': ^18 || ^19
+      react: ^18 || ^19
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   '@tiptap/core@3.32.2':
     resolution: {integrity: sha512-EitM8KY3agYfnp/bqhfxcaReVq4CUqVzMqoSIl7xSfYABTGYoTDtVXUdYSGutcCBFjc86BbXjrOlDlqkgC8BsQ==}
     peerDependencies:
@@ -2315,6 +2338,10 @@ packages:
   detect-node-es@1.1.0:
     resolution: {integrity: sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==}
 
+  diff@9.0.0:
+    resolution: {integrity: sha512-svtcdpS8CgJyqAjEQIXdb3OjhFVVYjzGAPO8WGCmRbrml64SPw/jJD4GoE98aR7r25A0XcgrK3F02yw9R/vhQw==}
+    engines: {node: '>=0.3.1'}
+
   electron-to-chromium@1.5.474:
     resolution: {integrity: sha512-t1DE2RM6wtco58TQ47NcKw0CXw4fT3gWQvj49kkNBzMrUX3m9Sq/SoKcjEfwa9vvQ6sKYlqi/g05vG2tKLWH4w==}
 
@@ -2746,6 +2773,15 @@ packages:
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
 
+  lucide-react@1.76.0:
+    resolution: {integrity: sha512-wRVHt2Xf64GXndB4rQOY9+3Wy9oJ59HDMYv6vwhT0hpSwUxQhG/RM9YijnOmvmIQ+VI/n+1V/FKd6gP4XL2aBQ==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+
   magic-string@1.4.5:
     resolution: {integrity: sha512-oLLC2+YvQUfAa+vxoufE/yc1icb87M9iXIRqAoR/2EhE/8cb3SF/+Gi0c2By1B+5Vz2e2vQtUvHiu1+63Znh+w==}
 
@@ -2794,6 +2830,12 @@ packages:
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
     engines: {node: '>=12.20.0'}
+
+  openapi-fetch@0.17.0:
+    resolution: {integrity: sha512-PsbZR1wAPcG91eEthKhN+Zn92FMHxv+/faECIwjXdxfTODGSGegYv0sc1Olz+HYPvKOuoXfp+0pA2XVt2cI0Ig==}
+
+  openapi-typescript-helpers@0.1.0:
+    resolution: {integrity: sha512-OKTGPthhivLw/fHz6c3OPtg72vi86qaMlqbJuVJ23qOvQ+53uw1n7HdmkJFibloF7QEjDrDkzJiOJuockM/ljw==}
 
   openapi-typescript@7.13.0:
     resolution: {integrity: sha512-EFP392gcqXS7ntPvbhBzbF8TyBA+baIYEm791Hy5YkjDYKTnk/Tn5OQeKm5BIZvJihpp8Zzr4hzx0Irde1LNGQ==}
@@ -3736,6 +3778,8 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
+  '@fontsource-variable/inter@5.3.0': {}
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -3778,6 +3822,22 @@ snapshots:
       keyv: 5.6.0
 
   '@keyv/serialize@1.1.1': {}
+
+  '@maniumek/suwfrontkit@0.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(tailwindcss@4.3.4)':
+    dependencies:
+      '@fontsource-variable/inter': 5.3.0
+      class-variance-authority: 0.7.1
+      clsx: 2.1.1
+      diff: 9.0.0
+      openapi-fetch: 0.17.0
+      radix-ui: 1.8.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
+      tailwind-merge: 3.7.0
+      tailwindcss: 4.3.4
+    transitivePeerDependencies:
+      - '@types/react'
+      - '@types/react-dom'
 
   '@maniumek/suwgate@0.6.0(@eslint/js@10.0.1(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2)))(eslint-import-resolver-typescript@4.4.5(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(eslint-plugin-boundaries@7.4.1(@typescript-eslint/parser@8.72.1(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.9.3))(eslint-import-resolver-typescript@4.4.5(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2))(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(typescript-eslint@8.72.1(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@5.9.3))':
     dependencies:
@@ -4847,6 +4907,15 @@ snapshots:
       tailwindcss: 4.3.4
       vite: 7.3.7(@types/node@26.6.6)(jiti@2.7.0)(lightningcss@1.33.0)(yaml@2.9.1)
 
+  '@tanstack/query-core@5.108.1': {}
+
+  '@tanstack/react-query@5.108.1(@types/react@19.3.0)(react@19.3.1)':
+    dependencies:
+      '@tanstack/query-core': 5.108.1
+      react: 19.3.1
+    optionalDependencies:
+      '@types/react': 19.3.0
+
   '@tiptap/core@3.32.2(@tiptap/pm@3.32.2)':
     dependencies:
       '@tiptap/pm': 3.32.2
@@ -5410,6 +5479,8 @@ snapshots:
 
   detect-node-es@1.1.0: {}
 
+  diff@9.0.0: {}
+
   electron-to-chromium@1.5.474: {}
 
   enhanced-resolve@5.26.1:
@@ -5854,6 +5925,12 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
+  lucide-react@1.76.0(@types/react@19.3.0)(react@19.3.1):
+    dependencies:
+      react: 19.3.1
+    optionalDependencies:
+      '@types/react': 19.3.0
+
   magic-string@1.4.5:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
@@ -5885,6 +5962,12 @@ snapshots:
   node-releases@2.0.63: {}
 
   obug@3.0.0: {}
+
+  openapi-fetch@0.17.0:
+    dependencies:
+      openapi-typescript-helpers: 0.1.0
+
+  openapi-typescript-helpers@0.1.0: {}
 
   openapi-typescript@7.13.0(typescript@5.9.3):
     dependencies:

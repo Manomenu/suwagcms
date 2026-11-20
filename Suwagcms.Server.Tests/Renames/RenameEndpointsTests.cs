@@ -66,7 +66,7 @@ public sealed class RenameEndpointsTests(TestDatabase database, ClassServer serv
 
     private async Task<Scene> NewScene()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var scene = new Scene(client, await ProcedureApi.NewBotAsync(client));
         Assert.Equal(
@@ -217,7 +217,7 @@ public sealed class RenameEndpointsTests(TestDatabase database, ClassServer serv
         await scene.AddArticle("cennik");
         await scene.AddArticle("wycena", "[a](cms://article/cennik)");
         var trigger = "rename_fails_" + scene.Bot;
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         await connection.ExecuteAsync(
             $"""
             CREATE FUNCTION {trigger}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'no'; END $$;
@@ -227,7 +227,7 @@ public sealed class RenameEndpointsTests(TestDatabase database, ClassServer serv
         );
         try
         {
-            var editor = new DefinitionEditor(database.Pool, TimeProvider.System);
+            var editor = new DefinitionEditor(database.DataSource, TimeProvider.System);
             var target = new ResourceRef(ResourceKind.Article, "cennik");
 
             await Assert.ThrowsAsync<PostgresException>(() =>

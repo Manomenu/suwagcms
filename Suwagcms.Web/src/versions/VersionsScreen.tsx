@@ -1,11 +1,11 @@
+import { Alert, ApiError } from "@maniumek/suwfrontkit";
+import { mistakesOf, type Mistake } from "@/api/client";
 import { useCallback, useEffect, useState } from "react";
 import { Redirect, useLocation, useSearch, useSearchParams } from "wouter";
 
-import { ApiError } from "@/api/client";
 import { useKindHistory } from "@/api/history";
 import { useToFirstPage } from "@/api/pagination";
 import { versionHref, versionsHref, withListSearch } from "@/api/resourceAddress";
-import { Alert } from "@/design/alert";
 
 import {
     createVersion,
@@ -40,7 +40,7 @@ function earlierAddress(bot: string, params: URLSearchParams): string | null {
 export function VersionsScreen({ bot }: { bot: string }) {
     const [versions, setVersions] = useState<VersionSummary[] | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
-    const [refused, setRefused] = useState<ApiError["mistakes"] | null>(null);
+    const [refused, setRefused] = useState<Mistake[] | null>(null);
     const [status, setStatus] = useState<BotStatus | null>(null);
     const [pushing, setPushing] = useState(false);
     const [pushFailure, setPushFailure] = useState<PushResult | null>(null);
@@ -129,7 +129,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
                         load();
                     })
                     .catch((error: unknown) => {
-                        if (error instanceof ApiError && error.mistakes.length > 0) setRefused(error.mistakes);
+                        if (error instanceof ApiError && mistakesOf(error).length > 0) setRefused(mistakesOf(error));
                         else setFailure(error instanceof Error ? error.message : String(error));
                     });
             }}

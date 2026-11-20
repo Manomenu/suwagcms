@@ -6,8 +6,8 @@ One line per top-level path (at most 300 characters each). suwgate's `repository
 lines: a new top-level folder needs its line here, a deleted one loses it.
 
 - `Suwagcms.slnx` — the .NET solution: the server, the SDK, the contracts, the CLI and their tests.
-- `Suwagcms.Server/` — the HTTP API (ASP.NET Core minimal APIs, Npgsql, Dapper with hand-written SQL). One folder and namespace per feature: `Api/` wires the routes, `Health/` checks the database, `Database/` is the pool and the migrations, `Editing/` the one write path of every resource.
-- `Suwagcms.Server/Database/Migrations/up/` — numbered SQL migrations, applied at start-up by grate and never edited afterwards.
+- `Suwagcms.Server/` — the HTTP API (minimal APIs, Dapper with hand-written SQL) on NuGet `Suwbackkit.Server` and `Suwbackkit.Postgres`. One folder and namespace per feature: `Api/` wires the routes, `Editing/` the one write path of every resource; `Database/` only the migrations.
+- `Suwagcms.Server/Database/Migrations/up/` — numbered SQL migrations, applied at start-up by `Suwbackkit.Postgres` (grate) and never edited afterwards.
 - `Suwagcms.Server.Tests/` — xUnit v3 tests against a real PostgreSQL. Mirrors the server's folders; `Commands/` ties every route to a CLI command; `Characterization/` holds behaviour recorded before changing legacy code.
 - `Suwagcms.Sdk/` — the SDK of a .NET bot, a NuGet package (`net9.0;net10.0`): the definition format, the validator, the bot runtime (routes, version store), JSON schemas (`just sdk-schema`). Contracts references it.
 - `Suwagcms.Sdk.Tests/` — xUnit v3 plain tests of the SDK, no database. Mirrors the SDK's folders.
@@ -17,7 +17,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `.claude-plugin/` — `marketplace.json`: this repository as a Claude Code marketplace, offering one plugin, `suwagcms`.
 - `claude-plugin/` — the Claude Code plugin: `.claude-plugin/plugin.json`, and `skills/suwagcms/SKILL.md`, the main skill that lists every CLI command. Tests in `Suwagcms.Cli.Tests/Plugin/` keep the list and the CLI equal.
 - `Suwagcms.Gate/` — the xUnit project that calls the .NET guards of NuGet `Suwgate.Architecture` and `Suwgate.Database` (one `SuwgateGuards.VerifyAll` test, `GuardTests`), and this app's own guards suwgate does not have; `suwgate check --quick` runs it. See "The gate" below.
-- `Suwagcms.Web/` — the web app (React 19, Tailwind 4, Vite, TypeScript strict, pnpm), with the gate `@maniumek/suwgate` among its packages. A folder per feature under `src/`; `src/shell/` the page frame, `src/design/` the design system, `src/api/` the HTTP client and generated types.
+- `Suwagcms.Web/` — the web app (React 19, Tailwind 4, Vite, TypeScript strict, pnpm), with the gate `@maniumek/suwgate` among its packages. A folder per feature under `src/`; `src/shell/` the panel, `src/design/` shared screens on `@maniumek/suwfrontkit`, `src/api/` the client and queries.
 - `contract/` — the API contract (`openapi.json`) and its version (`package.json`), generated (`just api-types`) and committed for consumers.
 - `compose.yaml` — the whole stack on a laptop from the same Dockerfiles: db (profile `db`, also the local database of `suwgate dev db`), server, web; everything configured from `.env` (`.env.example`) with ASP.NET names (`Section__Key`); ports only on 127.0.0.1 (db 5563, web 8220).
 - `Suwagcms.Server/Dockerfile`, `Suwagcms.Web/Dockerfile` — the two images (pinned bases, locked restore, build context is the repo root); the web image is nginx serving the build and proxying `/api` to the server.
@@ -86,7 +86,7 @@ suwgate's guards and steps are listed with their reasons in its README; the ones
 - Comments (`comments-*` guards and suwgate's eslint rule `no-comments`): none in any code or config file, only the tool directives AGENTS.md lists ("No comments").
 - Time in tests (suwgate's guard `test-timing`): no test measures, sleeps on, waits for or limits real time: no `Stopwatch`, real clock, `Thread.Sleep`, `Task.Delay` outside a poll loop or `Timeout` in .NET tests; no `performance.now`, `Date.now()` arithmetic, `waitForTimeout`, `setTimeout` or own time limit in web tests. A retry or a timeout is proved with a fake `TimeProvider`; a ceiling against a hang (`CancelAfter`, `WaitAsync(<TimeSpan>)`) is allowed.
 - Worktrees (`LinkedWorktreeTests`): the server tests' fixture refuses the main checkout's test database in a linked worktree.
-- Migrations at run time (`MigratorTests`): grate runs a script once, refuses a script edited after it ran, leaves nothing behind after a failing one, and leaves no temporary folders.
+- Migrations at run time: `Suwbackkit.Postgres` runs them and its own tests prove that grate runs a script once, refuses a script edited after it ran and leaves nothing behind after a failing one.
 - Acceptance criteria (the `criteria` step, full gate only): each spec in `docs/visual/spec/` has an acceptance section with one unique `AC-<feature>-<n>` per criterion, each is named by a guardrail of a known kind, every id a guardrail names is in a spec, no id stands where the gate checks nothing.
 
 ## Disabled analyzer and lint rules, and why

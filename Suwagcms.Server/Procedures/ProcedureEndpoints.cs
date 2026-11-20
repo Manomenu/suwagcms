@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Procedures;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Procedures;
@@ -34,22 +34,22 @@ internal static class ProcedureEndpoints
 
     private static async Task<Results<Ok<ProcedureList>, ProblemHttpResult>> List(
         string bot,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     ) =>
-        await ResourceStore.ReadAsync(pool, bot, cancellationToken) is { } stored
+        await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is { } stored
             ? TypedResults.Ok(ProcedureMapping.List(stored))
             : EditProblems.For(new EditResult.UnknownBot(), bot, "The procedures were not listed.");
 
     private static async Task<Results<Ok<ProcedureDetail>, ProblemHttpResult>> Get(
         string bot,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
         var target = new ResourceRef(ResourceKind.Procedure, id);
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The procedure was not shown.");
         }

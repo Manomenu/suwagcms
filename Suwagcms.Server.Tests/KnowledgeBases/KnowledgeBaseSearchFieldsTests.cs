@@ -16,7 +16,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, ClassS
 
     private async Task<KnowledgeBaseApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await KnowledgeBaseApi.NewBotAsync(App.CreateClient());
     }
 
@@ -69,7 +69,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, ClassS
     [Trait("criterion", "AC-knowledge-bases-17")]
     public async Task A_version_carries_the_profile_and_results_of_each_base()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var versions = await (await VersionApi.NewBotAsync(App.CreateClient())).Ready();
         var bases = new KnowledgeBaseApi(versions.Client, versions.Bot);
         Assert.True(
@@ -86,7 +86,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, ClassS
     [Trait("criterion", "AC-knowledge-bases-17")]
     public async Task A_file_of_changes_adds_a_base_with_both_and_edits_one_alone()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var scene = await ChangeScene.NewAsync(App.CreateClient());
         var bases = new KnowledgeBaseApi(App.CreateClient(), scene.Bot);
 
@@ -107,7 +107,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, ClassS
     [Trait("criterion", "AC-bot-declaration-22")]
     public async Task Creating_a_version_whose_base_names_a_profile_the_bot_does_not_serve_is_refused_and_stores_nothing()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         var id = PushScene.FreshId();
         await using var bot = await TestBot.StartAsync(

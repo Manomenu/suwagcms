@@ -1,7 +1,7 @@
 using System.Text.Json.Nodes;
 using Dapper;
 using Npgsql;
-using Suwagcms.Server.Database;
+using Suwbackkit.Postgres;
 
 namespace Suwagcms.Server.Tests.Procedures;
 
@@ -18,7 +18,7 @@ public sealed class StallKnowledgeMigrationTests(TestDatabase database) : IAsync
 
     public async ValueTask InitializeAsync()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         await TestDatabase.RecreateAsync(connectionString);
     }
 

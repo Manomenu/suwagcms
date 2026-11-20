@@ -28,13 +28,13 @@ public sealed partial class VersionPushTests(TestDatabase database, ClassServer 
 
     private HttpClient Client()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return App.CreateClient();
     }
 
     private HttpClient ClientWithPushTimeout(int seconds)
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var shorter = App.WithWebHostBuilder(builder =>
             builder.ConfigureAppConfiguration(
                 (_, configuration) =>

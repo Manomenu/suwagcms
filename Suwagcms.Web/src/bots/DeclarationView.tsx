@@ -1,8 +1,5 @@
+import { Alert, Badge, Button, Paper } from "@maniumek/suwfrontkit";
 import type { DeclarationStatus } from "@/api/declaration";
-import { Alert } from "@/design/alert";
-import { Badge } from "@/design/badge";
-import { Button } from "@/design/button";
-import { Paper } from "@/design/page";
 
 function whenOf(at: string): string {
     return `${at.slice(0, 16).replace("T", " ")} UTC`;

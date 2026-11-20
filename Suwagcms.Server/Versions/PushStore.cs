@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Text.Json;
 using Dapper;
+using Npgsql;
 using Suwagcms.Contracts.History;
 using Suwagcms.Contracts.Versions;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Versions;
@@ -16,9 +16,9 @@ internal static class PushStore
 
     private sealed record AttemptRow(Guid Id, int VersionNumber, string Status, string? Error, DateTime At);
 
-    public static async Task<Registered?> FindBotAsync(Pool pool, string bot, CancellationToken cancellationToken)
+    public static async Task<Registered?> FindBotAsync(NpgsqlDataSource dataSource, string bot, CancellationToken cancellationToken)
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var row = await connection.QuerySingleOrDefaultAsync<BotRow>(
             new CommandDefinition(
                 "SELECT address AS Address, reported_version AS ReportedVersion, reported_at AS ReportedAt FROM bot WHERE id = @bot",
@@ -35,9 +35,15 @@ internal static class PushStore
             );
     }
 
-    public static async Task ReportAsync(Pool pool, string bot, int? version, DateTimeOffset at, CancellationToken cancellationToken)
+    public static async Task ReportAsync(
+        NpgsqlDataSource dataSource,
+        string bot,
+        int? version,
+        DateTimeOffset at,
+        CancellationToken cancellationToken
+    )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await connection.ExecuteAsync(
             new CommandDefinition(
                 """
@@ -56,7 +62,7 @@ internal static class PushStore
     }
 
     public static async Task RecordAsync(
-        Pool pool,
+        NpgsqlDataSource dataSource,
         string bot,
         int version,
         int? left,
@@ -66,7 +72,7 @@ internal static class PushStore
         CancellationToken cancellationToken
     )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
         await connection.ExecuteAsync(
             new CommandDefinition(
@@ -120,9 +126,14 @@ internal static class PushStore
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public static async Task<List<PushAttempt>> RecentAsync(Pool pool, string bot, int take, CancellationToken cancellationToken)
+    public static async Task<List<PushAttempt>> RecentAsync(
+        NpgsqlDataSource dataSource,
+        string bot,
+        int take,
+        CancellationToken cancellationToken
+    )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var rows = await connection.QueryAsync<AttemptRow>(
             new CommandDefinition(
                 """

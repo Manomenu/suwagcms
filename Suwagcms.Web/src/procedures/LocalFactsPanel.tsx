@@ -1,14 +1,10 @@
+import { Button, Field, InfoTip, Input, Select } from "@maniumek/suwfrontkit";
 import { useState, type ReactNode } from "react";
 
 import { constraintText, whole } from "@/api/constraints";
 import { NO_PATTERN, patternFormOf, patternOf, type PatternForm } from "@/api/textPattern";
-import { Button } from "@/design/button";
 import { ConstraintFields, PatternFields } from "@/design/constraintFields";
 import { FACT_HINTS } from "@/design/factHints";
-import { Field } from "@/design/field";
-import { InfoTip } from "@/design/infoTip";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
 
 import { PROCEDURE_HINTS } from "./hints";
 import { removeLocalFact, setLocalFact, type Draft, type LocalFact } from "./draft";

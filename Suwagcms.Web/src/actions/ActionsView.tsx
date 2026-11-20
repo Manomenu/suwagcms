@@ -1,8 +1,8 @@
+import { Badge } from "@maniumek/suwfrontkit";
 import type { ReactNode } from "react";
 
 import { usePagedRows } from "@/api/pagination";
 import { AvailabilityBadge } from "@/design/availabilityPanel";
-import { Badge } from "@/design/badge";
 import type { HistoryPanelProps } from "@/design/page";
 import { ResourceList } from "@/design/resourceList";
 

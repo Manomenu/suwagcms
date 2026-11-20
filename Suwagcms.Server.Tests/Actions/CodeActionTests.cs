@@ -42,7 +42,7 @@ public sealed class CodeActionTests(TestDatabase database, ClassServer server) :
 
     private HttpClient Client()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         disposables.Add(client);
         return client;

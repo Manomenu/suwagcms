@@ -10,7 +10,7 @@ public sealed class ArticleEndpointsTests(TestDatabase database, ClassServer ser
 
     private async Task<ArticleApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await ArticleApi.NewBotAsync(App.CreateClient());
     }
 

@@ -71,7 +71,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
 
     private async Task<Scene> SceneAsync(bool withAction = true)
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         disposables.Add(client);
         var facts = await FactApi.NewBotAsync(client);
@@ -375,7 +375,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
 
     private async Task<BotScene> BotSceneAsync()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var client = App.CreateClient();
         disposables.Add(client);
         var id = PushScene.FreshId();

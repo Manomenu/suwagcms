@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Personas;
 using Suwagcms.Sdk.Format.Personas;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Personas;
@@ -23,9 +23,13 @@ internal static class PersonaEndpoints
             .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
     }
 
-    private static async Task<Results<Ok<PersonaView>, ProblemHttpResult>> Get(string bot, Pool pool, CancellationToken cancellationToken)
+    private static async Task<Results<Ok<PersonaView>, ProblemHttpResult>> Get(
+        string bot,
+        NpgsqlDataSource dataSource,
+        CancellationToken cancellationToken
+    )
     {
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, "The persona was not shown.");
         }

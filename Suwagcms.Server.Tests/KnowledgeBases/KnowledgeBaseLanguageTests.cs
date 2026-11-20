@@ -10,7 +10,7 @@ public sealed class KnowledgeBaseLanguageTests(TestDatabase database, ClassServe
 
     private async Task<KnowledgeBaseApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await KnowledgeBaseApi.NewBotAsync(App.CreateClient());
     }
 
@@ -32,7 +32,7 @@ public sealed class KnowledgeBaseLanguageTests(TestDatabase database, ClassServe
     public async Task A_stored_base_without_a_language_reads_as_en()
     {
         var api = await NewBot();
-        await using var connection = await database.Pool.OpenAsync(TestContext.Current.CancellationToken);
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
         await connection.ExecuteAsync(
             "INSERT INTO resource (id, bot_id, kind, public_id, revision, body, updated_at) VALUES (@id, @bot, 'knowledgeBase', 'old', 1, @body::jsonb, now())",
             new

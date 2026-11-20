@@ -1,9 +1,5 @@
+import { Button, Field, Input, Paper } from "@maniumek/suwfrontkit";
 import { useEffect, useState } from "react";
-
-import { Button } from "@/design/button";
-import { Field } from "@/design/field";
-import { Input } from "@/design/input";
-import { Paper } from "@/design/page";
 
 interface IdAnswer {
     lines: { id: string; where: string }[];

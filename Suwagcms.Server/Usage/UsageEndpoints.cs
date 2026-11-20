@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Npgsql;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Usage;
 using Suwagcms.Sdk.Format.References;
-using Suwagcms.Server.Database;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Usage;
@@ -29,12 +29,12 @@ internal static class UsageEndpoints
         string bot,
         string kind,
         string id,
-        Pool pool,
+        NpgsqlDataSource dataSource,
         CancellationToken cancellationToken
     )
     {
         var target = new ResourceRef(Kinds[kind], id);
-        if (await ResourceStore.ReadAsync(pool, bot, cancellationToken) is not { } stored)
+        if (await ResourceStore.ReadAsync(dataSource, bot, cancellationToken) is not { } stored)
         {
             return EditProblems.For(new EditResult.UnknownBot(), bot, Title);
         }

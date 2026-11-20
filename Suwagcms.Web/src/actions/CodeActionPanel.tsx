@@ -1,6 +1,4 @@
-import { Button } from "@/design/button";
-import { Paper } from "@/design/page";
-
+import { Button, Paper } from "@maniumek/suwfrontkit";
 import { constraintOf } from "./actionForm";
 import type { ActionField, ActionView } from "./api";
 

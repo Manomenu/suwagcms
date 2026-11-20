@@ -1,10 +1,7 @@
+import { Field, Input, Select, Textarea } from "@maniumek/suwfrontkit";
 import { useLayoutEffect, useRef, type ComponentProps } from "react";
 
 import type { Mistake } from "@/api/client";
-import { Field } from "@/design/field";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
-import { Textarea } from "@/design/textarea";
 
 import type { KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";

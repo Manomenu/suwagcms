@@ -1,12 +1,9 @@
+import { Button, Field, Input, Legend, Select } from "@maniumek/suwfrontkit";
 import type { ReactNode } from "react";
 
 import type { Mistake } from "@/api/client";
-import { Button } from "@/design/button";
 import { ConstraintFields } from "@/design/constraintFields";
 import { TYPE_HINT } from "@/design/factHints";
-import { Field, Legend } from "@/design/field";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
 
 import { emptyRow, METHODS, placeOf, type ActionForm, type FieldRow, type HeaderRow, type ListName } from "./actionForm";
 

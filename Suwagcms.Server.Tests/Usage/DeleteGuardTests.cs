@@ -12,7 +12,7 @@ public sealed class DeleteGuardTests(TestDatabase database, ClassServer server) 
 
     private async Task<ArticleApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await ArticleApi.NewBotAsync(App.CreateClient());
     }
 
@@ -147,7 +147,7 @@ public sealed class DeleteGuardTests(TestDatabase database, ClassServer server) 
     [Trait("criterion", "AC-delete-guard-12")]
     public async Task A_fact_a_procedure_uses_is_refused_listing_the_procedure_with_its_step_and_field_and_the_fact_stays()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var api = await ProcedureApi.NewBotAsync(App.CreateClient());
         await api.Add("orderValuation", ProcedureApi.Valuation);
         Assert.True(

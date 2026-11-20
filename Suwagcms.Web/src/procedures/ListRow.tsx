@@ -1,6 +1,5 @@
+import { Button } from "@maniumek/suwfrontkit";
 import { useState, type ReactNode } from "react";
-
-import { Button } from "@/design/button";
 
 type Direction = "up" | "down";
 

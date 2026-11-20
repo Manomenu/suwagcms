@@ -9,7 +9,7 @@ public sealed class FactEndpointsTests(TestDatabase database, ClassServer server
 
     private async Task<FactApi> NewBot()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         return await FactApi.NewBotAsync(App.CreateClient());
     }
 
@@ -409,7 +409,7 @@ public sealed class FactEndpointsTests(TestDatabase database, ClassServer server
     [Trait("criterion", "AC-bot-profiles-13")]
     public async Task A_bot_that_does_not_exist_is_a_404_with_a_mistake_on_every_route()
     {
-        _ = database.Pool;
+        _ = database.DataSource;
         var api = new FactApi(App.CreateClient(), "no-such-bot");
 
         var responses = new[]

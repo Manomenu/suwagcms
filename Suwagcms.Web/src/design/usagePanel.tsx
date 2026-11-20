@@ -1,8 +1,6 @@
+import { Alert, Anchor, Paper } from "@maniumek/suwfrontkit";
+import { Link } from "wouter";
 import type * as React from "react";
-
-import { Alert } from "@/design/alert";
-import { Anchor } from "@/design/anchor";
-import { Paper } from "@/design/page";
 
 export interface UsageEntry {
     kind: string;
@@ -32,8 +30,10 @@ function Card({
                 <ul className="flex flex-col gap-1">
                     {entries.map((entry) => (
                         <li key={`${entry.kind}:${entry.id}:${entry.field}`}>
-                            <Anchor href={hrefOf(entry)} {...(onFollow === undefined ? {} : { onClick: onFollow })}>
-                                {entry.id}
+                            <Anchor asChild>
+                                <Link href={hrefOf(entry)} {...(onFollow === undefined ? {} : { onClick: onFollow })}>
+                                    {entry.id}
+                                </Link>
                             </Anchor>{" "}
                             <span className="text-muted-foreground">
                                 {entry.kind} · {entry.field}

@@ -1,4 +1,6 @@
-import { request } from "../api/client";
+import { dataOf } from "@maniumek/suwfrontkit";
+
+import { api } from "../api/client";
 import type { components } from "../api/openapi";
 
 export type VersionSummary = components["schemas"]["VersionSummary"];
@@ -7,24 +9,20 @@ export type VersionCreated = components["schemas"]["VersionCreated"];
 export type VersionComparison = components["schemas"]["VersionComparison"];
 export type ResourceDifference = components["schemas"]["ResourceDifference"];
 
-function versionsPath(bot: string): string {
-    return `/bots/${encodeURIComponent(bot)}/versions`;
-}
-
 export function fetchVersions(bot: string, signal: AbortSignal): Promise<VersionSummary[]> {
-    return request<VersionSummary[]>(versionsPath(bot), { signal });
+    return dataOf(api.GET("/api/bots/{bot}/versions", { params: { path: { bot } }, signal }));
 }
 
 export function fetchVersion(bot: string, number: number, signal: AbortSignal): Promise<VersionDetail> {
-    return request<VersionDetail>(`${versionsPath(bot)}/${number}`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/versions/{number}", { params: { path: { bot, number } }, signal }));
 }
 
 export function fetchComparison(bot: string, from: number, to: number, signal: AbortSignal): Promise<VersionComparison> {
-    return request<VersionComparison>(`${versionsPath(bot)}/${from}/diff/${to}`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/versions/{from}/diff/{to}", { params: { path: { bot, from, to } }, signal }));
 }
 
 export function createVersion(bot: string): Promise<VersionCreated> {
-    return request<VersionCreated>(versionsPath(bot), { method: "POST" });
+    return dataOf(api.POST("/api/bots/{bot}/versions", { params: { path: { bot } } }));
 }
 
 export function numberOf(version: VersionSummary): number {
@@ -52,13 +50,13 @@ export type PushResult = components["schemas"]["PushResult"];
 export type PushPlan = components["schemas"]["PushPlan"];
 
 export function fetchStatus(bot: string, signal: AbortSignal): Promise<BotStatus> {
-    return request<BotStatus>(`${versionsPath(bot)}/status`, { signal });
+    return dataOf(api.GET("/api/bots/{bot}/versions/status", { params: { path: { bot } }, signal }));
 }
 
 export function pushVersion(bot: string, number: number): Promise<PushResult> {
-    return request<PushResult>(`${versionsPath(bot)}/${number}/push`, { method: "POST" });
+    return dataOf(api.POST("/api/bots/{bot}/versions/{number}/push", { params: { path: { bot, number } } }));
 }
 
 export function fetchPushPlan(bot: string, number: number): Promise<PushPlan> {
-    return request<PushPlan>(`${versionsPath(bot)}/${number}/push-plan`);
+    return dataOf(api.GET("/api/bots/{bot}/versions/{number}/push-plan", { params: { path: { bot, number } } }));
 }

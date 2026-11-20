@@ -1,7 +1,4 @@
-import { Button } from "@/design/button";
-import { Input } from "@/design/input";
-import { Select } from "@/design/select";
-
+import { Button, Input, Select } from "@maniumek/suwfrontkit";
 import type { Fact } from "./api";
 import { conditionKinds, freshCondition, kindOf, valuesOffered, type Condition, type ConditionKind } from "./draft";
 

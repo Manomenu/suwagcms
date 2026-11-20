@@ -1,15 +1,7 @@
 import type { ReactNode } from "react";
+import { ResourceList as Frame, type Paging, type ResourceColumn } from "@maniumek/suwfrontkit";
 
-import { Button } from "@/design/button";
-import { Page, Paper, type HistoryPanelProps } from "@/design/page";
-import { Paginated, type Paging } from "@/design/pagination";
-import { Table } from "@/design/table";
-
-export interface Column<Row> {
-    header: string;
-    className?: string;
-    cell: (row: Row) => ReactNode;
-}
+import { HistoryPanel, type HistoryPanelProps } from "@/design/page";
 
 export function ResourceList<Row>({
     title,
@@ -33,7 +25,7 @@ export function ResourceList<Row>({
     above?: ReactNode;
     rows: Row[];
     paging: Paging;
-    columns: Column<Row>[];
+    columns: ResourceColumn<Row>[];
     idOf: (row: Row) => string;
     openLabel?: string;
     onOpen: (row: Row) => void;
@@ -41,56 +33,33 @@ export function ResourceList<Row>({
     history: HistoryPanelProps;
 }) {
     return (
-        <Page
+        <Frame
             title={title}
-            history={history}
-            actions={
-                <Button onClick={onAdd} disabled={addDisabled}>
-                    {addLabel}
-                </Button>
-            }
-        >
-            {above}
-            {rows.length === 0 ? (
-                empty
-            ) : (
-                <Paginated paging={paging}>
-                    <Paper>
-                        <Table>
-                            <thead>
-                                <tr>
-                                    {columns.map((column) => (
-                                        <th key={column.header}>{column.header}</th>
-                                    ))}
-                                    <th />
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row) => (
-                                    <tr key={idOf(row)}>
-                                        {columns.map((column) => (
-                                            <td key={column.header} className={column.className}>
-                                                {column.cell(row)}
-                                            </td>
-                                        ))}
-                                        <td className="text-right">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    onOpen(row);
-                                                }}
-                                            >
-                                                {openLabel}
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    </Paper>
-                </Paginated>
+            columns={columns}
+            rows={rows}
+            idOf={idOf}
+            openLabel={openLabel}
+            link={(row, label) => (
+                <button
+                    type="button"
+                    onClick={() => {
+                        onOpen(row);
+                    }}
+                >
+                    {label}
+                </button>
             )}
-        </Page>
+            addLabel={addLabel}
+            addDisabled={addDisabled}
+            add={(label) => (
+                <button type="button" onClick={onAdd}>
+                    {label}
+                </button>
+            )}
+            {...(rows.length === 0 ? {} : { paging })}
+            empty={empty}
+            above={above}
+            below={<HistoryPanel {...history} />}
+        />
     );
 }

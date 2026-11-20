@@ -30,8 +30,8 @@ public sealed class LoopGuardTests(TestDatabase database)
     {
         var bot = "l" + Guid.NewGuid().ToString("N")[..12];
         var cancellation = TestContext.Current.CancellationToken;
-        Assert.True(await BotStore.AddAsync(database.Pool, new Bot(bot, "A bot", "http://bot.internal"), cancellation));
-        var editor = new DefinitionEditor(database.Pool, TimeProvider.System);
+        Assert.True(await BotStore.AddAsync(database.DataSource, new Bot(bot, "A bot", "http://bot.internal"), cancellation));
+        var editor = new DefinitionEditor(database.DataSource, TimeProvider.System);
         var knowledgeBase = new Put(
             new ResourceRef(ResourceKind.KnowledgeBase, "faq"),
             new KnowledgeBase

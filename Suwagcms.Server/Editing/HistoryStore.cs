@@ -3,7 +3,6 @@ using System.Text.Json;
 using Dapper;
 using Npgsql;
 using Suwagcms.Contracts.History;
-using Suwagcms.Server.Database;
 
 namespace Suwagcms.Server.Editing;
 
@@ -83,7 +82,7 @@ internal static class HistoryStore
         );
 
     public static async Task<HistoryPage?> ReadAsync(
-        Pool pool,
+        NpgsqlDataSource dataSource,
         string bot,
         (string Kind, string Id)? resource,
         int limit,
@@ -93,7 +92,7 @@ internal static class HistoryStore
         string? only = null
     )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         if (!await ResourceStore.BotExistsAsync(connection, null, bot, cancellationToken))
         {
             return null;
@@ -110,7 +109,7 @@ internal static class HistoryStore
     }
 
     public static async Task<HistoryPage> ReadWindowAsync(
-        Pool pool,
+        NpgsqlDataSource dataSource,
         string bot,
         int number,
         int limit,
@@ -119,7 +118,7 @@ internal static class HistoryStore
         CancellationToken cancellationToken
     )
     {
-        await using var connection = await pool.OpenAsync(cancellationToken);
+        await using var connection = await dataSource.OpenConnectionAsync(cancellationToken);
         var own = number.ToString(CultureInfo.InvariantCulture);
         var previous = (number - 1).ToString(CultureInfo.InvariantCulture);
         var created = (

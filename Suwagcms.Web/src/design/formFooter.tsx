@@ -1,7 +1,5 @@
-import { Alert } from "@/design/alert";
-import { Button } from "@/design/button";
+import { Alert, Button, StickyActions } from "@maniumek/suwfrontkit";
 import { MistakeItems, type ShownMistake } from "@/design/mistakeItems";
-import { StickyActions } from "@/design/stickyActions";
 
 export function FormFooter({
     saving,
@@ -12,7 +10,8 @@ export function FormFooter({
 }: {
     saving: {
         pending: boolean;
-        refusal: { message: string; mistakes: ShownMistake[] } | null;
+        refusal: { message: string } | null;
+        mistakes: ShownMistake[];
         forgetRefusal: () => void;
         cancel: () => void;
     };
@@ -22,10 +21,10 @@ export function FormFooter({
     onReload: () => void;
 }) {
     const { refusal } = saving;
-    const moved = refusal?.mistakes.some((mistake) => mistake.code === "resource.stale") ?? false;
+    const moved = saving.mistakes.some((mistake) => mistake.code === "resource.stale");
     return (
         <>
-            {refusal !== null && refusal.mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
+            {refusal !== null && saving.mistakes.length === 0 && <Alert variant="destructive">{refusal.message}</Alert>}
             {loose.length > 0 && (
                 <Alert variant="destructive">
                     <MistakeItems mistakes={loose} />

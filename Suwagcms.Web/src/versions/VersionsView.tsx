@@ -1,14 +1,10 @@
+import { Alert, Anchor, Button, Paginated, Paper, Select, Table } from "@maniumek/suwfrontkit";
+import { Link } from "wouter";
 import { useState } from "react";
 
 import type { Mistake } from "@/api/client";
 import { usePagedRows } from "@/api/pagination";
-import { Alert } from "@/design/alert";
-import { Anchor } from "@/design/anchor";
-import { Button } from "@/design/button";
-import { Page, Paper, type HistoryPanelProps } from "@/design/page";
-import { Paginated } from "@/design/pagination";
-import { Select } from "@/design/select";
-import { Table } from "@/design/table";
+import { Page, type HistoryPanelProps } from "@/design/page";
 
 import { contentOf, dateOf, numberOf, type BotStatus, type PushPlan, type PushResult, type VersionSummary } from "./api";
 import { comparisonLine, ComparisonRows } from "./comparison";
@@ -221,8 +217,10 @@ export function VersionsView({
                             {refused.map((mistake, index) => (
                                 <li key={`${mistake.code}-${mistake.resource.id}-${mistake.path}-${index}`}>
                                     {mistake.message} {mistake.fix}{" "}
-                                    <Anchor href={`${base}/${screenOf(mistake)}`} className="underline">
-                                        {mistake.resource.id === "" ? "Open" : `Open ${mistake.resource.id}`}
+                                    <Anchor asChild>
+                                        <Link href={`${base}/${screenOf(mistake)}`} className="underline">
+                                            {mistake.resource.id === "" ? "Open" : `Open ${mistake.resource.id}`}
+                                        </Link>
                                     </Anchor>
                                 </li>
                             ))}

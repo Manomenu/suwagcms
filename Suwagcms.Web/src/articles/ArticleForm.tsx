@@ -1,9 +1,8 @@
+import { Alert, Paper } from "@maniumek/suwfrontkit";
 import { useEffect, useState } from "react";
 
 import { useSaveForm } from "@/api/saveForm";
-import { Alert } from "@/design/alert";
 import { FormFooter } from "@/design/formFooter";
-import { Paper } from "@/design/page";
 
 import { articlesApi, fetchArticles, fetchProcedures, type KnowledgeBase } from "./api";
 import type { LinkTarget } from "./articleLink";
