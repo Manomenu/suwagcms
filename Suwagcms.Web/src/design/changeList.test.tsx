@@ -144,7 +144,7 @@ describe("the shared list of changes", () => {
                     apply={() => Promise.reject(new Error("not asked"))}
                     onChanged={() => undefined}
                     usage={null}
-                    onDelete={() => undefined}
+                    onDelete={() => Promise.resolve()}
                     history={{ entries: [edited], since: SINCE, failure: null, paging: paging(1) }}
                 >
                     <p>The form</p>

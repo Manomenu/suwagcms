@@ -20,6 +20,7 @@ function html(overrides: Partial<Parameters<typeof PersonaView>[0]> = {}): strin
             revision={4}
             empty={false}
             saved={false}
+            saving={false}
             failure={null}
             mistakes={[]}
             outOfDate={false}

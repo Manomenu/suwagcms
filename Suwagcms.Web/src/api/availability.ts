@@ -53,41 +53,36 @@ export function useAvailability(bot: string): AvailabilityState {
         };
     }, [load]);
 
-    const turn = useCallback(
-        (kind: AvailabilityKind, id: string, off: boolean) => {
-            setFailure(null);
-            const path = `${botPath(bot)}/${kind}/${encodeURIComponent(id)}/${off ? "off" : "on"}`;
-            request<AvailabilityAnswer>(path, { method: "POST" })
-                .then((answer) => {
-                    setDelivery(answer.delivery);
-                    return load(false, new AbortController().signal);
-                })
-                .catch((error: unknown) => {
-                    setFailure(messageOf(error));
-                });
-        },
-        [bot, load],
-    );
+    const turn = (kind: AvailabilityKind, id: string, off: boolean) => {
+        setFailure(null);
+        const path = `${botPath(bot)}/${kind}/${encodeURIComponent(id)}/${off ? "off" : "on"}`;
+        request<AvailabilityAnswer>(path, { method: "POST" })
+            .then((answer) => {
+                setDelivery(answer.delivery);
+                return load(false, new AbortController().signal);
+            })
+            .catch((error: unknown) => {
+                setFailure(messageOf(error));
+            });
+    };
 
-    const send = useCallback(() => {
+    const send = () => {
         setFailure(null);
         request<AvailabilityDelivery>(`${botPath(bot)}/send`, { method: "POST" })
             .then(setDelivery)
             .catch((error: unknown) => {
                 setFailure(messageOf(error));
             });
-    }, [bot]);
+    };
 
-    const isOff = useCallback(
-        (kind: AvailabilityKind, id: string) => view?.resources.some((item) => item.kind === kind && item.id === id && item.off) ?? false,
-        [view],
-    );
+    const isOff = (kind: AvailabilityKind, id: string) =>
+        view?.resources.some((item) => item.kind === kind && item.id === id && item.off) ?? false;
 
-    const reload = useCallback(() => {
+    const reload = () => {
         load(false, new AbortController().signal).catch((error: unknown) => {
             setFailure(messageOf(error));
         });
-    }, [load]);
+    };
 
     return { delivery, failure, isOff, turn, send, reload };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import type { Bot } from "@/api/bots";
 import { ApiError } from "@/api/client";
@@ -15,15 +15,18 @@ export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot
     const [name, setName] = useState("");
     const [address, setAddress] = useState("");
     const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const [registering, startRegistering] = useTransition();
 
     function submit(event: React.SyntheticEvent) {
         event.preventDefault();
         setRefusal(null);
-        registerBot({ id, name, address })
-            .then(onRegistered)
-            .catch((error: unknown) => {
-                setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
-            });
+        startRegistering(() =>
+            registerBot({ id, name, address })
+                .then(onRegistered)
+                .catch((error: unknown) => {
+                    setRefusal(error instanceof ApiError ? error : new ApiError(String(error)));
+                }),
+        );
     }
 
     return (
@@ -82,7 +85,9 @@ export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot
                 </Alert>
             )}
             <div className="flex gap-2">
-                <Button type="submit">Register</Button>
+                <Button type="submit" disabled={registering}>
+                    Register
+                </Button>
                 <Button type="button" variant="outline" onClick={onCancel}>
                     Cancel
                 </Button>

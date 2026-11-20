@@ -76,10 +76,13 @@ export function useToFirstPage(name = "page"): () => void {
     };
 }
 
-export function usePageInAddress(name: string, last: number | null): { page: number; move: (page: number) => void } {
+export function usePageInAddress(name: string, last: number | null, revision = 0): { page: number; move: (page: number) => void } {
     const [params, setParams] = useSearchParams();
     const raw = params.get(name);
-    const asked = pageAsked(raw);
+    const [seen, setSeen] = useState<{ revision: number; outdated: string | null }>({ revision, outdated: null });
+    if (seen.revision !== revision) setSeen({ revision, outdated: seen.revision === 0 ? null : raw });
+    else if (seen.outdated !== null && raw !== seen.outdated) setSeen({ revision, outdated: null });
+    const asked = raw !== null && raw === seen.outdated ? 1 : pageAsked(raw);
     const page = last === null ? asked : Math.min(asked, last);
     const written = page === 1 ? null : String(page);
     useEffect(() => {

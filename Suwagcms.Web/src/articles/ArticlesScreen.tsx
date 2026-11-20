@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useLocation, useSearchParams } from "wouter";
+import { Redirect, useLocation, useSearchParams } from "wouter";
 
 import { useAvailability } from "@/api/availability";
 import { editHref } from "@/api/resourceAddress";
@@ -49,6 +49,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
         };
     }, [bot]);
 
+    if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     const failure = editor.failure ?? basesFailure;
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
     if (editor.items === null || bases === null) return <p className="text-muted-foreground">Loading articles…</p>;

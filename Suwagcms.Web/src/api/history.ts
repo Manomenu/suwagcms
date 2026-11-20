@@ -1,8 +1,8 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import { request } from "./client";
 import type { components } from "./openapi";
-import { lastPage, PageSizeContext, usePageInAddress, useToFirstPage, type Paging } from "./pagination";
+import { lastPage, PageSizeContext, usePageInAddress, type Paging } from "./pagination";
 import { HISTORY_PAGE } from "./resourceAddress";
 
 type HistoryPage = components["schemas"]["HistoryPage"];
@@ -42,8 +42,7 @@ function useHistoryAt(path: string | null, revision: number, pageName: string, f
     const [answer, setAnswer] = useState<{ asked: string; page: number; body: HistoryPage | null; failure: string | null } | null>(null);
     const known = answer?.asked === asked ? answer : null;
     const pages = known?.body && size !== null ? lastPage(Number(known.body.total ?? 0), size) : null;
-    const { page, move } = usePageInAddress(pageName, pages);
-    const toFirstPage = useToFirstPage(pageName);
+    const { page, move } = usePageInAddress(pageName, pages, revision);
 
     useEffect(() => {
         if (path === null || size === null) return undefined;
@@ -60,12 +59,6 @@ function useHistoryAt(path: string | null, revision: number, pageName: string, f
             controller.abort();
         };
     }, [path, filter, size, page, asked]);
-
-    const seenRevision = useRef(revision);
-    useEffect(() => {
-        if (seenRevision.current !== 0 && seenRevision.current !== revision) toFirstPage();
-        seenRevision.current = revision;
-    });
 
     const current = known?.page === page ? known : null;
     return {

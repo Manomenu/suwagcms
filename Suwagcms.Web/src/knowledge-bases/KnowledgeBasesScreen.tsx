@@ -1,3 +1,5 @@
+import { Redirect } from "wouter";
+
 import { useResourceEditor } from "@/api/resourceEditor";
 import { Alert } from "@/design/alert";
 import { ResourceEdit } from "@/design/resourceEdit";
@@ -10,6 +12,7 @@ import { KnowledgeBasesView } from "./KnowledgeBasesView";
 export function KnowledgeBasesScreen({ bot }: { bot: string }) {
     const editor = useResourceEditor({ bot, api: knowledgeBasesApi, idOf: (base) => base.id, usage: null });
 
+    if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     if (editor.failure !== null) return <Alert variant="destructive">{editor.failure}</Alert>;
     if (editor.items === null) return <p className="text-muted-foreground">Loading knowledge bases…</p>;
     if (!editor.isOpen)

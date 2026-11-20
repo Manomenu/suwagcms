@@ -1,3 +1,5 @@
+import { Redirect } from "wouter";
+
 import { useResourceEditor } from "@/api/resourceEditor";
 import { Alert } from "@/design/alert";
 import { ResourceEdit } from "@/design/resourceEdit";
@@ -10,6 +12,7 @@ import { FactsView } from "./FactsView";
 export function FactsScreen({ bot }: { bot: string }) {
     const editor = useResourceEditor({ bot, api: factsApi, idOf: (fact) => fact.name, usage: "facts" });
 
+    if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     if (editor.failure !== null) return <Alert variant="destructive">{editor.failure}</Alert>;
     if (editor.items === null) return <p className="text-muted-foreground">Loading facts…</p>;
     if (!editor.isOpen)
