@@ -28,6 +28,7 @@ just up / just down       # the container stack on http://127.0.0.1:8220, then t
 just check-quick          # suwgate check --quick: the repository guards, and for what changed only build, csharpier, the .NET guards
                           # (Suwagcms.Gate), eslint, tsc, shellcheck
 just check                # suwgate check: the whole gate, every test, the whole repository (the same CI runs)
+just e2e                  # suwgate step e2e: the browser tests alone, with what they need (--headed, -g <name> go to Playwright)
 just fmt                  # csharpier and prettier
 ```
 
