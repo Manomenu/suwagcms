@@ -1,18 +1,17 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.History;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Settings;
 using Suwagcms.Server.Versions;
+using Suwbackkit.Server;
 
 namespace Suwagcms.Server.History;
 
 internal static class HistoryEndpoints
 {
     private const string Title = "The history was not shown.";
-    private const string Problem = "application/problem+json";
     private const int DefaultLimit = 50;
 
     private static readonly Dictionary<string, string> Kinds = new(StringComparer.Ordinal)
@@ -30,15 +29,15 @@ internal static class HistoryEndpoints
     {
         routes
             .MapGet("/bots/{bot}/history", OfBot)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status400BadRequest, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status400BadRequest);
         routes
             .MapGet(
                 "/bots/{bot}/{kind:regex(^(facts|knowledge-bases|articles|procedures|actions|persona|versions)$)}/{id}/history",
                 OfResource
             )
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/versions/{number:int}/window", OfWindow).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/versions/{number:int}/window", OfWindow).ProducesRefusal(StatusCodes.Status404NotFound);
     }
 
     private static async Task<Results<Ok<HistoryPage>, ProblemHttpResult>> OfBot(
@@ -57,10 +56,11 @@ internal static class HistoryEndpoints
         }
         if (!Kinds.TryGetValue(kind, out var only))
         {
-            return TypedResults.Problem(
-                title: Title,
-                detail: $"There is no kind '{kind}'. Ask for one of: {string.Join(", ", Kinds.Keys)}, or leave `kind` out for every change.",
-                statusCode: StatusCodes.Status400BadRequest
+            return Refusals.Refuse(
+                StatusCodes.Status400BadRequest,
+                Title,
+                RefusalCode.HistoryKindUnknown,
+                $"There is no kind '{kind}'. Ask for one of: {string.Join(", ", Kinds.Keys)}, or leave `kind` out for every change."
             );
         }
         return await PageAsync(bot, null, dataSource, limit, before, page, cancellationToken, only);

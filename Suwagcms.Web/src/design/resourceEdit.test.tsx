@@ -19,7 +19,7 @@ function render(usedBy: number, onDelete: () => Promise<void>, deleteFailure: st
                 noun="fact"
                 plural="facts"
                 addTitle="Add a fact"
-                onBack={() => undefined}
+                backHref="/list"
                 ready
                 missingId={null}
                 editedId="customer.city"

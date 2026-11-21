@@ -12,10 +12,10 @@ export interface ComparisonState {
     refusal: string | null;
 }
 
-export function NoSuchVersion({ asked, onBack }: { asked: string; onBack: () => void }) {
+export function NoSuchVersion({ asked, backHref }: { asked: string; backHref: string }) {
     return (
         <div className="flex flex-col gap-4">
-            <BackToList plural="versions" onBack={onBack} />
+            <BackToList plural="versions" backHref={backHref} />
             <Alert variant="destructive">This bot has no version {asked}.</Alert>
         </div>
     );
@@ -81,7 +81,7 @@ export function VersionView({
     history,
     onCompare,
     onCloseComparison,
-    onBack,
+    backHref,
 }: {
     bot: string;
     detail: VersionDetail;
@@ -90,13 +90,13 @@ export function VersionView({
     history: HistoryState;
     onCompare: (other: number) => void;
     onCloseComparison: () => void;
-    onBack: () => void;
+    backHref: string;
 }) {
     const number = numberOf(detail.version);
     const day = history.since?.slice(0, 10) ?? "";
     return (
         <div className="flex flex-col gap-4">
-            <BackToList plural="versions" onBack={onBack} />
+            <BackToList plural="versions" backHref={backHref} />
             <Page
                 title={`Version ${number}`}
                 history={{

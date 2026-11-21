@@ -32,7 +32,7 @@ function view(search: string, size: number | null = 20, failure: string | null =
     return renderToStaticMarkup(
         <Router ssrPath={`/bots/b/facts${search}`}>
             <PageSizeContext value={{ size, failure }}>
-                <FactsView history={noHistory} bot="b" facts={rows} onAdd={() => undefined} onEdit={() => undefined} />
+                <FactsView history={noHistory} bot="b" facts={rows} addHref="/new" hrefOf={() => "/edit"} />
             </PageSizeContext>
         </Router>,
     );
@@ -47,7 +47,7 @@ describe("a list divided into pages", () => {
         const html = view("?page=2");
 
         expect(html).toContain("Page 2 of 3");
-        expect(html.match(/<button[^>]*>Edit</g)).toHaveLength(20);
+        expect(html.match(/<a [^>]*href="\/edit"[^>]*>Edit</g)).toHaveLength(20);
         expect(html).toContain(">customer.field21<");
         expect(html).toContain(">customer.field40<");
         expect(html).not.toContain(">customer.field20<");

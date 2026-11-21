@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Bots;
-using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Editing;
 
 namespace Suwagcms.Server.Bots;
@@ -14,9 +12,9 @@ internal static class BotEndpoints
         routes.MapGet("/bots", List);
         routes
             .MapPost("/bots", Register)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, "application/problem+json")
-            .Produces<Refusal>(StatusCodes.Status409Conflict, "application/problem+json");
-        routes.MapGet("/bots/{bot}/declaration", Declaration).Produces<Refusal>(StatusCodes.Status404NotFound, "application/problem+json");
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity)
+            .ProducesRefusal(StatusCodes.Status409Conflict);
+        routes.MapGet("/bots/{bot}/declaration", Declaration).ProducesRefusal(StatusCodes.Status404NotFound);
     }
 
     private static async Task<Results<Ok<DeclarationStatus>, ProblemHttpResult>> Declaration(
@@ -41,21 +39,23 @@ internal static class BotEndpoints
         var mistakes = BotMistakes.In(request);
         if (mistakes.Count > 0)
         {
-            return Refused(StatusCodes.Status422UnprocessableEntity, "The bot was not registered.", mistakes);
+            return EditProblems.Refuse(
+                StatusCodes.Status422UnprocessableEntity,
+                "The bot was not registered.",
+                RefusalCode.BotInvalid,
+                mistakes
+            );
         }
         var bot = new Bot(request.Id, request.Name.Trim(), request.Address.Trim());
         if (!await BotStore.AddAsync(dataSource, bot, cancellationToken))
         {
-            return Refused(StatusCodes.Status409Conflict, "The bot was not registered.", [BotMistakes.Taken(bot.Id)]);
+            return EditProblems.Refuse(
+                StatusCodes.Status409Conflict,
+                "The bot was not registered.",
+                RefusalCode.BotTaken,
+                [BotMistakes.Taken(bot.Id)]
+            );
         }
         return TypedResults.Created((string?)null, bot);
     }
-
-    private static ProblemHttpResult Refused(int status, string title, List<Mistake> mistakes) =>
-        TypedResults.Problem(
-            title: title,
-            detail: $"{mistakes.Count} mistake(s) in `mistakes`: fix each as its `fix` says, then register again.",
-            statusCode: status,
-            extensions: new Dictionary<string, object?> { ["mistakes"] = mistakes }
-        );
 }

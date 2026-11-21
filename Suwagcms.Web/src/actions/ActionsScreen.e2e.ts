@@ -40,7 +40,7 @@ async function declaringBot(id: string): Promise<{ address: string; close: () =>
 }
 
 async function typeBasics(page: Page, id: string, url: string): Promise<void> {
-    await page.getByRole("button", { name: "Add an action" }).click();
+    await page.getByRole("link", { name: "Add an action" }).click();
     await page.getByLabel("Id").fill(id);
     await page.getByLabel("Description", { exact: true }).first().fill("Checks whether we serve an address.");
     await page.getByLabel("URL").fill(url);
@@ -87,7 +87,7 @@ test("AC-http-actions-1: an action added in the web with parameters, results, he
         },
     });
 
-    await row.getByRole("button", { name: "Open" }).click();
+    await row.getByRole("link", { name: "Open" }).click();
     await expect(page.getByLabel("Value", { exact: true })).toHaveValue("Bearer {secret:CRM_TOKEN}");
     await expect(page.getByLabel("URL")).toHaveValue("https://crm.internal/serviceability");
     await expect(page.getByLabel("Timeout (s)")).toHaveValue("20");
@@ -109,7 +109,7 @@ test("AC-http-actions-8: the web shows the mistakes of a bad action beside the f
         },
     });
     expect(api.status()).toBe(422);
-    const { mistakes } = (await api.json()) as { mistakes: { path: string; message: string; fix: string }[] };
+    const { mistakes } = (await api.json()) as { mistakes: { at: string; message: string; fix: string }[] };
     await page.goto(`/bots/${bot}/actions`);
 
     await typeBasics(page, "check", "ftp://crm.internal");
@@ -120,7 +120,7 @@ test("AC-http-actions-8: the web shows the mistakes of a bad action beside the f
 
     expect(mistakes.length).toBe(2);
     for (const mistake of mistakes) {
-        await expect(page.locator(`[data-field="${mistake.path}"]`)).toContainText(`${mistake.message} ${mistake.fix}`);
+        await expect(page.locator(`[data-field="${mistake.at}"]`)).toContainText(`${mistake.message} ${mistake.fix}`);
     }
     await expect(page.getByLabel("URL")).toHaveValue("ftp://crm.internal");
     expect((await (await request.get(`/api/bots/${bot}/actions`)).json()) as unknown[]).toEqual([]);
@@ -178,7 +178,7 @@ test("AC-code-actions-7: a code action's page has no editing controls and says w
 
     const row = page.getByRole("row").filter({ hasText: "lookupPolicy" });
     await expect(row).toContainText("code");
-    await row.getByRole("button", { name: "Open" }).click();
+    await row.getByRole("link", { name: "Open" }).click();
 
     const panel = page.getByRole("region", { name: "Code action lookupPolicy" });
     await expect(panel).toContainText("written in the bot's code");
@@ -364,7 +364,7 @@ test("AC-http-actions-21, AC-resource-rename-28: unsaved changes ask before they
 
     await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
     await page.getByRole("button", { name: "Cancel" }).click();
-    await page.getByRole("button", { name: "Back to actions" }).click();
+    await page.getByRole("link", { name: "Back to actions" }).click();
     await page.getByRole("link", { name: "Bots" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/actions/check/edit`);
     await expect(page.getByLabel("Description", { exact: true }).first()).toHaveValue("Unsaved");

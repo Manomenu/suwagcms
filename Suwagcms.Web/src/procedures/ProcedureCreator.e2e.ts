@@ -66,7 +66,7 @@ test("AC-procedure-creator-1: an author builds a procedure with the forms, with 
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/procedures`);
-    await page.getByRole("button", { name: "Add a procedure" }).click();
+    await page.getByRole("link", { name: "Add a procedure" }).click();
     await page.getByLabel("Id").fill("orderValuation");
     await page.getByLabel("Description").fill("The customer orders a valuation of a property.");
     await page.getByRole("button", { name: "Create procedure" }).click();
@@ -148,7 +148,7 @@ test("AC-procedure-creator-23: the page has the shared edit screen's parts in th
     await agentSaves(request, bot, "orderValuation", AGENT_WROTE, 0);
     await page.goto(`/bots/${bot}/procedures/orderValuation`);
 
-    await expect(page.getByRole("button", { name: "Back to procedures" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to procedures" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Procedure orderValuation" })).toBeVisible();
     const parts = [
         page.getByRole("button", { name: "Change id" }),
@@ -183,7 +183,7 @@ test("AC-pagination-6: going back from a procedure's page returns to the list's 
 
     await open(page, "ask");
     await expect(page).toHaveURL(/\?page=2$/);
-    await page.getByRole("button", { name: "Back to procedures" }).click();
+    await page.getByRole("link", { name: "Back to procedures" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures\\?page=2$`));
 });

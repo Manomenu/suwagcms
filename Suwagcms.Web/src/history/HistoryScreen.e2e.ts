@@ -42,7 +42,7 @@ test("AC-change-history-1: a resource's History panel shows a change with its ol
         200,
     );
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("link", { name: "Edit" }).click();
 
     const panel = page.getByRole("region", { name: "History" });
     await expect(panel.getByText("revision 2")).toBeVisible();

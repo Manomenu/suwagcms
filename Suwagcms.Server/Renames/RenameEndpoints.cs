@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Renames;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.References;
@@ -11,7 +10,6 @@ namespace Suwagcms.Server.Renames;
 internal static class RenameEndpoints
 {
     private const string Title = "The id was not changed.";
-    private const string Problem = "application/problem+json";
 
     private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
     {
@@ -26,9 +24,9 @@ internal static class RenameEndpoints
         routes
             .MapPost("/bots/{bot}/{kind:regex(^(facts|knowledge-bases|articles|procedures|actions)$)}/{id}/rename", Apply)
             .Accepts<RenameResource>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
 
     private static async Task<Results<Ok<RenameAnswer>, ProblemHttpResult>> Apply(
         string bot,

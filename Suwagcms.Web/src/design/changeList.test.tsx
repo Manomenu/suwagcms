@@ -132,7 +132,7 @@ describe("the shared list of changes", () => {
                     noun="article"
                     plural="articles"
                     addTitle="Add an article"
-                    onBack={() => undefined}
+                    backHref="/list"
                     ready
                     missingId={null}
                     editedId="cennik"

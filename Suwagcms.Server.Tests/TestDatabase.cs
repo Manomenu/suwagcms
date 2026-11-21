@@ -1,5 +1,6 @@
 using Npgsql;
 using Suwbackkit.Postgres;
+using Suwbackkit.Testing;
 
 [assembly: AssemblyFixture(typeof(Suwagcms.Server.Tests.TestDatabase))]
 
@@ -34,7 +35,7 @@ public sealed class TestDatabase : IAsyncLifetime
         LinkedWorktree.RefuseMainCheckoutDatabase(FromEnvironment, AppContext.BaseDirectory);
         try
         {
-            await RecreateAsync(ConnectionString);
+            await TestDatabases.RecreateAsync(ConnectionString);
         }
         catch (Exception error) when (error is NpgsqlException or TimeoutException && Environment.GetEnvironmentVariable("CI") is null)
         {
@@ -43,40 +44,6 @@ public sealed class TestDatabase : IAsyncLifetime
         }
         dataSource = NpgsqlDataSource.Create(new NpgsqlConnectionStringBuilder(ConnectionString) { MaxPoolSize = 4 }.ConnectionString);
         await Migrator.MigrateAsync(ConnectionString, Migrator.DefaultDirectory);
-    }
-
-    public static async Task RecreateAsync(string connectionString)
-    {
-        await DropAsync(connectionString);
-        await using var connection = await OpenAdminAsync(connectionString);
-        await using var create = new NpgsqlCommand(
-            $"CREATE DATABASE \"{new NpgsqlConnectionStringBuilder(connectionString).Database}\"",
-            connection
-        );
-        await create.ExecuteNonQueryAsync();
-    }
-
-    public static async Task DropAsync(string connectionString)
-    {
-        await using var connection = await OpenAdminAsync(connectionString);
-        await using var drop = new NpgsqlCommand(
-            $"DROP DATABASE IF EXISTS \"{new NpgsqlConnectionStringBuilder(connectionString).Database}\" WITH (FORCE)",
-            connection
-        );
-        await drop.ExecuteNonQueryAsync();
-    }
-
-    private static async Task<NpgsqlConnection> OpenAdminAsync(string connectionString)
-    {
-        var admin = new NpgsqlConnectionStringBuilder(connectionString)
-        {
-            Database = "postgres",
-            Timeout = 3,
-            Pooling = false,
-        };
-        var connection = new NpgsqlConnection(admin.ConnectionString);
-        await connection.OpenAsync();
-        return connection;
     }
 
     public async ValueTask DisposeAsync()

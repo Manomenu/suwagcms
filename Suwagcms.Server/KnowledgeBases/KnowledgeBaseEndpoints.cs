@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.KnowledgeBases;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Editing;
@@ -10,23 +9,22 @@ namespace Suwagcms.Server.KnowledgeBases;
 internal static class KnowledgeBaseEndpoints
 {
     private const string Title = "The knowledge base was not saved.";
-    private const string Problem = "application/problem+json";
 
     public static void MapKnowledgeBases(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/knowledge-bases", List).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/knowledge-bases/{id}", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/knowledge-bases", List).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/knowledge-bases/{id}", Get).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPut("/bots/{bot}/knowledge-bases/{id}", Save)
             .Accepts<SaveKnowledgeBase>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
         routes
             .MapDelete("/bots/{bot}/knowledge-bases/{id}", Delete)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
     }
 
     private static async Task<Results<Ok<List<KnowledgeBaseView>>, ProblemHttpResult>> List(

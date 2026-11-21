@@ -63,7 +63,7 @@ function view(list: Fact[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/facts">
             <PageSizeContext value={{ size: 20, failure: null }}>
-                <FactsView history={noHistory} bot="rzeczoznawca" facts={list} onAdd={() => undefined} onEdit={() => undefined} />
+                <FactsView history={noHistory} bot="rzeczoznawca" facts={list} addHref="/new" hrefOf={() => "/edit"} />
             </PageSizeContext>
         </Router>,
     );
@@ -95,11 +95,11 @@ describe("FactsView", () => {
         expect(html.match(/Used by:/g)).toHaveLength(1);
     });
 
-    it("AC-global-facts-8: each fact has an edit button, and Delete is on the opened fact beside what uses it", () => {
+    it("AC-global-facts-8: each fact has an edit link, and Delete is on the opened fact beside what uses it", () => {
         const html = view(facts);
 
         expect(html).not.toContain(">Delete<");
-        expect(html.match(/<button[^>]*>Edit</g)).toHaveLength(3);
+        expect(html.match(/<a [^>]*href="\/edit"[^>]*>Edit</g)).toHaveLength(3);
     });
 });
 

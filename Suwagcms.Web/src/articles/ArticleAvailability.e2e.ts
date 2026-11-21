@@ -51,7 +51,7 @@ test("AC-availability-1: an article turns off and on in the web, its screen and 
         await page.goto(`/bots/${bot}/articles`);
         const row = page.getByRole("row").filter({ hasText: "cennik" }).first();
         await expect(row).toContainText("on");
-        await row.getByRole("button", { name: "Edit" }).click();
+        await row.getByRole("link", { name: "Edit" }).click();
 
         const panel = page.getByRole("region", { name: "Used by" }).first();
         await expect(panel).toContainText("rabaty");
@@ -64,10 +64,10 @@ test("AC-availability-1: an article turns off and on in the web, its screen and 
         const group = page.getByRole("group", { name: "Availability" });
         await expect(group).toContainText("off");
         await expect(group).toContainText("Bot confirmed");
-        await page.getByRole("button", { name: "Back to articles" }).click();
+        await page.getByRole("link", { name: "Back to articles" }).click();
         const listed = page.getByRole("row").filter({ hasText: "cennik" }).first();
         await expect(listed).toContainText("off");
-        await listed.getByRole("button", { name: "Edit" }).click();
+        await listed.getByRole("link", { name: "Edit" }).click();
 
         const state = (await (await fetch(`${address}/suwagcms/state`)).json()) as { availability: { off: { id: string }[] } };
         expect(state.availability.off.map((item) => item.id)).toEqual(["cennik"]);
@@ -91,7 +91,7 @@ test("AC-availability-16: with the bot unreachable the page says the change is s
     server.closeAllConnections();
 
     await page.goto(`/bots/${bot}/articles`);
-    await page.getByRole("row").filter({ hasText: "rabaty" }).first().getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "rabaty" }).first().getByRole("link", { name: "Edit" }).click();
     await page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn off" }).click();
     await page.getByRole("dialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
 

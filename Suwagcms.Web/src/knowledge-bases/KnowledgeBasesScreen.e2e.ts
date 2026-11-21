@@ -18,7 +18,7 @@ test("AC-knowledge-bases-1: a bot with no bases offers to create the first one, 
     await page.goto(`/bots/${bot}/knowledge-bases`);
     await expect(page.getByText("No knowledge bases yet.")).toBeVisible();
 
-    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByRole("link", { name: "Add a knowledge base" }).click();
     await page.getByLabel("Id").fill("oferta");
     await page.getByLabel("Title").fill("Offer");
     await page.getByRole("button", { name: "Add", exact: true }).click();
@@ -33,7 +33,7 @@ test("AC-knowledge-bases-2: a base edited in the web keeps its id", async ({ pag
     await addBase(request, bot, "oferta", "Offer");
     await page.goto(`/bots/${bot}/knowledge-bases`);
 
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("link", { name: "Edit" }).click();
     await page.getByLabel("Title").fill("Our offer");
     await page.getByRole("button", { name: "Save" }).click();
 
@@ -46,7 +46,7 @@ test("AC-knowledge-bases-4: a title another base has is refused beside the title
     await addBase(request, bot, "oferta", "Our offer");
     await page.goto(`/bots/${bot}/knowledge-bases`);
 
-    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByRole("link", { name: "Add a knowledge base" }).click();
     await page.getByLabel("Id").fill("second");
     await page.getByLabel("Title").fill("  our OFFER ");
     await page.getByRole("button", { name: "Add", exact: true }).click();
@@ -63,7 +63,7 @@ test("AC-knowledge-bases-6: editing a base that changed meanwhile is refused wit
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "First");
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("link", { name: "Edit" }).click();
     await page.getByLabel("Title").fill("Marta's title");
     const other = await request.put(`/api/bots/${bot}/knowledge-bases/oferta?ifRevision=1`, {
         data: { title: "The agent's title", embedding: "default", results: 5 },
@@ -122,7 +122,7 @@ test("AC-knowledge-base-language-2: a new base starts on en, the language chosen
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByRole("link", { name: "Add a knowledge base" }).click();
     await expect(page.locator('[data-field="language"] select')).toHaveValue("en");
     await expect(page.locator('[data-field="language"] select').locator("option")).toHaveText(["pl", "en"]);
     await page.getByLabel("Id").fill("oferta");
@@ -134,7 +134,7 @@ test("AC-knowledge-base-language-2: a new base starts on en, the language chosen
     const row = page.getByRole("row").filter({ hasText: "oferta" });
     await expect(row.getByRole("cell", { name: "pl", exact: true })).toBeVisible();
     expect(await (await request.get(`/api/bots/${bot}/knowledge-bases/oferta`)).json()).toMatchObject({ language: "pl" });
-    await row.getByRole("button", { name: "Edit" }).click();
+    await row.getByRole("link", { name: "Edit" }).click();
     await expect(page.locator('[data-field="language"] select')).toHaveValue("pl");
 });
 
@@ -144,7 +144,7 @@ test("AC-knowledge-bases-14: a profile and results typed in the form are saved, 
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("button", { name: "Add a knowledge base" }).click();
+    await page.getByRole("link", { name: "Add a knowledge base" }).click();
     await page.getByLabel("Id").fill("legal");
     await page.getByLabel("Title").fill("Legal notes");
 
@@ -157,7 +157,7 @@ test("AC-knowledge-bases-14: a profile and results typed in the form are saved, 
     expect(await (await request.get(`/api/bots/${bot}/knowledge-bases`)).json()).toMatchObject([
         { id: "legal", embedding: "legalText", results: 12 },
     ]);
-    await row.getByRole("button", { name: "Edit" }).click();
+    await row.getByRole("link", { name: "Edit" }).click();
     await expect(page.getByLabel("Embedding profile")).toHaveValue("legalText");
     await expect(page.getByLabel("Results per search (1–20)")).toHaveValue("12");
 });
@@ -170,7 +170,7 @@ test("AC-resource-rename-4: Change id on a base keeps its articles in it and lea
     });
     expect(article.status()).toBe(200);
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("row").filter({ hasText: "offer" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "offer" }).getByRole("link", { name: "Edit" }).click();
 
     await page.getByRole("button", { name: "Change id" }).click();
     const dialog = page.getByRole("dialog", { name: "Change id" });
@@ -191,7 +191,7 @@ test("AC-knowledge-bases-10, AC-resource-rename-28: unsaved changes ask before t
     const bot = await newBot(request);
     await addBase(request, bot, "oferta", "Offer");
     await page.goto(`/bots/${bot}/knowledge-bases`);
-    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "oferta" }).getByRole("link", { name: "Edit" }).click();
     await expect(page.getByRole("button", { name: "Change id" })).toBeEnabled();
     await page.getByLabel("Title").fill("Unsaved");
     const questions: string[] = [];
@@ -204,7 +204,7 @@ test("AC-knowledge-bases-10, AC-resource-rename-28: unsaved changes ask before t
 
     await expect(page.getByRole("button", { name: "Change id" })).toBeDisabled();
     await page.getByRole("button", { name: "Cancel" }).click();
-    await page.getByRole("button", { name: "Back to knowledge bases" }).click();
+    await page.getByRole("link", { name: "Back to knowledge bases" }).click();
     await page.getByRole("link", { name: "Bots" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases/oferta/edit`);
     await expect(page.getByLabel("Title")).toHaveValue("Unsaved");

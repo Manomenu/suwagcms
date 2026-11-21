@@ -1,6 +1,6 @@
 {
     "name": "suwagcms-contract",
-    "version": "1.0.1",
+    "version": "2.0.0",
     "description": "The HTTP API of suwagcms as an OpenAPI document. Bump the version in the merge request that changes openapi.json: minor for an addition, major for a break.",
     "files": ["openapi.json"],
     "exports": { "./openapi.json": "./openapi.json" },

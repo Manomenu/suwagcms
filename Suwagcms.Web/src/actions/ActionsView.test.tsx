@@ -33,8 +33,8 @@ describe("ActionsView", () => {
                         actions={[action("check"), action("send")]}
 
                         isOff={(id) => id === "send"}
-                        onAdd={() => undefined}
-                        onOpen={() => undefined}
+                        addHref="/new"
+                        hrefOf={() => "/edit"}
                     />
                 </PageSizeContext>
             </Router>,
@@ -52,7 +52,7 @@ describe("a long list", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/b/actions?page=2">
                 <PageSizeContext value={{ size: 20, failure: null }}>
-                    <ActionsView history={noHistory} bot="b" actions={many} onAdd={() => undefined} onOpen={() => undefined} />
+                    <ActionsView history={noHistory} bot="b" actions={many} addHref="/new" hrefOf={() => "/edit"} />
                 </PageSizeContext>
             </Router>,
         );

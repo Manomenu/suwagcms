@@ -243,7 +243,7 @@ public sealed class ArticleEndpointsTests(TestDatabase database, ClassServer ser
         Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         Assert.Equal(["article.content.tooLong", "article.llmGuide.tooLong"], Codes(mistakes));
-        var content = mistakes.Single(mistake => mistake.GetProperty("path").GetString() == "content");
+        var content = mistakes.Single(mistake => mistake.GetProperty("at").GetString() == "content");
         Assert.Contains("has 200001 characters; the limit is 200000", content.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal(["atLimit"], (await api.List()).Select(article => article.Id));
     }

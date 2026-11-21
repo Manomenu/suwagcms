@@ -217,7 +217,7 @@ test("AC-change-history-24: opening a version goes to its address with a History
     await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toBeVisible();
 
     await page.goto(`/bots/${bot}/versions/1?page=2&historyPage=1&compare=2`);
-    await page.getByRole("button", { name: "Back to versions" }).click();
+    await page.getByRole("link", { name: "Back to versions" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/versions?page=2`);
 });
 
@@ -255,7 +255,7 @@ test("AC-change-history-25: a number the bot does not have, and an address that 
     for (const asked of ["99", "abc"]) {
         await page.goto(`/bots/${bot}/versions/${asked}`);
         await expect(page.getByText(`This bot has no version ${asked}.`)).toBeVisible();
-        await page.getByRole("button", { name: "Back to versions" }).click();
+        await page.getByRole("link", { name: "Back to versions" }).click();
         await expect(page).toHaveURL(`/bots/${bot}/versions`);
         await expect(page.getByRole("row").filter({ hasText: "v1 ·" })).toBeVisible();
     }

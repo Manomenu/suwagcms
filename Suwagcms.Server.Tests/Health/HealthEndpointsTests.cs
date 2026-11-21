@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Suwbackkit.Testing;
 
 namespace Suwagcms.Server.Tests.Health;
 

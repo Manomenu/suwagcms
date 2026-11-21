@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Validation;
 using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Sdk.Format.References;
@@ -14,7 +13,7 @@ internal static class ValidationEndpoints
         routes
             .MapPost("/validate", Validate)
             .Accepts<ValidateDefinition>("application/json")
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, "application/problem+json");
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
 
     private static async Task<Results<Ok<ValidationAnswer>, ProblemHttpResult>> Validate(
         HttpRequest request,

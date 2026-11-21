@@ -27,16 +27,16 @@ export function ProceduresView({
     list,
     isOff,
     notice,
-    onAdd,
-    onOpen,
+    addHref,
+    hrefOf,
 }: {
     bot: string;
     history: HistoryPanelProps;
     list: ProcedureList;
     isOff?: (id: string) => boolean;
     notice?: ReactNode;
-    onAdd: () => void;
-    onOpen: (id: string) => void;
+    addHref: string;
+    hrefOf: (id: string) => string;
 }) {
     const botMistakes: Mistake[] = list.botNotReady;
     const paged = usePagedRows(list.procedures);
@@ -46,7 +46,7 @@ export function ProceduresView({
             history={history}
             title={`Procedures of ${bot}`}
             addLabel="Add a procedure"
-            onAdd={onAdd}
+            addHref={addHref}
             above={
                 <>
                     {notice}
@@ -66,9 +66,7 @@ export function ProceduresView({
             rows={paged.rows}
             paging={paged.paging}
             idOf={(procedure) => procedure.id}
-            onOpen={(procedure) => {
-                onOpen(procedure.id);
-            }}
+            hrefOf={(procedure) => hrefOf(procedure.id)}
             columns={[
                 {
                     header: "Procedure",

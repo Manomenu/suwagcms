@@ -11,7 +11,7 @@ async function addCity(request: APIRequestContext, bot: string, description = "T
 }
 
 async function addIn(page: Page, name: string, description: string, maxLength: string): Promise<void> {
-    await page.getByRole("button", { name: "Add a fact" }).click();
+    await page.getByRole("link", { name: "Add a fact" }).click();
     await page.getByLabel("Name").fill(name);
     await page.getByLabel("Maximum length").fill(maxLength);
     await page.getByLabel("Description").fill(description);
@@ -43,10 +43,10 @@ test("AC-global-facts-6: the web shows the mistakes of a bad fact beside their f
         data: { type: "enum", description: "", writableBy: null, values: ["house"], min: null, max: null, maxLength: null },
     });
     expect(api.status()).toBe(422);
-    const refusal = (await api.json()) as { mistakes: { code: string; path: string; message: string; fix: string }[] };
+    const refusal = (await api.json()) as { mistakes: { code: string; at: string; message: string; fix: string }[] };
     const mistakes = refusal.mistakes;
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("button", { name: "Add a fact" }).click();
+    await page.getByRole("link", { name: "Add a fact" }).click();
     await page.getByLabel("Name").fill("order.kind");
     await page.getByLabel("Type").selectOption("enum");
     await page.getByLabel("Values").fill("house");
@@ -55,7 +55,7 @@ test("AC-global-facts-6: the web shows the mistakes of a bad fact beside their f
 
     expect(mistakes.map((mistake) => mistake.code)).toEqual(["fact.description.missing", "fact.enum.tooFewValues"]);
     for (const mistake of mistakes) {
-        await expect(page.locator(`[data-field="${mistake.path}"]`)).toContainText(`${mistake.message} ${mistake.fix}`);
+        await expect(page.locator(`[data-field="${mistake.at}"]`)).toContainText(`${mistake.message} ${mistake.fix}`);
     }
     await expect(page.getByLabel("Values")).toHaveValue("house");
     expect((await (await request.get(`/api/bots/${bot}/facts`)).json()) as unknown[]).toEqual([]);
@@ -68,7 +68,7 @@ test("AC-global-facts-11: saving an edit of a fact that changed meanwhile is ref
     const bot = await newBot(request);
     await addCity(request, bot, "First");
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("link", { name: "Edit" }).click();
     await page.getByLabel("Description").fill("Marta's text");
     const other = await request.put(`/api/bots/${bot}/facts/customer.city?ifRevision=1`, {
         data: { type: "text", description: "The agent's text", writableBy: null, values: null, min: null, max: null, maxLength: 80 },
@@ -92,7 +92,7 @@ test("AC-global-facts-8: a fact deleted in the web is gone from the list and fro
     await addCity(request, bot);
     await page.goto(`/bots/${bot}/facts`);
 
-    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("link", { name: "Edit" }).click();
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await page
         .getByRole("alertdialog")
@@ -117,7 +117,7 @@ test("AC-delete-guard-12: a fact a procedure uses is refused for delete in the A
     const refused = await request.delete(`/api/bots/${bot}/facts/customer.city`);
     expect(refused.status()).toBe(422);
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("link", { name: "Edit" }).click();
 
     await expect(page.getByRole("button", { name: "Delete" })).toBeDisabled();
     await expect(page.getByText("Used in 1 place. Remove that reference first.")).toBeVisible();
@@ -151,7 +151,7 @@ test("AC-edit-guard-11: a refused edit shows the mistake beside its field with a
     expect(saved.status()).toBe(200);
 
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("row").filter({ hasText: "order.kind" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "order.kind" }).getByRole("link", { name: "Edit" }).click();
     const values = page.getByLabel("Values (separated by commas)");
     await values.fill("house, land");
     await page.getByRole("button", { name: "Save" }).click();
@@ -172,7 +172,7 @@ test("AC-resource-rename-5: Change id on a fact renames it, with dots, and opens
     const bot = await newBot(request);
     await addCity(request, bot);
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("link", { name: "Edit" }).click();
 
     await page.getByRole("button", { name: "Change name" }).click();
     const dialog = page.getByRole("dialog", { name: "Change name" });
@@ -191,7 +191,7 @@ test("AC-fact-pattern-10: a person sets a pattern on a text fact, sees its mista
 }) => {
     const bot = await newBot(request);
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("button", { name: "Add a fact" }).click();
+    await page.getByRole("link", { name: "Add a fact" }).click();
     await page.getByLabel("Name").fill("order.code");
     await page.getByLabel("Maximum length").fill("10");
     await page.getByLabel("Description").fill("The code");
@@ -220,7 +220,7 @@ test("AC-fact-pattern-10: a person sets a pattern on a text fact, sees its mista
         pattern: { regex: "[A-Z]{2}", means: "two capitals", example: "AB", tellCustomer: "afterRefusal" },
     });
 
-    await row.getByRole("button", { name: "Edit" }).click();
+    await row.getByRole("link", { name: "Edit" }).click();
     await expect(page.getByLabel("Pattern: regular expression")).toHaveValue("[A-Z]{2}");
     await page.getByLabel("Pattern: regular expression").fill("");
     await page.getByLabel("Pattern: what it means").fill("");
@@ -237,7 +237,7 @@ test("AC-global-facts-17, AC-resource-rename-28: unsaved changes ask before they
     const bot = await newBot(request);
     await addCity(request, bot);
     await page.goto(`/bots/${bot}/facts`);
-    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.city" }).getByRole("link", { name: "Edit" }).click();
     await expect(page.getByRole("button", { name: "Change name" })).toBeEnabled();
     await page.getByLabel("Description").fill("Unsaved");
     const questions: string[] = [];
@@ -251,7 +251,7 @@ test("AC-global-facts-17, AC-resource-rename-28: unsaved changes ask before they
     await expect(page.getByRole("button", { name: "Change name" })).toBeDisabled();
     await expect(page.getByText("Save your changes first.")).toBeVisible();
     await page.getByRole("button", { name: "Cancel" }).click();
-    await page.getByRole("button", { name: "Back to facts" }).click();
+    await page.getByRole("link", { name: "Back to facts" }).click();
     await page.getByRole("link", { name: "Bots" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/facts/customer.city/edit`);
     await expect(page.getByLabel("Description")).toHaveValue("Unsaved");

@@ -182,7 +182,7 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
                 .Select(mistake =>
                     (
                         mistake.GetProperty("code").GetString() ?? "",
-                        mistake.GetProperty("path").GetString() ?? "",
+                        mistake.GetProperty("at").GetString() ?? "",
                         mistake.GetProperty("message").GetString() ?? ""
                     )
                 )
@@ -224,7 +224,7 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
         Assert.Equal(HttpStatusCode.Conflict, delete.StatusCode);
         Assert.Contains("revision 2", (await FactApi.MistakesOf(delete))[0].GetProperty("message").GetString(), StringComparison.Ordinal);
         var named = await FactApi.MistakesOf(unknown);
-        Assert.Equal("secretValue", named[0].GetProperty("path").GetString());
+        Assert.Equal("secretValue", named[0].GetProperty("at").GetString());
     }
 
     [Fact]

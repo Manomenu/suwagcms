@@ -1,17 +1,16 @@
 using Microsoft.AspNetCore.Http.HttpResults;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Changes;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Editing;
 using Suwagcms.Server.Versions;
+using Suwbackkit.Server;
 
 namespace Suwagcms.Server.Changes;
 
 internal static class ChangesEndpoints
 {
     private const string Title = "The changes were not applied.";
-    private const string Problem = "application/problem+json";
     private const string Added = "added";
     private const string Replaced = "replaced";
     private const string Unchanged = "unchanged";
@@ -22,8 +21,8 @@ internal static class ChangesEndpoints
         routes
             .MapPost("/bots/{bot}/changes", Apply)
             .Accepts<ApplyChanges>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<ChangesRefusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal<string, ChangeMistake>(StatusCodes.Status422UnprocessableEntity);
 
     private static async Task<Results<Ok<ChangesApplied>, ProblemHttpResult>> Apply(
         string bot,
@@ -97,13 +96,10 @@ internal static class ChangesEndpoints
         ChangeList.At(items.Find(item => item.Change.Target == mistake.Resource)?.Position, mistake);
 
     private static ProblemHttpResult Refused(List<ChangeMistake> mistakes) =>
-        TypedResults.Problem(
-            title: Title,
-            detail: $"{mistakes.Count} mistake(s) in `mistakes`: nothing was saved. Fix each as its `fix` says, then apply the whole file again.",
-            statusCode: StatusCodes.Status422UnprocessableEntity,
-            extensions: new Dictionary<string, object?>
-            {
-                ["mistakes"] = mistakes.OrderBy(mistake => mistake.Change ?? int.MaxValue).ToList(),
-            }
+        Refusals.Refuse(
+            StatusCodes.Status422UnprocessableEntity,
+            Title,
+            RefusalCode.ChangesInvalid,
+            mistakes.OrderBy(mistake => mistake.Change ?? int.MaxValue).ToList()
         );
 }

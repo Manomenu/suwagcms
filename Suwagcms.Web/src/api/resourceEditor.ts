@@ -113,12 +113,8 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
         close,
         isOpen: address.screen !== "list",
         listHistory,
-        add: () => {
-            if (mayLeave()) navigate(withSearch(newHref(bot, api.collection)));
-        },
-        edit: (view: View) => {
-            if (mayLeave()) navigate(withSearch(editHref(bot, api.collection, idOf(view))));
-        },
+        addHref: withSearch(newHref(bot, api.collection)),
+        hrefOf: (view: View) => withSearch(editHref(bot, api.collection, idOf(view))),
         mayLeave,
         formProps: {
             editing: address.screen === "edit",
@@ -131,9 +127,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
             onCancel: close,
         },
         panels: {
-            onBack: () => {
-                if (mayLeave()) close();
-            },
+            backHref: withSearch(listHref(bot, api.collection)),
             ready: address.screen === "new" || item !== null,
             missingId: current !== null && current.item === null ? current.id : null,
             editedId: id,

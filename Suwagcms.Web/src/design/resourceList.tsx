@@ -1,34 +1,35 @@
 import type { ReactNode } from "react";
 import { ResourceList as Frame, type Paging, type ResourceColumn } from "@maniumek/suwfrontkit";
 
+import { AppLink } from "@/design/appLink";
 import { HistoryPanel, type HistoryPanelProps } from "@/design/page";
 
 export function ResourceList<Row>({
     title,
     addLabel,
     addDisabled = false,
-    onAdd,
+    addHref,
     above,
     rows,
     paging,
     columns,
     idOf,
     openLabel = "Edit",
-    onOpen,
+    hrefOf,
     empty,
     history,
 }: {
     title: string;
     addLabel: string;
     addDisabled?: boolean;
-    onAdd: () => void;
+    addHref: string;
     above?: ReactNode;
     rows: Row[];
     paging: Paging;
     columns: ResourceColumn<Row>[];
     idOf: (row: Row) => string;
     openLabel?: string;
-    onOpen: (row: Row) => void;
+    hrefOf: (row: Row) => string;
     empty: ReactNode;
     history: HistoryPanelProps;
 }) {
@@ -39,23 +40,10 @@ export function ResourceList<Row>({
             rows={rows}
             idOf={idOf}
             openLabel={openLabel}
-            link={(row, label) => (
-                <button
-                    type="button"
-                    onClick={() => {
-                        onOpen(row);
-                    }}
-                >
-                    {label}
-                </button>
-            )}
+            link={(row, label) => <AppLink href={hrefOf(row)}>{label}</AppLink>}
             addLabel={addLabel}
             addDisabled={addDisabled}
-            add={(label) => (
-                <button type="button" onClick={onAdd}>
-                    {label}
-                </button>
-            )}
+            add={(label) => <AppLink href={addHref}>{label}</AppLink>}
             {...(rows.length === 0 ? {} : { paging })}
             empty={empty}
             above={above}

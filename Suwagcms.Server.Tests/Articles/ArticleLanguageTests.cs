@@ -77,7 +77,7 @@ public sealed class ArticleLanguageTests(TestDatabase database, ClassServer serv
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal("save.unknownField", mistake.GetProperty("code").GetString());
-        Assert.Equal("language", mistake.GetProperty("path").GetString());
+        Assert.Equal("language", mistake.GetProperty("at").GetString());
         Assert.Empty(await api.List());
     }
 

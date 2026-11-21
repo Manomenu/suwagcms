@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Procedures;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.References;
@@ -13,23 +12,22 @@ internal static class ProcedureEndpoints
 {
     public const string ConversationRequired = "procedure.conversation.required";
     private const string Title = "The procedure was not saved.";
-    private const string Problem = "application/problem+json";
 
     public static void MapProcedures(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/procedures", List).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/procedures/{id}", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/procedures", List).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/procedures/{id}", Get).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPut("/bots/{bot}/procedures/{id}", Save)
             .Accepts<SaveProcedure>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
         routes
             .MapDelete("/bots/{bot}/procedures/{id}", Delete)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
     }
 
     private static async Task<Results<Ok<ProcedureList>, ProblemHttpResult>> List(

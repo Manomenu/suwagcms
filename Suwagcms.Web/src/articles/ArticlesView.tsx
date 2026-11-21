@@ -20,8 +20,8 @@ export function ArticlesView({
     filters,
     notice,
     onFilters,
-    onAdd,
-    onEdit,
+    addHref,
+    hrefOf,
     onLeave,
 }: {
     bot: string;
@@ -32,8 +32,8 @@ export function ArticlesView({
     filters: Filters;
     notice?: ReactNode;
     onFilters: (filters: Filters) => void;
-    onAdd: () => void;
-    onEdit: (article: Article) => void;
+    addHref: string;
+    hrefOf: (article: Article) => string;
     onLeave: (event: React.MouseEvent) => void;
 }) {
     const paged = usePagedRows(articles);
@@ -44,7 +44,7 @@ export function ArticlesView({
             title={`Articles of ${bot}`}
             addLabel="Add an article"
             addDisabled={bases.length === 0}
-            onAdd={onAdd}
+            addHref={addHref}
             above={
                 <>
                     {bases.length === 0 && (
@@ -104,7 +104,7 @@ export function ArticlesView({
             rows={paged.rows}
             paging={paged.paging}
             idOf={(article) => article.id}
-            onOpen={onEdit}
+            hrefOf={hrefOf}
             columns={[
                 { header: "Title", className: "font-semibold", cell: (article) => article.title },
                 { header: "Id", className: "text-muted-foreground", cell: (article) => article.id },

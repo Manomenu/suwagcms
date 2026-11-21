@@ -160,7 +160,7 @@ public sealed class ProcedureEndpointsTests(TestDatabase database, ClassServer s
 
         Assert.Equal(
             ["firstStep", "steps.a.next", "steps.c.next[0].to"],
-            mistakes.Select(mistake => mistake.GetProperty("path").GetString() ?? "").Order(StringComparer.Ordinal)
+            mistakes.Select(mistake => mistake.GetProperty("at").GetString() ?? "").Order(StringComparer.Ordinal)
         );
         Assert.All(mistakes, mistake => Assert.Contains("a, c", mistake.GetProperty("fix").GetString(), StringComparison.Ordinal));
     }

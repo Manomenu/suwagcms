@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Availability;
 using Suwagcms.Sdk.Format.Procedures;
 using Suwagcms.Sdk.Format.References;
@@ -15,7 +14,6 @@ internal static class AvailabilityEndpoints
     public const string KindRefused = "availability.kind";
     public const string ConversationRefused = "availability.conversation";
 
-    private const string Problem = "application/problem+json";
     private const string WhatCanBeOff =
         "Only an article, a procedure or an action can be turned off; facts and knowledge bases have no availability.";
 
@@ -28,16 +26,16 @@ internal static class AvailabilityEndpoints
 
     public static void MapAvailability(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/availability", Show).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapPost("/bots/{bot}/availability/send", Send).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/availability", Show).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapPost("/bots/{bot}/availability/send", Send).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPost("/bots/{bot}/availability/{kind}/{id}/off", TurnOff)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
         routes
             .MapPost("/bots/{bot}/availability/{kind}/{id}/on", TurnOn)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
     }
 
     private static async Task<Results<Ok<AvailabilityView>, ProblemHttpResult>> Show(
@@ -172,11 +170,11 @@ internal static class AvailabilityEndpoints
     private static ProblemHttpResult Missing(ResourceRef target, string bot, string title)
     {
         var missing = EditProblems.Missing(target, bot);
-        return TypedResults.Problem(
-            title: title,
-            detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
-            statusCode: StatusCodes.Status404NotFound,
-            extensions: new Dictionary<string, object?> { ["mistakes"] = new[] { missing with { Fix = $"{missing.Fix} {WhatCanBeOff}" } } }
+        return EditProblems.Refuse(
+            StatusCodes.Status404NotFound,
+            title,
+            RefusalCode.ResourceMissing,
+            [missing with { Fix = $"{missing.Fix} {WhatCanBeOff}" }]
         );
     }
 }

@@ -74,7 +74,7 @@ public sealed class KnowledgeBaseLanguageTests(TestDatabase database, ClassServe
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal("knowledgeBase.language.unknown", mistake.GetProperty("code").GetString());
-        Assert.Equal("language", mistake.GetProperty("path").GetString());
+        Assert.Equal("language", mistake.GetProperty("at").GetString());
         Assert.Equal("Use one of: pl, en.", mistake.GetProperty("fix").GetString());
         Assert.Empty(await api.List());
     }

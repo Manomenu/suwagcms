@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Validation;
+using Suwbackkit.Server;
 
 namespace Suwagcms.Server.Editing;
 
@@ -17,16 +18,24 @@ internal static class EditProblems
     public const string CodeDeclared = "action.code.declared";
 
     public static ProblemHttpResult For(EditResult result, string bot, string title) =>
-        Problem(
-            result switch
-            {
-                EditResult.Refused => StatusCodes.Status422UnprocessableEntity,
-                EditResult.Stale => StatusCodes.Status409Conflict,
-                _ => StatusCodes.Status404NotFound,
-            },
-            title,
-            MistakesOf(result, bot)
-        );
+        result switch
+        {
+            EditResult.Refused => Refuse(
+                StatusCodes.Status422UnprocessableEntity,
+                title,
+                RefusalCode.DefinitionInvalid,
+                MistakesOf(result, bot)
+            ),
+            EditResult.Stale => Refuse(StatusCodes.Status409Conflict, title, RefusalCode.ResourceStale, MistakesOf(result, bot)),
+            EditResult.Missing => Refuse(StatusCodes.Status404NotFound, title, RefusalCode.ResourceMissing, MistakesOf(result, bot)),
+            _ => Refuse(StatusCodes.Status404NotFound, title, RefusalCode.BotNotFound, MistakesOf(result, bot)),
+        };
+
+    public static ProblemHttpResult Refuse(int status, string title, string code, IReadOnlyList<Mistake> mistakes) =>
+        Refusals.Refuse(status, title, code, mistakes.Select(RefusalMistake.Of).ToList());
+
+    public static RouteHandlerBuilder ProducesRefusal(this RouteHandlerBuilder builder, int status) =>
+        builder.ProducesRefusal<string, RefusalMistake>(status);
 
     public static IReadOnlyList<Mistake> MistakesOf(EditResult result, string bot) =>
         result switch
@@ -160,12 +169,4 @@ internal static class EditProblems
         new(code, ValidationStage.Save, stale.Target, "revision", message, fix, []);
 
     private static string Number(int? value) => (value ?? 0).ToString(CultureInfo.InvariantCulture);
-
-    private static ProblemHttpResult Problem(int status, string title, IReadOnlyList<Mistake> mistakes) =>
-        TypedResults.Problem(
-            title: title,
-            detail: $"{mistakes.Count} mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
-            statusCode: status,
-            extensions: new Dictionary<string, object?> { ["mistakes"] = mistakes }
-        );
 }

@@ -46,8 +46,8 @@ function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase
                     bases={knowledgeBases}
                     filters={filters}
                     onFilters={() => undefined}
-                    onAdd={() => undefined}
-                    onEdit={() => undefined}
+                    addHref="/new"
+                    hrefOf={() => "/edit"}
                     onLeave={() => undefined}
                 />
             </PageSizeContext>
@@ -101,8 +101,8 @@ describe("the list of articles and availability", () => {
                             isOff={isOff}
                             filters={{ knowledgeBase: "", language: "", text: "" }}
                             onFilters={() => undefined}
-                            onAdd={() => undefined}
-                            onEdit={() => undefined}
+                            addHref="/new"
+                            hrefOf={() => "/edit"}
                             onLeave={() => undefined}
                         />
                     </PageSizeContext>
@@ -314,8 +314,8 @@ describe("a long list", () => {
                         bases={bases}
                         filters={{ knowledgeBase: "", language: "", text: "" }}
                         onFilters={() => undefined}
-                        onAdd={() => undefined}
-                        onEdit={() => undefined}
+                        addHref="/new"
+                        hrefOf={() => "/edit"}
                         onLeave={() => undefined}
                     />
                 </PageSizeContext>

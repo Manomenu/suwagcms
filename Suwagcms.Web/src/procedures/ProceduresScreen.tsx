@@ -27,13 +27,14 @@ export function ProceduresScreen({ bot }: { bot: string }) {
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
+    const listAddress = withListSearch(listHref(bot, "procedures"), search);
     const backToList = () => {
-        navigate(withListSearch(listHref(bot, "procedures"), search), { replace: true });
+        navigate(listAddress, { replace: true });
     };
     if (addressOf(location, "procedures").screen === "new") {
         return (
             <div className="flex flex-col gap-4">
-                <BackToList plural="procedures" onBack={backToList} />
+                <BackToList plural="procedures" backHref={listAddress} />
                 <Page title="Add a procedure">
                     <NewProcedureForm bot={bot} onCancel={backToList} />
                 </Page>
@@ -48,12 +49,8 @@ export function ProceduresScreen({ bot }: { bot: string }) {
             list={list}
             isOff={(id) => availability.isOff("procedure", id)}
             notice={<AvailabilityNotice delivery={availability.delivery} failure={availability.failure} onSend={availability.send} />}
-            onAdd={() => {
-                navigate(withListSearch(newHref(bot, "procedures"), search));
-            }}
-            onOpen={(id) => {
-                navigate(withListSearch(editHref(bot, "procedures", id), search));
-            }}
+            addHref={withListSearch(newHref(bot, "procedures"), search)}
+            hrefOf={(id) => withListSearch(editHref(bot, "procedures", id), search)}
         />
     );
 }

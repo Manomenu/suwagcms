@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 using Dapper;
 using Npgsql;
 using Suwbackkit.Postgres;
+using Suwbackkit.Testing;
 
 namespace Suwagcms.Server.Tests.KnowledgeBases;
 
@@ -11,7 +12,7 @@ public sealed class KnowledgeBaseMigrationTests(TestDatabase database) : IAsyncL
 
     private readonly string connectionString = new NpgsqlConnectionStringBuilder(TestDatabase.ConnectionString)
     {
-        Database = $"kb_migration_{Guid.NewGuid():N}",
+        Database = $"test_kb_migration_{Guid.NewGuid():N}",
     }.ConnectionString;
 
     private readonly DirectoryInfo directory = Directory.CreateTempSubdirectory("kb-migration-");
@@ -19,14 +20,14 @@ public sealed class KnowledgeBaseMigrationTests(TestDatabase database) : IAsyncL
     public async ValueTask InitializeAsync()
     {
         _ = database.DataSource;
-        await TestDatabase.RecreateAsync(connectionString);
+        await TestDatabases.RecreateAsync(connectionString);
     }
 
     public async ValueTask DisposeAsync()
     {
         directory.Delete(recursive: true);
         NpgsqlConnection.ClearAllPools();
-        await TestDatabase.DropAsync(connectionString);
+        await TestDatabases.DropAsync(connectionString);
     }
 
     private void CopyMigrations(Func<string, bool> which)

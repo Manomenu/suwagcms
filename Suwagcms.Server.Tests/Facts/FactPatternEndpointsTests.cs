@@ -162,7 +162,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
         var refused = await api.Facts.Add("order.code", body);
 
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal((code, path), (mistake.GetProperty("code").GetString(), mistake.GetProperty("path").GetString()));
+        Assert.Equal((code, path), (mistake.GetProperty("code").GetString(), mistake.GetProperty("at").GetString()));
         Assert.Equal(HttpStatusCode.NotFound, (await api.Facts.Get("order.code")).StatusCode);
     }
 
@@ -240,7 +240,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal(
             ("fact.pattern.inUse", "pattern.regex"),
-            (mistake.GetProperty("code").GetString(), mistake.GetProperty("path").GetString())
+            (mistake.GetProperty("code").GetString(), mistake.GetProperty("at").GetString())
         );
         Assert.Equal(
             "first",
@@ -267,7 +267,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal(
             ("fact.pattern.inUse", "localFacts.code.pattern.regex"),
-            (mistake.GetProperty("code").GetString(), mistake.GetProperty("path").GetString())
+            (mistake.GetProperty("code").GetString(), mistake.GetProperty("at").GetString())
         );
         Assert.Contains("procedure first, step ask", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal("[A-Z]{2}", await LocalRegex(api));
@@ -438,7 +438,7 @@ public sealed class FactPatternEndpointsTests(TestDatabase database, ClassServer
         var lineBreak = await api.Facts.Add("order.mode", """{"type":"enum","description":"d","values":["a\nb","c"]}""");
 
         Assert.Equal(["fact.enum.valueReserved"], await FactApi.CodesOf(other));
-        Assert.Equal("values[1]", Assert.Single(await FactApi.MistakesOf(other)).GetProperty("path").GetString());
+        Assert.Equal("values[1]", Assert.Single(await FactApi.MistakesOf(other)).GetProperty("at").GetString());
         Assert.Equal(["fact.enum.valueUnusable"], await FactApi.CodesOf(lineBreak));
     }
 }

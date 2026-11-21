@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Actions;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Bots;
@@ -11,28 +10,27 @@ namespace Suwagcms.Server.Actions;
 internal static class ActionEndpoints
 {
     private const string Title = "The action was not saved.";
-    private const string Problem = "application/problem+json";
 
     public static void MapActions(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/actions", List).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/actions/{id}", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/actions", List).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/actions/{id}", Get).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPut("/bots/{bot}/actions/{id}", Save)
             .Accepts<SaveAction>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
         routes
             .MapDelete("/bots/{bot}/actions/{id}", Delete)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
         routes
             .MapPost("/bots/{bot}/actions/{id}/test", Test)
             .Accepts<RunAction>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
     }
 
     private static async Task<Results<Ok<ActionTestAnswer>, ProblemHttpResult>> Test(

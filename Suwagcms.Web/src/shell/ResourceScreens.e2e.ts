@@ -37,7 +37,7 @@ test("AC-web-shell-8, AC-web-shell-9: an id with dots opens at its address, surv
     await addFact(request, bot, "customer.email");
     await page.goto(`/bots/${bot}/facts`);
 
-    await page.getByRole("row").filter({ hasText: "customer.email" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.email" }).getByRole("link", { name: "Edit" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/facts/customer.email/edit`);
     await expect(page.getByLabel("Description")).toHaveValue("The email");
 
@@ -59,12 +59,12 @@ test("AC-web-shell-9: an unknown id says it is not found, with the way back, on 
 
     await page.goto(`/bots/${bot}/facts/no.such/edit`);
     await expect(page.getByRole("alert")).toContainText("no fact 'no.such'");
-    await page.getByRole("button", { name: "Back to facts" }).click();
+    await page.getByRole("link", { name: "Back to facts" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/facts`);
 
     await page.goto(`/bots/${bot}/procedures/noSuch/edit`);
     await expect(page.getByRole("alert")).toContainText("no procedure 'noSuch'");
-    await page.getByRole("button", { name: "Back to procedures" }).click();
+    await page.getByRole("link", { name: "Back to procedures" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/procedures`);
 });
 
@@ -94,24 +94,24 @@ test("AC-web-shell-11: adding or editing shows only that item, with a way back, 
     ];
     for (const { collection, id, add, back } of screens) {
         await page.goto(`/bots/${bot}/${collection}`);
-        await expect(page.getByRole("button", { name: add })).toBeVisible();
+        await expect(page.getByRole("link", { name: add })).toBeVisible();
         await expect(page.getByRole("table")).toBeVisible();
 
         await page.goto(`/bots/${bot}/${collection}/${id}/edit`);
-        await expect(page.getByRole("button", { name: back })).toBeVisible();
+        await expect(page.getByRole("link", { name: back })).toBeVisible();
         await expect(page.getByRole("table")).toHaveCount(0);
-        await expect(page.getByRole("button", { name: add })).toHaveCount(0);
+        await expect(page.getByRole("link", { name: add })).toHaveCount(0);
 
         await page.goto(`/bots/${bot}/${collection}/new`);
         await expect(page.getByRole("heading", { name: add })).toBeVisible();
         await expect(page.getByRole("table")).toHaveCount(0);
-        await page.getByRole("button", { name: back }).click();
+        await page.getByRole("link", { name: back }).click();
         await expect(page).toHaveURL(`/bots/${bot}/${collection}`);
     }
     await page.goto(`/bots/${bot}/actions/new`);
-    await expect(page.getByRole("button", { name: "Back to actions" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to actions" })).toBeVisible();
     await page.goto(`/bots/${bot}/procedures/new`);
-    await expect(page.getByRole("button", { name: "Back to procedures" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back to procedures" })).toBeVisible();
     await expect(page.getByRole("table")).toHaveCount(0);
 });
 
@@ -132,8 +132,8 @@ test("AC-web-shell-15: the article filters survive a reload and opening an artic
     await expect(page.getByLabel("Search")).toHaveValue("terms");
     await expect(page.getByRole("row").filter({ hasText: "priceList" })).toHaveCount(0);
 
-    await page.getByRole("row").filter({ hasText: "terms" }).getByRole("button", { name: "Edit" }).click();
-    await page.getByRole("button", { name: "Back to articles" }).click();
+    await page.getByRole("row").filter({ hasText: "terms" }).getByRole("link", { name: "Edit" }).click();
+    await page.getByRole("link", { name: "Back to articles" }).click();
     await expect(page.getByLabel("Search")).toHaveValue("terms");
 
     const steps = { hello: { say: "Hi" } };

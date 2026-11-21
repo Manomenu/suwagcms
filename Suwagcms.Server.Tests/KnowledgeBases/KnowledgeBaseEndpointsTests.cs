@@ -81,7 +81,7 @@ public sealed class KnowledgeBaseEndpointsTests(TestDatabase database, ClassServ
         var mistake = Assert.Single(await FactApi.MistakesOf(await api.Delete("offer")));
 
         Assert.Equal("resource.missing", mistake.GetProperty("code").GetString());
-        Assert.Equal("id", mistake.GetProperty("path").GetString());
+        Assert.Equal("id", mistake.GetProperty("at").GetString());
     }
 
     [Fact]
