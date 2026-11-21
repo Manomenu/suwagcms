@@ -4,6 +4,7 @@ using System.Text.Json;
 using Dapper;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Server.Tests.Articles;
@@ -19,28 +20,39 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
 {
     private TestApp App => server.App;
 
-    private async Task<(ArticleApi Articles, HistoryScene History)> NewBot()
+    private async Task<(ArticleApi Articles, HistoryScene History)> NewBot(TimeProvider? clock = null)
     {
         _ = database.DataSource;
-        var client = App.CreateClient();
+        var client = clock is null ? App.CreateClient() : App.WithClock(clock).CreateClient();
         var articles = await ArticleApi.NewBotAsync(client);
         return (articles, new HistoryScene(client, articles.Bot));
+    }
+
+    private async Task<DateTimeOffset> HistoryStartedAt()
+    {
+        await using var connection = await database.DataSource.OpenConnectionAsync(TestContext.Current.CancellationToken);
+        return new DateTimeOffset(await connection.ExecuteScalarAsync<DateTime>("SELECT min(started_at) FROM history_start"));
     }
 
     [Fact]
     [Trait("criterion", "AC-change-history-1")]
     public async Task Adding_editing_and_deleting_an_article_each_adds_one_entry_with_its_time_action_revision_and_changed_fields()
     {
-        var (articles, history) = await NewBot();
-        var before = TimeProvider.System.GetUtcNow().AddMinutes(-1);
+        var clock = new FakeTimeProvider();
+        var (articles, history) = await NewBot(clock);
+        var addedAt = clock.GetUtcNow();
         await articles.Add("cennik", ArticleApi.Body(content: "Wycena domu: 900 zł"));
+        clock.Advance(TimeSpan.FromMinutes(1));
+        var editedAt = clock.GetUtcNow();
         await articles.Put("cennik", ArticleApi.Body(content: "Wycena domu: 1100 zł"));
+        clock.Advance(TimeSpan.FromMinutes(1));
+        var deletedAt = clock.GetUtcNow();
         await articles.Delete("cennik");
 
         var entries = (await history.Of("articles", "cennik")).Entries;
 
         Assert.Equal(["deleted", "edited", "added"], entries.Select(entry => entry.Action));
-        Assert.All(entries, entry => Assert.InRange(entry.At, before, TimeProvider.System.GetUtcNow().AddMinutes(1)));
+        Assert.Equal([deletedAt, editedAt, addedAt], entries.Select(entry => entry.At));
         Assert.All(entries, entry => Assert.Equal(("article", "cennik"), (entry.Kind, entry.ResourceId)));
         var (deleted, edited, added) = (entries[0], entries[1], entries[2]);
         Assert.Equal(2, edited.Revision);
@@ -291,7 +303,7 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
         var run = await history.CliAsync("history", "article", "rabaty");
 
         Assert.Empty(page.Entries);
-        Assert.InRange(page.Since, TimeProvider.System.GetUtcNow().AddDays(-1), TimeProvider.System.GetUtcNow().AddMinutes(1));
+        Assert.Equal(await HistoryStartedAt(), page.Since);
         Assert.Equal(0, run.ExitCode);
         Assert.Contains($"No change has been recorded since {page.Since.UtcDateTime:yyyy-MM-dd}", run.Output, StringComparison.Ordinal);
     }

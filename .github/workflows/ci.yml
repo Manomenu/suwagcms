@@ -5,12 +5,7 @@ on:
     branches: [master]
   pull_request:
 
-permissions:
-  contents: read
-
-env:
-  CI: "1"
-  NODE_VERSION: 24.22.1
+permissions: {}
 
 jobs:
   gate:
@@ -22,34 +17,4 @@ jobs:
     with:
       working-directory: Suwagcms.Web
       browser: chromium
-      database: true
-
-  build:
-    needs: [gate]
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
-    timeout-minutes: 20
-    env:
-      COMPOSE_PROJECT_NAME: suwagcms-ci
-      IMAGE_TAG: ci
-      COMPOSE_FILE: compose.yaml:compose.ci.yaml
-    steps:
-      - name: actions/checkout v7.0.1
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-      - name: actions/setup-node v7.1.0
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Install suwgate for its smoke test
-        run: corepack enable && cd Suwagcms.Web && pnpm install --frozen-lockfile
-      - name: Build both images, start the stack and smoke-test it (nothing is published, the registry is project-specific)
-        run: |
-          docker compose --profile db up -d --build --wait
-          Suwagcms.Web/node_modules/.bin/suwgate dev smoke
-      - name: Logs on failure
-        if: failure()
-        run: docker compose --profile db logs
-      - name: Stop the stack
-        if: always()
-        run: docker compose --profile db down --remove-orphans --volumes
+      smoke: true

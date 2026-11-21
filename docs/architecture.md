@@ -22,7 +22,7 @@ lines: a new top-level folder needs its line here, a deleted one loses it.
 - `compose.yaml` — the whole stack on a laptop from the same Dockerfiles: db (profile `db`, also the local database of `suwgate dev db`), server, web; everything configured from `.env` (`.env.example`) with ASP.NET names (`Section__Key`); ports only on 127.0.0.1 (db 5563, web 8220).
 - `Suwagcms.Server/Dockerfile`, `Suwagcms.Web/Dockerfile` — the two images (pinned bases, locked restore, build context is the repo root); the web image is nginx serving the build and proxying `/api` to the server.
 - `.dockerignore` — keeps `node_modules`, `bin`, `obj` and `.env` out of the build context.
-- `.github/` — `workflows/ci.yml`: the gate (suwgate's reusable gate workflow), the browser tests (`e2e`), and the images built and smoke-tested (`build`); no image is published, the registry is project-specific. A second workflow, started by hand, releases the SDK to nuget.org.
+- `.github/` — `workflows/ci.yml`: one call of suwgate's reusable gate workflow: the gate (the browser tests included) and the images built and smoke-tested (`smoke: true`); no image is published, the registry is project-specific. A second workflow, started by hand, releases the SDK to nuget.org.
 - `.vscode/` — the editor's glue, shared: recommended extensions, formatter per language, the schema of `suwgate.yml`, file nesting, debug launch, tasks that run the gate. No style rules (they live in `.editorconfig` and the formatters' configs, so Rider agrees).
 - `.githooks/` — `pre-commit` runs `suwgate hook pre-commit`: gitleaks on what is being committed, then the quick gate; `just sync` enables it.
 - `docs/` — documentation for people working on the repo: this map, `development.md`, `release.md`, the specs in `visual/spec/` (their acceptance criteria live as guardrails, see AGENTS.md), decisions above one feature in `adr/`.
@@ -131,12 +131,12 @@ Browser storage: what a screen shows lives in the address, so a link and a refre
   `docker compose --profile db up` works; leave the `db` profile out and point `ConnectionStrings__Default` at an external PostgreSQL.
   Every port is on the loopback (the database password is a development one, and the server's routes have no key), which suwgate's
   `compose-ports` guard keeps.
-- CI pins every action, and suwgate's reusable gate workflow, by its commit; a step's name carries the version the commit is. The
-  reusable workflow has no database service, so the gate job starts the database of `compose.yaml` in its command before the gate.
-  Every job runs on the repository variable `CI_RUNNER` when it is set, else on `ubuntu-24.04`: suwgate's self-hosted fallback
-  sets it while the account's Actions minutes are used up. On a self-hosted runner the `build` job shares the machine with the
-  development stack, so it is a compose project of its own (`COMPOSE_PROJECT_NAME`, `IMAGE_TAG`) and `compose.ci.yaml` drops the host ports of
-  the database, which the development stack holds; its `down --volumes` never reaches the development database.
+- CI pins every action, and suwgate's reusable gate workflow, by its commit; a step's name carries the version the commit is. `ci.yml`
+  is one call of the gate workflow, whose own `database-up` step starts the database of `compose.yaml` (`suwgate dev db up`), in CI as
+  on a laptop. Every job runs on the repository variable `CI_RUNNER` when it is set, else on `ubuntu-24.04`: suwgate's self-hosted
+  fallback sets it while the account's Actions minutes are used up. The images are built and smoke-tested by `suwgate dev smoke --ci`
+  (`smoke: true`), a compose project of its own (`suwagcms-ci`, image tag `ci`) with every published port moved to a free loopback port,
+  so on a self-hosted runner it never collides with the development stack and its `down --volumes` never reaches the development database.
 - The SDK's release workflow (`sdk.yml`) runs only by hand (`just sdk-publish`), because a version on nuget.org cannot be deleted;
   nuget.org's trusted-publishing policy names its file, so it is not renamed alone. Its publish job runs no code of the repository.
 - The CLI is a .NET tool named `suwagcms` on the base runtime only, though the SDK it references brings ASP.NET Core for bots. The SDK

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.BotRuntime;
@@ -28,15 +29,15 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
 {
     private TestApp App => server.App;
 
-    private async Task<VersionApi> NewBot()
+    private async Task<VersionApi> NewBot(TimeProvider? clock = null)
     {
         _ = database.DataSource;
-        return await VersionApi.NewBotAsync(App.CreateClient());
+        return await VersionApi.NewBotAsync(clock is null ? App.CreateClient() : App.WithClock(clock).CreateClient());
     }
 
-    private async Task<VersionApi> FullBot()
+    private async Task<VersionApi> FullBot(TimeProvider? clock = null)
     {
-        var api = await (await NewBot()).Ready();
+        var api = await (await NewBot(clock)).Ready();
         var articles = new ArticleApi(api.Client, api.Bot);
         Assert.True((await articles.KnowledgeBases.Add("offer", "Offer")).IsSuccessStatusCode);
         Assert.True((await articles.Add("priceList", ArticleApi.Body())).IsSuccessStatusCode);
@@ -335,8 +336,9 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
     public async Task Concurrent_creations_of_changing_states_take_each_number_once_and_a_save_is_wholly_in_or_wholly_out()
     {
         var api = await (await NewBot()).Ready();
-        var editor = new DefinitionEditor(database.DataSource, TimeProvider.System);
-        var creator = new VersionCreator(database.DataSource, TimeProvider.System);
+        var clock = new FakeTimeProvider();
+        var editor = new DefinitionEditor(database.DataSource, clock);
+        var creator = new VersionCreator(database.DataSource, clock);
         var cancellation = TestContext.Current.CancellationToken;
         await editor.ApplyAsync(
             api.Bot,
@@ -423,15 +425,19 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
     [Trait("criterion", "AC-version-create-13")]
     public async Task The_list_shows_number_date_counts_and_digest_and_any_version_can_be_read()
     {
-        var api = await FullBot();
+        var clock = new FakeTimeProvider();
+        var api = await FullBot(clock);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        var createdAt = clock.GetUtcNow();
         var created = await api.Created();
+        clock.Advance(TimeSpan.FromMinutes(1));
 
         var listed = Assert.Single(await api.List());
         var detail = await api.Detail(1);
 
         Assert.Equal((1, 4, 1, 1, 2), (listed.Number, listed.Facts, listed.KnowledgeBases, listed.Articles, listed.Procedures));
         Assert.Equal(created.Version.Sha256, listed.Sha256);
-        Assert.InRange(listed.CreatedAt, TimeProvider.System.GetUtcNow().AddMinutes(-5), TimeProvider.System.GetUtcNow().AddMinutes(1));
+        Assert.Equal(createdAt, listed.CreatedAt);
         Assert.Equal(listed, detail.Version);
         Assert.Equal(HttpStatusCode.NotFound, (await api.Get(7)).StatusCode);
         Assert.Equal([VersionEndpoints.Missing], await VersionApi.CodesOf(await api.Get(7)));

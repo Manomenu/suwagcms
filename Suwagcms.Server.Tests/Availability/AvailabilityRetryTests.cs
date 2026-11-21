@@ -12,7 +12,7 @@ public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer se
     private static readonly TimeSpan Minute = TimeSpan.FromMinutes(1);
 
     private TestApp App => server.App;
-    private readonly WatchedClock clock = new(TimeProvider.System.GetUtcNow());
+    private readonly WatchedClock clock = new(new DateTimeOffset(2026, 11, 21, 9, 0, 0, TimeSpan.Zero));
     private AvailabilityRetries? retries;
     private int puts;
 
@@ -46,11 +46,18 @@ public sealed class AvailabilityRetryTests(TestDatabase database, ClassServer se
 
     private static async Task Until(Func<Task<bool>> done)
     {
-        var deadline = TimeProvider.System.GetUtcNow().AddSeconds(60);
-        while (!await done())
+        using var ceiling = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        ceiling.CancelAfter(TimeSpan.FromSeconds(60));
+        try
         {
-            Assert.True(TimeProvider.System.GetUtcNow() < deadline, "what the test waited for did not happen within 60 seconds");
-            await Task.Delay(10, TestContext.Current.CancellationToken);
+            while (!await done())
+            {
+                await Task.Delay(10, ceiling.Token);
+            }
+        }
+        catch (OperationCanceledException) when (!TestContext.Current.CancellationToken.IsCancellationRequested)
+        {
+            Assert.Fail("what the test waited for did not happen within 60 seconds");
         }
     }
 

@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Suwagcms.Server.Tests;
 
@@ -20,4 +23,7 @@ internal sealed class TestApp(string? pageSize = null) : WebApplicationFactory<P
                 )
         );
     }
+
+    internal WebApplicationFactory<Program> WithClock(TimeProvider clock) =>
+        WithWebHostBuilder(builder => builder.ConfigureTestServices(services => services.Replace(ServiceDescriptor.Singleton(clock))));
 }

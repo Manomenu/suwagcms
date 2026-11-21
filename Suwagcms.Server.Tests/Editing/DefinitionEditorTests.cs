@@ -1,4 +1,5 @@
 using Dapper;
+using Microsoft.Extensions.Time.Testing;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Sdk.Format.Facts;
@@ -11,6 +12,8 @@ namespace Suwagcms.Server.Tests.Editing;
 
 public sealed class DefinitionEditorTests(TestDatabase database)
 {
+    private readonly FakeTimeProvider clock = new();
+
     private static GlobalFact Fact(string name, string description = "A fact", int maxLength = 10) =>
         new()
         {
@@ -34,7 +37,7 @@ public sealed class DefinitionEditorTests(TestDatabase database)
                 TestContext.Current.CancellationToken
             )
         );
-        return (new DefinitionEditor(database.DataSource, TimeProvider.System), bot);
+        return (new DefinitionEditor(database.DataSource, clock), bot);
     }
 
     private async Task<List<Row>> Rows(string bot)
@@ -97,6 +100,7 @@ public sealed class DefinitionEditorTests(TestDatabase database)
         var (editor, bot) = await NewBot();
         await editor.ApplyAsync(bot, [Add("customer.city", "Before")], false, TestContext.Current.CancellationToken);
         var before = await Rows(bot);
+        clock.Advance(TimeSpan.FromMinutes(1));
         Change[] changes = [new Put(Ref("customer.city"), Fact("customer.city", "After"), 1), Add("order.kind")];
 
         var dry = Assert.IsType<EditResult.Saved>(await editor.ApplyAsync(bot, changes, true, TestContext.Current.CancellationToken));
@@ -130,6 +134,7 @@ public sealed class DefinitionEditorTests(TestDatabase database)
         var (editor, bot) = await NewBot();
         await editor.ApplyAsync(bot, [Add("customer.city", "Before")], false, TestContext.Current.CancellationToken);
         var before = await Rows(bot);
+        clock.Advance(TimeSpan.FromMinutes(1));
 
         var result = await editor.ApplyAsync(
             bot,
@@ -150,6 +155,7 @@ public sealed class DefinitionEditorTests(TestDatabase database)
         var (editor, bot) = await NewBot();
         await editor.ApplyAsync(bot, [Add("customer.city")], false, TestContext.Current.CancellationToken);
         var before = await Rows(bot);
+        clock.Advance(TimeSpan.FromMinutes(1));
 
         var result = await editor.ApplyAsync(
             bot,
