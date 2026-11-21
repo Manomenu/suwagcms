@@ -4,7 +4,7 @@ if [ "${1:-}" = "--help" ]; then
     cat <<'HELP'
 The fallback to `just sdk-publish`, which is the normal way, for a first release nuget.org's Trusted Publishing refuses.
 Packs Suwagcms.Sdk as <version> on this machine and pushes it to nuget.org with SDK_NUGET_API_KEY from the gitignored .env.
-Not for agents: a version on nuget.org cannot be deleted.
+A version on nuget.org cannot be deleted, only unlisted: check the number first.
 HELP
     exit 0
 fi
