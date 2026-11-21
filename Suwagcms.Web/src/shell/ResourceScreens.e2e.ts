@@ -94,18 +94,18 @@ test("AC-web-shell-11: adding or editing shows only that item, with a way back, 
     ];
     for (const { collection, id, add, back } of screens) {
         await page.goto(`/bots/${bot}/${collection}`);
-        await expect(page.getByRole("button", { name: add })).toBeVisible();
+        await expect(page.getByRole("link", { name: add })).toBeVisible();
         await expect(page.getByRole("table")).toBeVisible();
 
         await page.goto(`/bots/${bot}/${collection}/${id}/edit`);
-        await expect(page.getByRole("button", { name: back })).toBeVisible();
+        await expect(page.getByRole("link", { name: back })).toBeVisible();
         await expect(page.getByRole("table")).toHaveCount(0);
-        await expect(page.getByRole("button", { name: add })).toHaveCount(0);
+        await expect(page.getByRole("link", { name: add })).toHaveCount(0);
 
         await page.goto(`/bots/${bot}/${collection}/new`);
         await expect(page.getByRole("heading", { name: add })).toBeVisible();
         await expect(page.getByRole("table")).toHaveCount(0);
-        await page.getByRole("button", { name: back }).click();
+        await page.getByRole("link", { name: back }).click();
         await expect(page).toHaveURL(`/bots/${bot}/${collection}`);
     }
     await page.goto(`/bots/${bot}/actions/new`);
