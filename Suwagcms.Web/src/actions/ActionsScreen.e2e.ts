@@ -299,7 +299,7 @@ test("AC-action-test-run-1: a run from the action's page shows success with the 
     await expect(result).toContainText("serviceable = yes");
     await expect(result).toContainText("Answer 200");
     await expect(result).toContainText("320 ms");
-    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("alertdialog")).toHaveCount(0);
     running.close();
 });
 
@@ -315,7 +315,7 @@ test("AC-action-test-run-12: for another method the web shows a dialog with the 
     await panel.getByLabel("address").fill("Polna 3");
     await panel.getByRole("button", { name: "Run" }).click();
 
-    const dialog = page.getByRole("dialog", { name: "Really call the service" });
+    const dialog = page.getByRole("alertdialog", { name: "Really call the service" });
     await expect(dialog).toContainText("POST https://crm.internal/check");
     expect(running.runs()).toBe(0);
     await dialog.getByRole("button", { name: "Call it" }).click();

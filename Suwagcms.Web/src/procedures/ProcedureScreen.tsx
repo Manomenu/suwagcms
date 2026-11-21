@@ -1,4 +1,4 @@
-import { Alert, ApiError, Button } from "@maniumek/suwfrontkit";
+import { Alert, ApiError, Button, MistakeList, Spinner } from "@maniumek/suwfrontkit";
 import { mistakesOf } from "@/api/client";
 import { useEffect, useMemo, useReducer, useState } from "react";
 import { useLocation, useSearch, useSearchParams } from "wouter";
@@ -6,12 +6,11 @@ import { useLocation, useSearch, useSearchParams } from "wouter";
 import { useAvailability } from "@/api/availability";
 import { fetchDeclaration } from "@/api/declaration";
 import { useResourceHistory } from "@/api/history";
-import { mayLeave, useLeaveGuard } from "@maniumek/suwfrontkit";
+import { useLeaveGuard } from "@maniumek/suwfrontkit";
 import { renamer } from "@/api/rename";
 import { editHref, listHref, withListSearch } from "@/api/resourceAddress";
 import { usageHref, useUsage, type UsageLink } from "@/api/usage";
 import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
-import { MistakeItems } from "@/design/mistakeItems";
 import { BackToList, ResourceEdit } from "@/design/resourceEdit";
 
 import {
@@ -156,9 +155,6 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
                 usage: usage.usage,
                 failure: usage.failure,
                 hrefOf: (entry: UsageLink) => usageHref(bot, entry),
-                onFollow: (event: React.MouseEvent) => {
-                    if (!mayLeave()) event.preventDefault();
-                },
             }}
             onDelete={remove}
             history={history}
@@ -172,7 +168,7 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
                                 Not saved: fix {notice.mistakes.length === 1 ? "this mistake" : "these mistakes"} first. Your page is
                                 unchanged.
                             </p>
-                            <MistakeItems mistakes={notice.mistakes} />
+                            <MistakeList mistakes={notice.mistakes} />
                         </Alert>
                     )}
                     {notice?.kind === "failed" && <Alert variant="destructive">Not saved: {notice.message}</Alert>}
@@ -217,9 +213,6 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
                 openConditions={openConditions}
                 onConditionOpen={setConditionOpen}
                 onSave={save}
-                onLeave={(href) => {
-                    if (mayLeave()) navigate(href);
-                }}
             />
         </ResourceEdit>
     );
@@ -273,6 +266,6 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
             </div>
         );
     }
-    if (loaded === null) return <p className="text-muted-foreground">Loading {id}…</p>;
+    if (loaded === null) return <Spinner label={`Loading ${id}…`} size="sm" />;
     return <Body bot={bot} id={id} initial={loaded} backHref={backHref} />;
 }

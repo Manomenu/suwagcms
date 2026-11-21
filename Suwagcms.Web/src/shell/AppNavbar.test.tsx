@@ -1,6 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Router } from "wouter";
 
 import type { Bot } from "@/api/bots";
 
@@ -11,11 +10,7 @@ const rzeczoznawca: Bot = { id: "rzeczoznawca", name: "Rzeczoznawca", address: "
 const sklep: Bot = { id: "sklep", name: "Sklep", address: "http://sklep.internal:8080" };
 
 function render(bot: string | null, tab: Tab | null): string {
-    return renderToStaticMarkup(
-        <Router ssrPath="/bots">
-            <AppNavbar bots={[rzeczoznawca, sklep]} failure={null} bot={bot} tab={tab} />
-        </Router>,
-    );
+    return renderToStaticMarkup(<AppNavbar bots={[rzeczoznawca, sklep]} failure={null} bot={bot} tab={tab} />);
 }
 
 describe("AppNavbar", () => {
@@ -45,7 +40,9 @@ describe("AppNavbar", () => {
 
     it("AC-web-shell-3: marks the open bot as the current page, and as current while one of its tabs is open", () => {
         expect(render("sklep", null)).toMatch(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*Sklep/);
-        expect(render("sklep", "facts")).toMatch(/<li aria-current="true"[^>]*><a (?:(?!aria-current)[^>])*>(?:(?!<\/a>).)*Sklep/);
+        expect(render("sklep", "facts")).toMatch(
+            /<a (?:(?!aria-current)[^>])*data-holds-current=""(?:(?!aria-current)[^>])*>(?:(?!<\/a>).)*Sklep/,
+        );
     });
 
     it("AC-web-shell-3: marks only the current tab", () => {

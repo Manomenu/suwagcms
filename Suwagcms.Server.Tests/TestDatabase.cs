@@ -32,7 +32,7 @@ public sealed class TestDatabase : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        LinkedWorktree.RefuseMainCheckoutDatabase(FromEnvironment, AppContext.BaseDirectory);
+        LinkedWorktree.RefuseSharedDatabase();
         try
         {
             await TestDatabases.RecreateAsync(ConnectionString);

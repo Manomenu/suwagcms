@@ -1,4 +1,4 @@
-import { Alert } from "@maniumek/suwfrontkit";
+import { Alert, Spinner } from "@maniumek/suwfrontkit";
 import { Redirect } from "wouter";
 
 import { useAvailability } from "@/api/availability";
@@ -25,7 +25,7 @@ export function ActionsScreen({ bot }: { bot: string }) {
 
     if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     if (editor.failure !== null) return <Alert variant="destructive">{editor.failure}</Alert>;
-    if (editor.items === null) return <p className="text-muted-foreground">Loading actions…</p>;
+    if (editor.items === null) return <Spinner label="Loading actions…" size="sm" />;
 
     const notice = <AvailabilityNotice delivery={availability.delivery} failure={availability.failure} onSend={availability.send} />;
     if (!editor.isOpen) {

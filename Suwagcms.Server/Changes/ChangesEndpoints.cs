@@ -22,7 +22,7 @@ internal static class ChangesEndpoints
             .MapPost("/bots/{bot}/changes", Apply)
             .Accepts<ApplyChanges>("application/json")
             .ProducesRefusal(StatusCodes.Status404NotFound)
-            .ProducesRefusal<string, ChangeMistake>(StatusCodes.Status422UnprocessableEntity);
+            .ProducesRefusal<RefusalCode, string, ChangeMistake>(StatusCodes.Status422UnprocessableEntity);
 
     private static async Task<Results<Ok<ChangesApplied>, ProblemHttpResult>> Apply(
         string bot,

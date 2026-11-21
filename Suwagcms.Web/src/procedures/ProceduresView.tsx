@@ -1,6 +1,6 @@
 import { Anchor, Badge, Paper } from "@maniumek/suwfrontkit";
 import type { ReactNode } from "react";
-import { Link, useSearch } from "wouter";
+import { useSearch } from "wouter";
 
 import type { Mistake } from "@/api/client";
 import { usePagedRows } from "@/api/pagination";
@@ -71,9 +71,7 @@ export function ProceduresView({
                 {
                     header: "Procedure",
                     cell: (procedure) => (
-                        <Anchor asChild>
-                            <Link href={`~${withListSearch(editHref(bot, "procedures", procedure.id), search)}`}>{procedure.id}</Link>
-                        </Anchor>
+                        <Anchor href={withListSearch(editHref(bot, "procedures", procedure.id), search)}>{procedure.id}</Anchor>
                     ),
                 },
                 { header: "Description", className: "text-muted-foreground", cell: (procedure) => procedure.description },

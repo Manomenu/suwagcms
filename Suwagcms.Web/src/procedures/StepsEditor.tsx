@@ -101,7 +101,6 @@ export interface StepsProps {
     onSelect: (step: string | null) => void;
     openConditions: readonly string[];
     onConditionOpen: (row: string, open: boolean) => void;
-    onLeave: (href: string) => void;
 }
 
 function StepName({
@@ -484,7 +483,7 @@ function ArmsView({ row, props }: { row: StepRow; props: StepsProps }) {
 }
 
 function RowView({ row, number, props }: { row: StepRow; number: number; props: StepsProps }) {
-    const { draft, facts, procedures, id, bot, edit, selected, onSelect, onLeave, showKnowledge, bases, articles, actions, beside } = props;
+    const { draft, facts, procedures, id, bot, edit, selected, onSelect, showKnowledge, bases, articles, actions, beside } = props;
     const [refusal, setRefusal] = useState<string | null>(null);
     const step = draft.steps[row.name] ?? {};
     const block = blockOf(step);
@@ -554,7 +553,6 @@ function RowView({ row, number, props }: { row: StepRow; number: number; props: 
                         actions={actions}
                         beside={beside}
                         edit={edit}
-                        onLeave={onLeave}
                     />
                 </div>
             )}

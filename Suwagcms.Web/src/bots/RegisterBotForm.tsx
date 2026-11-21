@@ -1,9 +1,8 @@
-import { Alert, ApiError, Button, Field, Input } from "@maniumek/suwfrontkit";
+import { Alert, ApiError, Button, Field, Input, MistakeList } from "@maniumek/suwfrontkit";
 import { mistakesOf, refusalOf } from "@/api/client";
 import { useState, useTransition } from "react";
 
 import type { Bot } from "@/api/bots";
-import { MistakeItems } from "@/design/mistakeItems";
 
 import { registerBot } from "./api";
 
@@ -78,7 +77,7 @@ export function RegisterBotForm({ onRegistered, onCancel }: { onRegistered: (bot
             </Field>
             {refusal !== null && (
                 <Alert variant="destructive">
-                    {mistakesOf(refusal).length === 0 ? refusal.message : <MistakeItems mistakes={mistakesOf(refusal)} />}
+                    {mistakesOf(refusal).length === 0 ? refusal.message : <MistakeList mistakes={mistakesOf(refusal)} />}
                 </Alert>
             )}
             <div className="flex gap-2">

@@ -1,5 +1,4 @@
-import { Alert, Anchor, Badge, Paginated, type Paging } from "@maniumek/suwfrontkit";
-import { Link } from "wouter";
+import { Alert, Anchor, Badge, DiffLines, Paginated, Spinner, type DiffLine, type Paging } from "@maniumek/suwfrontkit";
 import type { ReactNode } from "react";
 
 export interface WrittenField {
@@ -37,9 +36,9 @@ const VARIANTS: Record<string, "success" | "primary" | "danger" | "neutral"> = {
     removed: "danger",
 };
 
-const LINE_MARKS = { Removed: "− ", Added: "+ ", Kept: "  ", Folded: "… " } as const;
+type WrittenLine = NonNullable<WrittenField["lines"]>[number];
 
-const LINE_COLORS = { Removed: "text-destructive", Added: "text-success", Kept: "", Folded: "text-muted-foreground" } as const;
+const CHANGES: Record<WrittenLine["change"], DiffLine["change"]> = { Kept: "same", Removed: "removed", Added: "added", Folded: "folded" };
 
 function Field({ field }: { field: WrittenField }) {
     if (field.lines === null) {
@@ -54,14 +53,7 @@ function Field({ field }: { field: WrittenField }) {
     return (
         <div className="text-sm">
             <p className="text-muted-foreground">{field.field}</p>
-            <pre className="overflow-auto text-xs whitespace-pre-wrap">
-                {field.lines.map((line, index) => (
-                    <div key={index} className={LINE_COLORS[line.change]}>
-                        {LINE_MARKS[line.change]}
-                        {line.text}
-                    </div>
-                ))}
-            </pre>
+            <DiffLines lines={field.lines.map((line) => ({ change: CHANGES[line.change], text: line.text }))} />
         </div>
     );
 }
@@ -149,10 +141,7 @@ function Entry({ line, hrefOf }: { line: ChangeLine; hrefOf: ((line: ChangeLine)
                 : {
                       resource: (
                           <>
-                              {line.kind}{" "}
-                              <Anchor asChild>
-                                  <Link href={hrefOf(line)}>{line.resourceId}</Link>
-                              </Anchor>
+                              {line.kind} <Anchor href={hrefOf(line)}>{line.resourceId}</Anchor>
                           </>
                       ),
                   })}
@@ -177,7 +166,7 @@ export function ChangeList({
     empty?: string;
 }) {
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
-    if (entries === null) return <p className="text-sm text-muted-foreground">Loading…</p>;
+    if (entries === null) return <Spinner label="Loading…" size="sm" className="text-sm" />;
     if (entries.length === 0) {
         return (
             <p className="text-sm text-muted-foreground">{empty ?? `No change has been recorded since ${since?.slice(0, 10) ?? ""}.`}</p>

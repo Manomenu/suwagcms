@@ -4,10 +4,11 @@ import type { components, paths } from "./openapi";
 
 export type Mistake = components["schemas"]["Mistake"];
 type RefusalMistake = components["schemas"]["RefusalMistake"];
+type RefusalCode = components["schemas"]["RefusalCode"];
 
 export const api = createApi<paths>();
 
-const refusals = refusalReader();
+const refusals = refusalReader<RefusalCode, string>();
 
 function shown(mistake: RefusalMistake): Mistake {
     const { at, ...rest } = mistake;

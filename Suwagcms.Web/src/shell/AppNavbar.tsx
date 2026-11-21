@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { mayLeave, NavLink } from "@maniumek/suwfrontkit";
+import { NavTree, Spinner, type NavItem1 } from "@maniumek/suwfrontkit";
 import {
     Bot as BotIcon,
     BotMessageSquare,
@@ -12,7 +12,6 @@ import {
     Workflow,
     Zap,
 } from "lucide-react";
-import { Link } from "wouter";
 
 import type { Bot } from "@/api/bots";
 
@@ -29,8 +28,35 @@ const TAB_ICONS: Record<Tab, ReactElement> = {
     history: <ScrollText />,
 };
 
-function guard(event: React.MouseEvent) {
-    if (!mayLeave()) event.preventDefault();
+function treeOf(bots: Bot[] | null, bot: string | null, tab: Tab | null): NavItem1[] {
+    return [
+        {
+            icon: <BotMessageSquare />,
+            label: "Bots",
+            href: "/bots",
+            current: bot === null,
+            items: (bots ?? []).map((entry) => {
+                const isOpen = entry.id === bot;
+                return {
+                    icon: <BotIcon />,
+                    label: entry.name,
+                    href: botHref(entry.id),
+                    title: entry.address,
+                    current: isOpen && tab === null,
+                    ...(isOpen
+                        ? {
+                              items: TABS.map((item) => ({
+                                  icon: TAB_ICONS[item.id],
+                                  label: item.label,
+                                  href: tabHref(entry.id, item.id),
+                                  current: tab === item.id,
+                              })),
+                          }
+                        : {}),
+                };
+            }),
+        },
+    ];
 }
 
 export function AppNavbar({
@@ -46,37 +72,9 @@ export function AppNavbar({
 }) {
     return (
         <nav aria-label="Bots" className="flex flex-col gap-0.5">
-            <NavLink asChild icon={<BotMessageSquare />} label="Bots" current={bot === null}>
-                <Link href="/bots" onClick={guard} />
-            </NavLink>
-            {bots === null && failure === null && <p className="px-2 py-2 text-sm text-muted-foreground">Loading bots…</p>}
+            <NavTree items={treeOf(bots, bot, tab)} />
+            {bots === null && failure === null && <Spinner label="Loading bots…" size="sm" className="px-2 py-2 text-sm" />}
             {failure !== null && <p className="px-2 py-2 text-xs text-muted-foreground">{failure}</p>}
-            {bots !== null && bots.length > 0 && (
-                <ul className="flex flex-col gap-0.5">
-                    {bots.map((entry) => {
-                        const isOpen = entry.id === bot;
-                        const profile = isOpen && tab === null;
-                        return (
-                            <li key={entry.id} aria-current={isOpen && !profile ? "true" : undefined} className="flex flex-col gap-0.5">
-                                <NavLink asChild icon={<BotIcon />} label={entry.name} current={profile}>
-                                    <Link href={botHref(entry.id)} title={entry.address} onClick={guard} />
-                                </NavLink>
-                                {isOpen && (
-                                    <ul className="flex flex-col gap-0.5">
-                                        {TABS.map((item) => (
-                                            <li key={item.id}>
-                                                <NavLink asChild icon={TAB_ICONS[item.id]} label={item.label} current={tab === item.id}>
-                                                    <Link href={tabHref(entry.id, item.id)} onClick={guard} />
-                                                </NavLink>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                )}
-                            </li>
-                        );
-                    })}
-                </ul>
-            )}
         </nav>
     );
 }

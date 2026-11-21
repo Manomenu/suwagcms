@@ -150,9 +150,6 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
                           usage: used.usage,
                           failure: used.failure,
                           hrefOf: (entry: UsageLink) => usageHref(bot, entry),
-                          onFollow: (event: React.MouseEvent) => {
-                              if (!mayLeave()) event.preventDefault();
-                          },
                       },
             onDelete: () => (item === null ? Promise.resolve() : remove(item)),
             history,

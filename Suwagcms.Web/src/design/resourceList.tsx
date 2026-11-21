@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { ResourceList as Frame, type Paging, type ResourceColumn } from "@maniumek/suwfrontkit";
 
-import { AppLink } from "@/design/appLink";
 import { HistoryPanel, type HistoryPanelProps } from "@/design/page";
 
 export function ResourceList<Row>({
@@ -40,10 +39,10 @@ export function ResourceList<Row>({
             rows={rows}
             idOf={idOf}
             openLabel={openLabel}
-            link={(row, label) => <AppLink href={hrefOf(row)}>{label}</AppLink>}
+            hrefOf={hrefOf}
             addLabel={addLabel}
             addDisabled={addDisabled}
-            add={(label) => <AppLink href={addHref}>{label}</AppLink>}
+            addHref={addHref}
             {...(rows.length === 0 ? {} : { paging })}
             empty={empty}
             above={above}

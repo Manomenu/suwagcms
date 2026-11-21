@@ -1,4 +1,4 @@
-import { Alert, Badge, Button, Paper } from "@maniumek/suwfrontkit";
+import { Alert, Badge, Button, ConfirmDialog } from "@maniumek/suwfrontkit";
 import { useState } from "react";
 
 interface UsedByEntry {
@@ -54,13 +54,21 @@ export function TurnOffDialog({
     onCancel: () => void;
 }) {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4">
-            <Paper role="dialog" aria-label="Turn off" className="flex w-full max-w-lg flex-col gap-3">
-                <h2 className="text-base font-semibold">Turn off {id}?</h2>
+        <ConfirmDialog
+            open
+            onOpenChange={(open) => {
+                if (!open) onCancel();
+            }}
+            title={`Turn off ${id}?`}
+            variant="destructive"
+            confirmLabel="Turn off"
+            onConfirm={onConfirm}
+        >
+            <div className="flex flex-col gap-3 text-sm">
                 {usedBy.length === 0 ? (
-                    <p className="text-sm">Nothing uses it.</p>
+                    <p>Nothing uses it.</p>
                 ) : (
-                    <section aria-label="Used by" className="flex flex-col gap-1 text-sm">
+                    <section aria-label="Used by" className="flex flex-col gap-1">
                         <p className="font-medium">Used by:</p>
                         <ul className="flex flex-col gap-1">
                             {usedBy.map((entry) => (
@@ -75,19 +83,9 @@ export function TurnOffDialog({
                         <p className="text-muted-foreground">They keep working.</p>
                     </section>
                 )}
-                <p className="text-sm text-muted-foreground">
-                    It takes effect on the bot at once, also in conversations on older versions.
-                </p>
-                <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
-                    </Button>
-                    <Button type="button" variant="destructive" onClick={onConfirm}>
-                        Turn off
-                    </Button>
-                </div>
-            </Paper>
-        </div>
+                <p className="text-muted-foreground">It takes effect on the bot at once, also in conversations on older versions.</p>
+            </div>
+        </ConfirmDialog>
     );
 }
 

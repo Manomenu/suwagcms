@@ -316,7 +316,9 @@ test("AC-knowledge-base-language-12: the article form shows the language of the 
     await expect(page.locator('[data-field="language"] output')).toHaveText("en");
     await page.locator('[data-field="knowledgeBase"] select').selectOption("oferta");
     await expect(page.locator('[data-field="language"] output')).toHaveText("pl");
-    await expect(page.locator('[data-field="language"] button')).toContainText(/language of the knowledge base the article is in/);
+    await expect(page.locator('[data-field="language"] button')).toHaveAccessibleDescription(
+        /language of the knowledge base the article is in/,
+    );
 });
 
 test("AC-knowledge-base-language-9: the list filters by language together with the other filters, the same as the API does", async ({
@@ -594,7 +596,7 @@ test("AC-delete-guard-4: after the last link is removed in the web the article c
         .getByRole("button", { name: /^Delete/ })
         .click();
 
-    await expect(page.getByRole("main").locator("tbody").getByRole("row")).toHaveCount(1);
+    await expect(page.getByRole("main").locator("tbody").first().getByRole("row")).toHaveCount(1);
     expect((await request.get(`/api/bots/${bot}/articles/cennik`)).status()).toBe(404);
 });
 

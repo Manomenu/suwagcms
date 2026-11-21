@@ -1,5 +1,4 @@
-import { Button, Field, Input, Legend, Select, Textarea } from "@maniumek/suwfrontkit";
-import { Link } from "wouter";
+import { Anchor, Button, Field, Input, Legend, Select, Textarea } from "@maniumek/suwfrontkit";
 
 import { listHref } from "@/api/resourceAddress";
 
@@ -24,21 +23,13 @@ import {
 import { PROCEDURE_HINTS } from "./hints";
 import { KnowledgeForm, type Beside } from "./KnowledgeForm";
 
-function NoFacts({ bot, onLeave }: { bot: string; onLeave: (href: string) => void }) {
-    const href = listHref(bot, "facts");
+function NoFacts({ bot }: { bot: string }) {
     return (
         <p className="text-sm text-muted-foreground">
             This bot has no facts yet.{" "}
-            <Link
-                href={`~${href}`}
-                className="text-anchor underline underline-offset-4"
-                onClick={(event) => {
-                    event.preventDefault();
-                    onLeave(href);
-                }}
-            >
+            <Anchor href={listHref(bot, "facts")} className="underline">
                 Add them on the Facts screen
-            </Link>
+            </Anchor>
             .
         </p>
     );
@@ -48,13 +39,11 @@ function CollectForm({
     picked,
     facts,
     bot,
-    onLeave,
     onChange,
 }: {
     picked: string[];
     facts: Fact[];
     bot: string;
-    onLeave: (href: string) => void;
     onChange: (facts: string[]) => void;
 }) {
     const offered = collectable(facts);
@@ -62,7 +51,7 @@ function CollectForm({
         offered.map((fact) => fact.name),
         picked,
     );
-    if (names.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
+    if (names.length === 0) return <NoFacts bot={bot} />;
     return <Checklist legend="Collect these facts" hint={PROCEDURE_HINTS.collect} names={names} picked={picked} onChange={onChange} />;
 }
 
@@ -70,18 +59,16 @@ function AssignForm({
     assigned,
     facts,
     bot,
-    onLeave,
     onChange,
 }: {
     assigned: Record<string, string>;
     facts: Fact[];
     bot: string;
-    onLeave: (href: string) => void;
     onChange: (assign: Record<string, string>) => void;
 }) {
     const entries = Object.entries(assigned);
     const free = facts.filter((fact) => !(fact.name in assigned));
-    if (facts.length === 0 && entries.length === 0) return <NoFacts bot={bot} onLeave={onLeave} />;
+    if (facts.length === 0 && entries.length === 0) return <NoFacts bot={bot} />;
     return (
         <fieldset className="flex flex-col gap-2">
             <Legend hint={PROCEDURE_HINTS.assign}>Assign these values</Legend>
@@ -410,7 +397,6 @@ export function StepForm({
     actions,
     beside,
     edit,
-    onLeave,
 }: {
     bot: string;
     id: string;
@@ -424,7 +410,6 @@ export function StepForm({
     actions: ActionView[];
     beside: Beside;
     edit: (change: (draft: Draft) => Draft) => void;
-    onLeave: (href: string) => void;
 }) {
     return (
         <section aria-label={`Step ${name}`} className="flex flex-col gap-3">
@@ -434,7 +419,6 @@ export function StepForm({
                     picked={step.collect}
                     facts={facts}
                     bot={bot}
-                    onLeave={onLeave}
                     onChange={(collect) => {
                         edit((current) => setBlock(current, name, { collect }));
                     }}
@@ -458,7 +442,6 @@ export function StepForm({
                     assigned={step.assign}
                     facts={facts}
                     bot={bot}
-                    onLeave={onLeave}
                     onChange={(assign) => {
                         edit((current) => setBlock(current, name, { assign }));
                     }}

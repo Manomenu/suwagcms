@@ -41,8 +41,8 @@ describe("ComparisonRows", () => {
         const page = rows(persona);
 
         expect(page).toContain("scope.whenOutOfScope");
-        expect(page).toMatch(/text-destructive[^>]*>− Old way/);
-        expect(page).toMatch(/text-success[^>]*>\+ New way/);
+        expect(page).toMatch(/<tr data-change="removed"[^>]*>(?:(?!<\/tr>).)*Old way/);
+        expect(page).toMatch(/<tr data-change="added"[^>]*>(?:(?!<\/tr>).)*New way/);
         expect(page).toContain("persona");
     });
 
@@ -87,8 +87,8 @@ describe("ComparisonRows", () => {
         expect(comparisonLine(comparison)).toBe("1 added · 1 removed · 2 changed");
         expect(html).toContain("customer.city");
         expect(html).toContain("maxLength");
-        expect(html).toContain("− Wycena domu: 900 zł");
-        expect(html).toContain("+ Wycena domu: 1100 zł");
+        expect(html).toMatch(/<tr data-change="removed"[^>]*>(?:(?!<\/tr>).)*Wycena domu: 900 zł/);
+        expect(html).toMatch(/<tr data-change="added"[^>]*>(?:(?!<\/tr>).)*Wycena domu: 1100 zł/);
         expect(html).toContain("rabaty");
         expect(html).toContain("stary");
     });

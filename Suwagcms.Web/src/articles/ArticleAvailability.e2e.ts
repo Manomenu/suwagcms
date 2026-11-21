@@ -56,7 +56,7 @@ test("AC-availability-1: an article turns off and on in the web, its screen and 
         const panel = page.getByRole("region", { name: "Used by" }).first();
         await expect(panel).toContainText("rabaty");
         await page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn off" }).click();
-        const dialog = page.getByRole("dialog", { name: "Turn off" });
+        const dialog = page.getByRole("alertdialog", { name: "Turn off" });
         await expect(dialog).toContainText("rabaty");
         await expect(dialog).toContainText("article · content");
         await dialog.getByRole("button", { name: "Turn off" }).click();
@@ -73,7 +73,7 @@ test("AC-availability-1: an article turns off and on in the web, its screen and 
         expect(state.availability.off.map((item) => item.id)).toEqual(["cennik"]);
 
         await group.getByRole("button", { name: "Turn on" }).click();
-        await expect(page.getByRole("dialog", { name: "Turn off" })).toHaveCount(0);
+        await expect(page.getByRole("alertdialog", { name: "Turn off" })).toHaveCount(0);
         await expect(group.getByRole("button", { name: "Turn off" })).toBeVisible();
     } finally {
         server.close();
@@ -93,7 +93,7 @@ test("AC-availability-16: with the bot unreachable the page says the change is s
     await page.goto(`/bots/${bot}/articles`);
     await page.getByRole("row").filter({ hasText: "rabaty" }).first().getByRole("link", { name: "Edit" }).click();
     await page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn off" }).click();
-    await page.getByRole("dialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
+    await page.getByRole("alertdialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
 
     await expect(page.getByRole("group", { name: "Availability" })).toContainText("off");
     const notice = page.getByRole("alert").filter({ hasText: "Not delivered." });
@@ -118,7 +118,7 @@ test("AC-availability-22: a procedure turns off on its page and the list of proc
 
         await page.goto(`/bots/${bot}/procedures/orderValuation`);
         await page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn off" }).click();
-        await page.getByRole("dialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
+        await page.getByRole("alertdialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
         await expect(page.getByRole("group", { name: "Availability" })).toContainText("Bot confirmed");
 
         await page.goto(`/bots/${bot}/procedures`);
@@ -135,7 +135,7 @@ test("AC-availability-31: an article that is off still shows off after Change id
         await fill(request, bot, address);
         await page.goto(`/bots/${bot}/articles?open=rabaty`);
         await page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn off" }).click();
-        await page.getByRole("dialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
+        await page.getByRole("alertdialog", { name: "Turn off" }).getByRole("button", { name: "Turn off" }).click();
         await expect(page.getByRole("group", { name: "Availability" }).getByRole("button", { name: "Turn on" })).toBeVisible();
 
         await page.getByRole("button", { name: "Change id" }).click();

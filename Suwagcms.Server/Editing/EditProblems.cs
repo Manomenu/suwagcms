@@ -31,11 +31,11 @@ internal static class EditProblems
             _ => Refuse(StatusCodes.Status404NotFound, title, RefusalCode.BotNotFound, MistakesOf(result, bot)),
         };
 
-    public static ProblemHttpResult Refuse(int status, string title, string code, IReadOnlyList<Mistake> mistakes) =>
+    public static ProblemHttpResult Refuse(int status, string title, RefusalCode code, IReadOnlyList<Mistake> mistakes) =>
         Refusals.Refuse(status, title, code, mistakes.Select(RefusalMistake.Of).ToList());
 
     public static RouteHandlerBuilder ProducesRefusal(this RouteHandlerBuilder builder, int status) =>
-        builder.ProducesRefusal<string, RefusalMistake>(status);
+        builder.ProducesRefusal<RefusalCode, string, RefusalMistake>(status);
 
     public static IReadOnlyList<Mistake> MistakesOf(EditResult result, string bot) =>
         result switch

@@ -1,4 +1,4 @@
-import { Alert, Paper } from "@maniumek/suwfrontkit";
+import { Alert, Paper, Spinner } from "@maniumek/suwfrontkit";
 import { useEffect, useState } from "react";
 
 import { useSaveForm } from "@/api/saveForm";
@@ -64,7 +64,7 @@ export function ArticleForm({
         <Paper>
             <form onSubmit={submit} className="flex flex-col gap-3">
                 {targetsFailure !== null && <Alert variant="destructive">{targetsFailure}</Alert>}
-                {targets === null && targetsFailure === null && <p className="text-muted-foreground">Loading the form…</p>}
+                {targets === null && targetsFailure === null && <Spinner label="Loading the form…" size="sm" />}
                 {targets !== null && (
                     <ArticleFields
                         form={form}

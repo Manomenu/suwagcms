@@ -85,7 +85,7 @@ suwgate's guards and steps are listed with their reasons in its README; the ones
 - Server tests (architecture/no-fixture-in-field): a test class takes the server from its class fixture, never starts one in a field.
 - Comments (`comments-*` guards and suwgate's eslint rule `no-comments`): none in any code or config file, only the tool directives AGENTS.md lists ("No comments").
 - Time in tests (suwgate's guard `test-timing`): no test measures, sleeps on, waits for or limits real time: no `Stopwatch`, real clock, `Thread.Sleep`, `Task.Delay` outside a poll loop or `Timeout` in .NET tests; no `performance.now`, `Date.now()` arithmetic, `waitForTimeout`, `setTimeout` or own time limit in web tests. A retry or a timeout is proved with a fake `TimeProvider`; a ceiling against a hang (`CancelAfter`, `WaitAsync(<TimeSpan>)`) is allowed.
-- Worktrees (`LinkedWorktreeTests`): the server tests' fixture refuses the main checkout's test database in a linked worktree.
+- Worktrees (`LinkedWorktree` of `Suwbackkit.Testing`, tested in the kit): the server tests' fixture refuses the main checkout's test database in a linked worktree.
 - Migrations at run time: `Suwbackkit.Postgres` runs them and its own tests prove that grate runs a script once, refuses a script edited after it ran and leaves nothing behind after a failing one.
 - Acceptance criteria (the `criteria` step, full gate only): each spec in `docs/visual/spec/` has an acceptance section with one unique `AC-<feature>-<n>` per criterion, each is named by a guardrail of a known kind, every id a guardrail names is in a spec, no id stands where the gate checks nothing.
 

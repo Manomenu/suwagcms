@@ -13,7 +13,7 @@ export type UsageCollection = "facts" | "articles" | "procedures" | "actions";
 export function usageHref(bot: string, link: UsageLink): string {
     const collection =
         link.kind === "procedure" ? "procedures" : link.kind === "fact" ? "facts" : link.kind === "action" ? "actions" : "articles";
-    return `~${editHref(bot, collection, link.id)}`;
+    return editHref(bot, collection, link.id);
 }
 
 export interface UsageState {

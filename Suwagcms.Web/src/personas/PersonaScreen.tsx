@@ -1,4 +1,4 @@
-import { Alert, ApiError } from "@maniumek/suwfrontkit";
+import { Alert, ApiError, Spinner } from "@maniumek/suwfrontkit";
 import { useCallback, useEffect, useState, useTransition } from "react";
 
 import { type Mistake, mistakesOf, refusalOf } from "@/api/client";
@@ -51,7 +51,7 @@ export function PersonaScreen({ bot }: { bot: string }) {
     }, [load]);
 
     if (loadFailure !== null) return <Alert variant="destructive">{loadFailure}</Alert>;
-    if (persona === null || form === null) return <p className="text-muted-foreground">Loading the persona…</p>;
+    if (persona === null || form === null) return <Spinner label="Loading the persona…" size="sm" />;
 
     function change(name: FieldName, text: string) {
         setSaved(false);
