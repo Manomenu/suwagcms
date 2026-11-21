@@ -48,7 +48,6 @@ function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase
                     onFilters={() => undefined}
                     addHref="/new"
                     hrefOf={() => "/edit"}
-                    onLeave={() => undefined}
                 />
             </PageSizeContext>
         </Router>,
@@ -103,7 +102,6 @@ describe("the list of articles and availability", () => {
                             onFilters={() => undefined}
                             addHref="/new"
                             hrefOf={() => "/edit"}
-                            onLeave={() => undefined}
                         />
                     </PageSizeContext>
                 </Router>,
@@ -316,7 +314,6 @@ describe("a long list", () => {
                         onFilters={() => undefined}
                         addHref="/new"
                         hrefOf={() => "/edit"}
-                        onLeave={() => undefined}
                     />
                 </PageSizeContext>
             </Router>,

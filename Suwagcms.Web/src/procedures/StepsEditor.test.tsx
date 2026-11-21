@@ -45,7 +45,6 @@ function form(over: Partial<Parameters<typeof ProcedureForm>[0]> = {}): string {
             edit={() => undefined}
             onSelect={() => undefined}
             onSave={() => undefined}
-            onLeave={() => undefined}
             {...over}
         />,
     );

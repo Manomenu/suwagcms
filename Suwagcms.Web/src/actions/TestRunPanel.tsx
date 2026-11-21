@@ -1,4 +1,4 @@
-import { Alert, ApiError, Badge, Button, Field, Input, Paper } from "@maniumek/suwfrontkit";
+import { Alert, ApiError, Badge, Button, ConfirmDialog, Field, Input, Paper } from "@maniumek/suwfrontkit";
 import { mistakesOf, refusalOf } from "@/api/client";
 import { useState } from "react";
 
@@ -108,29 +108,14 @@ export function TestRunPanel({ bot, action, unsaved }: { bot: string; action: Ac
                     {unsaved ? "Save first: a run always tries the saved action." : `Runs on bot ${bot} and really calls the service.`}
                 </span>
             </div>
-            {asking && (
-                <div
-                    role="dialog"
-                    aria-label="Really call the service"
-                    className="flex flex-col gap-2 rounded border border-border p-3 text-sm"
-                >
-                    <p>This will really call {call}.</p>
-                    <div className="flex gap-2">
-                        <Button type="button" onClick={run}>
-                            Call it
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                                setAsking(false);
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                    </div>
-                </div>
-            )}
+            <ConfirmDialog
+                open={asking}
+                onOpenChange={setAsking}
+                title="Really call the service?"
+                description={`This will really call ${call ?? ""}.`}
+                confirmLabel="Call it"
+                onConfirm={run}
+            />
             {answer !== null && <Answer answer={answer} />}
         </Paper>
     );

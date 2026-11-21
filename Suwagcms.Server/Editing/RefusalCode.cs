@@ -1,15 +1,37 @@
+using System.Text.Json.Serialization;
+
 namespace Suwagcms.Server.Editing;
 
-internal static class RefusalCode
+[JsonConverter(typeof(JsonStringEnumConverter<RefusalCode>))]
+internal enum RefusalCode
 {
-    public const string DefinitionInvalid = "definition.invalid";
-    public const string ResourceStale = "resource.stale";
-    public const string ResourceMissing = "resource.missing";
-    public const string BotNotFound = "bot.notFound";
-    public const string BotInvalid = "bot.invalid";
-    public const string BotTaken = "bot.taken";
-    public const string ChangesInvalid = "changes.invalid";
-    public const string VersionMissing = "version.missing";
-    public const string VersionNotPushed = "version.notPushed";
-    public const string HistoryKindUnknown = "history.kindUnknown";
+    [JsonStringEnumMemberName("definition.invalid")]
+    DefinitionInvalid,
+
+    [JsonStringEnumMemberName("resource.stale")]
+    ResourceStale,
+
+    [JsonStringEnumMemberName("resource.missing")]
+    ResourceMissing,
+
+    [JsonStringEnumMemberName("bot.notFound")]
+    BotNotFound,
+
+    [JsonStringEnumMemberName("bot.invalid")]
+    BotInvalid,
+
+    [JsonStringEnumMemberName("bot.taken")]
+    BotTaken,
+
+    [JsonStringEnumMemberName("changes.invalid")]
+    ChangesInvalid,
+
+    [JsonStringEnumMemberName("version.missing")]
+    VersionMissing,
+
+    [JsonStringEnumMemberName("version.notPushed")]
+    VersionNotPushed,
+
+    [JsonStringEnumMemberName("history.kindUnknown")]
+    HistoryKindUnknown,
 }

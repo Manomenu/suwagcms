@@ -175,10 +175,11 @@ describe("the shared list of changes", () => {
     it("AC-change-history-21: an entry reads kept lines, folds and old → new as written, and draws none of it twice", () => {
         const html = list([edited]);
 
-        expect(html).toContain("… 12 unchanged lines");
-        expect(html).toContain("  Cennik");
-        expect(html).toContain("− Wycena domu: 900 zł");
-        expect(html).toContain("+ Wycena domu: 1100 zł");
+        expect(html).toMatch(/<tr><td[^>]*>12 unchanged lines<\/td><\/tr>/);
+        expect(html).toMatch(/<tr data-change="same"[^>]*>(?:(?!<\/tr>).)*Cennik<\/td><\/tr>/);
+        expect(html).toMatch(/<tr data-change="removed"[^>]*>(?:(?!<\/tr>).)*Wycena domu: 900 zł<\/td><\/tr>/);
+        expect(html).toMatch(/<tr data-change="added"[^>]*>(?:(?!<\/tr>).)*Wycena domu: 1100 zł<\/td><\/tr>/);
+        expect(html.match(/Wycena domu: 900 zł/g)).toHaveLength(1);
         expect(textOf(html)).toMatch(/maxLength:\s+80\s+→\s+120/);
     });
 

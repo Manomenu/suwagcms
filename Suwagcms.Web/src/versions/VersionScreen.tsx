@@ -1,4 +1,4 @@
-import { Alert, ApiError } from "@maniumek/suwfrontkit";
+import { Alert, ApiError, Spinner } from "@maniumek/suwfrontkit";
 import { mistakesOf } from "@/api/client";
 import { useEffect, useState } from "react";
 import { useSearch, useSearchParams } from "wouter";
@@ -74,7 +74,7 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
 
     if (missing) return <NoSuchVersion asked={asked} backHref={listAddress} />;
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
-    if (detail === null) return <p className="text-muted-foreground">Loading the version…</p>;
+    if (detail === null) return <Spinner label="Loading the version…" size="sm" />;
     return (
         <VersionView
             bot={bot}

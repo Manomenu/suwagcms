@@ -26,8 +26,12 @@ export function isHistoryCollection(value: string | null): value is HistoryColle
     return value !== null && Object.values(COLLECTIONS).includes(value as HistoryCollection);
 }
 
+export function botHistoryHref(bot: string): string {
+    return `/bots/${encodeURIComponent(bot)}/history`;
+}
+
 export function historyHref(bot: string, entry: Pick<HistoryEntry, "kind" | "resourceId">): string {
-    return `~/bots/${encodeURIComponent(bot)}/history?kind=${COLLECTIONS[entry.kind] ?? "articles"}&id=${encodeURIComponent(entry.resourceId)}`;
+    return `/bots/${encodeURIComponent(bot)}/history?kind=${COLLECTIONS[entry.kind] ?? "articles"}&id=${encodeURIComponent(entry.resourceId)}`;
 }
 
 export interface HistoryState {

@@ -1,7 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Anchor, Button, InfoTip, ResourceEdit as Frame } from "@maniumek/suwfrontkit";
+import { Anchor, blockedByUsage, Button, InfoTip, ResourceEdit as Frame } from "@maniumek/suwfrontkit";
 
-import { AppLink } from "@/design/appLink";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { HistoryPanel, type HistoryPanelProps } from "@/design/page";
 import { UsagePanel } from "@/design/usagePanel";
@@ -12,22 +11,13 @@ export function BackToList({ plural, backHref }: { plural: string; backHref: str
             <span aria-hidden="true" className="text-anchor">
                 ←
             </span>
-            <Anchor asChild>
-                <AppLink href={backHref}>Back to {plural}</AppLink>
-            </Anchor>
+            <Anchor href={backHref}>Back to {plural}</Anchor>
         </div>
     );
 }
 
 function changeIdHelp(noun: string, idWord: string): string {
     return `Gives this ${noun} a new ${idWord} and rewrites every link and reference to it, all or nothing. You see what would change before anything does. Plain text naming it and versions already created stay as they are.`;
-}
-
-function blockedBy(usedBy: number): string | null {
-    if (usedBy === 0) return null;
-    return usedBy === 1
-        ? "Used in 1 place. Remove that reference first."
-        : `Used in ${String(usedBy)} places. Remove those references first.`;
 }
 
 export function ResourceEdit({
@@ -71,7 +61,7 @@ export function ResourceEdit({
     preview: ComponentProps<typeof ChangeIdDialog>["preview"];
     apply: ComponentProps<typeof ChangeIdDialog>["apply"];
     onChanged: (newId: string) => void;
-    usage: Pick<ComponentProps<typeof UsagePanel>, "usage" | "failure" | "hrefOf" | "onFollow"> | null;
+    usage: Pick<ComponentProps<typeof UsagePanel>, "usage" | "failure" | "hrefOf"> | null;
     showUses?: boolean;
     onDelete: () => Promise<void>;
     history: HistoryPanelProps;
@@ -87,7 +77,7 @@ export function ResourceEdit({
         <Frame
             title={title}
             width="full"
-            back={(label) => <AppLink href={backHref}>{label}</AppLink>}
+            backHref={backHref}
             backLabel={`Back to ${plural}`}
             ready={ready}
             failure={
@@ -137,7 +127,7 @@ export function ResourceEdit({
                           onDelete,
                           question: `Delete ${noun} ${editedId}?`,
                           consequence: "This cannot be undone. Versions already created keep it.",
-                          blocked: blockedBy(usedBy),
+                          blocked: blockedByUsage(usedBy),
                           failure: deleteFailure,
                           confirmLabel: `Delete ${noun}`,
                       },

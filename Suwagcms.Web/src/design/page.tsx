@@ -26,8 +26,7 @@ export function Page({
 
 export function HistoryPanel({ note, ...list }: HistoryPanelProps) {
     return (
-        <Paper aria-label="History" role="region" className="flex flex-col gap-2 wrap-anywhere">
-            <h3 className="text-sm font-semibold">History</h3>
+        <Paper title="History" className="flex flex-col gap-2 wrap-anywhere">
             {note !== undefined && <p className="text-sm text-muted-foreground">{note}</p>}
             <ChangeList {...list} />
         </Paper>

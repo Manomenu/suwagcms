@@ -19,8 +19,4 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="../Suwagcms.Server.Tests/LinkedWorktree.cs" Link="LinkedWorktree.cs" />
-  </ItemGroup>
 </Project>

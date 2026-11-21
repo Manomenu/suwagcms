@@ -1,4 +1,4 @@
-import { Button, Field, Input, Paper } from "@maniumek/suwfrontkit";
+import { Button, Dialog, Field, Input } from "@maniumek/suwfrontkit";
 import { useEffect, useState } from "react";
 
 interface IdAnswer {
@@ -55,11 +55,24 @@ export function ChangeIdDialog({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/70 p-4">
-            <Paper role="dialog" aria-label={`Change ${idWord}`} className="flex w-full max-w-lg flex-col gap-3">
-                <h2 className="text-base font-semibold">
-                    Change {idWord} of {noun} {id}
-                </h2>
+        <Dialog
+            open
+            onOpenChange={(open) => {
+                if (!open) onCancel();
+            }}
+            title={`Change ${idWord} of ${noun} ${id}`}
+            actions={
+                <>
+                    <Button type="button" variant="outline" onClick={onCancel}>
+                        Cancel
+                    </Button>
+                    <Button type="button" disabled={current === null || current.mistakes.length > 0} onClick={confirm}>
+                        Change {idWord}
+                    </Button>
+                </>
+            }
+        >
+            <div className="flex flex-col gap-3">
                 <Field
                     prefix="change-id"
                     name="newId"
@@ -96,15 +109,7 @@ export function ChangeIdDialog({
                     </section>
                 )}
                 <p className="text-sm text-muted-foreground">Plain text naming this {noun} is not changed.</p>
-                <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={onCancel}>
-                        Cancel
-                    </Button>
-                    <Button type="button" disabled={current === null || current.mistakes.length > 0} onClick={confirm}>
-                        Change {idWord}
-                    </Button>
-                </div>
-            </Paper>
-        </div>
+            </div>
+        </Dialog>
     );
 }

@@ -1,4 +1,4 @@
-import { Alert } from "@maniumek/suwfrontkit";
+import { Alert, Spinner } from "@maniumek/suwfrontkit";
 import { Redirect } from "wouter";
 
 import { useResourceEditor } from "@/api/resourceEditor";
@@ -14,7 +14,7 @@ export function FactsScreen({ bot }: { bot: string }) {
 
     if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     if (editor.failure !== null) return <Alert variant="destructive">{editor.failure}</Alert>;
-    if (editor.items === null) return <p className="text-muted-foreground">Loading facts…</p>;
+    if (editor.items === null) return <Spinner label="Loading facts…" size="sm" />;
     if (!editor.isOpen)
         return <FactsView bot={bot} history={editor.listHistory} facts={editor.items} addHref={editor.addHref} hrefOf={editor.hrefOf} />;
 

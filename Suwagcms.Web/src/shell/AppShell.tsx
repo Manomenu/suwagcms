@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { AppShell as Frame, mayLeave } from "@maniumek/suwfrontkit";
-import { Link, useLocation } from "wouter";
+import { AppShell as Frame, GuardedLink } from "@maniumek/suwfrontkit";
+import { useLocation } from "wouter";
 
 import { useBots } from "@/api/bots";
 
@@ -16,15 +16,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Frame
             appIcon={<img src="/favicon.svg" alt="" />}
             appTitle="suwagcms"
-            home={(link) => (
-                <Link
-                    href="/"
-                    {...link}
-                    onClick={(event) => {
-                        if (!mayLeave()) event.preventDefault();
-                    }}
-                />
-            )}
+            home={(link) => <GuardedLink href="/" {...link} />}
             panel={<AppNavbar bots={bots} failure={failure} bot={bot} tab={tab} />}
             panelLabel="Navigation panel"
             storageKey="suwagcms.navigation-panel"

@@ -40,7 +40,9 @@ describe("TestRunPanel", () => {
 
         await run(container);
 
-        expect(container.querySelector('[role="dialog"]')?.textContent).toContain("This will really call the bot's code for lookup.");
+        expect(document.body.querySelector('[role="alertdialog"]')?.textContent).toContain(
+            "This will really call the bot's code for lookup.",
+        );
         expect(runAction).not.toHaveBeenCalled();
     });
 

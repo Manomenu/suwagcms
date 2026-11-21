@@ -1,4 +1,4 @@
-import { Alert } from "@maniumek/suwfrontkit";
+import { Alert, Spinner } from "@maniumek/suwfrontkit";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -18,7 +18,7 @@ export function BotsScreen({ openId }: { openId: string | null }) {
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
-    if (bots === null) return <p className="text-muted-foreground">Loading bots…</p>;
+    if (bots === null) return <Spinner label="Loading bots…" size="sm" />;
 
     return (
         <BotsView

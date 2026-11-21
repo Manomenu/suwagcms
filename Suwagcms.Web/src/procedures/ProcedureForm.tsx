@@ -50,15 +50,16 @@ function MistakeCount({
                         {place === "top" ? (
                             <MistakeNote mistake={mistake} />
                         ) : (
-                            <button
+                            <Button
                                 type="button"
-                                className="cursor-pointer text-left text-anchor underline underline-offset-4"
+                                variant="link"
+                                className="h-auto p-0 text-left whitespace-normal underline"
                                 onClick={() => {
                                     onPick(place);
                                 }}
                             >
                                 {mistake.message}
-                            </button>
+                            </Button>
                         )}
                     </li>
                 ))}

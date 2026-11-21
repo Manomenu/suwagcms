@@ -164,8 +164,14 @@ test("AC-edit-guard-11: a refused edit shows the mistake beside its field with a
 
     const usedBy = page.getByRole("list", { name: "Used by" });
     await expect(usedBy).toContainText("step ask (condition)");
+    const questions: string[] = [];
+    page.once("dialog", (dialog) => {
+        questions.push(dialog.message());
+        void dialog.accept();
+    });
     await usedBy.getByRole("link", { name: "orderValuation" }).click();
     await expect(page).toHaveURL(new RegExp(`/bots/${bot}/procedures/orderValuation/edit$`));
+    expect(questions).toHaveLength(1);
 });
 
 test("AC-resource-rename-5: Change id on a fact renames it, with dots, and opens it at its new name", async ({ page, request }) => {

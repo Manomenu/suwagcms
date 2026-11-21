@@ -1,5 +1,4 @@
 import { Alert, Anchor, Button, Paginated, Paper, Select, Table } from "@maniumek/suwfrontkit";
-import { Link } from "wouter";
 import { useState } from "react";
 
 import type { Mistake } from "@/api/client";
@@ -124,7 +123,7 @@ export function VersionsView({
     onCreate: () => void;
     onOpen: (version: VersionSummary) => void;
 }) {
-    const base = `~/bots/${encodeURIComponent(bot)}`;
+    const base = `/bots/${encodeURIComponent(bot)}`;
     const bots = status === null ? null : statusView(status);
     const paged = usePagedRows(versions);
     return (
@@ -217,10 +216,8 @@ export function VersionsView({
                             {refused.map((mistake, index) => (
                                 <li key={`${mistake.code}-${mistake.resource.id}-${mistake.path}-${index}`}>
                                     {mistake.message} {mistake.fix}{" "}
-                                    <Anchor asChild>
-                                        <Link href={`${base}/${screenOf(mistake)}`} className="underline">
-                                            {mistake.resource.id === "" ? "Open" : `Open ${mistake.resource.id}`}
-                                        </Link>
+                                    <Anchor href={`${base}/${screenOf(mistake)}`} className="underline">
+                                        {mistake.resource.id === "" ? "Open" : `Open ${mistake.resource.id}`}
                                     </Anchor>
                                 </li>
                             ))}

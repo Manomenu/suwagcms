@@ -1,4 +1,4 @@
-import { Alert, ApiError } from "@maniumek/suwfrontkit";
+import { Alert, ApiError, Spinner } from "@maniumek/suwfrontkit";
 import { mistakesOf, type Mistake } from "@/api/client";
 import { useCallback, useEffect, useState } from "react";
 import { Redirect, useLocation, useSearch, useSearchParams } from "wouter";
@@ -78,7 +78,7 @@ export function VersionsScreen({ bot }: { bot: string }) {
     if (failure !== null) {
         return <Alert variant="destructive">{failure}</Alert>;
     }
-    if (versions === null) return <p className="text-muted-foreground">Loading versions…</p>;
+    if (versions === null) return <Spinner label="Loading versions…" size="sm" />;
 
     return (
         <VersionsView

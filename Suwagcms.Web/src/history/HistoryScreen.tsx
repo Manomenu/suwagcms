@@ -1,7 +1,7 @@
 import { Anchor, Paper } from "@maniumek/suwfrontkit";
-import { Link, useSearchParams } from "wouter";
+import { useSearchParams } from "wouter";
 
-import { historyHref, isHistoryCollection, useBotHistory, useResourceHistory, type HistoryCollection } from "@/api/history";
+import { botHistoryHref, historyHref, isHistoryCollection, useBotHistory, useResourceHistory, type HistoryCollection } from "@/api/history";
 import { ChangeList } from "@/design/changeList";
 import { Page } from "@/design/page";
 
@@ -19,14 +19,7 @@ function BotHistory({ bot }: { bot: string }) {
 function ResourceHistory({ bot, collection, id }: { bot: string; collection: HistoryCollection; id: string }) {
     const history = useResourceHistory(bot, collection, id, 0, "page");
     return (
-        <Page
-            title={`History of ${id}`}
-            actions={
-                <Anchor asChild>
-                    <Link href={`~/bots/${encodeURIComponent(bot)}/history`}>All changes</Link>
-                </Anchor>
-            }
-        >
+        <Page title={`History of ${id}`} actions={<Anchor href={botHistoryHref(bot)}>All changes</Anchor>}>
             <Paper>
                 <ChangeList {...history} />
             </Paper>

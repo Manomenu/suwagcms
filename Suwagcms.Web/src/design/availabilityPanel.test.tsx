@@ -1,9 +1,32 @@
+// @vitest-environment jsdom
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { AvailabilityBadge, AvailabilityNotice, AvailabilityPanel, TurnOffDialog } from "./availabilityPanel";
 
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
 const nothing = () => undefined;
+
+function shown(element: React.ReactElement): string {
+    const container = document.createElement("div");
+    document.body.append(container);
+    const root = createRoot(container);
+    act(() => {
+        root.render(element);
+    });
+    const text = document.body.querySelector('[role="alertdialog"]')?.textContent ?? "";
+    act(() => {
+        root.unmount();
+    });
+    return text;
+}
+
+afterEach(() => {
+    document.body.replaceChildren();
+});
 
 describe("availability panel", () => {
     it("AC-availability-1: says on or off, and offers the opposite", () => {
@@ -18,7 +41,7 @@ describe("availability panel", () => {
     });
 
     it("AC-availability-2: the question lists each thing that uses the resource with its field, and says when nothing does", () => {
-        const used = renderToStaticMarkup(
+        const used = shown(
             <TurnOffDialog
                 id="cennik"
                 usedBy={[{ kind: "article", id: "rabaty", field: "content" }]}
@@ -26,7 +49,7 @@ describe("availability panel", () => {
                 onCancel={nothing}
             />,
         );
-        const unused = renderToStaticMarkup(<TurnOffDialog id="cennik" usedBy={[]} onConfirm={nothing} onCancel={nothing} />);
+        const unused = shown(<TurnOffDialog id="cennik" usedBy={[]} onConfirm={nothing} onCancel={nothing} />);
 
         expect(used).toContain("Turn off cennik?");
         expect(used).toContain("rabaty");

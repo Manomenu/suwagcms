@@ -1,5 +1,4 @@
 import { Anchor, Input, Select } from "@maniumek/suwfrontkit";
-import { Link } from "wouter";
 import type { ReactNode } from "react";
 
 import { LANGUAGES } from "@/api/languages";
@@ -22,7 +21,6 @@ export function ArticlesView({
     onFilters,
     addHref,
     hrefOf,
-    onLeave,
 }: {
     bot: string;
     history: HistoryPanelProps;
@@ -34,7 +32,6 @@ export function ArticlesView({
     onFilters: (filters: Filters) => void;
     addHref: string;
     hrefOf: (article: Article) => string;
-    onLeave: (event: React.MouseEvent) => void;
 }) {
     const paged = usePagedRows(articles);
     const filtered = filters.knowledgeBase !== "" || filters.language !== "" || filters.text.trim() !== "";
@@ -50,12 +47,7 @@ export function ArticlesView({
                     {bases.length === 0 && (
                         <p className="text-muted-foreground">
                             This bot has no knowledge base yet, and an article lives in one.{" "}
-                            <Anchor asChild>
-                                <Link href={`~${listHref(bot, "knowledge-bases")}`} onClick={onLeave}>
-                                    Create the first knowledge base
-                                </Link>
-                            </Anchor>
-                            .
+                            <Anchor href={listHref(bot, "knowledge-bases")}>Create the first knowledge base</Anchor>.
                         </p>
                     )}
                     {notice}

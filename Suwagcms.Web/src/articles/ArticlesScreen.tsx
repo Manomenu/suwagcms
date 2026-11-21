@@ -1,4 +1,4 @@
-import { Alert } from "@maniumek/suwfrontkit";
+import { Alert, Spinner } from "@maniumek/suwfrontkit";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Redirect, useLocation, useSearchParams } from "wouter";
@@ -49,7 +49,7 @@ export function ArticlesScreen({ bot }: { bot: string }) {
     if (editor.redirect !== null) return <Redirect to={editor.redirect} replace />;
     const failure = editor.failure ?? basesFailure;
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
-    if (editor.items === null || bases === null) return <p className="text-muted-foreground">Loading articles…</p>;
+    if (editor.items === null || bases === null) return <Spinner label="Loading articles…" size="sm" />;
 
     function openLinked(id: string, kind: "article" | "procedure") {
         if (!editor.mayLeave()) return;
@@ -73,9 +73,6 @@ export function ArticlesScreen({ bot }: { bot: string }) {
                 }}
                 addHref={editor.addHref}
                 hrefOf={editor.hrefOf}
-                onLeave={(event) => {
-                    if (!editor.mayLeave()) event.preventDefault();
-                }}
             />
         );
     }

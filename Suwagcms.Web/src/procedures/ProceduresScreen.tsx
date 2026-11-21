@@ -1,4 +1,4 @@
-import { Alert } from "@maniumek/suwfrontkit";
+import { Alert, Spinner } from "@maniumek/suwfrontkit";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useSearch } from "wouter";
 
@@ -41,7 +41,7 @@ export function ProceduresScreen({ bot }: { bot: string }) {
             </div>
         );
     }
-    if (list === null) return <p className="text-muted-foreground">Loading procedures…</p>;
+    if (list === null) return <Spinner label="Loading procedures…" size="sm" />;
     return (
         <ProceduresView
             bot={bot}
