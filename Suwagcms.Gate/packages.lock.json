@@ -4,9 +4,9 @@
     "net10.0": {
       "Suwgate.Architecture": {
         "type": "Direct",
-        "requested": "[0.3.0, )",
-        "resolved": "0.3.0",
-        "contentHash": "B5Tq71LjudDSA0XiGnOIdEdWNebf3nfiCbrp81dhHUeeJxwGmraqxFq5cLfr2NLmhYOnozwiR4tIH/yhN9B1Iw==",
+        "requested": "[0.4.0, )",
+        "resolved": "0.4.0",
+        "contentHash": "nYUYByAfD0Qv9rE4BZdvCEeRHQGkDELzUmnSAYtispDpLkoD1zZ/DUztbgQqtbvpGJ8oI3A7HlWg6XqmK+H8lA==",
         "dependencies": {
           "Microsoft.CodeAnalysis.BannedApiAnalyzers": "4.14.0",
           "Microsoft.CodeAnalysis.CSharp": "5.0.0",
@@ -16,12 +16,12 @@
       },
       "Suwgate.Database": {
         "type": "Direct",
-        "requested": "[0.3.0, )",
-        "resolved": "0.3.0",
-        "contentHash": "vWg/auL4n3WLGxUsFrQ9u1ZUKaotDJAH3N0QbDe8jX33SXNWbb7vnXHAxGUDz153gsV5b9dQE1b1ZP6NsTQzVw==",
+        "requested": "[0.4.0, )",
+        "resolved": "0.4.0",
+        "contentHash": "SdGGQB2k7LpDkLv2eCsngUgXbUnX/6+PrARt2cOgwmpaaMxUKvC0ZqrGi6Kj92zL6zjVwmNn/QsIkzQ79WSolQ==",
         "dependencies": {
           "Microsoft.CodeAnalysis.CSharp": "5.0.0",
-          "Suwgate.Architecture": "0.3.0",
+          "Suwgate.Architecture": "0.4.0",
           "TngTech.ArchUnitNET": "0.13.4",
           "YamlDotNet": "18.1.0"
         }

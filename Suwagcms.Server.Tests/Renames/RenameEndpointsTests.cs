@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Dapper;
+using Microsoft.Extensions.Time.Testing;
 using Npgsql;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.Renames;
@@ -227,7 +228,7 @@ public sealed class RenameEndpointsTests(TestDatabase database, ClassServer serv
         );
         try
         {
-            var editor = new DefinitionEditor(database.DataSource, TimeProvider.System);
+            var editor = new DefinitionEditor(database.DataSource, new FakeTimeProvider());
             var target = new ResourceRef(ResourceKind.Article, "cennik");
 
             await Assert.ThrowsAsync<PostgresException>(() =>

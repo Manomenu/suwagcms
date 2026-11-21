@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Time.Testing;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.Versions;
@@ -26,10 +27,10 @@ public sealed partial class VersionPushTests(TestDatabase database, ClassServer 
     [GeneratedRegex("\"digest\":\"[0-9a-f]+\"", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex Digest();
 
-    private HttpClient Client()
+    private HttpClient Client(TimeProvider? clock = null)
     {
         _ = database.DataSource;
-        return App.CreateClient();
+        return clock is null ? App.CreateClient() : App.WithClock(clock).CreateClient();
     }
 
     private HttpClient ClientWithPushTimeout(int seconds)
@@ -278,25 +279,28 @@ public sealed partial class VersionPushTests(TestDatabase database, ClassServer 
     [Trait("criterion", "AC-version-push-12")]
     public async Task Every_attempt_is_recorded_with_its_time_version_result_and_reason_newest_first()
     {
-        var (scene, bot) = await FilledAsync(Client());
+        var clock = new FakeTimeProvider();
+        var (scene, bot) = await FilledAsync(Client(clock));
         await using var _ = bot;
+        var firstAt = clock.GetUtcNow();
         await scene.PushAsync((await scene.CreateAsync()).Number);
+        clock.Advance(TimeSpan.FromMinutes(1));
         await scene.ChangeAsync();
         var second = await scene.CreateAsync();
         await bot.StopAsync();
+        var secondAt = clock.GetUtcNow();
         await scene.PushAsync(second.Number);
+        clock.Advance(TimeSpan.FromMinutes(1));
 
         var attempts = (await scene.StatusAsync()).Attempts;
         var listed = await scene.CliAsync("versions", "status");
 
-        Assert.Equal([(2, PushOutcome.Failed), (1, PushOutcome.Succeeded)], attempts.Select(attempt => (attempt.Version, attempt.Outcome)));
+        Assert.Equal(
+            [(2, PushOutcome.Failed, secondAt), (1, PushOutcome.Succeeded, firstAt)],
+            attempts.Select(attempt => (attempt.Version, attempt.Outcome, attempt.At))
+        );
         Assert.Contains("cannot reach", attempts[0].Error, StringComparison.Ordinal);
         Assert.Null(attempts[1].Error);
-        Assert.All(
-            attempts,
-            attempt =>
-                Assert.InRange(attempt.At, TimeProvider.System.GetUtcNow().AddMinutes(-5), TimeProvider.System.GetUtcNow().AddMinutes(1))
-        );
         Assert.Contains("  v2  failed  ", listed.Output, StringComparison.Ordinal);
         Assert.Contains("  v1  succeeded", listed.Output, StringComparison.Ordinal);
     }
