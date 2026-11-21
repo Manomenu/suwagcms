@@ -1,3 +1,5 @@
+using Suwbackkit.Cli;
+
 namespace Suwagcms.Cli.Connection;
 
 internal static class ServerAddress
@@ -11,35 +13,18 @@ internal static class ServerAddress
     public static AddressChoice Choose(string? option, CliEnvironment environment)
     {
         ArgumentNullException.ThrowIfNull(environment);
-        if (Given(option) is { } fromOption)
-        {
-            return Parse(fromOption, "--server");
-        }
-        if (Given(environment.Variable(Variable)) is { } fromVariable)
-        {
-            return Parse(fromVariable, Variable);
-        }
-        if (Given(environment.Config?.SuwagcmsUrl) is { } fromConfig)
-        {
-            return Parse(fromConfig, $"{RepositoryConfig.AddressKey} in {RepositoryConfig.FileName}");
-        }
-        if (Given(SavedAddress.Read(environment.SettingsFolder)) is { } saved)
-        {
-            return Parse(saved, "The address saved with `suwagcms server`");
-        }
-        return Parse(Default, "The default address");
+        return Suwbackkit.Cli.ServerAddress.Choose(
+            [
+                new("--server", () => option),
+                new(Variable, () => environment.Variable(Variable)),
+                new($"{RepositoryConfig.AddressKey} in {RepositoryConfig.FileName}", () => environment.Config?.SuwagcmsUrl),
+                new("The address saved with `suwagcms server`", () => SavedAddress.Read(environment.SettingsFolder)),
+            ],
+            Default
+        );
     }
 
-    public static AddressChoice Parse(string text, string source) =>
-        Uri.TryCreate(text.Trim().TrimEnd('/') + "/", UriKind.Absolute, out var address) && address.Scheme is "http" or "https"
-            ? new AddressChoice(address, null)
-            : new AddressChoice(null, $"{source} is '{text}', not an http or https address. Give one like {Default}.");
+    public static AddressChoice Parse(string text, string source) => Suwbackkit.Cli.ServerAddress.Parse(text, source, Default);
 
-    public static string Display(Uri address)
-    {
-        ArgumentNullException.ThrowIfNull(address);
-        return address.ToString().TrimEnd('/');
-    }
-
-    private static string? Given(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+    public static string Display(Uri address) => Suwbackkit.Cli.ServerAddress.Display(address);
 }

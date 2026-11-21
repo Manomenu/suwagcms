@@ -80,8 +80,12 @@ internal sealed record BotTarget(BotCommandRun Run, Uri Address, string Bot, Cli
         return await Run.Report.ReportAsync(shown, Address);
     }
 
-    public Task<int> OpenAsync(Uri page, ParseResult parsed) =>
-        WebPage.ShowAsync(page, parsed.InvocationConfiguration.Output, parsed.InvocationConfiguration.Error, Machine.OpenBrowser);
+    public async Task<int> OpenAsync(Uri page, ParseResult parsed)
+    {
+        ArgumentNullException.ThrowIfNull(parsed);
+        await WebPage.ShowAsync(page, parsed.InvocationConfiguration.Output, parsed.InvocationConfiguration.Error, Machine.OpenBrowser);
+        return ExitCodes.Done;
+    }
 
     public async Task<int> OpenSavedAsync(int reported, ParseResult parsed, GlobalOptions options, string kind, string id)
     {

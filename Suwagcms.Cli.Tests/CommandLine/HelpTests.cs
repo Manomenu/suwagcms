@@ -1,12 +1,11 @@
 using System.CommandLine;
+using Suwbackkit.Cli;
 
 namespace Suwagcms.Cli.Tests.CommandLine;
 
 public sealed class HelpTests
 {
     private static RootCommand Tree() => CliApp.Create(CliEnvironment.Real());
-
-    private static IEnumerable<Command> Commands(Command parent) => parent.Subcommands.SelectMany(child => Commands(child).Prepend(child));
 
     [Fact]
     [Trait("criterion", "AC-cli-foundation-11")]
@@ -30,9 +29,9 @@ public sealed class HelpTests
         var root = Tree();
         var everyCommand = root.Options.Where(option => option.Recursive).Select(option => option.Name);
 
-        foreach (var command in Commands(root))
+        foreach (var command in CommandTree.All(root))
         {
-            var result = await TestCli.Run([.. Path(command), "--help"]);
+            var result = await TestCli.Run([.. CommandTree.WordsOf(command).Split(' '), "--help"]);
 
             Assert.Equal(0, result.ExitCode);
             foreach (var option in command.Options.Select(option => option.Name).Concat(everyCommand))
@@ -40,16 +39,6 @@ public sealed class HelpTests
                 Assert.Contains(option, result.Output, StringComparison.Ordinal);
             }
         }
-    }
-
-    private static string[] Path(Command command)
-    {
-        var path = new List<string>();
-        for (Symbol? symbol = command; symbol is Command and not RootCommand; symbol = symbol.Parents.FirstOrDefault())
-        {
-            path.Insert(0, symbol.Name);
-        }
-        return [.. path];
     }
 
     [Fact]

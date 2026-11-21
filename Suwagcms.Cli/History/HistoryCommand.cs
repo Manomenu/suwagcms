@@ -4,7 +4,6 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts.History;
 
 namespace Suwagcms.Cli.History;
@@ -83,12 +82,13 @@ internal static class HistoryCommand
                 var resource = word == PersonaWord ? PersonaWord : parsed.GetValue(id);
                 if (parsed.GetValue(options.Open))
                 {
-                    return await WebPage.ShowAsync(
+                    await WebPage.ShowAsync(
                         narrowed is null ? PageOf(target, word, resource, parsed.GetValue(page)) : target.PageOf(Collections[narrowed]),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         target.Machine.OpenBrowser
                     );
+                    return ExitCodes.Done;
                 }
                 var path = word is null
                     ? target.CollectionPath("history")

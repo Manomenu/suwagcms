@@ -1,9 +1,17 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Anchor, blockedByUsage, Button, InfoTip, ResourceEdit as Frame } from "@maniumek/suwfrontkit";
+import {
+    Anchor,
+    blockedByUsage,
+    Button,
+    InfoTip,
+    ResourceEdit as Frame,
+    UsagePanel,
+    type Usage,
+    type UsageLink,
+} from "@maniumek/suwfrontkit";
 
 import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { HistoryPanel, type HistoryPanelProps } from "@/design/page";
-import { UsagePanel } from "@/design/usagePanel";
 
 export function BackToList({ plural, backHref }: { plural: string; backHref: string }) {
     return (
@@ -20,7 +28,7 @@ function changeIdHelp(noun: string, idWord: string): string {
     return `Gives this ${noun} a new ${idWord} and rewrites every link and reference to it, all or nothing. You see what would change before anything does. Plain text naming it and versions already created stay as they are.`;
 }
 
-export function ResourceEdit({
+export function ResourceEdit<T>({
     noun,
     plural,
     addTitle,
@@ -61,7 +69,7 @@ export function ResourceEdit({
     preview: ComponentProps<typeof ChangeIdDialog>["preview"];
     apply: ComponentProps<typeof ChangeIdDialog>["apply"];
     onChanged: (newId: string) => void;
-    usage: Pick<ComponentProps<typeof UsagePanel>, "usage" | "failure" | "hrefOf"> | null;
+    usage: { usage: Usage<T> | null; failure: string | null; linkOf: (entry: T) => UsageLink } | null;
     showUses?: boolean;
     onDelete: () => Promise<void>;
     history: HistoryPanelProps;

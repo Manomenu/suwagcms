@@ -2,15 +2,14 @@ extern alias Cli;
 
 using System.CommandLine;
 using System.Text.Json;
-using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
+using Suwbackkit.Cli;
+using Suwbackkit.Testing;
 using CliApp = Cli::Suwagcms.Cli.CliApp;
 using CliEnvironment = Cli::Suwagcms.Cli.CliEnvironment;
 
 namespace Suwagcms.Server.Tests.Commands;
 
-public sealed partial class EveryRouteHasACommandTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
+public sealed class EveryRouteHasACommandTests(TestDatabase database, ClassServer server) : IClassFixture<ClassServer>
 {
     private TestApp App => server.App;
 
@@ -89,16 +88,6 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
         ["text"] = "--text",
     };
 
-    private static Command? Find(RootCommand root, string words)
-    {
-        Command? found = root;
-        foreach (var word in words.Split(' '))
-        {
-            found = found?.Subcommands.SingleOrDefault(command => command.Name == word);
-        }
-        return found;
-    }
-
     private static string RepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -139,29 +128,15 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
                 .Where(item =>
                     !OptionOfParameter.TryGetValue(item.Parameter, out var option)
                     || !Routes.TryGetValue(item.Route, out var coverage)
-                    || !coverage.Commands.Any(words => Find(root, words)?.Options.Any(found => found.Name == option) == true)
+                    || !coverage.Commands.Any(words => CommandTree.Find(root, words)?.Options.Any(found => found.Name == option) == true)
                 )
                 .Select(item => $"{item.Route} ?{item.Parameter}"),
         ];
 
-    [GeneratedRegex(@"\{(\w+):[^}]+\}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex RouteConstraint();
-
-    private List<string> Mapped()
+    private IReadOnlyList<string> Mapped()
     {
         _ = database.DataSource;
-        return
-        [
-            .. App
-                .Services.GetRequiredService<EndpointDataSource>()
-                .Endpoints.OfType<RouteEndpoint>()
-                .SelectMany(endpoint =>
-                    (endpoint.Metadata.GetMetadata<HttpMethodMetadata>()?.HttpMethods ?? []).Select(method =>
-                        $"{method} {RouteConstraint().Replace(endpoint.RoutePattern.RawText ?? "", "{$1}")}"
-                    )
-                )
-                .Order(StringComparer.Ordinal),
-        ];
+        return MappedRoutes.Of(App.Services);
     }
 
     [Fact]
@@ -214,7 +189,7 @@ public sealed partial class EveryRouteHasACommandTests(TestDatabase database, Cl
         foreach (var words in Routes.Values.SelectMany(coverage => coverage.Commands).Distinct())
         {
             Assert.True(
-                Find(root, words) is not null,
+                CommandTree.Find(root, words) is not null,
                 $"`suwagcms {words}` is named in the table of routes and commands but is not a command."
             );
         }

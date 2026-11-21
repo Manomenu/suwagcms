@@ -37,12 +37,13 @@ internal static class PersonaCommand
             {
                 if (parsed.GetValue(options.Open))
                 {
-                    return await WebPage.ShowAsync(
+                    await WebPage.ShowAsync(
                         target.PageOf(Path),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         target.Machine.OpenBrowser
                     );
+                    return ExitCodes.Done;
                 }
                 var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Path), cancellationToken);
                 if (answer.ExitCode != ExitCodes.Done)

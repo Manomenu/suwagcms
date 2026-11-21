@@ -4,7 +4,6 @@ using System.Text.Json;
 using Suwagcms.Cli.Bots;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts.Versions;
 
 namespace Suwagcms.Cli.Versions;
@@ -35,12 +34,13 @@ internal static class DiffCommand
                 var second = parsed.GetRequiredValue(to).ToString(CultureInfo.InvariantCulture);
                 if (parsed.GetValue(options.Open))
                 {
-                    return await WebPage.ShowAsync(
+                    await WebPage.ShowAsync(
                         new Uri(target.PageOf(VersionsCommand.Collection), $"?from={first}&to={second}"),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         target.Machine.OpenBrowser
                     );
+                    return ExitCodes.Done;
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,

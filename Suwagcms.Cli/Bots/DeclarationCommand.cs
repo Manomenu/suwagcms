@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.Text.Json;
 using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
-using Suwagcms.Cli.Output;
 using Suwagcms.Contracts.Bots;
 
 namespace Suwagcms.Cli.Bots;
@@ -29,12 +28,13 @@ internal static class DeclarationCommand
             {
                 if (parsed.GetValue(options.Open))
                 {
-                    return await WebPage.ShowAsync(
+                    await WebPage.ShowAsync(
                         new Uri(target.Address, $"bots/{Uri.EscapeDataString(target.Bot)}"),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         environment.OpenBrowser
                     );
+                    return ExitCodes.Done;
                 }
                 var answer = await ServerCall.GetAsync(
                     environment,

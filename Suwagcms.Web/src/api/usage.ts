@@ -1,4 +1,4 @@
-import { dataOf } from "@maniumek/suwfrontkit";
+import { dataOf, type UsageLink as PanelLink } from "@maniumek/suwfrontkit";
 import { skipToken, useQuery } from "@tanstack/react-query";
 
 import { api, messageOf } from "./client";
@@ -14,6 +14,10 @@ export function usageHref(bot: string, link: UsageLink): string {
     const collection =
         link.kind === "procedure" ? "procedures" : link.kind === "fact" ? "facts" : link.kind === "action" ? "actions" : "articles";
     return editHref(bot, collection, link.id);
+}
+
+export function usageLinkOf(bot: string): (link: UsageLink) => PanelLink {
+    return (link) => ({ href: usageHref(bot, link), label: link.id, detail: `${link.kind} · ${link.field}` });
 }
 
 export interface UsageState {
