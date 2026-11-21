@@ -96,8 +96,8 @@ describe("the shared list of changes", () => {
 
     it("AC-change-history-6: another page is offered only when there is one", () => {
         expect(list([edited], 2)).toContain("Page 1 of 2");
-        expect(list([edited], 2)).not.toContain("invisible");
-        expect(list([edited], 1)).toContain("invisible");
+        expect(list([edited], 2)).toContain('role="group" aria-label="Pages" aria-hidden="false"');
+        expect(list([edited], 1)).toContain('role="group" aria-label="Pages" aria-hidden="true"');
     });
 
     it("AC-change-history-6: the bot's list names each resource with a link to its own history", () => {

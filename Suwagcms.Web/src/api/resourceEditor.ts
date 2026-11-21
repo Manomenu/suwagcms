@@ -8,7 +8,7 @@ import { useKindHistory, useResourceHistory } from "./history";
 import { renamer } from "./rename";
 import { addressOf, editHref, listHref, newHref, withListSearch } from "./resourceAddress";
 import { revisionOf, type ResourceApi } from "./resourceApi";
-import { usageHref, useUsage, type UsageCollection, type UsageLink } from "./usage";
+import { usageLinkOf, useUsage, type UsageCollection } from "./usage";
 
 export function useResourceEditor<View extends { revision: number | string }, Save>({
     bot,
@@ -149,7 +149,7 @@ export function useResourceEditor<View extends { revision: number | string }, Sa
                     : {
                           usage: used.usage,
                           failure: used.failure,
-                          hrefOf: (entry: UsageLink) => usageHref(bot, entry),
+                          linkOf: usageLinkOf(bot),
                       },
             onDelete: () => (item === null ? Promise.resolve() : remove(item)),
             history,

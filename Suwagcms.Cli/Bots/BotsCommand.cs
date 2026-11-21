@@ -39,12 +39,13 @@ internal static class BotsCommand
                 }
                 if (parsed.GetValue(options.Open))
                 {
-                    return await WebPage.ShowAsync(
+                    await WebPage.ShowAsync(
                         new Uri(address, "bots"),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         environment.OpenBrowser
                     );
+                    return ExitCodes.Done;
                 }
                 var (bots, answer) = await BotListing.FetchAsync(environment, address, cancellationToken);
                 if (bots is null)

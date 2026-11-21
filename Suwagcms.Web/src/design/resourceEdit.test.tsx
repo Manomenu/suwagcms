@@ -36,7 +36,7 @@ function render(usedBy: number, onDelete: () => Promise<void>, deleteFailure: st
                         uses: [],
                     },
                     failure: null,
-                    hrefOf: () => "/",
+                    linkOf: (entry) => ({ href: "/", label: entry.id }),
                 }}
                 onDelete={onDelete}
                 history={{

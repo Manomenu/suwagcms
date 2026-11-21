@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Suwbackkit.Cli;
 
 namespace Suwagcms.Cli.Connection;
 
@@ -85,23 +86,12 @@ internal static class ServerCall
         {
             return ServerAnswer.Succeeded(await ReadJsonAsync(response, cancellationToken));
         }
-        var body = await ReadJsonAsync(response, cancellationToken);
-        if (
-            (int)response.StatusCode is >= 400 and < 500
-            && body is { ValueKind: JsonValueKind.Object } problem
-            && problem.TryGetProperty("mistakes", out var mistakes)
-            && mistakes.ValueKind == JsonValueKind.Array
-            && mistakes.GetArrayLength() > 0
-        )
+        var refusal = await ReadJsonAsync(response, cancellationToken) is { } body ? ServerRefusal.Read(body) : null;
+        if ((int)response.StatusCode is >= 400 and < 500 && refusal is { Mistakes.Count: > 0 })
         {
-            return ServerAnswer.Refused([.. mistakes.EnumerateArray().Select(mistake => mistake.Clone())]);
+            return ServerAnswer.Refused([.. refusal.Mistakes.Select(mistake => mistake.Json)]);
         }
-        var detail =
-            body is { ValueKind: JsonValueKind.Object } found
-            && found.TryGetProperty("detail", out var text)
-            && text.ValueKind == JsonValueKind.String
-                ? $" {text.GetString()}"
-                : "";
+        var detail = refusal?.Detail is { } text ? $" {text}" : "";
         return ServerAnswer.Failed(
             $"{ServerAddress.Display(address)} answered {(int)response.StatusCode} {Reason(response.StatusCode)}.{detail} Check the server, or pass --server or set {ServerAddress.Variable}."
         );

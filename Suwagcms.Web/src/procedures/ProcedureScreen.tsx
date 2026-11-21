@@ -10,7 +10,7 @@ import { useResourceHistory } from "@/api/history";
 import { useLeaveGuard } from "@maniumek/suwfrontkit";
 import { renamer } from "@/api/rename";
 import { editHref, listHref, withListSearch } from "@/api/resourceAddress";
-import { usageHref, useUsage, type UsageLink } from "@/api/usage";
+import { usageLinkOf, useUsage } from "@/api/usage";
 import { AvailabilityNotice, AvailabilityPanel } from "@/design/availabilityPanel";
 import { BackToList, ResourceEdit } from "@/design/resourceEdit";
 
@@ -171,7 +171,7 @@ function Body({
             usage={{
                 usage: usage.usage,
                 failure: usage.failure,
-                hrefOf: (entry: UsageLink) => usageHref(bot, entry),
+                linkOf: usageLinkOf(bot),
             }}
             onDelete={remove}
             history={history}

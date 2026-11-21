@@ -234,14 +234,14 @@ test("AC-change-history-31: a version's panel moves with the same controls under
     expect((await request.post(`/api/bots/${bot}/versions`)).status()).toBe(201);
     await page.goto(`/bots/${bot}/versions/1`);
     const panel = page.getByRole("region", { name: "History" });
-    await expect(panel.getByText("Page 1 of 2")).toBeVisible();
+    await expect(panel.locator("[data-counter]").filter({ hasText: "Page 1 of 2" })).toBeVisible();
 
     await panel.getByRole("button", { name: "Next" }).click();
 
     await expect(page).toHaveURL(`/bots/${bot}/versions/1?historyPage=2`);
     await expect(panel.getByRole("link", { name: "customer.f1" })).toBeVisible();
     await page.reload();
-    await expect(panel.getByText("Page 2 of 2")).toBeVisible();
+    await expect(panel.locator("[data-counter]").filter({ hasText: "Page 2 of 2" })).toBeVisible();
 });
 
 test("AC-change-history-25: a number the bot does not have, and an address that is not a number, say so with the way back", async ({

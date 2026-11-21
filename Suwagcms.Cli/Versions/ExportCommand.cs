@@ -65,14 +65,16 @@ internal static class ExportCommand
                         return exported;
                     }
                 }
-                return parsed.GetValue(options.Open)
-                    ? await WebPage.ShowAsync(
+                if (parsed.GetValue(options.Open))
+                {
+                    await WebPage.ShowAsync(
                         new Uri(target.PageOf(VersionsCommand.Collection), string.Create(CultureInfo.InvariantCulture, $"?open={chosen}")),
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         target.Machine.OpenBrowser
-                    )
-                    : exported;
+                    );
+                }
+                return exported;
             }
         );
         return command;

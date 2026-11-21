@@ -33,12 +33,13 @@ internal static class StatusCommand
                 var display = ServerAddress.Display(address);
                 if (parsed.GetValue(options.Open))
                 {
-                    return await WebPage.ShowAsync(
+                    await WebPage.ShowAsync(
                         address,
                         parsed.InvocationConfiguration.Output,
                         parsed.InvocationConfiguration.Error,
                         environment.OpenBrowser
                     );
+                    return ExitCodes.Done;
                 }
                 var answer = await ServerCall.GetAsync(environment, address, "api/health", cancellationToken);
                 return answer.ExitCode switch

@@ -1,5 +1,5 @@
-using System.CommandLine;
 using System.Text.RegularExpressions;
+using Suwbackkit.Cli;
 
 namespace Suwagcms.Cli.Tests.Plugin;
 
@@ -18,14 +18,15 @@ internal static partial class CommandList
 
     public static IReadOnlyList<string> RunnableInCli() =>
         [
-            .. All(CliApp.Create(CliEnvironment.Real()))
+            .. CommandTree
+                .All(CliApp.Create(CliEnvironment.Real()))
                 .Where(command => command.Subcommands.Count == 0)
-                .Select(Words)
+                .Select(CommandTree.WordsOf)
                 .Order(StringComparer.Ordinal),
         ];
 
     public static IReadOnlyList<string> ExistingInCli() =>
-        [.. All(CliApp.Create(CliEnvironment.Real())).Select(Words).Order(StringComparer.Ordinal)];
+        [.. CommandTree.All(CliApp.Create(CliEnvironment.Real())).Select(CommandTree.WordsOf).Order(StringComparer.Ordinal)];
 
     public static CommandDifferences Compare(string skillText, IEnumerable<string> runnable, IEnumerable<string> existing)
     {
@@ -58,11 +59,12 @@ internal static partial class CommandList
     }
 
     public static IEnumerable<(string Words, IReadOnlyList<string> Options)> OptionsInCli() =>
-        All(CliApp.Create(CliEnvironment.Real()))
+        CommandTree
+            .All(CliApp.Create(CliEnvironment.Real()))
             .Where(command => command.Subcommands.Count == 0)
             .Select(command =>
                 (
-                    Words(command),
+                    CommandTree.WordsOf(command),
                     (IReadOnlyList<string>)[.. command.Options.Where(option => !option.Recursive).Select(option => option.Name)]
                 )
             );
@@ -74,16 +76,4 @@ internal static partial class CommandList
                 || line.StartsWith($"- `suwagcms {words}`", StringComparison.Ordinal)
             ),
         ];
-
-    private static IEnumerable<Command> All(Command parent) => parent.Subcommands.SelectMany(child => All(child).Prepend(child));
-
-    private static string Words(Command command)
-    {
-        var words = new List<string>();
-        for (Symbol? symbol = command; symbol is Command and not RootCommand; symbol = symbol.Parents.FirstOrDefault())
-        {
-            words.Insert(0, symbol.Name);
-        }
-        return string.Join(" ", words);
-    }
 }
