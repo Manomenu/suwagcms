@@ -432,7 +432,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
   <h3>4. Releasing a new version</h3>
   <ol class="steps">
     <li><p>On an up-to-date, clean <code>master</code>, the owner runs <code>just sdk-publish 0.2.0</code>.</p></li>
-    <li><p>The <code>sdk.yml</code> workflow tests the SDK, packs that version and pushes it to nuget.org. The command says how to follow it.</p></li>
+    <li><p>The <code>sdk.yml</code> workflow checks that CI passed on exactly that commit's files, packs that version and pushes it to nuget.org. The command says how to follow it.</p></li>
     <li><p>From another branch, or with uncommitted or unpushed work, the command refuses and nothing starts. A version on nuget.org can never be deleted, so what is released must be exactly what the owner has in front of them.</p></li>
   </ol>
 </section>
@@ -500,7 +500,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-sdk-validator-10</code> A field the format does not know produces no mistake, and the known fields of that document are still checked.</li>
     <li><code>AC-sdk-validator-11</code> The published JSON schema of the format is compared with the format on the gate, so a format change without its schema fails with the command that regenerates it.</li>
     <li><code>AC-sdk-validator-12</code> Packing the SDK produces a NuGet package with the id <code>Suwagcms.Sdk</code>.</li>
-    <li><code>AC-sdk-validator-15</code> The release workflow <code>sdk.yml</code> starts only by hand with a version, checks the version, tests the SDK, packs that version with its symbols and pushes it to nuget.org.</li>
+    <li><code>AC-sdk-validator-15</code> The release workflow <code>sdk.yml</code> starts only by hand with a version, checks the version, refuses a commit whose tree carries no green tree stamp of its CI run (the whole gate, SDK tests included, already passed on exactly that tree, so it does not test again), packs that version with its symbols and pushes it to nuget.org.</li>
     <li><code>AC-sdk-validator-16</code> In the release workflow, only the job that pushes can get a nuget.org key, it runs no code of the repository, no key is stored, and every action is pinned by its commit hash.</li>
     <li><code>AC-sdk-validator-17</code> <code>just sdk-publish &lt;version&gt;</code> starts the workflow on <code>master</code> with that version and says how to follow it, and a version of the wrong form starts nothing.</li>
     <li><code>AC-sdk-validator-18</code> A release is refused, with nothing started, from a branch other than <code>master</code>, from a checkout with uncommitted changes and from a <code>master</code> that differs from the remote one in either direction, and the workflow itself refuses any ref but <code>master</code>.</li>

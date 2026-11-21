@@ -51,7 +51,7 @@ public sealed partial class SdkReleaseTests
 
     [Fact]
     [Trait("criterion", "AC-sdk-validator-15")]
-    public void The_workflow_starts_by_hand_and_checks_tests_packs_and_pushes_that_version()
+    public void The_workflow_starts_by_hand_refuses_a_commit_ci_has_not_passed_and_packs_and_pushes_that_version()
     {
         var workflow = Workflow();
 
@@ -59,7 +59,10 @@ public sealed partial class SdkReleaseTests
         Assert.DoesNotMatch(AutomaticTrigger(), workflow);
         var (pack, publish) = Jobs();
         Assert.Contains("sdk-version.sh \"$VERSION\"", pack, StringComparison.Ordinal);
-        Assert.Contains("dotnet test --project Suwagcms.Sdk.Tests", pack, StringComparison.Ordinal);
+        Assert.Contains("statuses: read", pack, StringComparison.Ordinal);
+        Assert.Contains("select(.context == \"ci/tree\" and .state == \"success\")", pack, StringComparison.Ordinal);
+        Assert.Contains("grep -qxF \"$tree\"", pack, StringComparison.Ordinal);
+        Assert.DoesNotContain("dotnet test", pack, StringComparison.Ordinal);
         Assert.Contains("dotnet pack Suwagcms.Sdk ", pack, StringComparison.Ordinal);
         Assert.Contains("-p:Version=\"$VERSION\"", pack, StringComparison.Ordinal);
         Assert.Contains("-p:ContinuousIntegrationBuild=true", pack, StringComparison.Ordinal);
@@ -206,7 +209,7 @@ public sealed partial class SdkReleaseTests
     [GeneratedRegex(@"secrets\.(\w+)")]
     private static partial Regex Secret();
 
-    [GeneratedRegex(@"uses:\s*(\S+)")]
+    [GeneratedRegex(@"\buses:\s*(\S+)")]
     private static partial Regex Action();
 
     [GeneratedRegex("@[0-9a-f]{40}$")]

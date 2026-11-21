@@ -20,6 +20,9 @@ jobs:
   pack:
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 15
+    permissions:
+      contents: read
+      statuses: read
     steps:
       - name: Refuse anything but master
         run: |
@@ -30,6 +33,22 @@ jobs:
 
       - name: actions/checkout v7.0.1
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Refuse a commit whose tree CI has not passed (the ci/tree stamp of its ci run), instead of testing it again
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -uo pipefail
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          stamps="$(gh api "repos/$REPOSITORY/commits/$SHA/statuses?per_page=100" --jq '.[] | select(.context == "ci/tree" and .state == "success") | .description')" || stamps=""
+          if ! grep -qxF "$tree" <<< "$stamps"; then
+            echo "::error::the ci run of $SHA has not passed (no green ci/tree stamp of its tree $tree): wait until it is green, then run just sdk-publish $VERSION again."
+            exit 1
+          fi
 
       - name: Check the version
         run: ./scripts/.internal/sdk-version.sh "$VERSION"
@@ -38,9 +57,6 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68
         with:
           global-json-file: global.json
-
-      - name: Test the SDK
-        run: dotnet test --project Suwagcms.Sdk.Tests --configuration Release --no-progress
 
       - name: Pack
         run: dotnet pack Suwagcms.Sdk -c Release -o nupkg -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true
