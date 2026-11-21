@@ -23,7 +23,7 @@ just api-types            # regenerate contract/openapi.json and Suwagcms.Web/sr
                           # exposes; then raise the contract's version in contract/package.json
 just slow-tests           # the 10 slowest .NET tests (-n 25 for more): a report, the gate never measures time
 just mutate               # Stryker.NET (MTP runner, preview) on the server code changed since master; needs a master with commits
-just sdk-publish 0.1.0    # the owner releases the SDK to nuget.org through CI (docs/release.md)
+just sdk-publish 0.1.0    # releases the SDK to nuget.org through CI (docs/release.md)
 just up / just down       # the container stack on http://127.0.0.1:8220, then the smoke test
 just check-quick          # suwgate check --quick: the repository guards, and for what changed only build, csharpier, the .NET guards
                           # (Suwagcms.Gate), eslint, tsc, shellcheck

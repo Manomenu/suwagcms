@@ -4,7 +4,7 @@ if [ "${1:-}" = "--help" ]; then
     cat <<'HELP'
 Starts the release of Suwagcms.Sdk: runs the sdk workflow on master, which tests, packs and pushes to nuget.org.
 Nothing is packed here and no key is used.
-Not for agents: a version on nuget.org cannot be deleted.
+A version on nuget.org cannot be deleted, only unlisted: check the number first.
 HELP
     exit 0
 fi

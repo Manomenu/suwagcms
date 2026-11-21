@@ -1,13 +1,13 @@
 # Releasing Suwagcms.Sdk
 
-The owner releases it, from a commit of `master` whose CI is green: `just sdk-publish 0.1.0` runs the workflow sdk.yml on `master`
+The owner or an agent releases it, from a commit of `master` whose CI is green: `just sdk-publish 0.1.0` runs the workflow sdk.yml on `master`
 (`gh workflow run`) and says how to follow the run; it stops first on a bad version, another branch, uncommitted changes or a `master` that
 differs from the remote master. The workflow refuses anything but `master`, checks the version, refuses a commit whose CI run has not
 passed (no green tree stamp of its tree, the commit status suwgate's gate workflow writes after a green run: the whole gate, SDK tests
 included, ran on exactly that tree, so the release does not test it again; wait for the run and start the release again), packs that version (`-p:Version=`, built with `ContinuousIntegrationBuild`,
 so the symbols hold no local paths) and pushes it with its `.snupkg` to nuget.org. A version on nuget.org can never be deleted, only
 unlisted, so a bad release is followed by the next version, never replaced. The csproj says `0.0.0-local`, which is what a pack without a
-version produces. Agents never publish.
+version produces.
 
 **Why in CI, with no key.** [Trusted Publishing](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) is how nuget.org gives
 a key to a CI job instead of to a person: the job's OIDC token is exchanged (the NuGet login action) for a key that lives one hour, so the
