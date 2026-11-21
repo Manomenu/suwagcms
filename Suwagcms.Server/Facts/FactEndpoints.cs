@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Editing;
@@ -10,23 +9,22 @@ namespace Suwagcms.Server.Facts;
 internal static class FactEndpoints
 {
     private const string Title = "The fact was not saved.";
-    private const string Problem = "application/problem+json";
 
     public static void MapFacts(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/facts", List).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/facts/{name}", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/facts", List).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/facts/{name}", Get).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPut("/bots/{bot}/facts/{name}", Save)
             .Accepts<SaveFact>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
         routes
             .MapDelete("/bots/{bot}/facts/{name}", Delete)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
     }
 
     private static async Task<Results<Ok<List<Fact>>, ProblemHttpResult>> List(

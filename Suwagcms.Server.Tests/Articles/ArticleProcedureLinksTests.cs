@@ -75,7 +75,7 @@ public sealed class ArticleProcedureLinksTests(TestDatabase database, ClassServe
 
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
-        Assert.Equal("llmGuide", mistake.GetProperty("path").GetString());
+        Assert.Equal("llmGuide", mistake.GetProperty("at").GetString());
         Assert.Contains("procedure 'elsewhere'", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
     }
 

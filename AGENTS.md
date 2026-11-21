@@ -11,6 +11,7 @@ this file is the one to edit. Setup: [docs/development.md](docs/development.md).
 - `suwgate check --quick` while working, and `suwgate step <step> [-- <tool args>]` runs one step while working (e.g. `suwgate step e2e -- --headed`
   after changing anything a user clicks; `suwgate step` lists them); `suwgate check` before calling a change done; it runs the browser tests too and needs
   the Playwright browser, and gives a linked worktree its own test databases and ports.
+- Test last: finish every change of the task, then run the full gate once and push once, so CI runs once. After a red run, fix all it shows, rerun only the tests that failed, and the full gate once when they pass. Quick checks of the part you change (its unit tests, the type checker, `suwgate step <step>`) are fine while building.
 
 ## Git
 

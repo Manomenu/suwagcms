@@ -40,7 +40,13 @@ function detail(revision: number, notReady: Mistake[] = [], say = "hi"): Procedu
 }
 
 const refused = (status: number, mistakes: Mistake[] = [], message = "no") =>
-    Promise.reject(new ApiError(status, { detail: message, mistakes }));
+    Promise.reject(
+        new ApiError(status, {
+            detail: message,
+            code: "definition.invalid",
+            mistakes: mistakes.map(({ path, ...rest }) => ({ ...rest, at: path })),
+        }),
+    );
 
 describe("the live list of mistakes", () => {
     it("AC-procedure-creator-3: shows what the server's dry run reports, whichever stage it speaks of", async () => {

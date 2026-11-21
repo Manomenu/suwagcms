@@ -223,7 +223,7 @@ public sealed class ActionTestRunTests(TestDatabase database, ClassServer server
         var mistakes = await FactApi.MistakesOf(refused);
         Assert.Equal(
             ["values.address", "values.floors"],
-            mistakes.Select(mistake => mistake.GetProperty("path").GetString()).Order(StringComparer.Ordinal)
+            mistakes.Select(mistake => mistake.GetProperty("at").GetString()).Order(StringComparer.Ordinal)
         );
         Assert.All(mistakes, mistake => Assert.NotEmpty(mistake.GetProperty("fix").GetString() ?? ""));
         Assert.Equal(before, scene.Bot.Requests);

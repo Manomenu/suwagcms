@@ -71,8 +71,8 @@ export function ArticlesScreen({ bot }: { bot: string }) {
                 onFilters={(next) => {
                     setParams(Object.fromEntries(Object.entries(next).filter(([, value]) => value !== "")), { replace: true });
                 }}
-                onAdd={editor.add}
-                onEdit={editor.edit}
+                addHref={editor.addHref}
+                hrefOf={editor.hrefOf}
                 onLeave={(event) => {
                     if (!editor.mayLeave()) event.preventDefault();
                 }}

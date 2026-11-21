@@ -61,6 +61,13 @@ internal sealed class FactApi(HttpClient client, string bot)
         return [.. document.RootElement.GetProperty("mistakes").EnumerateArray().Select(mistake => mistake.Clone())];
     }
 
+    public static async Task<string?> RefusalCodeOf(HttpResponseMessage response)
+    {
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.TryGetProperty("code", out var code) ? code.GetString() : null;
+    }
+
     public static async Task<string[]> CodesOf(HttpResponseMessage response) =>
         [.. (await MistakesOf(response)).Select(mistake => mistake.GetProperty("code").GetString() ?? "").Order(StringComparer.Ordinal)];
 

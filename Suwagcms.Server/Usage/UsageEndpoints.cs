@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Usage;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Server.Editing;
@@ -10,7 +9,6 @@ namespace Suwagcms.Server.Usage;
 internal static class UsageEndpoints
 {
     private const string Title = "The usage was not shown.";
-    private const string Problem = "application/problem+json";
 
     private static readonly Dictionary<string, ResourceKind> Kinds = new(StringComparer.Ordinal)
     {
@@ -23,7 +21,7 @@ internal static class UsageEndpoints
     public static void MapUsage(this IEndpointRouteBuilder routes) =>
         routes
             .MapGet("/bots/{bot}/{kind:regex(^(facts|articles|procedures|actions)$)}/{id}/usage", Show)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound);
 
     private static async Task<Results<Ok<UsageView>, ProblemHttpResult>> Show(
         string bot,

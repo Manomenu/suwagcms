@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Articles;
 using Suwagcms.Sdk.Format.Articles;
 using Suwagcms.Sdk.Format.References;
@@ -11,23 +10,22 @@ namespace Suwagcms.Server.Articles;
 internal static class ArticleEndpoints
 {
     private const string Title = "The article was not saved.";
-    private const string Problem = "application/problem+json";
 
     public static void MapArticles(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/articles", List).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/articles/{id}", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/articles", List).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/articles/{id}", Get).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPut("/bots/{bot}/articles/{id}", Save)
             .Accepts<SaveArticle>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
         routes
             .MapDelete("/bots/{bot}/articles/{id}", Delete)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
     }
 
     private static async Task<Results<Ok<List<ArticleView>>, ProblemHttpResult>> List(

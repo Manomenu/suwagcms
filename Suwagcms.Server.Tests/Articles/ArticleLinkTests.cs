@@ -25,7 +25,7 @@ public sealed class ArticleLinkTests(TestDatabase database, ClassServer server) 
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
-        Assert.Equal("content", mistake.GetProperty("path").GetString());
+        Assert.Equal("content", mistake.GetProperty("at").GetString());
         Assert.Contains("links to article 'cenik'", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal(["cennik"], (await api.List()).Select(article => article.Id));
     }

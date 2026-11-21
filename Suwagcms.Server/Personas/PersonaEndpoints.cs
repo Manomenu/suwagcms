@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Personas;
 using Suwagcms.Sdk.Format.Personas;
 using Suwagcms.Server.Editing;
@@ -10,17 +9,16 @@ namespace Suwagcms.Server.Personas;
 internal static class PersonaEndpoints
 {
     private const string Title = "The persona was not saved.";
-    private const string Problem = "application/problem+json";
 
     public static void MapPersona(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/persona", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/persona", Get).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPut("/bots/{bot}/persona", Save)
             .Accepts<SavePersona>("application/json")
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status409Conflict, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status409Conflict)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
     }
 
     private static async Task<Results<Ok<PersonaView>, ProblemHttpResult>> Get(

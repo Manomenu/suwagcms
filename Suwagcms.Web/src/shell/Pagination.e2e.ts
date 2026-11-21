@@ -90,11 +90,11 @@ test("AC-pagination-6: opening a row on page 2 and saving, cancelling or going b
     const bot = await newBot(request);
     await addFacts(request, bot, 7);
     await page.goto(`/bots/${bot}/facts?page=2`);
-    const open = () => page.getByRole("row").filter({ hasText: "customer.f15" }).getByRole("button", { name: "Edit" }).click();
+    const open = () => page.getByRole("row").filter({ hasText: "customer.f15" }).getByRole("link", { name: "Edit" }).click();
 
     await open();
     await expect(page).toHaveURL(`/bots/${bot}/facts/customer.f15/edit?page=2`);
-    await page.getByRole("button", { name: "Back to facts" }).click();
+    await page.getByRole("link", { name: "Back to facts" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/facts?page=2`);
 
     await open();
@@ -117,9 +117,9 @@ test("AC-pagination-6: the creator of a procedure on page 2 returns to page 2 to
     await page.goto(`/bots/${bot}/procedures?page=2`);
     await expect(listPages(page).getByText("Page 2 of 2")).toBeVisible();
 
-    await page.getByRole("row").getByRole("button", { name: "Edit" }).first().click();
+    await page.getByRole("row").getByRole("link", { name: "Edit" }).first().click();
     await expect(page).toHaveURL(/\/edit\?page=2$/);
-    await page.getByRole("button", { name: "Back to procedures" }).click();
+    await page.getByRole("link", { name: "Back to procedures" }).click();
 
     await expect(page).toHaveURL(`/bots/${bot}/procedures?page=2`);
 });
@@ -133,7 +133,7 @@ test("AC-pagination-6: deleting the only row of the last page shows the new last
     await page.goto(`/bots/${bot}/facts?page=3`);
     await expect(listPages(page).getByText("Page 3 of 3")).toBeVisible();
 
-    await page.getByRole("row").filter({ hasText: "customer.f20" }).getByRole("button", { name: "Edit" }).click();
+    await page.getByRole("row").filter({ hasText: "customer.f20" }).getByRole("link", { name: "Edit" }).click();
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await page
         .getByRole("alertdialog")
@@ -300,7 +300,7 @@ test("AC-pagination-12: the History panel pages under historyPage: the list's pa
     await page.reload();
     await expect(panel.getByText("Page 2 of 3")).toBeVisible();
 
-    await page.getByRole("button", { name: "Back to knowledge bases" }).click();
+    await page.getByRole("link", { name: "Back to knowledge bases" }).click();
     await expect(page).toHaveURL(`/bots/${bot}/knowledge-bases?page=2`);
 });
 

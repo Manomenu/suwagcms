@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Npgsql;
-using Suwagcms.Contracts;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.Format.References;
@@ -13,22 +12,21 @@ internal static class VersionEndpoints
 {
     public const string Missing = "version.missing";
     private const string Title = "The version was not created.";
-    private const string Problem = "application/problem+json";
 
     public static void MapVersions(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/bots/{bot}/versions", List).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/versions/{number:int}", Get).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+        routes.MapGet("/bots/{bot}/versions", List).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/versions/{number:int}", Get).ProducesRefusal(StatusCodes.Status404NotFound);
         routes
             .MapPost("/bots/{bot}/versions", Create)
             .Produces<VersionCreated>(StatusCodes.Status201Created)
-            .Produces<Refusal>(StatusCodes.Status404NotFound, Problem)
-            .Produces<Refusal>(StatusCodes.Status422UnprocessableEntity, Problem);
-        routes.MapGet("/bots/{bot}/versions/{from:int}/diff/{to:int}", Diff).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/versions/{number:int}/export", Export).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/versions/status", Status).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapPost("/bots/{bot}/versions/{number:int}/push", Push).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
-        routes.MapGet("/bots/{bot}/versions/{number:int}/push-plan", PushPlan).Produces<Refusal>(StatusCodes.Status404NotFound, Problem);
+            .ProducesRefusal(StatusCodes.Status404NotFound)
+            .ProducesRefusal(StatusCodes.Status422UnprocessableEntity);
+        routes.MapGet("/bots/{bot}/versions/{from:int}/diff/{to:int}", Diff).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/versions/{number:int}/export", Export).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/versions/status", Status).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapPost("/bots/{bot}/versions/{number:int}/push", Push).ProducesRefusal(StatusCodes.Status404NotFound);
+        routes.MapGet("/bots/{bot}/versions/{number:int}/push-plan", PushPlan).ProducesRefusal(StatusCodes.Status404NotFound);
     }
 
     private static async Task<Results<Ok<VersionComparison>, ProblemHttpResult>> Diff(
@@ -56,12 +54,7 @@ internal static class VersionEndpoints
             .Distinct()
             .Select(number => NoSuchVersion(bot, number, latest))
             .ToList();
-        return TypedResults.Problem(
-            title: "The versions were not compared.",
-            detail: $"{missing.Count} mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
-            statusCode: StatusCodes.Status404NotFound,
-            extensions: new Dictionary<string, object?> { ["mistakes"] = missing }
-        );
+        return EditProblems.Refuse(StatusCodes.Status404NotFound, "The versions were not compared.", RefusalCode.VersionMissing, missing);
     }
 
     private static async Task<Results<Ok<VersionExport>, ProblemHttpResult>> Export(
@@ -110,12 +103,7 @@ internal static class VersionEndpoints
     }
 
     private static ProblemHttpResult NotPushed(VersionPusher.Rejected rejected) =>
-        TypedResults.Problem(
-            title: "The version was not pushed.",
-            detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
-            statusCode: rejected.Status,
-            extensions: new Dictionary<string, object?> { ["mistakes"] = new[] { rejected.Mistake } }
-        );
+        EditProblems.Refuse(rejected.Status, "The version was not pushed.", RefusalCode.VersionNotPushed, [rejected.Mistake]);
 
     private static async Task<Results<Ok<List<VersionSummary>>, ProblemHttpResult>> List(
         string bot,
@@ -149,17 +137,11 @@ internal static class VersionEndpoints
     ) =>
         await VersionStore.ListAsync(dataSource, bot, cancellationToken) is null
             ? EditProblems.For(new EditResult.UnknownBot(), bot, title)
-            : TypedResults.Problem(
-                title: title,
-                detail: "1 mistake(s) in `mistakes`: fix each as its `fix` says, then try again.",
-                statusCode: StatusCodes.Status404NotFound,
-                extensions: new Dictionary<string, object?>
-                {
-                    ["mistakes"] = new[]
-                    {
-                        NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(dataSource, bot, cancellationToken)),
-                    },
-                }
+            : EditProblems.Refuse(
+                StatusCodes.Status404NotFound,
+                title,
+                RefusalCode.VersionMissing,
+                [NoSuchVersion(bot, number, await VersionStore.LatestNumberAsync(dataSource, bot, cancellationToken))]
             );
 
     private static async Task<Results<Created<VersionCreated>, Ok<VersionCreated>, ProblemHttpResult>> Create(

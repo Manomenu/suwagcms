@@ -45,7 +45,7 @@ interface Loaded {
 
 const BASE_PROCEDURE = "conversation";
 
-function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: Loaded; onBack: () => void }) {
+function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial: Loaded; backHref: string }) {
     const [state, dispatch] = useReducer(reduce, initial.detail, stateOf);
     const [params, setParams] = useSearchParams();
     const selected = params.get("step");
@@ -137,7 +137,7 @@ function Body({ bot, id, initial, onBack }: { bot: string; id: string; initial: 
             noun="procedure"
             plural="procedures"
             addTitle="Add a procedure"
-            onBack={onBack}
+            backHref={backHref}
             ready
             missingId={null}
             editedId={id}
@@ -229,7 +229,6 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
     const [loaded, setLoaded] = useState<Loaded | null>(null);
     const [failure, setFailure] = useState<string | null>(null);
     const [missing, setMissing] = useState(false);
-    const [, navigate] = useLocation();
     const search = useSearch();
 
     useEffect(() => {
@@ -264,18 +263,16 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
         };
     }, [bot, id]);
 
-    const onBack = () => {
-        if (mayLeave()) navigate(withListSearch(listHref(bot, "procedures"), search));
-    };
+    const backHref = withListSearch(listHref(bot, "procedures"), search);
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
     if (missing) {
         return (
             <div className="flex flex-col gap-4">
-                <BackToList plural="procedures" onBack={onBack} />
+                <BackToList plural="procedures" backHref={backHref} />
                 <Alert variant="destructive">This bot has no procedure '{id}'. It may have been deleted, or its id changed.</Alert>
             </div>
         );
     }
     if (loaded === null) return <p className="text-muted-foreground">Loading {id}…</p>;
-    return <Body bot={bot} id={id} initial={loaded} onBack={onBack} />;
+    return <Body bot={bot} id={id} initial={loaded} backHref={backHref} />;
 }

@@ -124,6 +124,7 @@ public sealed class FactEndpointsTests(TestDatabase database, ClassServer server
         var mistake = Assert.Single(await FactApi.MistakesOf(response));
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal("resource.stale", await FactApi.RefusalCodeOf(response));
         Assert.Equal("resource.exists", mistake.GetProperty("code").GetString());
         Assert.Contains("edit the existing fact", mistake.GetProperty("fix").GetString(), StringComparison.Ordinal);
         Assert.Equal("First", Assert.Single(await api.List()).Description);
@@ -142,6 +143,7 @@ public sealed class FactEndpointsTests(TestDatabase database, ClassServer server
             ["fact.description.missing", "fact.enum.tooFewValues", "fact.name.invalid", "fact.writableBy.invalid"],
             await FactApi.CodesOf(response)
         );
+        Assert.Equal("definition.invalid", await FactApi.RefusalCodeOf(response));
         Assert.Empty(await api.List());
     }
 
@@ -160,7 +162,7 @@ public sealed class FactEndpointsTests(TestDatabase database, ClassServer server
             first.Select(mistake => mistake.GetProperty("code").GetString())
         );
         Assert.Equal(first.Select(mistake => mistake.GetRawText()), second.Select(mistake => mistake.GetRawText()));
-        Assert.Equal(["description", "values"], first.Select(mistake => mistake.GetProperty("path").GetString()));
+        Assert.Equal(["description", "values"], first.Select(mistake => mistake.GetProperty("at").GetString()));
     }
 
     [Fact]
@@ -175,7 +177,7 @@ public sealed class FactEndpointsTests(TestDatabase database, ClassServer server
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(
             ["Colour", "maxLenght"],
-            mistakes.Select(mistake => mistake.GetProperty("path").GetString()).Order(StringComparer.Ordinal)
+            mistakes.Select(mistake => mistake.GetProperty("at").GetString()).Order(StringComparer.Ordinal)
         );
         Assert.All(mistakes, mistake => Assert.Equal("save.unknownField", mistake.GetProperty("code").GetString()));
         Assert.Contains(
@@ -239,9 +241,11 @@ public sealed class FactEndpointsTests(TestDatabase database, ClassServer server
     {
         var api = await NewBot();
 
-        var mistake = Assert.Single(await FactApi.MistakesOf(await api.Delete("customer.city")));
+        var response = await api.Delete("customer.city");
+        var mistake = Assert.Single(await FactApi.MistakesOf(response));
 
-        Assert.Equal("name", mistake.GetProperty("path").GetString());
+        Assert.Equal("resource.missing", await FactApi.RefusalCodeOf(response));
+        Assert.Equal("name", mistake.GetProperty("at").GetString());
     }
 
     [Fact]

@@ -171,7 +171,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
                 .Select(mistake =>
                     (
                         mistake.GetProperty("code").GetString() ?? "",
-                        mistake.GetProperty("path").GetString() ?? "",
+                        mistake.GetProperty("at").GetString() ?? "",
                         mistake.GetProperty("message").GetString() ?? "",
                         mistake.GetProperty("fix").GetString() ?? ""
                     )
@@ -275,7 +275,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal(MistakeCodes.ActionFieldInUse, mistake.GetProperty("code").GetString());
-        Assert.Equal(path, mistake.GetProperty("path").GetString());
+        Assert.Equal(path, mistake.GetProperty("at").GetString());
         Assert.Contains(says, mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Contains("procedure orderService, step checkAddress", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
     }

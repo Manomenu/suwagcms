@@ -8,14 +8,14 @@ export function KnowledgeBasesView({
     bot,
     history,
     bases,
-    onAdd,
-    onEdit,
+    addHref,
+    hrefOf,
 }: {
     bot: string;
     history: HistoryPanelProps;
     bases: KnowledgeBase[];
-    onAdd: () => void;
-    onEdit: (base: KnowledgeBase) => void;
+    addHref: string;
+    hrefOf: (base: KnowledgeBase) => string;
 }) {
     const paged = usePagedRows(bases);
     return (
@@ -23,11 +23,11 @@ export function KnowledgeBasesView({
             history={history}
             title={`Knowledge bases of ${bot}`}
             addLabel="Add a knowledge base"
-            onAdd={onAdd}
+            addHref={addHref}
             rows={paged.rows}
             paging={paged.paging}
             idOf={(base) => base.id}
-            onOpen={onEdit}
+            hrefOf={hrefOf}
             columns={[
                 { header: "Title", className: "font-medium", cell: (base) => base.title },
                 { header: "Id", className: "text-muted-foreground", cell: (base) => base.id },

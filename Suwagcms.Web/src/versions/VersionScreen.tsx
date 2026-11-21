@@ -1,7 +1,7 @@
 import { Alert, ApiError } from "@maniumek/suwfrontkit";
 import { mistakesOf } from "@/api/client";
 import { useEffect, useState } from "react";
-import { useLocation, useSearch, useSearchParams } from "wouter";
+import { useSearch, useSearchParams } from "wouter";
 
 import { useVersionWindow } from "@/api/history";
 import { versionsHref, withListSearch } from "@/api/resourceAddress";
@@ -25,7 +25,6 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
     const history = useVersionWindow(bot, number);
     const search = useSearch();
     const [params, setParams] = useSearchParams();
-    const [, navigate] = useLocation();
     const compared = versionNumberOf(params.get(COMPARE));
 
     useEffect(() => {
@@ -60,9 +59,7 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
         };
     }, [bot, number, compared]);
 
-    const toList = () => {
-        navigate(withListSearch(versionsHref(bot), search));
-    };
+    const listAddress = withListSearch(versionsHref(bot), search);
     const writeCompared = (other: number | null) => {
         setParams(
             (was) => {
@@ -75,7 +72,7 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
         );
     };
 
-    if (missing) return <NoSuchVersion asked={asked} onBack={toList} />;
+    if (missing) return <NoSuchVersion asked={asked} backHref={listAddress} />;
     if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
     if (detail === null) return <p className="text-muted-foreground">Loading the version…</p>;
     return (
@@ -91,7 +88,7 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
             onCloseComparison={() => {
                 writeCompared(null);
             }}
-            onBack={toList}
+            backHref={listAddress}
         />
     );
 }

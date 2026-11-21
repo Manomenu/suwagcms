@@ -9,14 +9,14 @@ export function FactsView({
     bot,
     facts,
     history,
-    onAdd,
-    onEdit,
+    addHref,
+    hrefOf,
 }: {
     bot: string;
     facts: Fact[];
     history: HistoryPanelProps;
-    onAdd: () => void;
-    onEdit: (fact: Fact) => void;
+    addHref: string;
+    hrefOf: (fact: Fact) => string;
 }) {
     const paged = usePagedRows(facts);
     return (
@@ -24,11 +24,11 @@ export function FactsView({
             history={history}
             title={`Facts of ${bot}`}
             addLabel="Add a fact"
-            onAdd={onAdd}
+            addHref={addHref}
             rows={paged.rows}
             paging={paged.paging}
             idOf={(fact) => fact.name}
-            onOpen={onEdit}
+            hrefOf={hrefOf}
             columns={[
                 { header: "Name", className: "font-medium", cell: (fact) => fact.name },
                 { header: "Type", className: "text-muted-foreground", cell: (fact) => `${constraintOf(fact)} · ${fact.writableBy}` },

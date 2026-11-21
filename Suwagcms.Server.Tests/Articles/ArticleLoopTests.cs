@@ -56,7 +56,7 @@ public sealed class ArticleLoopTests(TestDatabase database, ClassServer server) 
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal("reference.loop", mistake.GetProperty("code").GetString());
-        Assert.Equal("llmGuide", mistake.GetProperty("path").GetString());
+        Assert.Equal("llmGuide", mistake.GetProperty("at").GetString());
         Assert.Contains("pricing → pricing", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Empty(await api.List());
     }

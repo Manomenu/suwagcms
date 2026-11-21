@@ -53,7 +53,7 @@ function page(shown: { versions?: VersionSummary[]; comparison?: ComparisonState
                 history={shown.history ?? history}
                 onCompare={() => undefined}
                 onCloseComparison={() => undefined}
-                onBack={() => undefined}
+                backHref="/list"
             />
         </Router>,
     );
@@ -81,10 +81,14 @@ describe("VersionView", () => {
     });
 
     it("AC-change-history-25: a version the bot does not have says so, with the way back to Versions", () => {
-        const html = renderToStaticMarkup(<NoSuchVersion asked="99" onBack={() => undefined} />);
+        const html = renderToStaticMarkup(
+            <Router ssrPath="/bots/rzeczoznawca/versions/99">
+                <NoSuchVersion asked="99" backHref="/bots/rzeczoznawca/versions" />
+            </Router>,
+        );
 
         expect(html).toContain("This bot has no version 99.");
-        expect(html).toContain("Back to versions");
+        expect(html).toMatch(/<a [^>]*href="\/bots\/rzeczoznawca\/versions"[^>]*>Back to versions<\/a>/);
     });
 
     it("AC-change-history-25: an address that is not a number asks for no version", () => {

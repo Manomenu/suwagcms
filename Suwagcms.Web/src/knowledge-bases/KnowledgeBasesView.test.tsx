@@ -26,7 +26,7 @@ function view(list: KnowledgeBase[]): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/knowledge-bases">
             <PageSizeContext value={{ size: 20, failure: null }}>
-                <KnowledgeBasesView history={noHistory} bot="rzeczoznawca" bases={list} onAdd={() => undefined} onEdit={() => undefined} />
+                <KnowledgeBasesView history={noHistory} bot="rzeczoznawca" bases={list} addHref="/new" hrefOf={() => "/edit"} />
             </PageSizeContext>
         </Router>,
     );
@@ -179,7 +179,7 @@ describe("a long list", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/b/knowledge-bases?page=2">
                 <PageSizeContext value={{ size: 20, failure: null }}>
-                    <KnowledgeBasesView history={noHistory} bot="b" bases={many} onAdd={() => undefined} onEdit={() => undefined} />
+                    <KnowledgeBasesView history={noHistory} bot="b" bases={many} addHref="/new" hrefOf={() => "/edit"} />
                 </PageSizeContext>
             </Router>,
         );

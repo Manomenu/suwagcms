@@ -36,8 +36,8 @@ export function ActionsScreen({ bot }: { bot: string }) {
                 actions={editor.items}
                 isOff={(id) => availability.isOff("action", id)}
                 notice={notice}
-                onAdd={editor.add}
-                onOpen={editor.edit}
+                addHref={editor.addHref}
+                hrefOf={editor.hrefOf}
             />
         );
     }

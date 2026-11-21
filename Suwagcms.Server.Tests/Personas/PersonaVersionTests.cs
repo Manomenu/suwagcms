@@ -212,7 +212,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal(MistakeCodes.PersonaIncomplete, mistake.GetProperty("code").GetString());
-        Assert.Equal("scope.whenOutOfScope", mistake.GetProperty("path").GetString());
+        Assert.Equal("scope.whenOutOfScope", mistake.GetProperty("at").GetString());
         Assert.True(
             (
                 await persona.Save("""{"personality":"You help.","scope":{"inScope":"In","outOfScope":"Out","whenOutOfScope":"Decline"}}""")

@@ -14,16 +14,16 @@ export function ActionsView({
     actions,
     isOff,
     notice,
-    onAdd,
-    onOpen,
+    addHref,
+    hrefOf,
 }: {
     bot: string;
     history: HistoryPanelProps;
     actions: ActionView[];
     isOff?: (id: string) => boolean;
     notice?: ReactNode;
-    onAdd: () => void;
-    onOpen: (action: ActionView) => void;
+    addHref: string;
+    hrefOf: (action: ActionView) => string;
 }) {
     const paged = usePagedRows(actions);
     return (
@@ -31,13 +31,13 @@ export function ActionsView({
             history={history}
             title={`Actions of ${bot}`}
             addLabel="Add an action"
-            onAdd={onAdd}
+            addHref={addHref}
             above={notice}
             rows={paged.rows}
             paging={paged.paging}
             idOf={(action) => action.id}
             openLabel="Open"
-            onOpen={onOpen}
+            hrefOf={hrefOf}
             columns={[
                 { header: "Id", className: "font-medium", cell: (action) => action.id },
                 { header: "Description", cell: (action) => action.description },

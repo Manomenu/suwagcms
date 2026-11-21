@@ -1,16 +1,20 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Button, InfoTip, ResourceEdit as Frame } from "@maniumek/suwfrontkit";
+import { Anchor, Button, InfoTip, ResourceEdit as Frame } from "@maniumek/suwfrontkit";
 
+import { AppLink } from "@/design/appLink";
 import { ChangeIdDialog } from "@/design/changeIdDialog";
 import { HistoryPanel, type HistoryPanelProps } from "@/design/page";
 import { UsagePanel } from "@/design/usagePanel";
 
-export function BackToList({ plural, onBack }: { plural: string; onBack: () => void }) {
+export function BackToList({ plural, backHref }: { plural: string; backHref: string }) {
     return (
-        <div>
-            <Button type="button" variant="link" className="h-auto px-0" onClick={onBack}>
-                ← Back to {plural}
-            </Button>
+        <div className="flex items-center gap-1 text-sm">
+            <span aria-hidden="true" className="text-anchor">
+                ←
+            </span>
+            <Anchor asChild>
+                <AppLink href={backHref}>Back to {plural}</AppLink>
+            </Anchor>
         </div>
     );
 }
@@ -31,7 +35,7 @@ export function ResourceEdit({
     plural,
     addTitle,
     idWord = "id",
-    onBack,
+    backHref,
     ready,
     missingId,
     editedId,
@@ -55,7 +59,7 @@ export function ResourceEdit({
     plural: string;
     addTitle: string;
     idWord?: string;
-    onBack: () => void;
+    backHref: string;
     ready: boolean;
     missingId: string | null;
     editedId: string | null;
@@ -83,11 +87,7 @@ export function ResourceEdit({
         <Frame
             title={title}
             width="full"
-            back={(label) => (
-                <button type="button" onClick={onBack}>
-                    {label}
-                </button>
-            )}
+            back={(label) => <AppLink href={backHref}>{label}</AppLink>}
             backLabel={`Back to ${plural}`}
             ready={ready}
             failure={

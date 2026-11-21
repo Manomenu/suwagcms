@@ -4,7 +4,6 @@ using System.Text.Json.Nodes;
 using Suwagcms.Contracts;
 using Suwagcms.Contracts.Actions;
 using Suwagcms.Contracts.Articles;
-using Suwagcms.Contracts.Changes;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.KnowledgeBases;
 using Suwagcms.Contracts.Procedures;
@@ -128,7 +127,7 @@ internal static class ChangeList
     }
 
     public static ChangeMistake At(int? position, Mistake mistake) =>
-        new(position, mistake.Code, mistake.Stage, mistake.Resource, mistake.Path, mistake.Message, mistake.Fix, mistake.Related);
+        new(position, mistake.Code, mistake.Message, mistake.Fix, mistake.Stage, mistake.Resource, mistake.Related) { At = mistake.Path };
 
     private static (ChangeItem? Item, List<ChangeMistake> Mistakes) Item(JsonNode? node, int position, ResourceRef whole, bool replace)
     {

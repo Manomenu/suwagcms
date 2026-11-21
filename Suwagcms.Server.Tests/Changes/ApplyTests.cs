@@ -182,7 +182,7 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
 
         static string Shown(JsonElement mistake)
         {
-            return $"{mistake.GetProperty("code").GetString()}|{mistake.GetProperty("path").GetString()}|{mistake.GetProperty("message").GetString()}|{mistake.GetProperty("fix").GetString()}";
+            return $"{mistake.GetProperty("code").GetString()}|{mistake.GetProperty("at").GetString()}|{mistake.GetProperty("message").GetString()}|{mistake.GetProperty("fix").GetString()}";
         }
         Assert.NotEmpty(own);
         Assert.Equal(own.Select(Shown).Order(StringComparer.Ordinal), through.Select(Shown).Order(StringComparer.Ordinal));
@@ -423,9 +423,9 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
         Assert.Equal(2, mistakes.Count);
         Assert.Equal(2, mistakes[0].GetProperty("change").GetInt32());
         Assert.Equal("save.unknownField", mistakes[0].GetProperty("code").GetString());
-        Assert.Equal("descripton", mistakes[0].GetProperty("path").GetString());
+        Assert.Equal("descripton", mistakes[0].GetProperty("at").GetString());
         Assert.Equal(3, mistakes[1].GetProperty("change").GetInt32());
-        Assert.Equal("available", mistakes[1].GetProperty("path").GetString());
+        Assert.Equal("available", mistakes[1].GetProperty("at").GetString());
     }
 
     [Fact]
@@ -561,7 +561,7 @@ public sealed class ApplyTests(TestDatabase database, ClassServer server) : ICla
         using var refusal = JsonDocument.Parse(bad.Output);
         var mistake = refusal.RootElement.GetProperty("mistakes")[0];
         Assert.Equal(1, mistake.GetProperty("change").GetInt32());
-        foreach (var field in new[] { "code", "stage", "resource", "path", "message", "fix", "related" })
+        foreach (var field in new[] { "code", "stage", "resource", "at", "message", "fix", "related" })
         {
             Assert.True(mistake.TryGetProperty(field, out _), $"A mistake of a file lacks '{field}', which a save's mistake has.");
         }

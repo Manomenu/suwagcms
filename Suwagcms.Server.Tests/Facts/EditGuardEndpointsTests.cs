@@ -74,7 +74,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal("fact.enum.valueInUse", Code(mistake));
-        Assert.Equal("values", mistake.GetProperty("path").GetString());
+        Assert.Equal("values", mistake.GetProperty("at").GetString());
         Assert.Equal("GlobalFact", mistake.GetProperty("resource").GetProperty("kind").GetString());
         Assert.Contains("Value 'flat' of 'kind' is used", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Contains("procedure first, step ask (condition)", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
@@ -113,7 +113,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal("fact.type.inUse", Code(mistake));
-        Assert.Equal("type", mistake.GetProperty("path").GetString());
+        Assert.Equal("type", mistake.GetProperty("at").GetString());
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
 
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
         Assert.Equal("fact.range.inUse", Code(mistake));
-        Assert.Equal(field, mistake.GetProperty("path").GetString());
+        Assert.Equal(field, mistake.GetProperty("at").GetString());
     }
 
     [Fact]
@@ -156,7 +156,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
         var refused = await api.Facts.Put("rooms", """{"type":"int","description":"Rooms","min":5,"max":50}""");
 
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal(("fact.range.inUse", "min"), (Code(mistake), mistake.GetProperty("path").GetString()));
+        Assert.Equal(("fact.range.inUse", "min"), (Code(mistake), mistake.GetProperty("at").GetString()));
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
         var refused = await api.Facts.Put("note", """{"type":"text","description":"A note","maxLength":5}""");
 
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal(("fact.range.inUse", "maxLength"), (Code(mistake), mistake.GetProperty("path").GetString()));
+        Assert.Equal(("fact.range.inUse", "maxLength"), (Code(mistake), mistake.GetProperty("at").GetString()));
         Assert.Equal(2, Referrers(mistake).Length);
     }
 
@@ -218,7 +218,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
         var refused = await api.Facts.Put("note", """{"type":"text","description":"A note","maxLength":10,"writableBy":"assign"}""");
 
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal(("fact.writableBy.inUse", "writableBy"), (Code(mistake), mistake.GetProperty("path").GetString()));
+        Assert.Equal(("fact.writableBy.inUse", "writableBy"), (Code(mistake), mistake.GetProperty("at").GetString()));
         Assert.Contains(
             "'collect' of step 'ask' in 'first' names fact 'note'",
             mistake.GetProperty("message").GetString(),
@@ -375,7 +375,7 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
         var refused = await api.Put("first", Declaring(steps, changed));
 
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal((code, path), (Code(mistake), mistake.GetProperty("path").GetString()));
+        Assert.Equal((code, path), (Code(mistake), mistake.GetProperty("at").GetString()));
         Assert.Equal(["first:steps.ask.next[0].when.mine"], Referrers(mistake));
     }
 

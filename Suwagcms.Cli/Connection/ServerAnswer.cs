@@ -18,10 +18,10 @@ internal sealed record ServerAnswer(int ExitCode, string Message, IReadOnlyList<
     private static string Describe(JsonElement mistake, Func<string, string, string?>? link)
     {
         var code = Text(mistake, "code");
-        var path = Text(mistake, "path");
+        var at = Text(mistake, "at");
         var message = Text(mistake, "message");
         var fix = Text(mistake, "fix");
-        var head = string.Join(" ", new[] { code, path, message }.Where(part => part is not null));
+        var head = string.Join(" ", new[] { code, at, message }.Where(part => part is not null));
         var related = string.Concat(Related(mistake, code, link).Select(line => $"{Environment.NewLine}{line}"));
         return fix is null ? head + related : $"{head}{related}{Environment.NewLine}  Fix: {fix}";
     }

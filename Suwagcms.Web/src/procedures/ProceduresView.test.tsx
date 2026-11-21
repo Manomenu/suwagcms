@@ -27,7 +27,7 @@ function view(shown: ProcedureList): string {
     return renderToStaticMarkup(
         <Router ssrPath="/bots/rzeczoznawca/procedures">
             <PageSizeContext value={{ size: 20, failure: null }}>
-                <ProceduresView history={noHistory} onAdd={() => undefined} onOpen={() => undefined} bot="rzeczoznawca" list={shown} />
+                <ProceduresView history={noHistory} addHref="/new" hrefOf={() => "/edit"} bot="rzeczoznawca" list={shown} />
             </PageSizeContext>
         </Router>,
     );
@@ -40,8 +40,8 @@ describe("ProceduresView", () => {
                 <PageSizeContext value={{ size: 20, failure: null }}>
                     <ProceduresView
                         history={noHistory}
-                        onAdd={() => undefined}
-                        onOpen={() => undefined}
+                        addHref="/new"
+                        hrefOf={() => "/edit"}
                         bot="rzeczoznawca"
                         list={list}
                         isOff={(id) => id === "goodbye"}
@@ -100,7 +100,7 @@ describe("a long list", () => {
         const html = renderToStaticMarkup(
             <Router ssrPath="/bots/b/procedures?page=2">
                 <PageSizeContext value={{ size: 20, failure: null }}>
-                    <ProceduresView history={noHistory} bot="b" list={many} onAdd={() => undefined} onOpen={() => undefined} />
+                    <ProceduresView history={noHistory} bot="b" list={many} addHref="/new" hrefOf={() => "/edit"} />
                 </PageSizeContext>
             </Router>,
         );
