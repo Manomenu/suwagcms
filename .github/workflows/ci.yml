@@ -16,16 +16,13 @@ jobs:
   gate:
     permissions:
       contents: read
-    uses: Manomenu/suwgate/.github/workflows/gate.yml@b62c463aa1a2e9edfb7a11daa66bd2531b55102a
+      statuses: write
+      pull-requests: read
+    uses: Manomenu/suwgate/.github/workflows/gate.yml@e05e6a8a0387033d0a009db1e4b69b2471568df0
     with:
-      runs-on: ${{ vars.CI_RUNNER || 'ubuntu-24.04' }}
       working-directory: Suwagcms.Web
-      dotnet: true
+      browser: chromium
       database: true
-      oasdiff: true
-      browser-install-command: pnpm exec playwright install chromium
-      browser-deps-command: pnpm exec playwright install-deps chromium
-      command: Suwagcms.Web/node_modules/.bin/suwgate check --verbose
 
   build:
     needs: [gate]
