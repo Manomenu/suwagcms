@@ -185,7 +185,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
         var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        Assert.Equal([MistakeCodes.PersonaRequired], await FactApi.CodesOf(refused));
+        Assert.Equal(["persona.required"], await FactApi.CodesOf(refused));
         Assert.True((await persona.Save("""{"personality":"You help.\nBriefly."}""")).IsSuccessStatusCode);
         var version = await scene.CreateAsync();
         var result = await scene.PushAsync(version.Number);
@@ -211,7 +211,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal(MistakeCodes.PersonaIncomplete, mistake.GetProperty("code").GetString());
+        Assert.Equal("persona.incomplete", mistake.GetProperty("code").GetString());
         Assert.Equal("scope.whenOutOfScope", mistake.GetProperty("at").GetString());
         Assert.True(
             (
@@ -235,7 +235,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
         var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
 
         Assert.Empty(status.CannotRun);
-        Assert.Contains(MistakeCodes.PersonaIncomplete, await FactApi.CodesOf(refused));
+        Assert.Contains("persona.incomplete", await FactApi.CodesOf(refused));
     }
 
     [Fact]
@@ -249,7 +249,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
         var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
 
         Assert.Empty(status.CannotRun);
-        Assert.Contains(MistakeCodes.PersonaRequired, await FactApi.CodesOf(refused));
+        Assert.Contains("persona.required", await FactApi.CodesOf(refused));
     }
 
     [Fact]
@@ -280,7 +280,7 @@ public sealed class PersonaVersionTests(TestDatabase database, ClassServer serve
         var result = await scene.PushAsync(version.Number);
 
         Assert.Equal(PushOutcome.Failed, result.Outcome);
-        Assert.Equal(MistakeCodes.PersonaRequired, Assert.Single(result.Mistakes).Code);
+        Assert.Equal(MistakeCode.PersonaRequired, Assert.Single(result.Mistakes).Code);
         Assert.Null((await scene.StatusAsync()).Has);
     }
 

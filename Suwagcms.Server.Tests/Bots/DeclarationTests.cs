@@ -176,24 +176,24 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
     }
 
     [Theory]
-    [InlineData("""{"bot":"another","formatVersion":5,"blocks":["listen"]}""", MistakeCodes.DeclarationBot)]
-    [InlineData("""{"bot":"SELF","formatVersion":5,"blocks":[]}""", MistakeCodes.DeclarationBlocksMissing)]
-    [InlineData("""{"bot":"SELF","formatVersion":5,"blocks":["fly"]}""", MistakeCodes.DeclarationBlockUnknown)]
+    [InlineData("""{"bot":"another","formatVersion":5,"blocks":["listen"]}""", MistakeCode.DeclarationBot)]
+    [InlineData("""{"bot":"SELF","formatVersion":5,"blocks":[]}""", MistakeCode.DeclarationBlocksMissing)]
+    [InlineData("""{"bot":"SELF","formatVersion":5,"blocks":["fly"]}""", MistakeCode.DeclarationBlockUnknown)]
     [InlineData(
         """{"bot":"SELF","formatVersion":5,"blocks":["listen"],"codeActions":[{"id":"a"}]}""",
-        MistakeCodes.CodeActionDescriptionMissing
+        MistakeCode.CodeActionDescriptionMissing
     )]
     [InlineData(
         """{"bot":"SELF","formatVersion":5,"blocks":["listen"],"codeActions":[{"id":"a","description":"d"},{"id":"a","description":"d"}]}""",
-        MistakeCodes.CodeActionRepeated
+        MistakeCode.CodeActionRepeated
     )]
     [InlineData(
         """{"bot":"SELF","formatVersion":5,"blocks":["listen"],"codeActions":[{"id":"a","description":"d","parameters":[{"name":"n","type":"blob","description":"d"}]}]}""",
-        MistakeCodes.FactTypeInvalid
+        MistakeCode.FactTypeInvalid
     )]
-    [InlineData("not json", MistakeCodes.DeclarationInvalid)]
+    [InlineData("not json", MistakeCode.DeclarationInvalid)]
     [Trait("criterion", "AC-bot-declaration-7")]
-    public async Task An_invalid_answer_shows_its_mistakes_and_the_stored_declaration_stays_as_it_was(string answer, string code)
+    public async Task An_invalid_answer_shows_its_mistakes_and_the_stored_declaration_stays_as_it_was(string answer, MistakeCode code)
     {
         ArgumentNullException.ThrowIfNull(answer);
         var (scene, bot) = await SceneAsync(Client(), Everything);
@@ -222,13 +222,13 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
 
         Assert.Equal(
             [
-                MistakeCodes.CodeActionDescriptionMissing,
-                MistakeCodes.CodeActionDescriptionMissing,
-                MistakeCodes.CodeActionRepeated,
-                MistakeCodes.DeclarationBlocksMissing,
-                MistakeCodes.DeclarationBot,
+                "codeAction.description.missing",
+                "codeAction.description.missing",
+                "codeAction.repeated",
+                "declaration.blocks.missing",
+                "declaration.bot",
             ],
-            status.Mistakes.Select(mistake => mistake.Code).Order(StringComparer.Ordinal)
+            status.Mistakes.Select(mistake => mistake.Code.Text()).Order(StringComparer.Ordinal)
         );
     }
 
@@ -352,7 +352,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var codes = await Facts.FactApi.CodesOf(refused);
-        Assert.Equal([MistakeCodes.DeclarationBlock], codes);
+        Assert.Equal(["declaration.block"], codes);
         Assert.Equal(asked, bot.Requests);
         Assert.Null((await scene.StatusAsync()).Latest);
     }
@@ -372,7 +372,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
         await AskAsync(scene);
 
         var refused = await scene.Client.PostAsync($"/api/bots/{scene.Bot}/versions", null, TestContext.Current.CancellationToken);
-        Assert.Equal([MistakeCodes.DeclarationFormatVersion], await Facts.FactApi.CodesOf(refused));
+        Assert.Equal(["declaration.formatVersion"], await Facts.FactApi.CodesOf(refused));
     }
 
     [Fact]
@@ -398,7 +398,7 @@ public sealed class DeclarationTests(TestDatabase database, ClassServer server) 
 
         Assert.Equal(PushOutcome.Failed, result.Outcome);
         Assert.Contains("does not declare now", result.Reason, StringComparison.Ordinal);
-        Assert.Equal(MistakeCodes.DeclarationBlock, Assert.Single(result.Mistakes).Code);
+        Assert.Equal(MistakeCode.DeclarationBlock, Assert.Single(result.Mistakes).Code);
         Assert.Equal(0, puts);
         Assert.Null((await scene.StatusAsync()).Has);
         Assert.Equal(PushOutcome.Failed, Assert.Single(await scene.Attempts()).Outcome);

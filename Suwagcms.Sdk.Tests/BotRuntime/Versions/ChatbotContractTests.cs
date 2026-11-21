@@ -8,7 +8,6 @@ using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.BotRuntime.Versions;
 using Suwagcms.Sdk.Format;
 using Suwagcms.Sdk.Format.Versions;
-using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime.Versions;
 
@@ -124,9 +123,9 @@ public sealed class ChatbotContractTests
         wrongDigest["digest"] = "0";
         var refusals = new[]
         {
-            (Document: Documents.Make(2, bot: "sales"), Code: MistakeCodes.VersionBot),
-            (Document: otherFormat, Code: MistakeCodes.FormatVersion),
-            (Document: wrongDigest, Code: MistakeCodes.VersionDigest),
+            (Document: Documents.Make(2, bot: "sales"), Code: "version.bot"),
+            (Document: otherFormat, Code: "format.version"),
+            (Document: wrongDigest, Code: "version.digest"),
         };
         foreach (var (document, code) in refusals)
         {

@@ -5,7 +5,7 @@ import type { Mistake } from "@/api/client";
 import type { Fact } from "./api";
 import { bodyOf, emptyForm, fieldOf, formOf, referrerPlace } from "./factForm";
 
-function mistake(code: string, path: string): Mistake {
+function mistake(code: Mistake["code"], path: string): Mistake {
     return { code, path, message: "m", fix: "f", stage: "Save", resource: { kind: "GlobalFact", id: "x" }, related: [] };
 }
 

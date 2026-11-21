@@ -3,7 +3,7 @@ using Suwagcms.Sdk.Format.References;
 namespace Suwagcms.Sdk.Validation;
 
 public sealed record Mistake(
-    string Code,
+    MistakeCode Code,
     ValidationStage Stage,
     ResourceRef Resource,
     string Path,

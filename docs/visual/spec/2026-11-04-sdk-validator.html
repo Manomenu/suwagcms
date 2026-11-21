@@ -505,6 +505,7 @@ pre.out { font: 12px/1.5 var(--mono); background: var(--code-bg); border: 1px so
     <li><code>AC-sdk-validator-17</code> <code>just sdk-publish &lt;version&gt;</code> starts the workflow on <code>master</code> with that version and says how to follow it, and a version of the wrong form starts nothing.</li>
     <li><code>AC-sdk-validator-18</code> A release is refused, with nothing started, from a branch other than <code>master</code>, from a checkout with uncommitted changes and from a <code>master</code> that differs from the remote one in either direction, and the workflow itself refuses any ref but <code>master</code>.</li>
     <li><code>AC-sdk-validator-19</code> The package is ready to be public: it declares the MIT license, the repository holds that license with the package's copyright, it carries a readme that does not call it unpublished, and it has a description, tags and a project address.</li>
+    <li><code>AC-sdk-validator-20</code> A mistake's code is one of a closed list, <code>MistakeCode</code>: each member is sent as its own dotted text, such as <code>step.missing</code>, no two share a text, and the text reads back as the same member, so a bot and the CMS agree on every code and a consumer of the HTTP contract or <code>bot-runtime.schema.json</code> sees the whole list.</li>
   </ul>
 </section>
 

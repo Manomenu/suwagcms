@@ -6,7 +6,7 @@ namespace Suwagcms.Sdk.Validation.Rules;
 
 internal static class ProcedureMistake
 {
-    public static Rule For(string code, ValidationStage stage, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
+    public static Rule For(MistakeCode code, ValidationStage stage, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
         new(
             code,
             stage,
@@ -15,7 +15,7 @@ internal static class ProcedureMistake
 
     public static Mistake Make(
         Procedure procedure,
-        string code,
+        MistakeCode code,
         ValidationStage stage,
         string path,
         string message,

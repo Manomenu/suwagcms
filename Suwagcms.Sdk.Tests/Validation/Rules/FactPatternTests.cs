@@ -28,7 +28,7 @@ public sealed class FactPatternTests
         [
             .. DefinitionValidator
                 .Validate(new BotDefinition { FormatVersion = 5, Facts = [fact] }, ValidationStage.Save)
-                .Select(mistake => (mistake.Code, mistake.Path)),
+                .Select(mistake => (mistake.Code.Text(), mistake.Path)),
         ];
 
     private static Mistake[] Check(BotDefinition definition) => [.. DefinitionValidator.Validate(definition, ValidationStage.Save)];
@@ -149,7 +149,7 @@ public sealed class FactPatternTests
         foreach (var wrong in new[] { "never", "AfterRefusal", "" })
         {
             Assert.Equal(
-                [(MistakeCodes.FactPatternTellCustomerInvalid, "pattern.tellCustomer")],
+                [("fact.pattern.tellCustomerInvalid", "pattern.tellCustomer")],
                 Mistakes(Code(TwoCapitals with { TellCustomer = wrong }))
             );
         }
@@ -163,10 +163,10 @@ public sealed class FactPatternTests
     [Trait("criterion", "AC-fact-pattern-3")]
     public void A_pattern_needs_a_regex_and_words_for_it_and_an_example_it_gives_is_not_blank()
     {
-        Assert.Equal([(MistakeCodes.FactPatternRegexMissing, "pattern.regex")], Mistakes(Code(TwoCapitals with { Regex = "" })));
-        Assert.Equal([(MistakeCodes.FactPatternMeansMissing, "pattern.means")], Mistakes(Code(TwoCapitals with { Means = "  " })));
-        Assert.Equal([(MistakeCodes.FactPatternExampleBlank, "pattern.example")], Mistakes(Code(TwoCapitals with { Example = " " })));
-        Assert.Equal([(MistakeCodes.FactPatternExampleBlank, "pattern.example")], Mistakes(Code(TwoCapitals with { Example = "" })));
+        Assert.Equal([("fact.pattern.regexMissing", "pattern.regex")], Mistakes(Code(TwoCapitals with { Regex = "" })));
+        Assert.Equal([("fact.pattern.meansMissing", "pattern.means")], Mistakes(Code(TwoCapitals with { Means = "  " })));
+        Assert.Equal([("fact.pattern.exampleBlank", "pattern.example")], Mistakes(Code(TwoCapitals with { Example = " " })));
+        Assert.Equal([("fact.pattern.exampleBlank", "pattern.example")], Mistakes(Code(TwoCapitals with { Example = "" })));
     }
 
     [Theory]
@@ -179,7 +179,7 @@ public sealed class FactPatternTests
     [InlineData("(?(a)b|c)")]
     [InlineData("a)|(?:b")]
     public void A_regex_that_does_not_compile_alone_and_whole_without_backtracking_is_refused(string regex) =>
-        Assert.Equal([(MistakeCodes.FactPatternRegexInvalid, "pattern.regex")], Mistakes(Code(TwoCapitals with { Regex = regex })));
+        Assert.Equal([("fact.pattern.regexInvalid", "pattern.regex")], Mistakes(Code(TwoCapitals with { Regex = regex })));
 
     [Theory]
     [Trait("criterion", "AC-fact-pattern-4")]
@@ -187,7 +187,7 @@ public sealed class FactPatternTests
     [InlineData("a*")]
     [InlineData("a|")]
     public void A_regex_that_matches_an_empty_text_is_refused(string regex) =>
-        Assert.Equal([(MistakeCodes.FactPatternRegexMatchesEmpty, "pattern.regex")], Mistakes(Code(TwoCapitals with { Regex = regex })));
+        Assert.Equal([("fact.pattern.regexMatchesEmpty", "pattern.regex")], Mistakes(Code(TwoCapitals with { Regex = regex })));
 
     [Theory]
     [Trait("criterion", "AC-fact-pattern-5")]
@@ -216,7 +216,7 @@ public sealed class FactPatternTests
     [InlineData(LandRegisterRegex, "WA1M/00012345/6 and more")]
     public void An_example_its_regex_does_not_match_as_a_whole_is_refused(string regex, string example) =>
         Assert.Equal(
-            [(MistakeCodes.FactPatternExampleMismatch, "pattern.example")],
+            [("fact.pattern.exampleMismatch", "pattern.example")],
             Mistakes(
                 Code(
                     new TextPattern
@@ -256,7 +256,7 @@ public sealed class FactPatternTests
         if (refused)
         {
             var mistake = Assert.Single(mistakes);
-            Assert.Equal((MistakeCodes.FactPatternExampleTooLong, "pattern.example"), (mistake.Code, mistake.Path));
+            Assert.Equal(("fact.pattern.exampleTooLong", "pattern.example"), (mistake.Code.Text(), mistake.Path));
             Assert.Contains("raise maxLength", mistake.Fix, StringComparison.Ordinal);
         }
         else
@@ -299,7 +299,7 @@ public sealed class FactPatternTests
 
         Assert.Contains(
             Check(definition),
-            mistake => mistake is { Code: MistakeCodes.FactPatternExampleTooLong, Path: "localFacts.code.pattern.example" }
+            mistake => mistake is { Code: MistakeCode.FactPatternExampleTooLong, Path: "localFacts.code.pattern.example" }
         );
     }
 
@@ -307,7 +307,7 @@ public sealed class FactPatternTests
     [Trait("criterion", "AC-fact-pattern-16")]
     public void An_invalid_maximum_length_has_its_own_mistake_and_an_example_is_not_measured_against_it() =>
         Assert.Equal(
-            [(MistakeCodes.FactTextMaxLengthInvalid, "maxLength")],
+            [("fact.text.maxLengthInvalid", "maxLength")],
             Mistakes(
                 Code(
                     new TextPattern
@@ -345,8 +345,8 @@ public sealed class FactPatternTests
             Pattern = TwoCapitals,
         };
 
-        Assert.Equal([(MistakeCodes.FactConstraintForeign, "pattern")], Mistakes(onInt));
-        Assert.Equal([(MistakeCodes.FactConstraintForeign, "pattern")], Mistakes(onEnum));
+        Assert.Equal([("fact.constraint.foreign", "pattern")], Mistakes(onInt));
+        Assert.Equal([("fact.constraint.foreign", "pattern")], Mistakes(onEnum));
         Assert.Contains(
             "change the type to text",
             Assert.Single(Check(new BotDefinition { FormatVersion = 5, Facts = [onEnum] })).Fix,
@@ -361,9 +361,9 @@ public sealed class FactPatternTests
         var assign = Assert.Single(Check(Assigning("ab", TwoCapitals)));
         var condition = Assert.Single(Check(Testing("ab", TwoCapitals)));
 
-        Assert.Equal(MistakeCodes.AssignValueInvalid, assign.Code);
+        Assert.Equal(MistakeCode.AssignValueInvalid, assign.Code);
         Assert.Contains("written as the pattern [A-Z]{2}", assign.Fix, StringComparison.Ordinal);
-        Assert.Equal(MistakeCodes.ConditionValueInvalid, condition.Code);
+        Assert.Equal(MistakeCode.ConditionValueInvalid, condition.Code);
         Assert.Empty(Check(Assigning("AB", TwoCapitals)));
         Assert.Empty(Check(Testing("AB", TwoCapitals)));
     }
@@ -376,8 +376,8 @@ public sealed class FactPatternTests
         var definition = Assigning("ab", broken) with { Facts = [Code(broken) with { Description = " " }] };
 
         Assert.Equal(
-            [MistakeCodes.FactDescriptionMissing, MistakeCodes.FactPatternRegexInvalid],
-            Check(definition).Select(mistake => mistake.Code).Order(StringComparer.Ordinal)
+            ["fact.description.missing", "fact.pattern.regexInvalid"],
+            Check(definition).Select(mistake => mistake.Code.Text()).Order(StringComparer.Ordinal)
         );
     }
 
@@ -415,9 +415,9 @@ public sealed class FactPatternTests
 
         Assert.Contains(
             mistakes,
-            mistake => mistake is { Code: MistakeCodes.FactPatternExampleMismatch, Path: "localFacts.code.pattern.example" }
+            mistake => mistake is { Code: MistakeCode.FactPatternExampleMismatch, Path: "localFacts.code.pattern.example" }
         );
-        Assert.Contains(mistakes, mistake => mistake.Code == MistakeCodes.AssignValueInvalid);
+        Assert.Contains(mistakes, mistake => mistake.Code == MistakeCode.AssignValueInvalid);
     }
 
     [Fact]
@@ -430,7 +430,7 @@ public sealed class FactPatternTests
         var reshaped = EditGuard.Reshape(before, after, Check(after));
 
         var mistake = Assert.Single(reshaped);
-        Assert.Equal((MistakeCodes.FactPatternInUse, "pattern.regex"), (mistake.Code, mistake.Path));
+        Assert.Equal(("fact.pattern.inUse", "pattern.regex"), (mistake.Code.Text(), mistake.Path));
         Assert.Contains("'AB'", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("procedure p, step a", mistake.Message, StringComparison.Ordinal);
         Assert.Equal(["p"], mistake.Related.Select(related => related.Resource.Id));
@@ -444,7 +444,7 @@ public sealed class FactPatternTests
         var refused = plain with { Facts = [Code(TwoCapitals with { Regex = "[0-9]{2}" })] };
         var kept = plain with { Facts = [Code(TwoCapitals with { Regex = "[A-F]{2}" })] };
 
-        Assert.Equal(MistakeCodes.FactPatternInUse, Assert.Single(EditGuard.Reshape(plain, refused, Check(refused))).Code);
+        Assert.Equal(MistakeCode.FactPatternInUse, Assert.Single(EditGuard.Reshape(plain, refused, Check(refused))).Code);
         Assert.Empty(EditGuard.Reshape(plain, kept, Check(kept)));
     }
 

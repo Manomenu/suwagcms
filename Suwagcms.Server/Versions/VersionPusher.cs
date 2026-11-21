@@ -170,7 +170,7 @@ internal sealed class VersionPusher(
         return reply switch
         {
             BotClient.Reply.Answer { Status: StatusCodes.Status409Conflict } answer
-                when BotClient.RefusalIn(answer)?.Mistakes.Any(mistake => mistake.Code == MistakeCodes.VersionNotHeld) == true =>
+                when BotClient.RefusalIn(answer)?.Mistakes.Any(mistake => mistake.Code == MistakeCode.VersionNotHeld) == true =>
                 await SendAsync(bot, number, target, cancellationToken),
             BotClient.Reply.Answer
             {

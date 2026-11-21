@@ -10,7 +10,7 @@ internal static class FactPatternRules
         if (PatternOf(fact) is { Regex.Length: 0 })
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternRegexMissing,
+                MistakeCode.FactPatternRegexMissing,
                 fact,
                 "pattern.regex",
                 $"The pattern of '{fact.Name}' has no regex.",
@@ -24,7 +24,7 @@ internal static class FactPatternRules
         if (PatternOf(fact) is { Regex.Length: > 0 } pattern && FactValues.RegexProblem(pattern.Regex) is { } problem)
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternRegexInvalid,
+                MistakeCode.FactPatternRegexInvalid,
                 fact,
                 "pattern.regex",
                 $"The pattern of '{fact.Name}' cannot be used: {problem}",
@@ -38,7 +38,7 @@ internal static class FactPatternRules
         if (Usable(fact) is { } pattern && FactValues.Matches(pattern.Regex, ""))
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternRegexMatchesEmpty,
+                MistakeCode.FactPatternRegexMatchesEmpty,
                 fact,
                 "pattern.regex",
                 $"The pattern of '{fact.Name}' can match an empty text.",
@@ -52,7 +52,7 @@ internal static class FactPatternRules
         if (PatternOf(fact) is { } pattern && string.IsNullOrWhiteSpace(pattern.Means))
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternMeansMissing,
+                MistakeCode.FactPatternMeansMissing,
                 fact,
                 "pattern.means",
                 $"The pattern of '{fact.Name}' does not say what it means.",
@@ -66,7 +66,7 @@ internal static class FactPatternRules
         if (PatternOf(fact) is { Example: { } example } && string.IsNullOrWhiteSpace(example))
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternExampleBlank,
+                MistakeCode.FactPatternExampleBlank,
                 fact,
                 "pattern.example",
                 $"The example of the pattern of '{fact.Name}' is blank.",
@@ -84,7 +84,7 @@ internal static class FactPatternRules
         )
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternExampleMismatch,
+                MistakeCode.FactPatternExampleMismatch,
                 fact,
                 "pattern.example",
                 $"The example '{example}' of '{fact.Name}' does not match its regex {pattern.Regex}.",
@@ -103,7 +103,7 @@ internal static class FactPatternRules
         )
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternExampleTooLong,
+                MistakeCode.FactPatternExampleTooLong,
                 fact,
                 "pattern.example",
                 string.Create(
@@ -120,7 +120,7 @@ internal static class FactPatternRules
         if (PatternOf(fact) is { } pattern && !TellCustomers.All.Contains(pattern.TellCustomer, StringComparer.Ordinal))
         {
             yield return FactRules.Make(
-                MistakeCodes.FactPatternTellCustomerInvalid,
+                MistakeCode.FactPatternTellCustomerInvalid,
                 fact,
                 "pattern.tellCustomer",
                 $"The pattern of '{fact.Name}' has the unknown tellCustomer '{pattern.TellCustomer}'.",

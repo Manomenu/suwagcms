@@ -69,7 +69,7 @@ function view(list: Fact[]): string {
     );
 }
 
-function mistake(code: string, path: string, message: string, fix: string): Mistake {
+function mistake(code: Mistake["code"], path: string, message: string, fix: string): Mistake {
     return { code, path, message, fix, stage: "Save", resource: { kind: "GlobalFact", id: "order.kind" }, related: [] };
 }
 

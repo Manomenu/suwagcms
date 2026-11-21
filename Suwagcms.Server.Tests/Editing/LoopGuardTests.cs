@@ -67,7 +67,7 @@ public sealed class LoopGuardTests(TestDatabase database)
             Assert.Single(results.OfType<EditResult.Saved>());
             var refused = Assert.Single(results.OfType<EditResult.Refused>());
             var mistake = Assert.Single(refused.Mistakes);
-            Assert.Equal(MistakeCodes.ReferenceLoop, mistake.Code);
+            Assert.Equal(MistakeCode.ReferenceLoop, mistake.Code);
             Assert.Contains("a → b → a", mistake.Message, StringComparison.Ordinal);
         }
     }

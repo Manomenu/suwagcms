@@ -63,7 +63,7 @@ public sealed class ValidateEndpointTests(TestDatabase database, ClassServer ser
 
         Assert.NotEmpty(library);
         Assert.Equal(Comparable(library), Comparable(answer.Mistakes));
-        Assert.Equal(declared && stage == "Version", answer.Mistakes.Any(mistake => mistake.Code == MistakeCodes.DeclarationBlock));
+        Assert.Equal(declared && stage == "Version", answer.Mistakes.Any(mistake => mistake.Code == MistakeCode.DeclarationBlock));
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public sealed class ValidateEndpointTests(TestDatabase database, ClassServer ser
         Assert.Empty(answer.Mistakes);
 
         var missing = await PostAsync(Client(), """{"definition":{"formatVersion":5}}""");
-        Assert.Equal(MistakeCodes.BotConversationMissing, Assert.Single(missing.Mistakes).Code);
+        Assert.Equal(MistakeCode.BotConversationMissing, Assert.Single(missing.Mistakes).Code);
     }
 
     [Fact]
@@ -85,9 +85,9 @@ public sealed class ValidateEndpointTests(TestDatabase database, ClassServer ser
     public async Task A_definition_or_declaration_that_cannot_be_read_gets_a_mistake_and_a_body_with_a_typo_is_refused()
     {
         var client = Client();
-        Assert.Equal(MistakeCodes.FormatInvalid, Assert.Single((await PostAsync(client, """{"stage":"Version"}""")).Mistakes).Code);
+        Assert.Equal(MistakeCode.FormatInvalid, Assert.Single((await PostAsync(client, """{"stage":"Version"}""")).Mistakes).Code);
         Assert.Equal(
-            MistakeCodes.DeclarationInvalid,
+            MistakeCode.DeclarationInvalid,
             Assert
                 .Single((await PostAsync(client, """{"definition":{"formatVersion":5},"declaration":{"blocks":"listen"}}""")).Mistakes)
                 .Code

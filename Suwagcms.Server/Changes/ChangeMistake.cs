@@ -6,10 +6,10 @@ namespace Suwagcms.Server.Changes;
 
 internal sealed record ChangeMistake(
     int? Change,
-    string Code,
+    MistakeCode Code,
     string Message,
     string Fix,
     ValidationStage Stage,
     ResourceRef Resource,
     IReadOnlyList<RelatedResource> Related
-) : Mistake<string>(Code, Message, Fix);
+) : Mistake<MistakeCode>(Code, Message, Fix);

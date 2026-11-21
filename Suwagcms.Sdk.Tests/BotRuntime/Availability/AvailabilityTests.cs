@@ -4,7 +4,6 @@ using Suwagcms.Sdk.BotRuntime.Availability;
 using Suwagcms.Sdk.BotRuntime.Versions;
 using Suwagcms.Sdk.Format.References;
 using Suwagcms.Sdk.Tests.BotRuntime.Versions;
-using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime.Availability;
 
@@ -287,7 +286,7 @@ public sealed class AvailabilityTests
         );
 
         Assert.Contains(
-            MistakeCodes.AvailabilityInvalid,
+            "availability.invalid",
             await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken),
             StringComparison.Ordinal
         );

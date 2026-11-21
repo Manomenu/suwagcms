@@ -9,56 +9,53 @@ internal static class ArticleRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        For(MistakeCodes.ArticleIdInvalid, Id),
+        For(MistakeCode.ArticleIdInvalid, Id),
         For(
-            MistakeCodes.ArticleTitleMissing,
-            article => Blank(article, MistakeCodes.ArticleTitleMissing, "title", article.Title, "Say what the article is about.")
+            MistakeCode.ArticleTitleMissing,
+            article => Blank(article, MistakeCode.ArticleTitleMissing, "title", article.Title, "Say what the article is about.")
         ),
         For(
-            MistakeCodes.ArticleContentMissing,
+            MistakeCode.ArticleContentMissing,
             article =>
                 Blank(
                     article,
-                    MistakeCodes.ArticleContentMissing,
+                    MistakeCode.ArticleContentMissing,
                     "content",
                     article.Content,
                     "Write what is true: the customer reads it, through the model."
                 )
         ),
         For(
-            MistakeCodes.ArticleLlmGuideMissing,
+            MistakeCode.ArticleLlmGuideMissing,
             article =>
                 Blank(
                     article,
-                    MistakeCodes.ArticleLlmGuideMissing,
+                    MistakeCode.ArticleLlmGuideMissing,
                     "llmGuide",
                     article.LlmGuide,
                     "Say how the model should talk about it: tone, what to ask first, what not to say."
                 )
         ),
         For(
-            MistakeCodes.ArticleDescriptionMissing,
+            MistakeCode.ArticleDescriptionMissing,
             article =>
                 Blank(
                     article,
-                    MistakeCodes.ArticleDescriptionMissing,
+                    MistakeCode.ArticleDescriptionMissing,
                     "description",
                     article.Description,
                     "Say what the article answers: the bot's search reads it."
                 )
         ),
+        For(MistakeCode.ArticleContentTooLong, article => TooLong(article, MistakeCode.ArticleContentTooLong, "content", article.Content)),
         For(
-            MistakeCodes.ArticleContentTooLong,
-            article => TooLong(article, MistakeCodes.ArticleContentTooLong, "content", article.Content)
+            MistakeCode.ArticleLlmGuideTooLong,
+            article => TooLong(article, MistakeCode.ArticleLlmGuideTooLong, "llmGuide", article.LlmGuide)
         ),
-        For(
-            MistakeCodes.ArticleLlmGuideTooLong,
-            article => TooLong(article, MistakeCodes.ArticleLlmGuideTooLong, "llmGuide", article.LlmGuide)
-        ),
-        new(MistakeCodes.ArticleKnowledgeBaseUnknown, ValidationStage.Save, UnknownKnowledgeBase),
+        new(MistakeCode.ArticleKnowledgeBaseUnknown, ValidationStage.Save, UnknownKnowledgeBase),
     ];
 
-    private static Rule For(string code, Func<Article, IEnumerable<Mistake>> check) =>
+    private static Rule For(MistakeCode code, Func<Article, IEnumerable<Mistake>> check) =>
         new(code, ValidationStage.Save, definition => definition.Articles.SelectMany(check));
 
     private static IEnumerable<Mistake> Id(Article article)
@@ -66,7 +63,7 @@ internal static class ArticleRules
         if (!ResourceIds.IsCamelCase(article.Id))
         {
             yield return Make(
-                MistakeCodes.ArticleIdInvalid,
+                MistakeCode.ArticleIdInvalid,
                 article,
                 "id",
                 $"'{article.Id}' is not an article id: it is camelCase, like priceList.",
@@ -75,7 +72,7 @@ internal static class ArticleRules
         }
     }
 
-    private static IEnumerable<Mistake> Blank(Article article, string code, string path, string text, string fix)
+    private static IEnumerable<Mistake> Blank(Article article, MistakeCode code, string path, string text, string fix)
     {
         if (string.IsNullOrWhiteSpace(text))
         {
@@ -83,7 +80,7 @@ internal static class ArticleRules
         }
     }
 
-    private static IEnumerable<Mistake> TooLong(Article article, string code, string path, string text)
+    private static IEnumerable<Mistake> TooLong(Article article, MistakeCode code, string path, string text)
     {
         if (text.Length > Article.MaxTextLength)
         {
@@ -111,7 +108,7 @@ internal static class ArticleRules
             .Articles.Where(article => !known.Contains(article.KnowledgeBase))
             .Select(article =>
                 Make(
-                    MistakeCodes.ArticleKnowledgeBaseUnknown,
+                    MistakeCode.ArticleKnowledgeBaseUnknown,
                     article,
                     "knowledgeBase",
                     string.IsNullOrWhiteSpace(article.KnowledgeBase)
@@ -122,6 +119,6 @@ internal static class ArticleRules
             );
     }
 
-    private static Mistake Make(string code, Article article, string path, string message, string fix) =>
+    private static Mistake Make(MistakeCode code, Article article, string path, string message, string fix) =>
         new(code, ValidationStage.Save, new ResourceRef(ResourceKind.Article, article.Id), path, message, fix, []);
 }

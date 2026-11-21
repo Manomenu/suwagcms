@@ -27,7 +27,7 @@ public sealed class LoopRulesTests
         };
 
     private static List<Mistake> Loops(BotDefinition definition) =>
-        [.. DefinitionValidator.Validate(definition, ValidationStage.Save).Where(mistake => mistake.Code == MistakeCodes.ReferenceLoop)];
+        [.. DefinitionValidator.Validate(definition, ValidationStage.Save).Where(mistake => mistake.Code == MistakeCode.ReferenceLoop)];
 
     private static List<Mistake> Loops(params Article[] articles) => Loops(Bot(articles));
 
@@ -37,7 +37,7 @@ public sealed class LoopRulesTests
     {
         var mistake = Assert.Single(Loops(Linking("pricing", Link("discounts")), Linking("discounts", "Text.", Link("pricing"))));
 
-        Assert.Equal(MistakeCodes.ReferenceLoop, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceLoop, mistake.Code);
         Assert.Equal(ValidationStage.Save, mistake.Stage);
         Assert.Contains("discounts → pricing → discounts", mistake.Message, StringComparison.Ordinal);
         Assert.Equal(new ResourceRef(ResourceKind.Article, "discounts"), mistake.Resource);
@@ -128,7 +128,7 @@ public sealed class LoopRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
 
-        Assert.Equal(MistakeCodes.ReferenceLoop, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceLoop, mistake.Code);
         Assert.Contains("discounts → pricing → discounts", mistake.Message, StringComparison.Ordinal);
         Assert.Equal(
             Assert.Single(Loops(Linking("pricing", Link("discounts")), Linking("discounts", "Text.", Link("pricing")))).Message,

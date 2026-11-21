@@ -19,13 +19,3 @@ First check that the `mtp` runner fills `coveredBy` per test.
 The first fake in tests (WireMock for an external API, a mail catcher, e2e seed data) brings a
 test environment of its own: a folder with its compose file, and a `just` module; `dev.compose` in `suwgate.yml`
 points `suwgate dev db` there. Until then the gate needs only the one PostgreSQL container of `compose.yaml`.
-
-## The mistake codes as an enum of the contract
-
-The refusal's top-level `code` is the enum `RefusalCode` in the contract; the mistakes' codes are still strings
-(`ProducesRefusal<RefusalCode, string, …>`). They are a closed set, every one a constant of this repository
-(`MistakeCodes` of the SDK, about 150, plus `StrictBody.UnknownField`, `ChangeList.OtherBot`, `ActionTester.ValueUnfit`), so by the
-contract rule of AGENTS.md they belong in an enum too, which Suwbackkit 0.4 allows as a second type parameter
-(`ProducesRefusal<RefusalCode, MistakeCode, RefusalMistake>`). Its own task, because `MistakeCodes` is the published SDK's API:
-the bots compare against those constants, so the change is a major SDK release with a migration note, and the web's
-`refusalReader<RefusalCode, MistakeCode>()` and its `mistake.code === "…"` checks follow.

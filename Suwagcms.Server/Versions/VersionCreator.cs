@@ -12,8 +12,6 @@ namespace Suwagcms.Server.Versions;
 
 internal sealed class VersionCreator(NpgsqlDataSource dataSource, TimeProvider time)
 {
-    public const string Unchanged = "version.unchanged";
-
     public async Task<(VersionCreated? Created, EditResult? Refusal)> CreateAsync(
         string bot,
         bool dryRun,
@@ -85,7 +83,7 @@ internal sealed class VersionCreator(NpgsqlDataSource dataSource, TimeProvider t
 
     private static Mistake NothingChanged(string bot, int latest) =>
         new(
-            Unchanged,
+            MistakeCode.VersionUnchanged,
             ValidationStage.Version,
             new ResourceRef(ResourceKind.Definition, bot),
             "definition",

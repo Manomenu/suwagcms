@@ -9,22 +9,22 @@ internal static class KnowledgeBaseRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        For(MistakeCodes.KnowledgeBaseIdInvalid, definition => definition.KnowledgeBases.SelectMany(Id)),
-        For(MistakeCodes.KnowledgeBaseTitleMissing, definition => definition.KnowledgeBases.SelectMany(Title)),
-        For(MistakeCodes.KnowledgeBaseTitleRepeated, Repeated),
-        For(MistakeCodes.KnowledgeBaseLanguageUnknown, definition => definition.KnowledgeBases.SelectMany(Language)),
-        For(MistakeCodes.KnowledgeBaseEmbeddingMissing, definition => definition.KnowledgeBases.SelectMany(Embedding)),
-        For(MistakeCodes.KnowledgeBaseResultsOutOfRange, definition => definition.KnowledgeBases.SelectMany(Results)),
+        For(MistakeCode.KnowledgeBaseIdInvalid, definition => definition.KnowledgeBases.SelectMany(Id)),
+        For(MistakeCode.KnowledgeBaseTitleMissing, definition => definition.KnowledgeBases.SelectMany(Title)),
+        For(MistakeCode.KnowledgeBaseTitleRepeated, Repeated),
+        For(MistakeCode.KnowledgeBaseLanguageUnknown, definition => definition.KnowledgeBases.SelectMany(Language)),
+        For(MistakeCode.KnowledgeBaseEmbeddingMissing, definition => definition.KnowledgeBases.SelectMany(Embedding)),
+        For(MistakeCode.KnowledgeBaseResultsOutOfRange, definition => definition.KnowledgeBases.SelectMany(Results)),
     ];
 
-    private static Rule For(string code, Func<BotDefinition, IEnumerable<Mistake>> check) => new(code, ValidationStage.Save, check);
+    private static Rule For(MistakeCode code, Func<BotDefinition, IEnumerable<Mistake>> check) => new(code, ValidationStage.Save, check);
 
     private static IEnumerable<Mistake> Id(KnowledgeBase knowledgeBase)
     {
         if (!ResourceIds.IsCamelCase(knowledgeBase.Id))
         {
             yield return Make(
-                MistakeCodes.KnowledgeBaseIdInvalid,
+                MistakeCode.KnowledgeBaseIdInvalid,
                 knowledgeBase,
                 "id",
                 $"'{knowledgeBase.Id}' is not a knowledge base id: it is camelCase, like offer or forValuers.",
@@ -38,7 +38,7 @@ internal static class KnowledgeBaseRules
         if (string.IsNullOrWhiteSpace(knowledgeBase.Title))
         {
             yield return Make(
-                MistakeCodes.KnowledgeBaseTitleMissing,
+                MistakeCode.KnowledgeBaseTitleMissing,
                 knowledgeBase,
                 "title",
                 $"Knowledge base '{knowledgeBase.Id}' has no title.",
@@ -52,7 +52,7 @@ internal static class KnowledgeBaseRules
         if (!KnowledgeBaseLanguages.All.Contains(knowledgeBase.Language, StringComparer.Ordinal))
         {
             yield return Make(
-                MistakeCodes.KnowledgeBaseLanguageUnknown,
+                MistakeCode.KnowledgeBaseLanguageUnknown,
                 knowledgeBase,
                 "language",
                 string.IsNullOrWhiteSpace(knowledgeBase.Language)
@@ -68,7 +68,7 @@ internal static class KnowledgeBaseRules
         if (string.IsNullOrWhiteSpace(knowledgeBase.Embedding))
         {
             yield return Make(
-                MistakeCodes.KnowledgeBaseEmbeddingMissing,
+                MistakeCode.KnowledgeBaseEmbeddingMissing,
                 knowledgeBase,
                 "embedding",
                 $"Knowledge base '{knowledgeBase.Id}' names no embedding profile.",
@@ -84,7 +84,7 @@ internal static class KnowledgeBaseRules
             .KnowledgeBases.Where(knowledgeBase => !profiles.Contains(knowledgeBase.Embedding, StringComparer.OrdinalIgnoreCase))
             .OrderBy(knowledgeBase => knowledgeBase.Id, StringComparer.Ordinal)
             .Select(knowledgeBase => new Mistake(
-                MistakeCodes.DeclarationEmbeddingProfile,
+                MistakeCode.DeclarationEmbeddingProfile,
                 ValidationStage.Version,
                 Resource(knowledgeBase),
                 "embedding",
@@ -99,7 +99,7 @@ internal static class KnowledgeBaseRules
         if (knowledgeBase.Results is < KnowledgeBase.MinResults or > KnowledgeBase.MaxResults)
         {
             yield return Make(
-                MistakeCodes.KnowledgeBaseResultsOutOfRange,
+                MistakeCode.KnowledgeBaseResultsOutOfRange,
                 knowledgeBase,
                 "results",
                 string.Create(
@@ -126,7 +126,7 @@ internal static class KnowledgeBaseRules
                     var others = group.Where(other => other.index != entry.index).ToList();
                     var names = string.Join(", ", others.Select(other => $"'{other.item.Id}'"));
                     return Make(
-                        MistakeCodes.KnowledgeBaseTitleRepeated,
+                        MistakeCode.KnowledgeBaseTitleRepeated,
                         entry.item,
                         "title",
                         $"The title '{entry.item.Title.Trim()}' of knowledge base '{entry.item.Id}' is used by knowledge base {names}.",
@@ -139,7 +139,7 @@ internal static class KnowledgeBaseRules
     private static ResourceRef Resource(KnowledgeBase knowledgeBase) => new(ResourceKind.KnowledgeBase, knowledgeBase.Id);
 
     private static Mistake Make(
-        string code,
+        MistakeCode code,
         KnowledgeBase knowledgeBase,
         string path,
         string message,

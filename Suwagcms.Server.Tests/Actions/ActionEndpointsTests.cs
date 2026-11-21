@@ -91,11 +91,11 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
         foreach (
             var code in new[]
             {
-                MistakeCodes.ActionIdInvalid,
-                MistakeCodes.ActionDescriptionMissing,
-                MistakeCodes.ActionImplementationMissing,
-                MistakeCodes.FactTypeInvalid,
-                MistakeCodes.FactDescriptionMissing,
+                "action.id.invalid",
+                "action.description.missing",
+                "action.implementation.missing",
+                "fact.type.invalid",
+                "fact.description.missing",
             }
         )
         {
@@ -177,7 +177,7 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
         var refused = await FactApi.MistakesOf(await api.Add("check", Body));
 
         Assert.Equal(
-            offline.Select(mistake => (mistake.Code, mistake.Path, mistake.Message)).Order(),
+            offline.Select(mistake => (mistake.Code.Text(), mistake.Path, mistake.Message)).Order(),
             refused
                 .Select(mistake =>
                     (
@@ -439,7 +439,7 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
 
         Assert.Equal(1, (await ActionApi.Json(added)).GetProperty("added").GetInt32());
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        Assert.Contains(MistakeCodes.ActionSecretInUrl, await FactApi.CodesOf(refused));
+        Assert.Contains("action.secret.inUrl", await FactApi.CodesOf(refused));
         Assert.Equal(1, (await ActionApi.Json(deleted)).GetProperty("deleted").GetInt32());
     }
 }

@@ -30,12 +30,12 @@ internal static class ProcedureText
     public static string Mistakes(string head, IReadOnlyList<Mistake> mistakes)
     {
         ArgumentNullException.ThrowIfNull(mistakes);
-        var width = mistakes.Max(mistake => mistake.Code.Length);
+        var width = mistakes.Max(mistake => mistake.Code.Text().Length);
         return string.Join(
             Environment.NewLine,
             [
                 string.Create(CultureInfo.InvariantCulture, $"{head}, {mistakes.Count} mistake{(mistakes.Count == 1 ? "" : "s")}:"),
-                .. mistakes.Select(mistake => $"  {mistake.Code.PadRight(width)}  {mistake.Message} {mistake.Fix}"),
+                .. mistakes.Select(mistake => $"  {mistake.Code.Text().PadRight(width)}  {mistake.Message} {mistake.Fix}"),
             ]
         );
     }

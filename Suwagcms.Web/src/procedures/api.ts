@@ -60,3 +60,11 @@ export type ActionView = components["schemas"]["ActionView"];
 export function fetchActions(bot: string, signal: AbortSignal): Promise<ActionView[]> {
     return dataOf(api.GET("/api/bots/{bot}/actions", { params: { path: { bot } }, signal }));
 }
+
+export function proceduresKey(bot: string, ...rest: unknown[]): unknown[] {
+    return ["procedures", bot, ...rest];
+}
+
+export function procedureKey(bot: string, id: string): unknown[] {
+    return proceduresKey(bot, "item", id);
+}

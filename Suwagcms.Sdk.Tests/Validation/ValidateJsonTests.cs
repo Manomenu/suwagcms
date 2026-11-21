@@ -18,7 +18,7 @@ public sealed class ValidateJsonTests
     {
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Version));
 
-        Assert.Equal(MistakeCodes.FormatInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.FormatInvalid, mistake.Code);
         Assert.Equal(path, mistake.Path);
     }
 
@@ -32,7 +32,7 @@ public sealed class ValidateJsonTests
     {
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Version));
 
-        Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
+        Assert.Equal(MistakeCode.FormatVersion, mistake.Code);
         Assert.Contains("reads 5", mistake.Message, StringComparison.Ordinal);
     }
 
@@ -42,7 +42,7 @@ public sealed class ValidateJsonTests
     {
         var mistake = Assert.Single(DefinitionValidator.ValidateJson("{\"formatVersion\":1,\"facts\":[]}", ValidationStage.Version));
 
-        Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
+        Assert.Equal(MistakeCode.FormatVersion, mistake.Code);
         Assert.Contains("set formatVersion to 5", mistake.Fix, StringComparison.Ordinal);
         Assert.Contains("create a new version from the working state", mistake.Fix, StringComparison.Ordinal);
     }
@@ -77,7 +77,7 @@ public sealed class ValidateJsonTests
 
         Assert.Equal(
             [ResourceKind.KnowledgeBase, ResourceKind.Action],
-            mistakes.Where(mistake => mistake.Code == MistakeCodes.DuplicateId).Select(mistake => mistake.Resource.Kind)
+            mistakes.Where(mistake => mistake.Code == MistakeCode.DuplicateId).Select(mistake => mistake.Resource.Kind)
         );
     }
 }

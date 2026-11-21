@@ -7,6 +7,7 @@ using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.Versions;
 using Suwagcms.Sdk.BotRuntime.Versions;
+using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Versions;
@@ -186,7 +187,7 @@ public sealed partial class VersionPushTests(TestDatabase database, ClassServer 
 
         Assert.Equal(PushOutcome.Failed, result.Outcome);
         Assert.Contains("the bot refused v2", result.Reason, StringComparison.Ordinal);
-        Assert.Contains(result.Mistakes, mistake => mistake.Code.Contains("digest", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Mistakes, mistake => mistake.Code == MistakeCode.VersionDigest);
         Assert.Equal(1, (await scene.StatusAsync()).Has);
         Assert.Equal(1, cli.ExitCode);
         Assert.Contains("Fix:", cli.Error, StringComparison.Ordinal);

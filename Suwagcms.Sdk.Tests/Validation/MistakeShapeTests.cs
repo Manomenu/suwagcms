@@ -49,8 +49,8 @@ public sealed class MistakeShapeTests
 
         Assert.All(mistakes, AssertComplete);
         Assert.Equal(
-            [.. rulesSeen.Append(MistakeCodes.FormatInvalid).Append(MistakeCodes.FormatVersion).Order(StringComparer.Ordinal)],
-            mistakes.Select(mistake => mistake.Code).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
+            [.. rulesSeen.Select(code => code.Text()).Append("format.invalid").Append("format.version").Order(StringComparer.Ordinal)],
+            mistakes.Select(mistake => mistake.Code.Text()).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)
         );
         Assert.All(rulesSeen, code => Assert.Contains(mistakes, mistake => mistake.Code == code));
     }
@@ -78,7 +78,7 @@ public sealed class MistakeShapeTests
 
     private static void AssertComplete(Mistake mistake)
     {
-        Assert.False(string.IsNullOrWhiteSpace(mistake.Code));
+        Assert.True(Enum.IsDefined(mistake.Code));
         Assert.NotNull(mistake.Resource);
         Assert.NotNull(mistake.Resource.Id);
         Assert.False(string.IsNullOrWhiteSpace(mistake.Path));

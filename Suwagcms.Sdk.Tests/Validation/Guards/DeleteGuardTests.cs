@@ -37,7 +37,7 @@ public sealed class DeleteGuardTests
     {
         var mistake = Assert.Single(Deleting(Bot(Linking("wycena", "See [it](cms://article/cennik).")), Cennik));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal(Cennik, mistake.Resource);
         Assert.Contains("'cennik'", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("cannot be deleted", mistake.Message, StringComparison.Ordinal);
@@ -100,7 +100,7 @@ public sealed class DeleteGuardTests
 
         var mistake = Assert.Single(Deleting(after, fact), mistake => mistake.Resource == fact);
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.All(mistake.Related, related => Assert.Equal(new ResourceRef(ResourceKind.Procedure, "orderValuation"), related.Resource));
         Assert.Contains(mistake.Related, related => related.Location.StartsWith("steps.ask.", StringComparison.Ordinal));
         Assert.Contains(mistake.Related, related => related.Location.Contains("when.customer.city", StringComparison.Ordinal));
@@ -118,7 +118,7 @@ public sealed class DeleteGuardTests
 
         var mistake = Assert.Single(Deleting(after, fact), mistake => mistake.Resource == fact);
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal(new RelatedResource(new ResourceRef(ResourceKind.Procedure, "p"), "steps.only.say"), Assert.Single(mistake.Related));
         Assert.Contains("steps.only.say of procedure 'p'", mistake.Message, StringComparison.Ordinal);
     }
@@ -132,7 +132,7 @@ public sealed class DeleteGuardTests
 
         var mistake = Assert.Single(Deleting(after, target));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal(target, mistake.Resource);
         Assert.Equal(
             new RelatedResource(new ResourceRef(ResourceKind.Procedure, "orderValuation"), "steps.get.start"),

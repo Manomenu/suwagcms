@@ -10,14 +10,14 @@ internal static class ProcedureFactRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        For(MistakeCodes.FactCollectNotWritable, NotWritable),
-        For(MistakeCodes.ConditionKindInvalid, Kinds),
-        For(MistakeCodes.ConditionTypeMisfit, Misfits),
-        For(MistakeCodes.ConditionValueInvalid, ConditionValues),
-        For(MistakeCodes.AssignValueInvalid, AssignValues),
+        For(MistakeCode.FactCollectNotWritable, NotWritable),
+        For(MistakeCode.ConditionKindInvalid, Kinds),
+        For(MistakeCode.ConditionTypeMisfit, Misfits),
+        For(MistakeCode.ConditionValueInvalid, ConditionValues),
+        For(MistakeCode.AssignValueInvalid, AssignValues),
     ];
 
-    private static Rule For(string code, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
+    private static Rule For(MistakeCode code, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
         ProcedureMistake.For(code, ValidationStage.Save, check);
 
     public static IEnumerable<Mistake> MissingFacts(BotDefinition definition) =>
@@ -38,7 +38,7 @@ internal static class ProcedureFactRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ReferenceMissing,
+                MistakeCode.ReferenceMissing,
                 reference.Path,
                 $"{Where(reference)} in '{procedure.Id}' names fact '{reference.To.Id}', which this procedure does not see.",
                 reference.Use == FactUse.Say
@@ -56,7 +56,7 @@ internal static class ProcedureFactRules
             {
                 yield return Make(
                     procedure,
-                    MistakeCodes.FactCollectNotWritable,
+                    MistakeCode.FactCollectNotWritable,
                     reference.Path,
                     $"{Where(reference)} names fact '{reference.To.Id}', which only an assign step may write.",
                     "Remove it from collect, or give the fact 'writableBy: set'.",
@@ -79,7 +79,7 @@ internal static class ProcedureFactRules
             .Select(entry =>
                 Make(
                     procedure,
-                    MistakeCodes.ConditionKindInvalid,
+                    MistakeCode.ConditionKindInvalid,
                     entry.Path,
                     $"The condition on '{entry.Fact}' has {entry.Condition.Kinds.Count} kinds of condition.",
                     "Give exactly one: oneOf, range or known."
@@ -94,7 +94,7 @@ internal static class ProcedureFactRules
             {
                 yield return Make(
                     procedure,
-                    MistakeCodes.ConditionTypeMisfit,
+                    MistakeCode.ConditionTypeMisfit,
                     $"{entry.Path}.range",
                     $"The condition 'range' does not fit {Article(fact.Type)} {fact.Type} fact '{fact.Name}'.",
                     $"Conditions for {Article(fact.Type)} {fact.Type} fact: oneOf, known."
@@ -175,7 +175,7 @@ internal static class ProcedureFactRules
                 {
                     yield return Make(
                         procedure,
-                        MistakeCodes.AssignValueInvalid,
+                        MistakeCode.AssignValueInvalid,
                         $"steps.{stepName}.assign.{name}",
                         $"'{value}' is not a value of '{name}'.",
                         FactValues.Valid(fact)
@@ -219,11 +219,11 @@ internal static class ProcedureFactRules
     private static string Article(string type) => type is FactTypes.Enum or FactTypes.WholeNumber ? "an" : "a";
 
     private static Mistake Value(Procedure procedure, string path, string message, string fix) =>
-        Make(procedure, MistakeCodes.ConditionValueInvalid, path, message, fix);
+        Make(procedure, MistakeCode.ConditionValueInvalid, path, message, fix);
 
     private static Mistake Make(
         Procedure procedure,
-        string code,
+        MistakeCode code,
         string path,
         string message,
         string fix,

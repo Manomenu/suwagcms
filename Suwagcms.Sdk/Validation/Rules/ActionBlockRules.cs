@@ -11,23 +11,23 @@ internal static class ActionBlockRules
     public static IReadOnlyList<Rule> All { get; } =
     [
         Save(
-            MistakeCodes.ActionMappingTypeMismatch,
+            MistakeCode.ActionMappingTypeMismatch,
             (definition, procedure) => Mappings(definition, procedure, code: false, TypeMismatches)
         ),
-        Save(MistakeCodes.ActionMappingTooWide, (definition, procedure) => Mappings(definition, procedure, code: false, TooWide)),
-        Save(MistakeCodes.ActionMappingResultTwice, (_, procedure) => ResultsTwice(procedure)),
-        Save(MistakeCodes.StepActionFieldForeign, (_, procedure) => ForeignFields(procedure)),
+        Save(MistakeCode.ActionMappingTooWide, (definition, procedure) => Mappings(definition, procedure, code: false, TooWide)),
+        Save(MistakeCode.ActionMappingResultTwice, (_, procedure) => ResultsTwice(procedure)),
+        Save(MistakeCode.StepActionFieldForeign, (_, procedure) => ForeignFields(procedure)),
         ProcedureMistake.For(
-            MistakeCodes.ActionCodeMapping,
+            MistakeCode.ActionCodeMapping,
             ValidationStage.Version,
             (definition, procedure) =>
                 Mappings(definition, procedure, code: true, MissingFields)
                     .Concat(Mappings(definition, procedure, code: true, TypeMismatches))
                     .Concat(Mappings(definition, procedure, code: true, TooWide))
-                    .Select(mistake => mistake with { Code = MistakeCodes.ActionCodeMapping })
+                    .Select(mistake => mistake with { Code = MistakeCode.ActionCodeMapping })
         ),
-        ProcedureMistake.For(MistakeCodes.StepActionNoOnFailure, ValidationStage.Version, (_, procedure) => NoOnFailure(procedure)),
-        ProcedureMistake.For(MistakeCodes.StepActionUnmappedParameter, ValidationStage.Version, Unmapped),
+        ProcedureMistake.For(MistakeCode.StepActionNoOnFailure, ValidationStage.Version, (_, procedure) => NoOnFailure(procedure)),
+        ProcedureMistake.For(MistakeCode.StepActionUnmappedParameter, ValidationStage.Version, Unmapped),
     ];
 
     public static IEnumerable<Mistake> MissingMappedFields(BotDefinition definition) =>
@@ -35,7 +35,7 @@ internal static class ActionBlockRules
 
     private sealed record Mapping(Procedure Procedure, string Step, BotAction Action, string Kind, string Field, string Fact, string Path);
 
-    private static Rule Save(string code, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
+    private static Rule Save(MistakeCode code, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
         ProcedureMistake.For(code, ValidationStage.Save, check);
 
     private static BotAction? ActionOf(BotDefinition definition, ProcedureStep step) =>
@@ -92,7 +92,7 @@ internal static class ActionBlockRules
             var plural = mapping.Kind == "parameter" ? "Parameters" : "Results";
             yield return Make(
                 mapping,
-                MistakeCodes.ReferenceMissing,
+                MistakeCode.ReferenceMissing,
                 $"Step '{mapping.Step}' maps {mapping.Kind} '{mapping.Field}', which action '{mapping.Action.Id}' does not have.",
                 $"{plural}: {(fields.Count == 0 ? "none" : string.Join(", ", fields.Keys.Order(StringComparer.Ordinal)))}."
             );
@@ -103,12 +103,7 @@ internal static class ActionBlockRules
     {
         if (FieldOf(mapping) is { } field && FactOf(definition, mapping) is { } fact && field.Type != fact.Type)
         {
-            yield return Make(
-                mapping,
-                MistakeCodes.ActionMappingTypeMismatch,
-                Passes(mapping, fact, field),
-                "Map a fact of the same type."
-            );
+            yield return Make(mapping, MistakeCode.ActionMappingTypeMismatch, Passes(mapping, fact, field), "Map a fact of the same type.");
         }
     }
 
@@ -122,7 +117,7 @@ internal static class ActionBlockRules
             {
                 yield return Make(
                     mapping,
-                    MistakeCodes.ActionMappingTooWide,
+                    MistakeCode.ActionMappingTooWide,
                     Passes(mapping, fact, field),
                     fromFact
                         ? $"Use a fact that holds only what the parameter takes, or widen parameter '{mapping.Field}'."
@@ -168,7 +163,7 @@ internal static class ActionBlockRules
                 .Select(group =>
                     ProcedureMistake.Make(
                         procedure,
-                        MistakeCodes.ActionMappingResultTwice,
+                        MistakeCode.ActionMappingResultTwice,
                         ValidationStage.Save,
                         $"steps.{step.Key}.results",
                         $"Step '{step.Key}' writes results {string.Join(" and ", group.Select(entry => $"'{entry.Key}'").Order(StringComparer.Ordinal))} to one fact, '{group.Key}'.",
@@ -192,7 +187,7 @@ internal static class ActionBlockRules
                     .Select(field =>
                         ProcedureMistake.Make(
                             procedure,
-                            MistakeCodes.StepActionFieldForeign,
+                            MistakeCode.StepActionFieldForeign,
                             ValidationStage.Save,
                             $"steps.{step.Key}.{field.Field}",
                             $"Step '{step.Key}' has '{field.Field}', which only an action step can have.",
@@ -207,7 +202,7 @@ internal static class ActionBlockRules
             .Select(step =>
                 ProcedureMistake.Make(
                     procedure,
-                    MistakeCodes.StepActionNoOnFailure,
+                    MistakeCode.StepActionNoOnFailure,
                     ValidationStage.Version,
                     $"steps.{step.Key}.onFailure",
                     $"Step '{step.Key}' has no onFailure.",
@@ -225,7 +220,7 @@ internal static class ActionBlockRules
                     .Select(name =>
                         ProcedureMistake.Make(
                             procedure,
-                            MistakeCodes.StepActionUnmappedParameter,
+                            MistakeCode.StepActionUnmappedParameter,
                             ValidationStage.Version,
                             $"steps.{step.Key}.with.{name}",
                             $"Step '{step.Key}' does not map parameter '{name}'.",
@@ -234,6 +229,6 @@ internal static class ActionBlockRules
                     )
         );
 
-    private static Mistake Make(Mapping mapping, string code, string message, string fix) =>
+    private static Mistake Make(Mapping mapping, MistakeCode code, string message, string fix) =>
         ProcedureMistake.Make(mapping.Procedure, code, ValidationStage.Save, mapping.Path, message, fix);
 }

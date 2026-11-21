@@ -7,19 +7,19 @@ internal static class ProcedureShapeRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        Save(MistakeCodes.ProcedureIdInvalid, Id),
-        Save(MistakeCodes.ProcedureDescriptionMissing, Description),
-        Save(MistakeCodes.StepNameInvalid, StepNames),
-        Save(MistakeCodes.StepBlockUnknown, UnknownBlocks),
-        Save(MistakeCodes.StepBlockMultiple, MultipleBlocks),
-        Save(MistakeCodes.StepMissing, MissingSteps),
-        Save(MistakeCodes.StartTargetConversation, StartsConversation),
-        Save(MistakeCodes.StepInformPointName, PointNames),
-        Save(MistakeCodes.ProcedureWhenInterruptedInvalid, WhenInterruptedValue),
-        Save(MistakeCodes.ProcedureWhenInterruptedOnConversation, WhenInterruptedOnConversation),
+        Save(MistakeCode.ProcedureIdInvalid, Id),
+        Save(MistakeCode.ProcedureDescriptionMissing, Description),
+        Save(MistakeCode.StepNameInvalid, StepNames),
+        Save(MistakeCode.StepBlockUnknown, UnknownBlocks),
+        Save(MistakeCode.StepBlockMultiple, MultipleBlocks),
+        Save(MistakeCode.StepMissing, MissingSteps),
+        Save(MistakeCode.StartTargetConversation, StartsConversation),
+        Save(MistakeCode.StepInformPointName, PointNames),
+        Save(MistakeCode.ProcedureWhenInterruptedInvalid, WhenInterruptedValue),
+        Save(MistakeCode.ProcedureWhenInterruptedOnConversation, WhenInterruptedOnConversation),
     ];
 
-    private static Rule Save(string code, Func<Procedure, IEnumerable<Mistake>> check) =>
+    private static Rule Save(MistakeCode code, Func<Procedure, IEnumerable<Mistake>> check) =>
         ProcedureMistake.For(code, ValidationStage.Save, (_, procedure) => check(procedure));
 
     private static IEnumerable<Mistake> Id(Procedure procedure)
@@ -28,7 +28,7 @@ internal static class ProcedureShapeRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ProcedureIdInvalid,
+                MistakeCode.ProcedureIdInvalid,
                 "id",
                 $"'{procedure.Id}' is not a procedure id: it is one camelCase word.",
                 $"Rename the procedure to '{ResourceIds.Suggest(procedure.Id)}'."
@@ -42,7 +42,7 @@ internal static class ProcedureShapeRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ProcedureDescriptionMissing,
+                MistakeCode.ProcedureDescriptionMissing,
                 "description",
                 $"'{procedure.Id}' has no description.",
                 "Add one saying when the procedure is used: the model reads it to decide whether to start it."
@@ -56,7 +56,7 @@ internal static class ProcedureShapeRules
             .Select(name =>
                 Make(
                     procedure,
-                    MistakeCodes.StepNameInvalid,
+                    MistakeCode.StepNameInvalid,
                     $"steps.{name}",
                     $"The step name '{name}' is not camelCase.",
                     $"Rename the step to '{ResourceIds.Suggest(name)}'."
@@ -70,7 +70,7 @@ internal static class ProcedureShapeRules
                 .Select(key =>
                     Make(
                         procedure,
-                        MistakeCodes.StepBlockUnknown,
+                        MistakeCode.StepBlockUnknown,
                         $"steps.{step.Key}.{key}",
                         $"Step '{step.Key}' has the unknown block '{key}'.",
                         key == "knowledge"
@@ -86,7 +86,7 @@ internal static class ProcedureShapeRules
             .Select(step =>
                 Make(
                     procedure,
-                    MistakeCodes.StepBlockMultiple,
+                    MistakeCode.StepBlockMultiple,
                     $"steps.{step.Key}",
                     $"Step '{step.Key}' has {step.Value.Blocks.Count} blocks: {string.Join(", ", step.Value.Blocks.Select(block => block.Name))}.",
                     $"Keep one block per step ({string.Join(", ", Block.Names)}): split it into steps joined by next."
@@ -116,7 +116,7 @@ internal static class ProcedureShapeRules
                     yield return string.IsNullOrWhiteSpace(target)
                         ? Make(
                             procedure,
-                            MistakeCodes.StepMissing,
+                            MistakeCode.StepMissing,
                             $"steps.{name}.{path}",
                             $"A branch of step '{name}' goes to no step.",
                             "Add a step to this branch, or a Next: row."
@@ -133,7 +133,7 @@ internal static class ProcedureShapeRules
             .Select(step =>
                 Make(
                     procedure,
-                    MistakeCodes.StartTargetConversation,
+                    MistakeCode.StartTargetConversation,
                     $"steps.{step.Key}.start",
                     $"'start' of step '{step.Key}' in '{procedure.Id}' names '{Procedure.ConversationId}', which cannot be started: it is the base of every conversation.",
                     "End the procedure here instead, by leaving out 'next'."
@@ -147,7 +147,7 @@ internal static class ProcedureShapeRules
                 .Select(name =>
                     Make(
                         procedure,
-                        MistakeCodes.StepInformPointName,
+                        MistakeCode.StepInformPointName,
                         $"steps.{step.Key}.inform.points.{name}",
                         $"The point name '{name}' in 'inform' of step '{step.Key}' is not camelCase.",
                         $"Rename it to '{ResourceIds.Suggest(name)}'."
@@ -161,7 +161,7 @@ internal static class ProcedureShapeRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ProcedureWhenInterruptedInvalid,
+                MistakeCode.ProcedureWhenInterruptedInvalid,
                 "whenInterrupted",
                 $"'{procedure.Id}' has the unknown whenInterrupted '{value}'.",
                 $"Use one of: {string.Join(", ", ProcedureInterruptions.All)}."
@@ -175,7 +175,7 @@ internal static class ProcedureShapeRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ProcedureWhenInterruptedOnConversation,
+                MistakeCode.ProcedureWhenInterruptedOnConversation,
                 "whenInterrupted",
                 $"'{Procedure.ConversationId}' has whenInterrupted, but it is the base of every conversation and nothing can interrupt it away.",
                 "Remove whenInterrupted from it."
@@ -184,8 +184,8 @@ internal static class ProcedureShapeRules
     }
 
     private static Mistake Missing(Procedure procedure, string path, string what) =>
-        Make(procedure, MistakeCodes.StepMissing, path, $"{what} names no step of '{procedure.Id}'.", ProcedureMistake.StepList(procedure));
+        Make(procedure, MistakeCode.StepMissing, path, $"{what} names no step of '{procedure.Id}'.", ProcedureMistake.StepList(procedure));
 
-    private static Mistake Make(Procedure procedure, string code, string path, string message, string fix) =>
+    private static Mistake Make(Procedure procedure, MistakeCode code, string path, string message, string fix) =>
         ProcedureMistake.Make(procedure, code, ValidationStage.Save, path, message, fix);
 }

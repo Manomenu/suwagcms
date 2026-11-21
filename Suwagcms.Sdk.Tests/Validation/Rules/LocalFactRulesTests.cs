@@ -92,9 +92,9 @@ public sealed class LocalFactRulesTests
 
     [Theory]
     [Trait("criterion", "AC-local-facts-3")]
-    [InlineData("", "text", MistakeCodes.FactDescriptionMissing, "description")]
-    [InlineData("A note", "blob", MistakeCodes.FactTypeInvalid, "type")]
-    [InlineData("A note", "int", MistakeCodes.FactConstraintForeign, "maxLength")]
+    [InlineData("", "text", "fact.description.missing", "description")]
+    [InlineData("A note", "blob", "fact.type.invalid", "type")]
+    [InlineData("A note", "int", "fact.constraint.foreign", "maxLength")]
     public void A_bad_local_fact_has_the_code_of_a_global_one_and_a_path_inside_localFacts(
         string description,
         string type,
@@ -106,7 +106,7 @@ public sealed class LocalFactRulesTests
 
         var mistake = Assert.Single(
             Check(Procedure("mine", new Dictionary<string, LocalFact> { ["note"] = bad })),
-            found => found.Code == code
+            found => found.Code.Text() == code
         );
 
         Assert.Equal(new ResourceRef(ResourceKind.Procedure, "mine"), mistake.Resource);
@@ -121,7 +121,7 @@ public sealed class LocalFactRulesTests
     {
         var mistake = Assert.Single(Check(Procedure("mine", new Dictionary<string, LocalFact> { [name] = Note })));
 
-        Assert.Equal(MistakeCodes.FactNameInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.FactNameInvalid, mistake.Code);
         Assert.Equal($"localFacts.{name}", mistake.Path);
         Assert.Contains(fix, mistake.Fix, StringComparison.Ordinal);
     }
@@ -146,7 +146,7 @@ public sealed class LocalFactRulesTests
             )
         );
 
-        Assert.Equal(MistakeCodes.FactLocalNameClash, mistake.Code);
+        Assert.Equal(MistakeCode.FactLocalNameClash, mistake.Code);
         Assert.Contains($"'{name}'", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("'first', 'second'", mistake.Message, StringComparison.Ordinal);
         Assert.Equal(["first", "second"], mistake.Related.Select(related => related.Resource.Id));
@@ -178,17 +178,17 @@ public sealed class LocalFactRulesTests
             )
         );
 
-        Assert.Equal(MistakeCodes.FactCollectNotWritable, Assert.Single(Check(Procedure("bad", locals, Steps(Collect("flag"))))).Code);
+        Assert.Equal(MistakeCode.FactCollectNotWritable, Assert.Single(Check(Procedure("bad", locals, Steps(Collect("flag"))))).Code);
         Assert.Equal(
-            MistakeCodes.ConditionTypeMisfit,
+            MistakeCode.ConditionTypeMisfit,
             Assert.Single(Check(Procedure("bad", locals, Steps(When("kind", new Condition { Range = new NumberRange { Min = 1 } }))))).Code
         );
         Assert.Equal(
-            MistakeCodes.ConditionValueInvalid,
+            MistakeCode.ConditionValueInvalid,
             Assert.Single(Check(Procedure("bad", locals, Steps(When("kind", new Condition { OneOf = ["land"] }))))).Code
         );
         Assert.Equal(
-            MistakeCodes.AssignValueInvalid,
+            MistakeCode.AssignValueInvalid,
             Assert
                 .Single(
                     Check(
@@ -210,7 +210,7 @@ public sealed class LocalFactRulesTests
             ValidationStage.Version
         );
 
-        Assert.Contains(mistakes, mistake => mistake.Code == MistakeCodes.ProcedureNoWhenStalled);
+        Assert.Contains(mistakes, mistake => mistake.Code == MistakeCode.ProcedureNoWhenStalled);
     }
 
     [Theory]
@@ -229,7 +229,7 @@ public sealed class LocalFactRulesTests
 
         var mistake = Assert.Single(Check(mine, other));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Contains("which this procedure does not see", mistake.Message, StringComparison.Ordinal);
         Assert.Contains($"Facts it sees: {Samples.CityFact.Name}, visitDate.", mistake.Fix, StringComparison.Ordinal);
         Assert.Contains("Local facts of other procedures are not visible.", mistake.Fix, StringComparison.Ordinal);
@@ -249,7 +249,7 @@ public sealed class LocalFactRulesTests
         Assert.Empty(Check(Testing("first", Kind, "house"), Testing("second", Rooms, "3")));
 
         var mistake = Assert.Single(Check(Testing("first", Kind, "house"), Testing("second", Rooms, "house")));
-        Assert.Equal(MistakeCodes.AssignValueInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.AssignValueInvalid, mistake.Code);
         Assert.Equal("second", mistake.Resource.Id);
     }
 
@@ -275,7 +275,7 @@ public sealed class LocalFactRulesTests
         Assert.Equal(2, offline.Count);
         var mistake = Assert.Single(EditGuard.Reshape(before, after, offline));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal("localFacts.note", mistake.Path);
         Assert.Contains("no longer declares local fact 'note'", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("step ask (collect), step confirm (condition)", mistake.Message, StringComparison.Ordinal);

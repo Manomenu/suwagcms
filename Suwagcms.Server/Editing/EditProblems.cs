@@ -8,15 +8,6 @@ namespace Suwagcms.Server.Editing;
 
 internal static class EditProblems
 {
-    public const string BotNotFound = "bot.notFound";
-    public const string ResourceMissing = "resource.missing";
-    public const string ResourceExists = "resource.exists";
-    public const string ResourceStale = "resource.stale";
-    public const string ResourceSameId = "resource.sameId";
-    public const string ChangedTwice = "change.twice";
-    public const string CodeReadOnly = "action.code.readOnly";
-    public const string CodeDeclared = "action.code.declared";
-
     public static ProblemHttpResult For(EditResult result, string bot, string title) =>
         result switch
         {
@@ -35,7 +26,7 @@ internal static class EditProblems
         Refusals.Refuse(status, title, code, mistakes.Select(RefusalMistake.Of).ToList());
 
     public static RouteHandlerBuilder ProducesRefusal(this RouteHandlerBuilder builder, int status) =>
-        builder.ProducesRefusal<RefusalCode, string, RefusalMistake>(status);
+        builder.ProducesRefusal<RefusalCode, MistakeCode, RefusalMistake>(status);
 
     public static IReadOnlyList<Mistake> MistakesOf(EditResult result, string bot) =>
         result switch
@@ -51,7 +42,7 @@ internal static class EditProblems
     {
         var noun = ResourceKinds.Noun(target.Kind);
         return new(
-            ChangedTwice,
+            MistakeCode.ChangedTwice,
             ValidationStage.Save,
             target,
             "changes",
@@ -63,7 +54,7 @@ internal static class EditProblems
 
     public static Mistake Missing(ResourceRef target, string bot) =>
         new(
-            ResourceMissing,
+            MistakeCode.ResourceMissing,
             ValidationStage.Save,
             target,
             target.IdField(),
@@ -74,7 +65,7 @@ internal static class EditProblems
 
     public static Mistake UnknownBot(string bot) =>
         new(
-            BotNotFound,
+            MistakeCode.BotNotFound,
             ValidationStage.Save,
             new ResourceRef(ResourceKind.Definition, bot),
             "bot",
@@ -85,7 +76,7 @@ internal static class EditProblems
 
     public static Mistake ReadOnly(ResourceRef target) =>
         new(
-            CodeReadOnly,
+            MistakeCode.ActionCodeReadOnly,
             ValidationStage.Save,
             target,
             "implementation",
@@ -96,7 +87,7 @@ internal static class EditProblems
 
     public static Mistake CodeWritten(ResourceRef target) =>
         new(
-            CodeReadOnly,
+            MistakeCode.ActionCodeReadOnly,
             ValidationStage.Save,
             target,
             "implementation",
@@ -107,7 +98,7 @@ internal static class EditProblems
 
     public static Mistake DeclaredId(ResourceRef target, ResourceRef declared) =>
         new(
-            CodeDeclared,
+            MistakeCode.ActionCodeDeclared,
             ValidationStage.Save,
             target,
             "id",
@@ -118,7 +109,7 @@ internal static class EditProblems
 
     public static Mistake SameId(ResourceRef target) =>
         new(
-            ResourceSameId,
+            MistakeCode.ResourceSameId,
             ValidationStage.Save,
             target,
             target.IdField(),
@@ -129,7 +120,7 @@ internal static class EditProblems
 
     public static Mistake Taken(ResourceRef target, ResourceRef wanted) =>
         new(
-            MistakeCodes.DuplicateId,
+            MistakeCode.DuplicateId,
             ValidationStage.Save,
             target,
             target.IdField(),
@@ -147,14 +138,14 @@ internal static class EditProblems
         if (stale.Expected == 0 && stale.Target.Kind != ResourceKind.Persona)
         {
             return Make(
-                ResourceExists,
+                MistakeCode.ResourceExists,
                 stale,
                 $"The {noun} '{stale.Target.Id}' already exists (revision {Number(stale.Current)}).",
                 $"Choose another name, or edit the existing {noun}."
             );
         }
         return Make(
-            ResourceStale,
+            MistakeCode.ResourceStale,
             stale,
             stale.Current is { } current
                 ? $"The {noun} '{stale.Target.Id}' changed since you read it: you worked on revision {Number(stale.Expected)}, it is now revision {Number(current)}."
@@ -165,7 +156,7 @@ internal static class EditProblems
         );
     }
 
-    private static Mistake Make(string code, EditResult.Stale stale, string message, string fix) =>
+    private static Mistake Make(MistakeCode code, EditResult.Stale stale, string message, string fix) =>
         new(code, ValidationStage.Save, stale.Target, "revision", message, fix, []);
 
     private static string Number(int? value) => (value ?? 0).ToString(CultureInfo.InvariantCulture);

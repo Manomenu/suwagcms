@@ -352,7 +352,7 @@ public sealed class VersionRollbackTests(TestDatabase database, ClassServer serv
 
         Assert.Equal(PushOutcome.Failed, result.Outcome);
         var mistake = Assert.Single(result.Mistakes);
-        Assert.Equal(MistakeCodes.DeclarationBlock, mistake.Code);
+        Assert.Equal(MistakeCode.DeclarationBlock, mistake.Code);
         Assert.Contains("collect", mistake.Message, StringComparison.Ordinal);
         Assert.Empty(puts);
         Assert.Equal(2, await CurrentAsync(bot));

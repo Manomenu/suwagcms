@@ -10,12 +10,12 @@ import { AvailabilityNotice } from "@/design/availabilityPanel";
 import { Page } from "@/design/page";
 import { BackToList } from "@/design/resourceEdit";
 
-import { fetchProcedures } from "./api";
+import { fetchProcedures, proceduresKey } from "./api";
 import { NewProcedureForm } from "./NewProcedureForm";
 import { ProceduresView } from "./ProceduresView";
 
 export function ProceduresScreen({ bot }: { bot: string }) {
-    const procedures = useQuery({ queryKey: ["procedures", bot, "list"], queryFn: ({ signal }) => fetchProcedures(bot, signal) });
+    const procedures = useQuery({ queryKey: proceduresKey(bot, "list"), queryFn: ({ signal }) => fetchProcedures(bot, signal) });
     const list = procedures.data ?? null;
     const failure = procedures.error === null ? null : messageOf(procedures.error);
     const [location, navigate] = useLocation();

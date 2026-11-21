@@ -10,7 +10,6 @@ namespace Suwagcms.Server.Versions;
 
 internal static class VersionEndpoints
 {
-    public const string Missing = "version.missing";
     private const string Title = "The version was not created.";
 
     public static void MapVersions(this IEndpointRouteBuilder routes)
@@ -167,7 +166,7 @@ internal static class VersionEndpoints
 
     internal static Mistake NoSuchVersion(string bot, int number, int? latest) =>
         new(
-            Missing,
+            MistakeCode.VersionMissing,
             ValidationStage.Save,
             new ResourceRef(ResourceKind.Definition, bot),
             "number",

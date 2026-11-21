@@ -51,7 +51,7 @@ public sealed class ArticleLinkRulesTests
     {
         var mistake = Assert.Single(Check(Linking("See the [Price list](cms://article/cenik)."), Target("cennik")));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal(new ResourceRef(ResourceKind.Article, "wycena"), mistake.Resource);
         Assert.Equal("content", mistake.Path);
         Assert.Contains(
@@ -73,7 +73,7 @@ public sealed class ArticleLinkRulesTests
 
         var mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Save);
 
-        Assert.All(mistakes, mistake => Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code));
+        Assert.All(mistakes, mistake => Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code));
         Assert.Equal(["content", "content", "llmGuide"], mistakes.Select(mistake => mistake.Path));
         Assert.Contains("'one'", mistakes[0].Message, StringComparison.Ordinal);
         Assert.Contains("'two'", mistakes[1].Message, StringComparison.Ordinal);
@@ -90,7 +90,7 @@ public sealed class ArticleLinkRulesTests
     {
         var mistake = Assert.Single(Check(Linking($"See {link}."), Target("cennik")));
 
-        Assert.Equal(MistakeCodes.ReferenceMalformed, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMalformed, mistake.Code);
         Assert.Equal("content", mistake.Path);
         Assert.Contains("[Title](cms://article/<id>)", mistake.Fix, StringComparison.Ordinal);
     }

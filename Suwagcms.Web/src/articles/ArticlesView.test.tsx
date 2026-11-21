@@ -54,7 +54,7 @@ function view(list: Article[], knowledgeBases = bases, filters = { knowledgeBase
     );
 }
 
-function mistake(code: string, path: string): Mistake {
+function mistake(code: Mistake["code"], path: string): Mistake {
     return {
         code,
         path,

@@ -11,9 +11,6 @@ namespace Suwagcms.Server.Availability;
 
 internal static class AvailabilityEndpoints
 {
-    public const string KindRefused = "availability.kind";
-    public const string ConversationRefused = "availability.conversation";
-
     private const string WhatCanBeOff =
         "Only an article, a procedure or an action can be turned off; facts and knowledge bases have no availability.";
 
@@ -147,7 +144,7 @@ internal static class AvailabilityEndpoints
 
     private static Mistake NoAvailability(string kind) =>
         new(
-            KindRefused,
+            MistakeCode.AvailabilityKindRefused,
             ValidationStage.Save,
             new ResourceRef(ResourceKind.Definition, kind),
             "kind",
@@ -158,7 +155,7 @@ internal static class AvailabilityEndpoints
 
     private static Mistake Conversation(ResourceRef target) =>
         new(
-            ConversationRefused,
+            MistakeCode.AvailabilityConversationRefused,
             ValidationStage.Save,
             target,
             "id",

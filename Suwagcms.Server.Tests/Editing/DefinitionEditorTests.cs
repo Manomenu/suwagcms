@@ -4,6 +4,7 @@ using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Sdk.Format.Facts;
 using Suwagcms.Sdk.Format.References;
+using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Bots;
 using Suwagcms.Server.Editing;
 using Row = (string PublicId, int Revision, string Body, System.DateTimeOffset UpdatedAt);
@@ -144,7 +145,7 @@ public sealed class DefinitionEditorTests(TestDatabase database)
         );
 
         var refused = Assert.IsType<EditResult.Refused>(result);
-        Assert.Equal(["fact.name.invalid"], refused.Mistakes.Select(mistake => mistake.Code));
+        Assert.Equal([MistakeCode.FactNameInvalid], refused.Mistakes.Select(mistake => mistake.Code));
         Assert.Equal(before, await Rows(bot));
     }
 

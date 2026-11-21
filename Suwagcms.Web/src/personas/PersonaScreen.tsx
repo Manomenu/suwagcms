@@ -1,7 +1,8 @@
-import { Alert, ApiError, Spinner } from "@maniumek/suwfrontkit";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { Alert, Spinner } from "@maniumek/suwfrontkit";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
-import { type Mistake, mistakesOf, refusalOf } from "@/api/client";
+import { type Mistake, messageOf, mistakesOf, refusalOf } from "@/api/client";
 import { useResourceHistory } from "@/api/history";
 import { useLeaveGuard } from "@maniumek/suwfrontkit";
 
@@ -11,88 +12,70 @@ import { PersonaView } from "./PersonaView";
 
 const PERSONA_ID = "persona";
 
+interface Editing {
+    base: Persona;
+    form: PersonaForm;
+}
+
+function editingOf(persona: Persona): Editing {
+    return { base: persona, form: formOf(persona) };
+}
+
 export function PersonaScreen({ bot }: { bot: string }) {
-    const [persona, setPersona] = useState<Persona | null>(null);
-    const [form, setForm] = useState<PersonaForm | null>(null);
-    const [loadFailure, setLoadFailure] = useState<string | null>(null);
-    const [refusal, setRefusal] = useState<ApiError | null>(null);
+    const key = ["resources", bot, "persona"];
+    const queries = useQueryClient();
+    const loaded = useQuery({ queryKey: key, queryFn: ({ signal }) => fetchPersona(bot, signal) });
+    const [editing, setEditing] = useState<Editing | null>(null);
     const [saved, setSaved] = useState(false);
-    const [saving, startSaving] = useTransition();
-    const revision = persona === null ? 0 : Number(persona.revision);
+    const dirty = editing !== null && isDirty(editing.form, formOf(editing.base));
+    if (loaded.data !== undefined && (editing === null || (!dirty && editing.base.revision !== loaded.data.revision)))
+        setEditing(editingOf(loaded.data));
+    const revision = editing === null ? 0 : Number(editing.base.revision);
     const history = useResourceHistory(bot, "persona", PERSONA_ID, revision);
-    useLeaveGuard(
-        persona !== null && form !== null && isDirty(form, formOf(persona)),
-        "The persona has changes that are not saved. Leave without saving them?",
-    );
-
-    const show = useCallback((shown: Persona) => {
-        setPersona(shown);
-        setForm(formOf(shown));
-        setRefusal(null);
-    }, []);
-
-    const load = useCallback(
-        (signal: AbortSignal) => {
-            fetchPersona(bot, signal)
-                .then(show)
-                .catch((error: unknown) => {
-                    if (!signal.aborted) setLoadFailure(error instanceof Error ? error.message : String(error));
-                });
+    const save = useMutation({
+        mutationFn: (current: PersonaForm) => savePersona(bot, bodyOf(current), revision),
+        onSuccess: (answer) => {
+            queries.setQueryData(key, answer);
+            setEditing(editingOf(answer));
+            setSaved(true);
         },
-        [bot, show],
-    );
+    });
+    useLeaveGuard(dirty, "The persona has changes that are not saved. Leave without saving them?");
 
-    useEffect(() => {
-        const controller = new AbortController();
-        load(controller.signal);
-        return () => {
-            controller.abort();
-        };
-    }, [load]);
-
-    if (loadFailure !== null) return <Alert variant="destructive">{loadFailure}</Alert>;
-    if (persona === null || form === null) return <Spinner label="Loading the persona…" size="sm" />;
+    if (loaded.error !== null) return <Alert variant="destructive">{messageOf(loaded.error)}</Alert>;
+    if (editing === null) return <Spinner label="Loading the persona…" size="sm" />;
+    const { base, form } = editing;
 
     function change(name: FieldName, text: string) {
         setSaved(false);
-        setForm((was) => (was === null ? was : { ...was, [name]: text }));
+        setEditing((was) => (was === null ? was : { ...was, form: { ...was.form, [name]: text } }));
     }
 
-    function save(current: PersonaForm) {
-        setSaved(false);
-        setRefusal(null);
-        startSaving(() =>
-            savePersona(bot, bodyOf(current), revision)
-                .then((answer) => {
-                    show(answer);
-                    setSaved(true);
-                })
-                .catch((error: unknown) => {
-                    setRefusal(refusalOf(error));
-                }),
-        );
-    }
-
+    const refusal = save.error === null ? null : refusalOf(save.error);
     const mistakes: Mistake[] = mistakesOf(refusal);
     return (
         <PersonaView
             bot={bot}
             form={form}
             revision={revision}
-            empty={isEmpty(persona)}
+            empty={isEmpty(base)}
             saved={saved}
-            saving={saving}
+            saving={save.isPending}
             failure={refusal !== null && mistakes.length === 0 ? refusal.message : null}
             mistakes={mistakes}
             outOfDate={mistakes.some((mistake) => mistake.code === "resource.stale")}
             history={history}
             onChange={change}
             onSave={() => {
-                save(form);
+                setSaved(false);
+                save.mutate(form);
             }}
             onReload={() => {
                 setSaved(false);
-                load(new AbortController().signal);
+                save.reset();
+                void loaded.refetch().then((again) => {
+                    if (again.data !== undefined) setEditing(editingOf(again.data));
+                });
             }}
         />
     );

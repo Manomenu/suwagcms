@@ -8,12 +8,12 @@ internal static class KnowledgeEntryRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        ProcedureMistake.For(MistakeCodes.KnowledgeBaseMissing, ValidationStage.Save, (_, procedure) => NoBase(procedure)),
-        ProcedureMistake.For(MistakeCodes.KnowledgeBaseRepeated, ValidationStage.Save, (_, procedure) => RepeatedBases(procedure)),
-        ProcedureMistake.For(MistakeCodes.KnowledgeArticleOtherBase, ValidationStage.Save, ArticlesOfOtherBases),
-        ProcedureMistake.For(MistakeCodes.KnowledgeEntryEmpty, ValidationStage.Version, (_, procedure) => EmptyEntries(procedure)),
-        ProcedureMistake.For(MistakeCodes.KnowledgeQueryBlank, ValidationStage.Version, (_, procedure) => BlankQueries(procedure)),
-        ProcedureMistake.For(MistakeCodes.KnowledgeQueryNoArticles, ValidationStage.Version, QueriesWithNothingToSearch),
+        ProcedureMistake.For(MistakeCode.KnowledgeBaseMissing, ValidationStage.Save, (_, procedure) => NoBase(procedure)),
+        ProcedureMistake.For(MistakeCode.KnowledgeBaseRepeated, ValidationStage.Save, (_, procedure) => RepeatedBases(procedure)),
+        ProcedureMistake.For(MistakeCode.KnowledgeArticleOtherBase, ValidationStage.Save, ArticlesOfOtherBases),
+        ProcedureMistake.For(MistakeCode.KnowledgeEntryEmpty, ValidationStage.Version, (_, procedure) => EmptyEntries(procedure)),
+        ProcedureMistake.For(MistakeCode.KnowledgeQueryBlank, ValidationStage.Version, (_, procedure) => BlankQueries(procedure)),
+        ProcedureMistake.For(MistakeCode.KnowledgeQueryNoArticles, ValidationStage.Version, QueriesWithNothingToSearch),
     ];
 
     private sealed record EntryAt(string Path, string Where, KnowledgeEntry Entry);
@@ -41,7 +41,7 @@ internal static class KnowledgeEntryRules
             .Select(found =>
                 Make(
                     procedure,
-                    MistakeCodes.KnowledgeBaseMissing,
+                    MistakeCode.KnowledgeBaseMissing,
                     ValidationStage.Save,
                     $"{found.Path}.knowledgeBase",
                     $"An entry of {found.Where} names no knowledge base.",
@@ -62,7 +62,7 @@ internal static class KnowledgeEntryRules
                             .Select(item =>
                                 Make(
                                     procedure,
-                                    MistakeCodes.KnowledgeBaseRepeated,
+                                    MistakeCode.KnowledgeBaseRepeated,
                                     ValidationStage.Save,
                                     Index(found.Path, item.index),
                                     $"{found.Where} has two entries for the knowledge base '{group.Key}'.",
@@ -90,7 +90,7 @@ internal static class KnowledgeEntryRules
                     .Select(item =>
                         Make(
                             procedure,
-                            MistakeCodes.KnowledgeArticleOtherBase,
+                            MistakeCode.KnowledgeArticleOtherBase,
                             ValidationStage.Save,
                             Index($"{found.Path}.articles", item.index),
                             $"{found.Where} names article '{item.id}' under the knowledge base '{found.Entry.KnowledgeBase}', and it is in '{baseOf[item.id]}'.",
@@ -106,7 +106,7 @@ internal static class KnowledgeEntryRules
             .Select(found =>
                 Make(
                     procedure,
-                    MistakeCodes.KnowledgeEntryEmpty,
+                    MistakeCode.KnowledgeEntryEmpty,
                     ValidationStage.Version,
                     found.Path,
                     $"An entry of {found.Where} has no articles and no search queries.",
@@ -123,7 +123,7 @@ internal static class KnowledgeEntryRules
                     .Select(item =>
                         Make(
                             procedure,
-                            MistakeCodes.KnowledgeQueryBlank,
+                            MistakeCode.KnowledgeQueryBlank,
                             ValidationStage.Version,
                             Index($"{found.Path}.searchQueries", item.index),
                             $"{found.Where} has a blank search query.",
@@ -144,7 +144,7 @@ internal static class KnowledgeEntryRules
             .Select(found =>
                 Make(
                     procedure,
-                    MistakeCodes.KnowledgeQueryNoArticles,
+                    MistakeCode.KnowledgeQueryNoArticles,
                     ValidationStage.Version,
                     $"{found.Path}.searchQueries",
                     $"{found.Where} has a search query on the knowledge base '{found.Entry.KnowledgeBase}', which has no articles to search.",
@@ -162,7 +162,7 @@ internal static class KnowledgeEntryRules
                     .Select(found =>
                         Make(
                             procedure,
-                            MistakeCodes.DeclarationKnowledge,
+                            MistakeCode.DeclarationKnowledge,
                             ValidationStage.Version,
                             found.Path,
                             $"{found.Where} holds knowledge, which this bot does not declare it reads.",
@@ -193,7 +193,7 @@ internal static class KnowledgeEntryRules
                     .Select(item =>
                         Make(
                             procedure,
-                            MistakeCodes.DeclarationNamedArticlesTooLong,
+                            MistakeCode.DeclarationNamedArticlesTooLong,
                             ValidationStage.Version,
                             item.found.Path,
                             string.Create(
@@ -206,6 +206,6 @@ internal static class KnowledgeEntryRules
             );
     }
 
-    private static Mistake Make(Procedure procedure, string code, ValidationStage stage, string path, string message, string fix) =>
+    private static Mistake Make(Procedure procedure, MistakeCode code, ValidationStage stage, string path, string message, string fix) =>
         ProcedureMistake.Make(procedure, code, stage, path, message, fix);
 }

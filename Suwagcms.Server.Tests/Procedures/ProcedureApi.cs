@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Suwagcms.Contracts.Procedures;
+using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Procedures;
@@ -58,7 +59,7 @@ internal sealed class ProcedureApi(HttpClient client, FactApi facts)
         ];
 
     public static string[] NotReadyCodes(ProcedureDetail detail) =>
-        [.. detail.NotReady.Select(mistake => mistake.Code).Order(StringComparer.Ordinal)];
+        [.. detail.NotReady.Select(mistake => mistake.Code.Text()).Order(StringComparer.Ordinal)];
 
     public const string Conversation = """
         {"description":"The base of every conversation","firstStep":"wait",

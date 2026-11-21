@@ -52,7 +52,7 @@ public sealed class OldFormatTests(TestDatabase database, ClassServer server) : 
     {
         Assert.Equal(PushOutcome.Failed, result.Outcome);
         var mistake = Assert.Single(result.Mistakes);
-        Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
+        Assert.Equal(MistakeCode.FormatVersion, mistake.Code);
         Assert.Contains("create a new version from the working state", mistake.Fix, StringComparison.Ordinal);
     }
 

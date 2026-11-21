@@ -5,7 +5,7 @@ namespace Suwagcms.Sdk.Validation.Rules;
 
 internal static class DuplicateIdRule
 {
-    public static Rule Rule { get; } = new(MistakeCodes.DuplicateId, ValidationStage.Save, Check);
+    public static Rule Rule { get; } = new(MistakeCode.DuplicateId, ValidationStage.Save, Check);
 
     private static IEnumerable<Mistake> Check(BotDefinition definition) =>
         Duplicates(ResourceKind.GlobalFact, "facts", definition.Facts.Select(fact => fact.Name))
@@ -22,7 +22,7 @@ internal static class DuplicateIdRule
             {
                 var resource = new ResourceRef(kind, group.Key);
                 return new Mistake(
-                    MistakeCodes.DuplicateId,
+                    MistakeCode.DuplicateId,
                     ValidationStage.Save,
                     resource,
                     kind == ResourceKind.GlobalFact ? "name" : "id",

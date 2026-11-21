@@ -10,11 +10,11 @@ internal static class ReferenceRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        new(MistakeCodes.ReferenceMissing, ValidationStage.Save, MissingTargets),
-        new(MistakeCodes.ReferenceMalformed, ValidationStage.Save, definition => Malformed(definition).Concat(WrongNames(definition))),
-        new(MistakeCodes.ReferenceLoop, ValidationStage.Save, LoopRules.Loops),
-        new(MistakeCodes.LinkProcedureNotInGuide, ValidationStage.Save, ProcedureLinksInContent),
-        new(MistakeCodes.LinkProcedureConversation, ValidationStage.Save, LinksToConversation),
+        new(MistakeCode.ReferenceMissing, ValidationStage.Save, MissingTargets),
+        new(MistakeCode.ReferenceMalformed, ValidationStage.Save, definition => Malformed(definition).Concat(WrongNames(definition))),
+        new(MistakeCode.ReferenceLoop, ValidationStage.Save, LoopRules.Loops),
+        new(MistakeCode.LinkProcedureNotInGuide, ValidationStage.Save, ProcedureLinksInContent),
+        new(MistakeCode.LinkProcedureConversation, ValidationStage.Save, LinksToConversation),
     ];
 
     private static IEnumerable<Mistake> MissingTargets(BotDefinition definition) =>
@@ -31,7 +31,7 @@ internal static class ReferenceRules
             .From(definition)
             .Where(reference => reference.To.Kind == ResourceKind.Action && !known.Contains(reference.To.Id, StringComparer.Ordinal))
             .Select(reference => new Mistake(
-                MistakeCodes.ReferenceMissing,
+                MistakeCode.ReferenceMissing,
                 ValidationStage.Save,
                 reference.From,
                 reference.Path,
@@ -60,7 +60,7 @@ internal static class ReferenceRules
             .Where(reference => !known.Contains(reference.To))
             .DistinctBy(reference => (reference.From, reference.Path, reference.To))
             .Select(reference => new Mistake(
-                MistakeCodes.ReferenceMissing,
+                MistakeCode.ReferenceMissing,
                 ValidationStage.Save,
                 reference.From,
                 reference.Path,
@@ -99,7 +99,7 @@ internal static class ReferenceRules
             .From(definition)
             .Where(WrongName)
             .Select(reference => new Mistake(
-                MistakeCodes.ReferenceMalformed,
+                MistakeCode.ReferenceMalformed,
                 ValidationStage.Save,
                 reference.From,
                 reference.Path,
@@ -119,7 +119,7 @@ internal static class ReferenceRules
                 .DistinctBy(entry => (entry.Item1, entry.link.Target))
                 .Select(entry =>
                     Make(
-                        MistakeCodes.ReferenceMalformed,
+                        MistakeCode.ReferenceMalformed,
                         article.Id,
                         entry.Item1,
                         $"{entry.Item1} of '{article.Id}' has the link target '{entry.link.Target}', which is not a link to an article or a procedure.",
@@ -136,7 +136,7 @@ internal static class ReferenceRules
                 .DistinctBy(link => link.Id)
                 .Select(link =>
                     Make(
-                        MistakeCodes.LinkProcedureNotInGuide,
+                        MistakeCode.LinkProcedureNotInGuide,
                         article.Id,
                         "content",
                         $"content of '{article.Id}' links to procedure '{link.Id}'. A customer reads content, so it cannot start anything.",
@@ -152,7 +152,7 @@ internal static class ReferenceRules
             )
             .Select(article =>
                 Make(
-                    MistakeCodes.LinkProcedureConversation,
+                    MistakeCode.LinkProcedureConversation,
                     article.Id,
                     "llmGuide",
                     $"llmGuide of '{article.Id}' links to '{Procedure.ConversationId}', which cannot be started: it is the base of every conversation.",
@@ -160,6 +160,6 @@ internal static class ReferenceRules
                 )
             );
 
-    private static Mistake Make(string code, string articleId, string path, string message, string fix) =>
+    private static Mistake Make(MistakeCode code, string articleId, string path, string message, string fix) =>
         new(code, ValidationStage.Save, new ResourceRef(ResourceKind.Article, articleId), path, message, fix, []);
 }

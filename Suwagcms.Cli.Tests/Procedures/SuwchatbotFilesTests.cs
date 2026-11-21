@@ -259,7 +259,7 @@ public sealed class SuwchatbotFilesTests
             ShippedDeclaration
         );
 
-        Assert.Equal([MistakeCodes.DeclarationBlock], mistakes.Select(mistake => mistake.Code));
+        Assert.Equal([MistakeCode.DeclarationBlock], mistakes.Select(mistake => mistake.Code));
     }
 
     [Fact]
@@ -308,6 +308,6 @@ public sealed class SuwchatbotFilesTests
 
         var mistakes = DefinitionValidator.ValidateJson(Definition(Conversation, broken), ValidationStage.Version);
 
-        Assert.Equal([MistakeCodes.StepInformPointName], mistakes.Select(mistake => mistake.Code));
+        Assert.Equal([MistakeCode.StepInformPointName], mistakes.Select(mistake => mistake.Code));
     }
 }

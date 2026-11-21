@@ -4,7 +4,7 @@ import type { Mistake } from "@/api/client";
 
 import { bodyOf, fieldOf, formOf, isDirty, isEmpty } from "./personaForm";
 
-function mistakeAt(path: string, code = "persona.text.tooLong"): Mistake {
+function mistakeAt(path: string, code: Mistake["code"] = "persona.text.tooLong"): Mistake {
     return { code, stage: "Save", resource: { kind: "Persona", id: "persona" }, path, message: "m", fix: "f", related: [] };
 }
 

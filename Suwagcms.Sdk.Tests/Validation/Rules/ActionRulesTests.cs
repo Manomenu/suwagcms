@@ -38,7 +38,7 @@ public sealed class ActionRulesTests
     private static IReadOnlyList<Mistake> Check(params BotAction[] actions) =>
         DefinitionValidator.Validate(new BotDefinition { FormatVersion = 5, Actions = actions }, ValidationStage.Save);
 
-    private static string[] Codes(params BotAction[] actions) => [.. Check(actions).Select(mistake => mistake.Code)];
+    private static string[] Codes(params BotAction[] actions) => [.. Check(actions).Select(mistake => mistake.Code.Text())];
 
     [Fact]
     [Trait("criterion", "AC-http-actions-2")]
@@ -82,16 +82,16 @@ public sealed class ActionRulesTests
         foreach (
             var (code, path) in new[]
             {
-                (MistakeCodes.ActionIdInvalid, "id"),
-                (MistakeCodes.ActionDescriptionMissing, "description"),
-                (MistakeCodes.ActionImplementationMissing, "implementation"),
-                (MistakeCodes.FactNameInvalid, "parameters.Bad Name"),
-                (MistakeCodes.FactDescriptionMissing, "parameters.noDescription.description"),
-                (MistakeCodes.FactDescriptionMissing, "results.noDescription.description"),
-                (MistakeCodes.FactTypeInvalid, "results.badType.type"),
-                (MistakeCodes.FactEnumTooFewValues, "results.oneValue.values"),
-                (MistakeCodes.FactIntBoundMissing, "results.noBounds.min"),
-                (MistakeCodes.FactTextMaxLengthInvalid, "results.noLength.maxLength"),
+                (MistakeCode.ActionIdInvalid, "id"),
+                (MistakeCode.ActionDescriptionMissing, "description"),
+                (MistakeCode.ActionImplementationMissing, "implementation"),
+                (MistakeCode.FactNameInvalid, "parameters.Bad Name"),
+                (MistakeCode.FactDescriptionMissing, "parameters.noDescription.description"),
+                (MistakeCode.FactDescriptionMissing, "results.noDescription.description"),
+                (MistakeCode.FactTypeInvalid, "results.badType.type"),
+                (MistakeCode.FactEnumTooFewValues, "results.oneValue.values"),
+                (MistakeCode.FactIntBoundMissing, "results.noBounds.min"),
+                (MistakeCode.FactTextMaxLengthInvalid, "results.noLength.maxLength"),
             }
         )
         {
@@ -101,21 +101,21 @@ public sealed class ActionRulesTests
 
     [Fact]
     [Trait("criterion", "AC-http-actions-4")]
-    public void An_id_the_actions_already_have_is_a_duplicate() => Assert.Contains(MistakeCodes.DuplicateId, Codes(Http(), Http()));
+    public void An_id_the_actions_already_have_is_a_duplicate() => Assert.Contains("resource.duplicateId", Codes(Http(), Http()));
 
     [Theory]
-    [InlineData("GRAB", "https://crm.internal", MistakeCodes.ActionMethodInvalid)]
-    [InlineData("post", "https://crm.internal", MistakeCodes.ActionMethodInvalid)]
-    [InlineData("POST", "/relative", MistakeCodes.ActionUrlInvalid)]
-    [InlineData("POST", "ftp://crm.internal", MistakeCodes.ActionUrlInvalid)]
-    [InlineData("POST", "https://user:pass@crm.internal", MistakeCodes.ActionUrlCredentials)]
-    [InlineData("POST", "https://crm.internal/{unknown}", MistakeCodes.ActionUrlParameter)]
+    [InlineData("GRAB", "https://crm.internal", "action.http.method")]
+    [InlineData("post", "https://crm.internal", "action.http.method")]
+    [InlineData("POST", "/relative", "action.http.url")]
+    [InlineData("POST", "ftp://crm.internal", "action.http.url")]
+    [InlineData("POST", "https://user:pass@crm.internal", "action.http.urlCredentials")]
+    [InlineData("POST", "https://crm.internal/{unknown}", "action.http.urlParameter")]
     [Trait("criterion", "AC-http-actions-5")]
     public void A_bad_method_or_url_is_refused_with_a_fix(string method, string url, string code)
     {
         var mistake = Assert.Single(Check(Http(url, method)));
 
-        Assert.Equal(code, mistake.Code);
+        Assert.Equal(code, mistake.Code.Text());
         Assert.NotEmpty(mistake.Fix);
     }
 
@@ -127,7 +127,7 @@ public sealed class ActionRulesTests
     [Trait("criterion", "AC-http-actions-5")]
     public void A_timeout_outside_1_to_60_is_refused(int seconds, bool refused)
     {
-        var mistakes = Check(Http(timeout: seconds)).Where(mistake => mistake.Code == MistakeCodes.ActionTimeoutInvalid).ToList();
+        var mistakes = Check(Http(timeout: seconds)).Where(mistake => mistake.Code == MistakeCode.ActionTimeoutInvalid).ToList();
 
         Assert.Equal(refused, mistakes.Count > 0);
         Assert.All(mistakes, mistake => Assert.NotEmpty(mistake.Fix));
@@ -151,15 +151,15 @@ public sealed class ActionRulesTests
     }
 
     [Theory]
-    [InlineData("X-Thing", "{secret:lower}", MistakeCodes.ActionSecretName)]
-    [InlineData("X-Thing", "{secret:1BAD}", MistakeCodes.ActionSecretName)]
-    [InlineData("Authorization", "Bearer abc", MistakeCodes.ActionSecretLiteral)]
-    [InlineData("proxy-authorization", "abc", MistakeCodes.ActionSecretLiteral)]
-    [InlineData("Cookie", "a=b", MistakeCodes.ActionSecretLiteral)]
-    [InlineData("X-Api-Key", "abc", MistakeCodes.ActionSecretLiteral)]
-    [InlineData("X-Token", "abc", MistakeCodes.ActionSecretLiteral)]
-    [InlineData("X-Password", "abc", MistakeCodes.ActionSecretLiteral)]
-    [InlineData("X-Client-Secret", "abc", MistakeCodes.ActionSecretLiteral)]
+    [InlineData("X-Thing", "{secret:lower}", "action.secret.name")]
+    [InlineData("X-Thing", "{secret:1BAD}", "action.secret.name")]
+    [InlineData("Authorization", "Bearer abc", "action.secret.literal")]
+    [InlineData("proxy-authorization", "abc", "action.secret.literal")]
+    [InlineData("Cookie", "a=b", "action.secret.literal")]
+    [InlineData("X-Api-Key", "abc", "action.secret.literal")]
+    [InlineData("X-Token", "abc", "action.secret.literal")]
+    [InlineData("X-Password", "abc", "action.secret.literal")]
+    [InlineData("X-Client-Secret", "abc", "action.secret.literal")]
     [Trait("criterion", "AC-http-actions-6")]
     public void A_bad_secret_name_and_a_literal_value_in_a_sensitive_header_are_refused_with_the_reference_to_write(
         string header,
@@ -169,20 +169,20 @@ public sealed class ActionRulesTests
     {
         var mistake = Assert.Single(Check(Http(headers: new() { [header] = value })));
 
-        Assert.Equal(code, mistake.Code);
+        Assert.Equal(code, mistake.Code.Text());
         Assert.Contains("{secret:", mistake.Fix, StringComparison.Ordinal);
         Assert.DoesNotContain(value, mistake.Message, StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("https://crm.internal/{secret:CRM_TOKEN}", MistakeCodes.ActionSecretInUrl)]
-    [InlineData("https://crm.internal/x?apiKey=abc123", MistakeCodes.ActionSecretLiteral)]
+    [InlineData("https://crm.internal/{secret:CRM_TOKEN}", "action.secret.inUrl")]
+    [InlineData("https://crm.internal/x?apiKey=abc123", "action.secret.literal")]
     [Trait("criterion", "AC-http-actions-6")]
     public void A_secret_in_the_url_and_a_literal_query_value_with_a_sensitive_name_are_refused_with_a_fix(string url, string code)
     {
         var mistake = Assert.Single(Check(Http(url)));
 
-        Assert.Equal(code, mistake.Code);
+        Assert.Equal(code, mistake.Code.Text());
         Assert.Contains("{secret:", mistake.Fix, StringComparison.Ordinal);
         Assert.DoesNotContain("abc123", mistake.Message, StringComparison.Ordinal);
     }
@@ -203,7 +203,7 @@ public sealed class ActionRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(Json, ValidationStage.Save));
 
-        Assert.Equal(MistakeCodes.ActionSecretLiteral, mistake.Code);
+        Assert.Equal(MistakeCode.ActionSecretLiteral, mistake.Code);
         Assert.Equal("implementation.http.headers.Authorization", mistake.Path);
         Assert.Equal("Header 'Authorization' holds a literal value, and the CMS never stores secrets.", mistake.Message);
     }

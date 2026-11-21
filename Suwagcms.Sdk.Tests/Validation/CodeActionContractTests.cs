@@ -51,8 +51,8 @@ public sealed class CodeActionContractTests
         [
             .. DefinitionValidator
                 .Validate(definition, stage, declaration)
-                .Where(mistake => mistake.Code.StartsWith("action.code.", StringComparison.Ordinal))
-                .Select(mistake => mistake.Code),
+                .Where(mistake => mistake.Code.Text().StartsWith("action.code.", StringComparison.Ordinal))
+                .Select(mistake => mistake.Code.Text()),
         ];
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class CodeActionContractTests
     {
         var definition = Holding(Lookup.ToAction());
 
-        Assert.Equal([MistakeCodes.ActionCodeUndeclared], Codes(definition, Declaring(), ValidationStage.Version));
+        Assert.Equal(["action.code.undeclared"], Codes(definition, Declaring(), ValidationStage.Version));
         Assert.Empty(Codes(definition, Declaring(), ValidationStage.Save));
     }
 
@@ -76,7 +76,7 @@ public sealed class CodeActionContractTests
 
         var mistake = Assert.Single(
             DefinitionValidator.Validate(definition, ValidationStage.Version, declaration),
-            found => found.Code == MistakeCodes.ActionCodeContract
+            found => found.Code == MistakeCode.ActionCodeContract
         );
 
         Assert.Contains("parameter 'pesel' is text up to 11 here", mistake.Message, StringComparison.Ordinal);
@@ -91,7 +91,7 @@ public sealed class CodeActionContractTests
 
         var mistake = Assert.Single(
             DefinitionValidator.Validate(Holding(Lookup.ToAction()), ValidationStage.Version, declaration),
-            found => found.Code == MistakeCodes.ActionCodeContract
+            found => found.Code == MistakeCode.ActionCodeContract
         );
 
         Assert.Contains("result 'policy' is declared and not here", mistake.Message, StringComparison.Ordinal);
@@ -104,7 +104,7 @@ public sealed class CodeActionContractTests
     {
         var definition = Holding(Http("lookupPolicy"));
 
-        Assert.Equal([MistakeCodes.ActionCodeConflict], Codes(definition, Declaring(Lookup), ValidationStage.Version));
+        Assert.Equal(["action.code.conflict"], Codes(definition, Declaring(Lookup), ValidationStage.Version));
         Assert.Empty(Codes(definition, Declaring(Lookup), ValidationStage.Save));
     }
 
@@ -145,10 +145,10 @@ public sealed class CodeActionContractTests
             }
         );
 
-        var codes = DeclarationValidator.CheckAnswer(bad, "b").Select(mistake => mistake.Code).ToList();
+        var codes = DeclarationValidator.CheckAnswer(bad, "b").Select(mistake => mistake.Code.Text()).ToList();
 
-        Assert.Contains(MistakeCodes.CodeActionIdInvalid, codes);
-        Assert.Contains(MistakeCodes.CodeActionFieldRepeated, codes);
-        Assert.Contains(MistakeCodes.CodeActionFieldInvalid, codes);
+        Assert.Contains("codeAction.id.invalid", codes);
+        Assert.Contains("codeAction.field.repeated", codes);
+        Assert.Contains("codeAction.field.invalid", codes);
     }
 }

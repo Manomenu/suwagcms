@@ -153,7 +153,7 @@ internal sealed class DeclarationAsker(NpgsqlDataSource dataSource, BotClient cl
                 .CheckDefinition(ResourceKinds.Assemble(resources), declaration)
                 .Where(mistake =>
                     mistake.Code
-                        is not (MistakeCodes.DeclarationFormatVersion or MistakeCodes.PersonaRequired or MistakeCodes.PersonaIncomplete)
+                        is not (MistakeCode.DeclarationFormatVersion or MistakeCode.PersonaRequired or MistakeCode.PersonaIncomplete)
                 ),
         ];
     }

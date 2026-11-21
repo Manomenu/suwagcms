@@ -84,7 +84,7 @@ internal static class ValidateCommand
         string.Join(
             Environment.NewLine,
             answer
-                .Mistakes.Select(mistake => $"  {mistake.Code} {mistake.Message} {mistake.Fix}")
+                .Mistakes.Select(mistake => $"  {mistake.Code.Text()} {mistake.Message} {mistake.Fix}")
                 .Prepend(string.Create(CultureInfo.InvariantCulture, $"Mistakes, {answer.Mistakes.Count}:"))
         );
 }

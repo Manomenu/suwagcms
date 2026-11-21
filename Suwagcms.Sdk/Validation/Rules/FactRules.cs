@@ -14,7 +14,7 @@ internal static class FactRules
     public static IReadOnlyList<Rule> All { get; } =
     [
         new(
-            MistakeCodes.FactNameInvalid,
+            MistakeCode.FactNameInvalid,
             ValidationStage.Save,
             definition =>
                 definition
@@ -22,29 +22,29 @@ internal static class FactRules
                     .Concat(definition.Procedures.SelectMany(LocalNames))
                     .Concat(definition.Actions.Where(action => !action.IsCode).SelectMany(FieldNames))
         ),
-        For(MistakeCodes.FactTypeInvalid, Type),
-        For(MistakeCodes.FactDescriptionMissing, Description),
-        For(MistakeCodes.FactWritableByInvalid, WritableBy),
-        For(MistakeCodes.FactEnumTooFewValues, TooFewValues),
-        For(MistakeCodes.FactEnumValueBlank, BlankValues),
-        For(MistakeCodes.FactEnumValueRepeated, RepeatedValues),
-        For(MistakeCodes.FactEnumValueUnusable, UnusableValues),
-        For(MistakeCodes.FactEnumValueReserved, ReservedValues),
-        For(MistakeCodes.FactIntBoundMissing, MissingBounds),
-        For(MistakeCodes.FactIntRangeInverted, InvertedRange),
-        For(MistakeCodes.FactTextMaxLengthInvalid, MaxLength),
-        For(MistakeCodes.FactPatternRegexMissing, FactPatternRules.RegexMissing),
-        For(MistakeCodes.FactPatternRegexInvalid, FactPatternRules.RegexInvalid),
-        For(MistakeCodes.FactPatternRegexMatchesEmpty, FactPatternRules.RegexMatchesEmpty),
-        For(MistakeCodes.FactPatternMeansMissing, FactPatternRules.MeansMissing),
-        For(MistakeCodes.FactPatternExampleBlank, FactPatternRules.ExampleBlank),
-        For(MistakeCodes.FactPatternExampleMismatch, FactPatternRules.ExampleMismatch),
-        For(MistakeCodes.FactPatternExampleTooLong, FactPatternRules.ExampleTooLong),
-        For(MistakeCodes.FactPatternTellCustomerInvalid, FactPatternRules.TellCustomerInvalid),
-        For(MistakeCodes.FactConstraintForeign, ForeignConstraints),
+        For(MistakeCode.FactTypeInvalid, Type),
+        For(MistakeCode.FactDescriptionMissing, Description),
+        For(MistakeCode.FactWritableByInvalid, WritableBy),
+        For(MistakeCode.FactEnumTooFewValues, TooFewValues),
+        For(MistakeCode.FactEnumValueBlank, BlankValues),
+        For(MistakeCode.FactEnumValueRepeated, RepeatedValues),
+        For(MistakeCode.FactEnumValueUnusable, UnusableValues),
+        For(MistakeCode.FactEnumValueOther, ReservedValues),
+        For(MistakeCode.FactIntBoundMissing, MissingBounds),
+        For(MistakeCode.FactIntRangeInverted, InvertedRange),
+        For(MistakeCode.FactTextMaxLengthInvalid, MaxLength),
+        For(MistakeCode.FactPatternRegexMissing, FactPatternRules.RegexMissing),
+        For(MistakeCode.FactPatternRegexInvalid, FactPatternRules.RegexInvalid),
+        For(MistakeCode.FactPatternRegexMatchesEmpty, FactPatternRules.RegexMatchesEmpty),
+        For(MistakeCode.FactPatternMeansMissing, FactPatternRules.MeansMissing),
+        For(MistakeCode.FactPatternExampleBlank, FactPatternRules.ExampleBlank),
+        For(MistakeCode.FactPatternExampleMismatch, FactPatternRules.ExampleMismatch),
+        For(MistakeCode.FactPatternExampleTooLong, FactPatternRules.ExampleTooLong),
+        For(MistakeCode.FactPatternTellCustomerInvalid, FactPatternRules.TellCustomerInvalid),
+        For(MistakeCode.FactConstraintForeign, ForeignConstraints),
     ];
 
-    private static Rule For(string code, Func<GlobalFact, IEnumerable<Mistake>> check) =>
+    private static Rule For(MistakeCode code, Func<GlobalFact, IEnumerable<Mistake>> check) =>
         new(
             code,
             ValidationStage.Save,
@@ -81,7 +81,7 @@ internal static class FactRules
         FieldsOf(action)
             .Where(field => !ResourceIds.IsCamelCase(field.Name))
             .Select(field => new Mistake(
-                MistakeCodes.FactNameInvalid,
+                MistakeCode.FactNameInvalid,
                 ValidationStage.Save,
                 new ResourceRef(ResourceKind.Action, action.Id),
                 $"{field.List}.{field.Name}",
@@ -113,7 +113,7 @@ internal static class FactRules
         if (!FactNames.IsValid(fact.Name))
         {
             yield return Make(
-                MistakeCodes.FactNameInvalid,
+                MistakeCode.FactNameInvalid,
                 fact,
                 "name",
                 $"'{fact.Name}' is not a fact name: it is camelCase words, which may be joined by dots (customer.city).",
@@ -126,7 +126,7 @@ internal static class FactRules
         procedure
             .Locals.Keys.Where(name => !ResourceIds.IsCamelCase(name))
             .Select(name => new Mistake(
-                MistakeCodes.FactNameInvalid,
+                MistakeCode.FactNameInvalid,
                 ValidationStage.Save,
                 new ResourceRef(ResourceKind.Procedure, procedure.Id),
                 $"localFacts.{name}",
@@ -140,7 +140,7 @@ internal static class FactRules
         if (!FactTypes.All.Contains(fact.Type, StringComparer.Ordinal))
         {
             yield return Make(
-                MistakeCodes.FactTypeInvalid,
+                MistakeCode.FactTypeInvalid,
                 fact,
                 "type",
                 string.IsNullOrWhiteSpace(fact.Type) ? $"'{fact.Name}' has no type." : $"'{fact.Name}' has the unknown type '{fact.Type}'.",
@@ -154,7 +154,7 @@ internal static class FactRules
         if (string.IsNullOrWhiteSpace(fact.Description))
         {
             yield return Make(
-                MistakeCodes.FactDescriptionMissing,
+                MistakeCode.FactDescriptionMissing,
                 fact,
                 "description",
                 $"'{fact.Name}' has no description.",
@@ -168,7 +168,7 @@ internal static class FactRules
         if (!FactWriters.All.Contains(fact.WritableBy, StringComparer.Ordinal))
         {
             yield return Make(
-                MistakeCodes.FactWritableByInvalid,
+                MistakeCode.FactWritableByInvalid,
                 fact,
                 "writableBy",
                 $"'{fact.Name}' has the unknown writableBy '{fact.WritableBy}'.",
@@ -183,7 +183,7 @@ internal static class FactRules
         if (fact.Type == FactTypes.Enum && count < 2)
         {
             yield return Make(
-                MistakeCodes.FactEnumTooFewValues,
+                MistakeCode.FactEnumTooFewValues,
                 fact,
                 "values",
                 string.Create(CultureInfo.InvariantCulture, $"'{fact.Name}' has {count} value{(count == 1 ? "" : "s")}."),
@@ -200,7 +200,7 @@ internal static class FactRules
                 .Where(entry => string.IsNullOrWhiteSpace(entry.value))
                 .Select(entry =>
                     Make(
-                        MistakeCodes.FactEnumValueBlank,
+                        MistakeCode.FactEnumValueBlank,
                         fact,
                         Value(entry.index),
                         $"Value {entry.index + 1} of '{fact.Name}' is blank.",
@@ -221,7 +221,7 @@ internal static class FactRules
                         .Skip(1)
                         .Select(entry =>
                             Make(
-                                MistakeCodes.FactEnumValueRepeated,
+                                MistakeCode.FactEnumValueRepeated,
                                 fact,
                                 Value(entry.index),
                                 $"The value '{entry.value}' of '{fact.Name}' is listed more than once.",
@@ -239,7 +239,7 @@ internal static class FactRules
                 .Where(entry => !string.IsNullOrWhiteSpace(entry.value) && entry.value.AsSpan().IndexOfAny('\n', '\r', '\0') >= 0)
                 .Select(entry =>
                     Make(
-                        MistakeCodes.FactEnumValueUnusable,
+                        MistakeCode.FactEnumValueUnusable,
                         fact,
                         Value(entry.index),
                         $"Value {entry.index + 1} of '{fact.Name}' has a line break or a NUL.",
@@ -255,7 +255,7 @@ internal static class FactRules
                 .Where(entry => entry.value == ReservedValue)
                 .Select(entry =>
                     Make(
-                        MistakeCodes.FactEnumValueReserved,
+                        MistakeCode.FactEnumValueOther,
                         fact,
                         Value(entry.index),
                         $"'{fact.Name}' lists '{ReservedValue}' as a value, which is reserved for a value outside the list.",
@@ -274,7 +274,7 @@ internal static class FactRules
             if (bound is null)
             {
                 yield return Make(
-                    MistakeCodes.FactIntBoundMissing,
+                    MistakeCode.FactIntBoundMissing,
                     fact,
                     name,
                     $"'{fact.Name}' is an int without {name}.",
@@ -289,7 +289,7 @@ internal static class FactRules
         if (fact.Type == FactTypes.WholeNumber && fact.Min > fact.Max)
         {
             yield return Make(
-                MistakeCodes.FactIntRangeInverted,
+                MistakeCode.FactIntRangeInverted,
                 fact,
                 "min",
                 string.Create(CultureInfo.InvariantCulture, $"'{fact.Name}' has min {fact.Min} above max {fact.Max}."),
@@ -303,7 +303,7 @@ internal static class FactRules
         if (fact.Type == FactTypes.Text && fact.MaxLength is null or <= 0)
         {
             yield return Make(
-                MistakeCodes.FactTextMaxLengthInvalid,
+                MistakeCode.FactTextMaxLengthInvalid,
                 fact,
                 "maxLength",
                 fact.MaxLength is null
@@ -333,7 +333,7 @@ internal static class FactRules
             if (present && fact.Type != owner)
             {
                 yield return Make(
-                    MistakeCodes.FactConstraintForeign,
+                    MistakeCode.FactConstraintForeign,
                     fact,
                     name,
                     $"'{fact.Name}' is {Article(fact.Type)} {fact.Type} and cannot have {name}: it belongs to {Article(owner)} {owner}.",
@@ -350,7 +350,7 @@ internal static class FactRules
     private static ResourceRef Resource(GlobalFact fact) => new(ResourceKind.GlobalFact, fact.Name);
 
     internal static Mistake Make(
-        string code,
+        MistakeCode code,
         GlobalFact fact,
         string path,
         string message,

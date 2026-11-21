@@ -88,12 +88,12 @@ public sealed class InformBlockRulesTests
     {
         var mistake = Assert.Single(Save(Informing(TwoPoints, articles: ["officeContacts"]), Office()));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[0].articles[0]", mistake.Path);
         Assert.Contains("'knowledge' of step 'only'", mistake.Message, StringComparison.Ordinal);
 
         Assert.Equal(
-            MistakeCodes.KnowledgeArticleOtherBase,
+            MistakeCode.KnowledgeArticleOtherBase,
             Assert.Single(Save(Informing(TwoPoints, articles: ["officeContact"]), Office(knowledgeBase: "offer"))).Code
         );
     }
@@ -126,7 +126,7 @@ public sealed class InformBlockRulesTests
 
         var mistakes = DefinitionValidator.ValidateJson(json, ValidationStage.Save);
 
-        Assert.All(mistakes, mistake => Assert.Equal(MistakeCodes.ReferenceMalformed, mistake.Code));
+        Assert.All(mistakes, mistake => Assert.Equal(MistakeCode.ReferenceMalformed, mistake.Code));
         Assert.Equal(2, mistakes.Count);
         Assert.Contains(mistakes, mistake => mistake.Fix.Contains("'officeContact'", StringComparison.Ordinal));
     }
@@ -141,15 +141,15 @@ public sealed class InformBlockRulesTests
         Assert.Empty(Save(nothing));
         Assert.Empty(Save(blank));
         Assert.Equal(
-            [(MistakeCodes.StepInformEmpty, "steps.only.inform"), (MistakeCodes.InstructionBlank, "steps.only.inform.instruction")],
-            DefinitionValidator.Validate(Bot(nothing), ValidationStage.Version).Select(mistake => (mistake.Code, mistake.Path))
+            [("step.inform.empty", "steps.only.inform"), ("instruction.blank", "steps.only.inform.instruction")],
+            DefinitionValidator.Validate(Bot(nothing), ValidationStage.Version).Select(mistake => (mistake.Code.Text(), mistake.Path))
         );
         Assert.Equal(
             [
-                (MistakeCodes.StepInformPointBlank, "steps.only.inform.points.delivery"),
-                (MistakeCodes.StepInformPointBlank, "steps.only.inform.points.turnaround"),
+                ("step.inform.pointBlank", "steps.only.inform.points.delivery"),
+                ("step.inform.pointBlank", "steps.only.inform.points.turnaround"),
             ],
-            DefinitionValidator.Validate(Bot(blank), ValidationStage.Version).Select(mistake => (mistake.Code, mistake.Path))
+            DefinitionValidator.Validate(Bot(blank), ValidationStage.Version).Select(mistake => (mistake.Code.Text(), mistake.Path))
         );
         Assert.Empty(DefinitionValidator.Validate(Bot(Informing(TwoPoints)), ValidationStage.Version));
     }
@@ -168,7 +168,7 @@ public sealed class InformBlockRulesTests
 
         var mistake = Assert.Single(Save(two));
 
-        Assert.Equal(MistakeCodes.StepBlockMultiple, mistake.Code);
+        Assert.Equal(MistakeCode.StepBlockMultiple, mistake.Code);
         Assert.Contains("say, inform", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("inform", mistake.Fix, StringComparison.Ordinal);
         Assert.Contains("inform", Block.Names);
@@ -188,12 +188,12 @@ public sealed class InformBlockRulesTests
             """;
 
         Assert.Equal(
-            [MistakeCodes.ReferenceMissing, MistakeCodes.StepInformPointName],
-            DefinitionValidator.ValidateJson(missing, ValidationStage.Save).Select(mistake => mistake.Code)
+            ["reference.missing", "step.inform.pointName"],
+            DefinitionValidator.ValidateJson(missing, ValidationStage.Save).Select(mistake => mistake.Code.Text())
         );
         Assert.Equal(
-            [MistakeCodes.StepInformEmpty, MistakeCodes.InstructionBlank],
-            DefinitionValidator.ValidateJson(unfinished, ValidationStage.Version).Select(mistake => mistake.Code)
+            ["step.inform.empty", "instruction.blank"],
+            DefinitionValidator.ValidateJson(unfinished, ValidationStage.Version).Select(mistake => mistake.Code.Text())
         );
     }
 
@@ -203,7 +203,7 @@ public sealed class InformBlockRulesTests
     {
         var mistake = Assert.Single(Save(Informing(new Dictionary<string, string?> { ["when_ready"] = "Text." })));
 
-        Assert.Equal(MistakeCodes.StepInformPointName, mistake.Code);
+        Assert.Equal(MistakeCode.StepInformPointName, mistake.Code);
         Assert.Equal("steps.only.inform.points.when_ready", mistake.Path);
         Assert.Contains("'whenReady'", mistake.Fix, StringComparison.Ordinal);
     }

@@ -112,4 +112,19 @@ a fact with `FactValues.Accepts(fact, value)` and words what it takes with `Fact
 
 Pass a `BotDeclaration` as a third argument and the `Version` stage also reports what that bot cannot run; `Save` never looks at it.
 
-It returns every mistake at once, each with a stable code and a fix; an empty list means the definition passes.
+It returns every mistake at once, each with a stable code and a fix; an empty list means the definition passes. The code is a
+`MistakeCode`, an enum of every code the validator, the bot runtime and the CMS give: compare with `mistake.Code == MistakeCode.StepMissing`.
+On the wire and in `bot-runtime.schema.json` each one is its dotted text, such as `step.missing`, which `mistake.Code.Text()` gives.
+
+## Moving from 0.6
+
+The mistake codes became an enum. What a bot sends and receives is unchanged: every code keeps its dotted text.
+
+- `MistakeCodes.X`, a string constant, is now `MistakeCode.X`, and `Mistake.Code` is a `MistakeCode`. Replace `MistakeCodes.` with
+  `MistakeCode.`; where a code was used as text (a log line, a message, a dictionary key), write `mistake.Code.Text()`, since an enum's
+  `ToString()` gives its C# name (`StepMissing`), not `step.missing`.
+- `MistakeCodes.FactEnumValueReserved` is `MistakeCode.FactEnumValueOther`; its text is still `fact.enum.valueReserved`.
+- The codes the CMS gives on its own (such as `resource.stale` or `save.unknownField`) are members too, so a tool reading the CMS's
+  answers can compare them the same way.
+- A refusal holding a code outside the enum no longer reads as a `BotRefusal`: a bot outside .NET sends only the codes
+  `bot-runtime.schema.json` lists.
