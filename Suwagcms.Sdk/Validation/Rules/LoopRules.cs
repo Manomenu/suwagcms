@@ -51,7 +51,7 @@ internal static class LoopRules
                 : $"Remove the link from '{first.Id}' to '{second.Id}', or another link on the path.";
         var related = cycle.Select((resource, index) => new RelatedResource(resource, PathOut(index))).Skip(1).ToList();
         return new Mistake(
-            MistakeCodes.ReferenceLoop,
+            MistakeCode.ReferenceLoop,
             ValidationStage.Save,
             first,
             PathOut(0),

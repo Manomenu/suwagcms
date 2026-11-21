@@ -39,7 +39,7 @@ public sealed class ArticleProcedureLinkRulesTests
     {
         var mistake = Assert.Single(Save(Holding(content: $"Start {Link}.")));
 
-        Assert.Equal(MistakeCodes.LinkProcedureNotInGuide, mistake.Code);
+        Assert.Equal(MistakeCode.LinkProcedureNotInGuide, mistake.Code);
         Assert.Equal("content", mistake.Path);
         Assert.Contains("links to procedure 'orderValuation'", mistake.Message, StringComparison.Ordinal);
         Assert.Equal("Move the link to llmGuide.", mistake.Fix);
@@ -51,7 +51,7 @@ public sealed class ArticleProcedureLinkRulesTests
     {
         var mistake = Assert.Single(Save(Holding(guide: "Start [it](cms://procedure/orderValuatoin).")));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal("llmGuide", mistake.Path);
         Assert.Contains(
             "llmGuide of 'wycena' links to procedure 'orderValuatoin', which this bot does not have",
@@ -70,7 +70,7 @@ public sealed class ArticleProcedureLinkRulesTests
     {
         var mistake = Assert.Single(Save(Holding(guide: guide)));
 
-        Assert.Equal(MistakeCodes.ReferenceMalformed, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMalformed, mistake.Code);
         Assert.Contains("[label](cms://procedure/<id>)", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -80,7 +80,7 @@ public sealed class ArticleProcedureLinkRulesTests
     {
         var mistake = Assert.Single(Save(Holding(guide: "Go [back](cms://procedure/conversation).")));
 
-        Assert.Equal(MistakeCodes.LinkProcedureConversation, mistake.Code);
+        Assert.Equal(MistakeCode.LinkProcedureConversation, mistake.Code);
         Assert.Contains("cannot be started", mistake.Message, StringComparison.Ordinal);
     }
 
@@ -153,7 +153,7 @@ public sealed class ArticleProcedureLinkRulesTests
 
         var mistake = Assert.Single(DeleteGuard.Reshape(after, [target], DefinitionValidator.Validate(after, ValidationStage.Save)));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal(target, mistake.Resource);
         Assert.Equal(new RelatedResource(new ResourceRef(ResourceKind.Article, "wycena"), "llmGuide"), Assert.Single(mistake.Related));
     }
@@ -182,7 +182,7 @@ public sealed class ArticleProcedureLinkRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.Validate(definition, ValidationStage.Save));
 
-        Assert.Equal(MistakeCodes.ReferenceLoop, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceLoop, mistake.Code);
         Assert.Contains("wycena → orderValuation → wycena", mistake.Message, StringComparison.Ordinal);
     }
 
@@ -211,7 +211,7 @@ public sealed class ArticleProcedureLinkRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.Validate(definition, ValidationStage.Save));
 
-        Assert.Equal(MistakeCodes.ReferenceLoop, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceLoop, mistake.Code);
         Assert.Equal("llmGuide", mistake.Path);
         Assert.Equal("steps.tell.inform.knowledge[0].articles[0]", Assert.Single(mistake.Related).Location);
     }

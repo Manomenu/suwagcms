@@ -201,11 +201,15 @@ test("AC-procedure-creator-45: on a long procedure Save stays in view and works 
     await page.setViewportSize({ width: 1280, height: 700 });
     await page.goto(`/bots/${bot}/procedures/longOne/edit`);
     await page.getByLabel("Description").fill("Changed");
+    await expect(page.getByRole("region", { name: "Used by" })).toBeVisible();
+    await expect(page.getByText("No mistakes: ready for a version.")).toBeVisible();
 
     const save = page.getByRole("button", { name: "Save", exact: true });
-    await page.evaluate(() => {
-        window.scrollTo(0, 900);
-    });
+    const scrollToTheMiddle = () =>
+        row(page, "step20").evaluate((element) => {
+            element.scrollIntoView({ block: "start" });
+        });
+    await scrollToTheMiddle();
     await expect(save).toBeInViewport({ ratio: 1 });
     await expect(row(page, "step0")).not.toBeInViewport();
     await save.click({ timeout: 2000, trial: true });
@@ -224,9 +228,7 @@ test("AC-procedure-creator-45: on a long procedure Save stays in view and works 
     expect((await bottomOf(page.getByLabel("Add step", { exact: true }))).bottom).toBeLessThanOrEqual(bar.top);
     expect(bar.bottom).toBeLessThanOrEqual((await bottomOf(remove)).top);
 
-    await page.evaluate(() => {
-        window.scrollTo(0, 900);
-    });
+    await scrollToTheMiddle();
     await save.click();
     await expect(page.getByText("Unsaved changes")).toHaveCount(0);
     expect((await stored<{ description: string }>(request, bot, "longOne")).description).toBe("Changed");

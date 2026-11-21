@@ -27,19 +27,19 @@ public sealed class FactRulesTests
     private static IReadOnlyList<Mistake> Check(params GlobalFact[] facts) =>
         DefinitionValidator.Validate(new BotDefinition { FormatVersion = 5, Facts = facts }, ValidationStage.Save);
 
-    private static string[] Codes(params GlobalFact[] facts) => [.. Check(facts).Select(mistake => mistake.Code)];
+    private static string[] Codes(params GlobalFact[] facts) => [.. Check(facts).Select(mistake => mistake.Code.Text())];
 
     [Theory]
     [Trait("criterion", "AC-global-facts-16")]
-    [InlineData("a\nb", MistakeCodes.FactEnumValueUnusable)]
-    [InlineData("a\rb", MistakeCodes.FactEnumValueUnusable)]
-    [InlineData("a\0b", MistakeCodes.FactEnumValueUnusable)]
-    [InlineData("other", MistakeCodes.FactEnumValueReserved)]
+    [InlineData("a\nb", "fact.enum.valueUnusable")]
+    [InlineData("a\rb", "fact.enum.valueUnusable")]
+    [InlineData("a\0b", "fact.enum.valueUnusable")]
+    [InlineData("other", "fact.enum.valueReserved")]
     public void An_enum_value_with_a_line_break_or_a_NUL_or_the_reserved_other_is_refused_beside_the_value(string value, string code)
     {
         var mistake = Assert.Single(Check(Kind with { Values = ["house", value] }));
 
-        Assert.Equal((code, "values[1]"), (mistake.Code, mistake.Path));
+        Assert.Equal((code, "values[1]"), (mistake.Code.Text(), mistake.Path));
         Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
     }
 
@@ -86,7 +86,7 @@ public sealed class FactRulesTests
     {
         var mistake = Assert.Single(Check(Kind with { WritableBy = level }));
 
-        Assert.Equal(MistakeCodes.FactWritableByInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.FactWritableByInvalid, mistake.Code);
         Assert.Equal("writableBy", mistake.Path);
         Assert.Contains("assign, set, correct", mistake.Fix, StringComparison.Ordinal);
     }
@@ -96,7 +96,7 @@ public sealed class FactRulesTests
     [InlineData("")]
     [InlineData("   ")]
     public void A_blank_description_is_refused(string description) =>
-        Assert.Equal([MistakeCodes.FactDescriptionMissing], Codes(Kind with { Description = description }));
+        Assert.Equal(["fact.description.missing"], Codes(Kind with { Description = description }));
 
     [Theory]
     [Trait("criterion", "AC-global-facts-3")]
@@ -107,7 +107,7 @@ public sealed class FactRulesTests
     {
         var mistake = Assert.Single(Check(Kind with { Type = type, Values = null }));
 
-        Assert.Equal(MistakeCodes.FactTypeInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.FactTypeInvalid, mistake.Code);
         Assert.Contains("enum, int, text", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -115,9 +115,9 @@ public sealed class FactRulesTests
     [Trait("criterion", "AC-global-facts-3")]
     public void An_enum_with_fewer_than_two_values_is_refused_whether_it_has_one_or_none()
     {
-        Assert.Equal([MistakeCodes.FactEnumTooFewValues], Codes(Kind with { Values = ["house"] }));
-        Assert.Equal([MistakeCodes.FactEnumTooFewValues], Codes(Kind with { Values = [] }));
-        Assert.Equal([MistakeCodes.FactEnumTooFewValues], Codes(Kind with { Values = null }));
+        Assert.Equal(["fact.enum.tooFewValues"], Codes(Kind with { Values = ["house"] }));
+        Assert.Equal(["fact.enum.tooFewValues"], Codes(Kind with { Values = [] }));
+        Assert.Equal(["fact.enum.tooFewValues"], Codes(Kind with { Values = null }));
     }
 
     [Fact]
@@ -127,8 +127,8 @@ public sealed class FactRulesTests
         var blank = Assert.Single(Check(Kind with { Values = ["house", " ", "flat"] }));
         var repeated = Assert.Single(Check(Kind with { Values = ["house", "flat", "house"] }));
 
-        Assert.Equal((MistakeCodes.FactEnumValueBlank, "values[1]"), (blank.Code, blank.Path));
-        Assert.Equal((MistakeCodes.FactEnumValueRepeated, "values[2]"), (repeated.Code, repeated.Path));
+        Assert.Equal((MistakeCode.FactEnumValueBlank, "values[1]"), (blank.Code, blank.Path));
+        Assert.Equal((MistakeCode.FactEnumValueRepeated, "values[2]"), (repeated.Code, repeated.Path));
         Assert.Equal(["values[0]"], repeated.Related.Select(related => related.Location));
     }
 
@@ -136,10 +136,10 @@ public sealed class FactRulesTests
     [Trait("criterion", "AC-global-facts-3")]
     public void An_int_needs_both_bounds_and_min_may_not_exceed_max()
     {
-        Assert.Equal([MistakeCodes.FactIntBoundMissing], Codes(Floors with { Min = null }));
-        Assert.Equal([MistakeCodes.FactIntBoundMissing], Codes(Floors with { Max = null }));
-        Assert.Equal([MistakeCodes.FactIntBoundMissing, MistakeCodes.FactIntBoundMissing], Codes(Floors with { Min = null, Max = null }));
-        Assert.Equal([MistakeCodes.FactIntRangeInverted], Codes(Floors with { Min = 9, Max = 8 }));
+        Assert.Equal(["fact.int.boundMissing"], Codes(Floors with { Min = null }));
+        Assert.Equal(["fact.int.boundMissing"], Codes(Floors with { Max = null }));
+        Assert.Equal(["fact.int.boundMissing", "fact.int.boundMissing"], Codes(Floors with { Min = null, Max = null }));
+        Assert.Equal(["fact.int.rangeInverted"], Codes(Floors with { Min = 9, Max = 8 }));
         Assert.Empty(Check(Floors with { Min = 8, Max = 8 }));
     }
 
@@ -150,7 +150,7 @@ public sealed class FactRulesTests
     [InlineData(-5)]
     public void A_text_needs_a_maxLength_above_zero(int? length)
     {
-        Assert.Equal([MistakeCodes.FactTextMaxLengthInvalid], Codes(Samples.CityFact with { MaxLength = length }));
+        Assert.Equal(["fact.text.maxLengthInvalid"], Codes(Samples.CityFact with { MaxLength = length }));
         Assert.Empty(Check(Samples.CityFact with { MaxLength = 1 }));
     }
 
@@ -161,11 +161,11 @@ public sealed class FactRulesTests
         var mistakes = Check(Floors with { Values = ["a", "b"], MaxLength = 3 });
 
         Assert.Equal(
-            [(MistakeCodes.FactConstraintForeign, "maxLength"), (MistakeCodes.FactConstraintForeign, "values")],
-            mistakes.Select(mistake => (mistake.Code, mistake.Path))
+            [("fact.constraint.foreign", "maxLength"), ("fact.constraint.foreign", "values")],
+            mistakes.Select(mistake => (mistake.Code.Text(), mistake.Path))
         );
-        Assert.Equal([MistakeCodes.FactConstraintForeign], Codes(Kind with { Min = 1 }));
-        Assert.Equal([MistakeCodes.FactConstraintForeign], Codes(Samples.CityFact with { Max = 1 }));
+        Assert.Equal(["fact.constraint.foreign"], Codes(Kind with { Min = 1 }));
+        Assert.Equal(["fact.constraint.foreign"], Codes(Samples.CityFact with { Max = 1 }));
     }
 
     [Theory]
@@ -188,7 +188,7 @@ public sealed class FactRulesTests
     {
         var mistake = Assert.Single(Check(Kind with { Name = name }));
 
-        Assert.Equal(MistakeCodes.FactNameInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.FactNameInvalid, mistake.Code);
         Assert.Contains($"'{suggested}'", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -198,7 +198,7 @@ public sealed class FactRulesTests
     {
         var mistake = Assert.Single(Check(Kind, Floors, Kind));
 
-        Assert.Equal(MistakeCodes.DuplicateId, mistake.Code);
+        Assert.Equal(MistakeCode.DuplicateId, mistake.Code);
         Assert.Equal(["facts[0]", "facts[2]"], mistake.Related.Select(related => related.Location));
     }
 
@@ -216,12 +216,7 @@ public sealed class FactRulesTests
         };
 
         Assert.Equal(
-            [
-                MistakeCodes.FactDescriptionMissing,
-                MistakeCodes.FactEnumTooFewValues,
-                MistakeCodes.FactNameInvalid,
-                MistakeCodes.FactWritableByInvalid,
-            ],
+            ["fact.description.missing", "fact.enum.tooFewValues", "fact.name.invalid", "fact.writableBy.invalid"],
             Codes(bad).Order(StringComparer.Ordinal)
         );
     }

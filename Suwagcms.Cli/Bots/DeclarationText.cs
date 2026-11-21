@@ -1,6 +1,7 @@
 using System.Globalization;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Sdk.Format.Declaration;
+using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Bots;
 
@@ -29,7 +30,7 @@ internal static class DeclarationText
                 );
                 lines.AddRange(
                     status.Mistakes.Select(mistake =>
-                        $"  {mistake.Code} {mistake.Path} {mistake.Message}{Environment.NewLine}    Fix: {mistake.Fix}"
+                        $"  {mistake.Code.Text()} {mistake.Path} {mistake.Message}{Environment.NewLine}    Fix: {mistake.Fix}"
                     )
                 );
                 lines.Add(

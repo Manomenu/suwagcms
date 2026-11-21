@@ -12,7 +12,7 @@ internal static class VersionIntake
     public static IReadOnlyList<Mistake> Check(string json, string botId, int number, BotDeclaration? declaration = null)
     {
         var content = DefinitionValidator.ValidateJson(json, ValidationStage.Version, declaration);
-        if (content.Any(mistake => mistake.Code is MistakeCodes.FormatInvalid or MistakeCodes.FormatVersion))
+        if (content.Any(mistake => mistake.Code is MistakeCode.FormatInvalid or MistakeCode.FormatVersion))
         {
             return content;
         }
@@ -23,14 +23,14 @@ internal static class VersionIntake
 
         if (number < 1)
         {
-            mistakes.Add(Envelope(MistakeCodes.VersionNumber, "number", "The route's number is below 1.", "Use a whole number from 1."));
+            mistakes.Add(Envelope(MistakeCode.VersionNumber, "number", "The route's number is below 1.", "Use a whole number from 1."));
         }
 
         if (Text(root, "bot") != botId)
         {
             mistakes.Add(
                 Envelope(
-                    MistakeCodes.VersionBot,
+                    MistakeCode.VersionBot,
                     "bot",
                     $"The document is for bot '{Text(root, "bot")}', this bot is '{botId}'.",
                     "Push the version to the bot it was created for."
@@ -42,7 +42,7 @@ internal static class VersionIntake
         {
             mistakes.Add(
                 Envelope(
-                    MistakeCodes.VersionNumber,
+                    MistakeCode.VersionNumber,
                     "number",
                     $"The document's number differs from the route's {number.ToString(CultureInfo.InvariantCulture)}.",
                     "Send the document to the route of its own number."
@@ -55,7 +55,7 @@ internal static class VersionIntake
         {
             mistakes.Add(
                 Envelope(
-                    MistakeCodes.VersionDigest,
+                    MistakeCode.VersionDigest,
                     "digest",
                     $"The digest does not match the document (expected {expected}).",
                     "Compute it with VersionDigest.Of, or create the version again."
@@ -69,6 +69,6 @@ internal static class VersionIntake
     private static string? Text(JsonElement root, string name) =>
         root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
-    private static Mistake Envelope(string code, string path, string message, string fix) =>
+    private static Mistake Envelope(MistakeCode code, string path, string message, string fix) =>
         new(code, ValidationStage.Version, new ResourceRef(ResourceKind.Definition, string.Empty), path, message, fix, []);
 }

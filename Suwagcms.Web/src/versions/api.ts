@@ -57,6 +57,10 @@ export function pushVersion(bot: string, number: number): Promise<PushResult> {
     return dataOf(api.POST("/api/bots/{bot}/versions/{number}/push", { params: { path: { bot, number } } }));
 }
 
-export function fetchPushPlan(bot: string, number: number): Promise<PushPlan> {
-    return dataOf(api.GET("/api/bots/{bot}/versions/{number}/push-plan", { params: { path: { bot, number } } }));
+export function fetchPushPlan(bot: string, number: number, signal: AbortSignal): Promise<PushPlan> {
+    return dataOf(api.GET("/api/bots/{bot}/versions/{number}/push-plan", { params: { path: { bot, number } }, signal }));
+}
+
+export function versionsKey(bot: string, ...rest: unknown[]): unknown[] {
+    return ["versions", bot, ...rest];
 }

@@ -64,7 +64,7 @@ public sealed class ProcedureEndpointsTests(TestDatabase database, ClassServer s
         var answer = await api.Add("orderValuation", Interrupted("sometimes"));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, answer.StatusCode);
-        Assert.Contains(MistakeCodes.ProcedureWhenInterruptedInvalid, await ProcedureApi.CodesOf(answer));
+        Assert.Contains("procedure.whenInterrupted.invalid", await ProcedureApi.CodesOf(answer));
         Assert.Equal(HttpStatusCode.NotFound, (await api.Get("orderValuation")).StatusCode);
     }
 
@@ -266,7 +266,7 @@ public sealed class ProcedureEndpointsTests(TestDatabase database, ClassServer s
 
         var list = await api.List();
 
-        Assert.Equal("bot.conversation.missing", Assert.Single(list.BotNotReady).Code);
+        Assert.Equal(MistakeCode.BotConversationMissing, Assert.Single(list.BotNotReady).Code);
     }
 
     [Fact]

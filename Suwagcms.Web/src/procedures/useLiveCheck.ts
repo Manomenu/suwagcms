@@ -1,27 +1,34 @@
+import { keepPreviousData, skipToken, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
-import { saveProcedure } from "./api";
+import { procedureKey, saveProcedure } from "./api";
 import { toSave, type Draft } from "./draft";
 import { checkOf, type Check } from "./mistakes";
 
 const QUIET_MS = 400;
 
-export function useLiveCheck(bot: string, id: string, revision: number, draft: Draft): Check {
-    const [check, setCheck] = useState<Check>({ state: "checking" });
-    const body = JSON.stringify(toSave(draft));
+function useQuiet(text: string): string | null {
+    const [quiet, setQuiet] = useState<string | null>(null);
     useEffect(() => {
-        const controller = new AbortController();
         const timer = setTimeout(() => {
-            void checkOf(saveProcedure(bot, id, JSON.parse(body) as ReturnType<typeof toSave>, revision, true, controller.signal)).then(
-                (next) => {
-                    if (!controller.signal.aborted) setCheck(next);
-                },
-            );
+            setQuiet(text);
         }, QUIET_MS);
         return () => {
             clearTimeout(timer);
-            controller.abort();
         };
-    }, [bot, id, revision, body]);
-    return check;
+    }, [text]);
+    return quiet;
+}
+
+export function useLiveCheck(bot: string, id: string, revision: number, draft: Draft): Check {
+    const body = useQuiet(JSON.stringify(toSave(draft)));
+    const check = useQuery({
+        queryKey: [...procedureKey(bot, id), "check", revision, body],
+        queryFn:
+            body === null
+                ? skipToken
+                : ({ signal }) => checkOf(saveProcedure(bot, id, JSON.parse(body) as ReturnType<typeof toSave>, revision, true, signal)),
+        placeholderData: keepPreviousData,
+    });
+    return check.data ?? { state: "checking" };
 }

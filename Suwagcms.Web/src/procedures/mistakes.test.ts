@@ -9,7 +9,7 @@ import { checkOf, conditionOfPlace, consequenceOf, placeOf, stepOfPlace } from "
 import { isDirty, loaded, outcomeOf, reduce } from "./state";
 
 const mistake = (stage: "Save" | "Version", path: string, message = "m"): Mistake => ({
-    code: `c.${path}`,
+    code: "step.missing",
     stage,
     resource: { kind: "Procedure", id: "p" },
     path,

@@ -3,8 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Suwagcms.Contracts.Facts;
 using Suwagcms.Contracts.Personas;
-using Suwagcms.Sdk.Validation;
-using Suwagcms.Server.Editing;
 using Suwagcms.Server.Tests.Facts;
 
 namespace Suwagcms.Server.Tests.Personas;
@@ -70,7 +68,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database, ClassServer ser
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var mistakes = await FactApi.MistakesOf(response);
         Assert.Equal(["personality", "scope.outOfScope"], mistakes.Select(mistake => mistake.GetProperty("at").GetString()));
-        Assert.All(mistakes, mistake => Assert.Equal(MistakeCodes.PersonaTextTooLong, mistake.GetProperty("code").GetString()));
+        Assert.All(mistakes, mistake => Assert.Equal("persona.text.tooLong", mistake.GetProperty("code").GetString()));
         Assert.All(mistakes, mistake => Assert.False(string.IsNullOrEmpty(mistake.GetProperty("fix").GetString())));
         Assert.Equal(new PersonaView(null, null, 0), await api.Read());
     }
@@ -87,7 +85,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database, ClassServer ser
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(response));
-        Assert.Equal(StrictBody.UnknownField, mistake.GetProperty("code").GetString());
+        Assert.Equal("save.unknownField", mistake.GetProperty("code").GetString());
         Assert.Equal(path, mistake.GetProperty("at").GetString());
         Assert.Contains(field, mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal(0, (await api.Read()).Revision);
@@ -107,7 +105,7 @@ public sealed class PersonaEndpointsTests(TestDatabase database, ClassServer ser
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(response));
-        Assert.Equal(EditProblems.ResourceStale, mistake.GetProperty("code").GetString());
+        Assert.Equal("resource.stale", mistake.GetProperty("code").GetString());
         Assert.Contains("revision 2", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Equal("Piotr's", (await api.Read()).Personality);
     }

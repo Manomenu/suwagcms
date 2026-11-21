@@ -1,25 +1,14 @@
 import { Alert, ApiError, Spinner } from "@maniumek/suwfrontkit";
-import { mistakesOf, type Mistake } from "@/api/client";
-import { useCallback, useEffect, useState } from "react";
+import { messageOf, mistakesOf } from "@/api/client";
+import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Redirect, useLocation, useSearch, useSearchParams } from "wouter";
 
 import { useKindHistory } from "@/api/history";
 import { useToFirstPage } from "@/api/pagination";
 import { versionHref, versionsHref, withListSearch } from "@/api/resourceAddress";
 
-import {
-    createVersion,
-    fetchPushPlan,
-    fetchStatus,
-    fetchVersions,
-    numberOf,
-    pushVersion,
-    versionNumberOf,
-    type BotStatus,
-    type PushPlan,
-    type PushResult,
-    type VersionSummary,
-} from "./api";
+import { createVersion, fetchPushPlan, fetchStatus, fetchVersions, numberOf, pushVersion, versionNumberOf, versionsKey } from "./api";
 import { VersionsView } from "./VersionsView";
 
 function earlierAddress(bot: string, params: URLSearchParams): string | null {
@@ -38,13 +27,7 @@ function earlierAddress(bot: string, params: URLSearchParams): string | null {
 }
 
 export function VersionsScreen({ bot }: { bot: string }) {
-    const [versions, setVersions] = useState<VersionSummary[] | null>(null);
-    const [failure, setFailure] = useState<string | null>(null);
-    const [refused, setRefused] = useState<Mistake[] | null>(null);
-    const [status, setStatus] = useState<BotStatus | null>(null);
-    const [pushing, setPushing] = useState(false);
-    const [pushFailure, setPushFailure] = useState<PushResult | null>(null);
-    const [plan, setPlan] = useState<PushPlan | null>(null);
+    const [planned, setPlanned] = useState<number | null>(null);
     const [params] = useSearchParams();
     const search = useSearch();
     const [, navigate] = useLocation();
@@ -52,86 +35,58 @@ export function VersionsScreen({ bot }: { bot: string }) {
     const earlier = earlierAddress(bot, params);
     const [events, setEvents] = useState(1);
     const history = useKindHistory(bot, earlier === null ? "versions" : null, events);
-
-    const load = useCallback(
-        (signal?: AbortSignal) => {
-            const controller = new AbortController();
-            const used = signal ?? controller.signal;
-            const fail = (error: unknown) => {
-                if (!used.aborted) setFailure(error instanceof Error ? error.message : String(error));
-            };
-            fetchVersions(bot, used).then(setVersions).catch(fail);
-            fetchStatus(bot, used).then(setStatus).catch(fail);
+    const queries = useQueryClient();
+    const versions = useQuery({ queryKey: versionsKey(bot, "list"), queryFn: ({ signal }) => fetchVersions(bot, signal) });
+    const status = useQuery({ queryKey: versionsKey(bot, "status"), queryFn: ({ signal }) => fetchStatus(bot, signal) });
+    const plan = useQuery({
+        queryKey: versionsKey(bot, "plan", planned),
+        queryFn: planned === null ? skipToken : ({ signal }) => fetchPushPlan(bot, planned, signal),
+        gcTime: 0,
+    });
+    const changed = () => {
+        setEvents((was) => was + 1);
+        void queries.invalidateQueries({ queryKey: versionsKey(bot) });
+    };
+    const push = useMutation({ mutationFn: (number: number) => pushVersion(bot, number), onSettled: changed });
+    const create = useMutation({
+        mutationFn: () => createVersion(bot),
+        onSuccess: () => {
+            toFirstPage();
+            changed();
         },
-        [bot],
-    );
-
-    useEffect(() => {
-        const controller = new AbortController();
-        load(controller.signal);
-        return () => {
-            controller.abort();
-        };
-    }, [load]);
+    });
+    const refused = create.error instanceof ApiError && mistakesOf(create.error).length > 0 ? mistakesOf(create.error) : null;
+    const failed = versions.error ?? status.error ?? plan.error ?? push.error ?? (refused === null ? create.error : null);
 
     if (earlier !== null) return <Redirect to={earlier} replace />;
-    if (failure !== null) {
-        return <Alert variant="destructive">{failure}</Alert>;
+    if (failed !== null) {
+        return <Alert variant="destructive">{messageOf(failed)}</Alert>;
     }
-    if (versions === null) return <Spinner label="Loading versions…" size="sm" />;
+    if (versions.data === undefined) return <Spinner label="Loading versions…" size="sm" />;
 
     return (
         <VersionsView
             bot={bot}
-            versions={versions}
+            versions={versions.data}
             history={history}
-            status={status}
-            pushFailure={pushFailure}
-            pushing={pushing}
+            status={status.data ?? null}
+            pushFailure={push.data?.outcome === "Failed" ? push.data : null}
+            pushing={push.isPending}
             refused={refused}
             onCompare={(from, to) => {
                 navigate(`${versionHref(bot, to)}?compare=${from}`);
             }}
-            plan={plan}
-            onPlan={(number) => {
-                fetchPushPlan(bot, number)
-                    .then(setPlan)
-                    .catch((error: unknown) => {
-                        setFailure(error instanceof Error ? error.message : String(error));
-                    });
-            }}
+            plan={planned === null ? null : (plan.data ?? null)}
+            onPlan={setPlanned}
             onCancelPlan={() => {
-                setPlan(null);
+                setPlanned(null);
             }}
             onPush={(number) => {
-                setPlan(null);
-                setPushing(true);
-                setPushFailure(null);
-                pushVersion(bot, number)
-                    .then((result) => {
-                        if (result.outcome === "Failed") setPushFailure(result);
-                    })
-                    .catch((error: unknown) => {
-                        setFailure(error instanceof Error ? error.message : String(error));
-                    })
-                    .finally(() => {
-                        setPushing(false);
-                        setEvents((was) => was + 1);
-                        load();
-                    });
+                setPlanned(null);
+                push.mutate(number);
             }}
             onCreate={() => {
-                setRefused(null);
-                createVersion(bot)
-                    .then(() => {
-                        toFirstPage();
-                        setEvents((was) => was + 1);
-                        load();
-                    })
-                    .catch((error: unknown) => {
-                        if (error instanceof ApiError && mistakesOf(error).length > 0) setRefused(mistakesOf(error));
-                        else setFailure(error instanceof Error ? error.message : String(error));
-                    });
+                create.mutate();
             }}
             onOpen={(version) => {
                 navigate(withListSearch(versionHref(bot, numberOf(version)), search));

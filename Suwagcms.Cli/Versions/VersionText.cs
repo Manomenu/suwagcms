@@ -1,6 +1,7 @@
 using System.Globalization;
 using Suwagcms.Contracts.Bots;
 using Suwagcms.Contracts.Versions;
+using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Versions;
 
@@ -91,7 +92,7 @@ internal static class VersionText
         return string.Join(
             Environment.NewLine,
             result
-                .Mistakes.Select(mistake => $"  {mistake.Code} {mistake.Message}{Environment.NewLine}    Fix: {mistake.Fix}")
+                .Mistakes.Select(mistake => $"  {mistake.Code.Text()} {mistake.Message}{Environment.NewLine}    Fix: {mistake.Fix}")
                 .Prepend(heading)
         );
     }

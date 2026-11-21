@@ -27,8 +27,6 @@ namespace Suwagcms.Server.Changes;
 
 internal static class ChangeList
 {
-    public const string OtherBot = "changes.otherBot";
-
     private const string Add = "add";
     private const string Edit = "edit";
     private const string Delete = "delete";
@@ -74,7 +72,7 @@ internal static class ChangeList
                 At(
                     null,
                     new Mistake(
-                        StrictBody.UnknownField,
+                        MistakeCode.SaveUnknownField,
                         ValidationStage.Save,
                         whole,
                         field.Key,
@@ -91,7 +89,7 @@ internal static class ChangeList
                 At(
                     null,
                     new Mistake(
-                        OtherBot,
+                        MistakeCode.ChangesOtherBot,
                         ValidationStage.Save,
                         whole,
                         "bot",
@@ -319,5 +317,5 @@ internal static class ChangeList
     private static string? Text(JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
 
     private static Mistake Invalid(ResourceRef whole, string path, string message, string fix) =>
-        new(StrictBody.Invalid, ValidationStage.Save, whole, path, message, fix, []);
+        new(MistakeCode.SaveInvalid, ValidationStage.Save, whole, path, message, fix, []);
 }

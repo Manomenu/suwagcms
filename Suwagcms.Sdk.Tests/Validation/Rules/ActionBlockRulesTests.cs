@@ -107,7 +107,7 @@ public sealed class ActionBlockRulesTests
 
         var mistake = Assert.Single(Save(definition));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal("steps.run.action", mistake.Path);
         Assert.Equal("Actions of the bot: check.", mistake.Fix);
     }
@@ -129,16 +129,14 @@ public sealed class ActionBlockRulesTests
         Assert.Contains(
             mistakes,
             mistake =>
-                mistake.Path == "steps.run.with.nope"
-                && mistake.Fix == "Parameters: input."
-                && mistake.Code == MistakeCodes.ReferenceMissing
+                mistake.Path == "steps.run.with.nope" && mistake.Fix == "Parameters: input." && mistake.Code == MistakeCode.ReferenceMissing
         );
         Assert.Contains(
             mistakes,
             mistake =>
                 mistake.Path == "steps.run.results.outptu"
                 && mistake.Fix == "Results: output."
-                && mistake.Code == MistakeCodes.ReferenceMissing
+                && mistake.Code == MistakeCode.ReferenceMissing
         );
     }
 
@@ -151,7 +149,7 @@ public sealed class ActionBlockRulesTests
         foreach (var path in new[] { "steps.run.with.input", "steps.run.results.output" })
         {
             var mistake = Assert.Single(mistakes, found => found.Path == path);
-            Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+            Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
             Assert.Contains("the.fact", mistake.Fix, StringComparison.Ordinal);
         }
     }
@@ -160,13 +158,13 @@ public sealed class ActionBlockRulesTests
         new()
         {
             { Yes, Yes with { Values = ["yes", "no", "maybe"] }, null },
-            { Yes with { Values = ["yes", "no", "maybe"] }, Yes, MistakeCodes.ActionMappingTooWide },
+            { Yes with { Values = ["yes", "no", "maybe"] }, Yes, "action.mapping.tooWide" },
             { Number with { Min = 2, Max = 100 }, Number, null },
-            { Number with { Min = 0, Max = 500 }, Number, MistakeCodes.ActionMappingTooWide },
+            { Number with { Min = 0, Max = 500 }, Number, "action.mapping.tooWide" },
             { Text with { MaxLength = 200 }, Text, null },
-            { Text with { MaxLength = 500 }, Text, MistakeCodes.ActionMappingTooWide },
-            { Number, Text, MistakeCodes.ActionMappingTypeMismatch },
-            { Yes, Text, MistakeCodes.ActionMappingTypeMismatch },
+            { Text with { MaxLength = 500 }, Text, "action.mapping.tooWide" },
+            { Number, Text, "action.mapping.typeMismatch" },
+            { Yes, Text, "action.mapping.typeMismatch" },
         };
 
     [Theory]
@@ -187,7 +185,7 @@ public sealed class ActionBlockRulesTests
             return;
         }
         var mistake = Assert.Single(mistakes);
-        Assert.Equal(code, mistake.Code);
+        Assert.Equal(code, mistake.Code.Text());
         Assert.Contains("fact 'the.fact' (", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("parameter 'input' (", mistake.Message, StringComparison.Ordinal);
     }
@@ -196,12 +194,12 @@ public sealed class ActionBlockRulesTests
         new()
         {
             { Yes, Yes with { Values = ["yes", "no", "maybe"] }, null },
-            { Yes with { Values = ["yes", "no", "maybe"] }, Yes, MistakeCodes.ActionMappingTooWide },
+            { Yes with { Values = ["yes", "no", "maybe"] }, Yes, "action.mapping.tooWide" },
             { Number with { Min = 2 }, Number, null },
-            { Number with { Max = 500 }, Number, MistakeCodes.ActionMappingTooWide },
+            { Number with { Max = 500 }, Number, "action.mapping.tooWide" },
             { Text with { MaxLength = 10 }, Text, null },
-            { Text with { MaxLength = 500 }, Text, MistakeCodes.ActionMappingTooWide },
-            { Number, Text, MistakeCodes.ActionMappingTypeMismatch },
+            { Text with { MaxLength = 500 }, Text, "action.mapping.tooWide" },
+            { Number, Text, "action.mapping.typeMismatch" },
         };
 
     [Theory]
@@ -222,7 +220,7 @@ public sealed class ActionBlockRulesTests
             return;
         }
         var mistake = Assert.Single(mistakes);
-        Assert.Equal(code, mistake.Code);
+        Assert.Equal(code, mistake.Code.Text());
         Assert.Contains("result 'output' (", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("fact 'the.fact' (", mistake.Message, StringComparison.Ordinal);
     }
@@ -264,7 +262,7 @@ public sealed class ActionBlockRulesTests
 
         var mistake = Assert.Single(Save(Bot(action, Fact(Text), step)));
 
-        Assert.Equal(MistakeCodes.ActionMappingResultTwice, mistake.Code);
+        Assert.Equal(MistakeCode.ActionMappingResultTwice, mistake.Code);
     }
 
     [Theory]
@@ -277,7 +275,7 @@ public sealed class ActionBlockRulesTests
 
         var mistake = Assert.Single(Save(Bot(Action(Text, Text), Fact(Text), step)));
 
-        Assert.Equal(MistakeCodes.StepMissing, mistake.Code);
+        Assert.Equal(MistakeCode.StepMissing, mistake.Code);
         Assert.Equal($"steps.run.{field}", mistake.Path);
         Assert.Contains("failed", mistake.Fix, StringComparison.Ordinal);
     }
@@ -295,7 +293,7 @@ public sealed class ActionBlockRulesTests
 
         var mistake = Assert.Single(Save(Bot(Action(Text, Text), Fact(Text), step)));
 
-        Assert.Equal(MistakeCodes.StepActionFieldForeign, mistake.Code);
+        Assert.Equal(MistakeCode.StepActionFieldForeign, mistake.Code);
         Assert.Equal($"steps.run.{field}", mistake.Path);
     }
 
@@ -308,11 +306,11 @@ public sealed class ActionBlockRulesTests
 
         Assert.Contains(
             OfProcedures(blank, ValidationStage.Version),
-            mistake => mistake.Code == MistakeCodes.StepBlockEmpty && mistake.Path == "steps.run.action"
+            mistake => mistake.Code == MistakeCode.StepBlockEmpty && mistake.Path == "steps.run.action"
         );
-        var codes = OfProcedures(unfinished, ValidationStage.Version).Select(mistake => mistake.Code).ToList();
-        Assert.Contains(MistakeCodes.StepActionNoOnFailure, codes);
-        Assert.Contains(MistakeCodes.StepActionUnmappedParameter, codes);
+        var codes = OfProcedures(unfinished, ValidationStage.Version).Select(mistake => mistake.Code.Text()).ToList();
+        Assert.Contains("step.action.noOnFailure", codes);
+        Assert.Contains("step.action.unmappedParameter", codes);
         Assert.Empty(OfProcedures(unfinished, ValidationStage.Save));
     }
 
@@ -322,7 +320,7 @@ public sealed class ActionBlockRulesTests
     {
         var definition = Bot(Action(Text, Text), Fact(Text), Step());
 
-        Assert.DoesNotContain(OfProcedures(definition, ValidationStage.Version), mistake => mistake.Code == MistakeCodes.StepUnreachable);
+        Assert.DoesNotContain(OfProcedures(definition, ValidationStage.Version), mistake => mistake.Code == MistakeCode.StepUnreachable);
     }
 
     [Fact]
@@ -335,7 +333,7 @@ public sealed class ActionBlockRulesTests
 
         var mistakes = OfProcedures(definition with { Procedures = [procedure with { Steps = steps }] }, ValidationStage.Version);
 
-        Assert.DoesNotContain(mistakes, mistake => mistake.Code == MistakeCodes.StepUnreachable);
+        Assert.DoesNotContain(mistakes, mistake => mistake.Code == MistakeCode.StepUnreachable);
     }
 
     [Theory]
@@ -378,10 +376,10 @@ public sealed class ActionBlockRulesTests
 
         Assert.Empty(Save(With("note", "wide")));
         Assert.Equal(
-            [MistakeCodes.ActionMappingTooWide, MistakeCodes.ActionMappingTooWide],
-            Save(With("wide", "note")).Select(mistake => mistake.Code)
+            ["action.mapping.tooWide", "action.mapping.tooWide"],
+            Save(With("wide", "note")).Select(mistake => mistake.Code.Text())
         );
-        Assert.Equal(MistakeCodes.ReferenceMissing, Assert.Single(Save(With("note", "ghost"))).Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, Assert.Single(Save(With("note", "ghost"))).Code);
     }
 
     [Fact]
@@ -397,7 +395,7 @@ public sealed class ActionBlockRulesTests
         );
         Assert.Contains(
             "parameter 'input' (text up to 5)",
-            Assert.Single(OfProcedures(unfit, ValidationStage.Version), mistake => mistake.Code == MistakeCodes.ActionCodeMapping).Message,
+            Assert.Single(OfProcedures(unfit, ValidationStage.Version), mistake => mistake.Code == MistakeCode.ActionCodeMapping).Message,
             StringComparison.Ordinal
         );
     }
@@ -420,10 +418,10 @@ public sealed class ActionBlockRulesTests
 
         Assert.Empty(Save(misfits));
         Assert.Empty(Save(unknown));
-        Assert.Equal(2, OfProcedures(misfits, ValidationStage.Version).Count(mistake => mistake.Code == MistakeCodes.ActionCodeMapping));
+        Assert.Equal(2, OfProcedures(misfits, ValidationStage.Version).Count(mistake => mistake.Code == MistakeCode.ActionCodeMapping));
         Assert.Contains(
             OfProcedures(unknown, ValidationStage.Version),
-            mistake => mistake.Code == MistakeCodes.ActionCodeMapping && mistake.Path == "steps.run.with.gone"
+            mistake => mistake.Code == MistakeCode.ActionCodeMapping && mistake.Path == "steps.run.with.gone"
         );
     }
 }

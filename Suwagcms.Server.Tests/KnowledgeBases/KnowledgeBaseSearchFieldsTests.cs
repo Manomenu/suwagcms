@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Sdk.Format.Procedures.Blocks;
-using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Tests.Changes;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Versions;
@@ -30,7 +29,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, ClassS
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(
-            [MistakeCodes.KnowledgeBaseEmbeddingMissing, MistakeCodes.KnowledgeBaseResultsOutOfRange],
+            ["knowledgeBase.embedding.missing", "knowledgeBase.results.outOfRange"],
             (await FactApi.CodesOf(response)).Order(StringComparer.Ordinal)
         );
         Assert.Empty(await api.List());
@@ -140,7 +139,7 @@ public sealed class KnowledgeBaseSearchFieldsTests(TestDatabase database, ClassS
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal(MistakeCodes.DeclarationEmbeddingProfile, mistake.GetProperty("code").GetString());
+        Assert.Equal("declaration.embeddingProfile", mistake.GetProperty("code").GetString());
         Assert.Contains("It serves: default.", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Empty(
             await client.GetFromJsonAsync<List<JsonElement>>($"/api/bots/{id}/versions", TestContext.Current.CancellationToken) ?? []

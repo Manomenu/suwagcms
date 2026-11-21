@@ -46,7 +46,7 @@ public sealed class WhenInterruptedRulesTests
     {
         var mistake = Assert.Single(Check(ProcedureSamples.All with { WhenInterrupted = value }));
 
-        Assert.Equal(MistakeCodes.ProcedureWhenInterruptedInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.ProcedureWhenInterruptedInvalid, mistake.Code);
         Assert.Equal(ValidationStage.Save, mistake.Stage);
         Assert.Equal("whenInterrupted", mistake.Path);
         Assert.Contains("keep, discard", mistake.Fix, StringComparison.Ordinal);
@@ -62,7 +62,7 @@ public sealed class WhenInterruptedRulesTests
 
         var mistake = Assert.Single(Check(conversation));
 
-        Assert.Equal(MistakeCodes.ProcedureWhenInterruptedOnConversation, mistake.Code);
+        Assert.Equal(MistakeCode.ProcedureWhenInterruptedOnConversation, mistake.Code);
         Assert.Contains("Remove whenInterrupted", mistake.Fix, StringComparison.Ordinal);
     }
 }

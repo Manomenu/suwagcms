@@ -215,7 +215,7 @@ internal sealed class DefinitionEditor(NpgsqlDataSource dataSource, TimeProvider
         var renamed = changes.OfType<Rename>().Select(rename => rename.NewTarget).ToList();
         return mistakes.Any(mistake => renamed.Contains(mistake.Resource))
             ? mistakes.Where(mistake =>
-                mistake.Code != MistakeCodes.ReferenceMalformed
+                mistake.Code != MistakeCode.ReferenceMalformed
                 || !rewritten.Any(reference => reference.From == mistake.Resource && reference.Path == mistake.Path)
             )
             : mistakes;

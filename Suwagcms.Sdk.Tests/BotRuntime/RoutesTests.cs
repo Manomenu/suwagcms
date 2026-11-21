@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json.Nodes;
 using Suwagcms.Sdk.BotRuntime.Versions;
 using Suwagcms.Sdk.Tests.BotRuntime.Versions;
-using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime;
 
@@ -38,7 +37,7 @@ public sealed class RoutesTests
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, status);
         var mistakes = body.Member("mistakes").Items();
-        Assert.Equal(2, mistakes.Count(mistake => mistake.Member("code").Text() == MistakeCodes.DuplicateId));
+        Assert.Equal(2, mistakes.Count(mistake => mistake.Member("code").Text() == "resource.duplicateId"));
         var state = await bot.StateAsync();
         Assert.Equal(1, state.Current);
         Assert.Equal([1], state.Held);
@@ -50,10 +49,10 @@ public sealed class RoutesTests
     public static TheoryData<string, string> WrongEnvelopes =>
         new()
         {
-            { "bot", MistakeCodes.VersionBot },
-            { "formatVersion", MistakeCodes.FormatVersion },
-            { "digest", MistakeCodes.VersionDigest },
-            { "number", MistakeCodes.VersionNumber },
+            { "bot", "version.bot" },
+            { "formatVersion", "format.version" },
+            { "digest", "version.digest" },
+            { "number", "version.number" },
         };
 
     [Theory]

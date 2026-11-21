@@ -38,7 +38,7 @@ internal static class AvailabilityIntake
 
     private static Mistake Invalid(string path, string message) =>
         new(
-            MistakeCodes.AvailabilityInvalid,
+            MistakeCode.AvailabilityInvalid,
             ValidationStage.Version,
             new ResourceRef(ResourceKind.Definition, string.Empty),
             path,

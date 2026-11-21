@@ -28,14 +28,17 @@ internal static class PersonaMapping
         var (body, mistakes) = StrictBody.Read<SavePersona>(root, target);
         var inScope =
             root.ValueKind == JsonValueKind.Object && root.TryGetProperty("scope", out var scope) && scope.ValueKind == JsonValueKind.Object
-                ? StrictBody.Read<PersonaScope>(scope, target).Mistakes.Where(mistake => mistake.Code == StrictBody.UnknownField).ToList()
+                ? StrictBody
+                    .Read<PersonaScope>(scope, target)
+                    .Mistakes.Where(mistake => mistake.Code == MistakeCode.SaveUnknownField)
+                    .ToList()
                 : [];
         return inScope.Count == 0
             ? (body, mistakes)
             : (
                 null,
                 [
-                    .. mistakes.Where(mistake => mistake.Code == StrictBody.UnknownField),
+                    .. mistakes.Where(mistake => mistake.Code == MistakeCode.SaveUnknownField),
                     .. inScope.Select(mistake => mistake with { Path = $"scope.{mistake.Path}" }),
                 ]
             );

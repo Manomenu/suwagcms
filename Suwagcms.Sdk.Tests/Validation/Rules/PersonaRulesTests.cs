@@ -25,7 +25,7 @@ public sealed class PersonaRulesTests
         [
             .. DefinitionValidator
                 .Validate(definition, stage, declaration)
-                .Select(mistake => mistake.Code)
+                .Select(mistake => mistake.Code.Text())
                 .Where(code => code.StartsWith("persona.", StringComparison.Ordinal)),
         ];
 
@@ -49,7 +49,7 @@ public sealed class PersonaRulesTests
             ValidationStage.Save
         );
 
-        var tooLong = mistakes.Where(mistake => mistake.Code == MistakeCodes.PersonaTextTooLong).ToList();
+        var tooLong = mistakes.Where(mistake => mistake.Code == MistakeCode.PersonaTextTooLong).ToList();
         Assert.Equal(["personality", "scope.inScope", "scope.whenOutOfScope"], tooLong.Select(mistake => mistake.Path));
         Assert.All(tooLong, mistake => Assert.Equal(ValidationStage.Save, mistake.Stage));
         Assert.All(tooLong, mistake => Assert.Contains("20000", mistake.Fix, StringComparison.Ordinal));
@@ -79,13 +79,13 @@ public sealed class PersonaRulesTests
         var blankScope = Whole with { Scope = WholeScope with { WhenOutOfScope = " \n" } };
         var mistakes = DefinitionValidator.Validate(With(blankScope), ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete));
 
-        var mistake = Assert.Single(mistakes, found => found.Code == MistakeCodes.PersonaIncomplete);
+        var mistake = Assert.Single(mistakes, found => found.Code == MistakeCode.PersonaIncomplete);
         Assert.Equal(("scope.whenOutOfScope", ValidationStage.Version), (mistake.Path, mistake.Stage));
         Assert.Equal(
             ["personality", "scope.inScope", "scope.outOfScope", "scope.whenOutOfScope"],
             DefinitionValidator
                 .Validate(With(null), ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete))
-                .Where(found => found.Code == MistakeCodes.PersonaIncomplete)
+                .Where(found => found.Code == MistakeCode.PersonaIncomplete)
                 .Select(found => found.Path)
         );
     }
@@ -100,11 +100,11 @@ public sealed class PersonaRulesTests
         Assert.Equal(3, Codes(part, ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete)).Count);
         Assert.Contains(
             DeclarationValidator.CheckAnswer(Declaring("full"), "rzeczoznawca"),
-            mistake => mistake.Code == MistakeCodes.DeclarationPersonaUnknown
+            mistake => mistake.Code == MistakeCode.DeclarationPersonaUnknown
         );
         Assert.DoesNotContain(
             DeclarationValidator.CheckAnswer(Declaring(BotDeclaration.PersonaComplete), "rzeczoznawca"),
-            mistake => mistake.Code == MistakeCodes.DeclarationPersonaUnknown
+            mistake => mistake.Code == MistakeCode.DeclarationPersonaUnknown
         );
     }
 
@@ -116,7 +116,7 @@ public sealed class PersonaRulesTests
     {
         var definition = With(text is null ? null : new Persona { Personality = text });
 
-        Assert.Equal([MistakeCodes.PersonaRequired], Codes(definition, ValidationStage.Version, Declaring(BotDeclaration.PersonaRequired)));
+        Assert.Equal(["persona.required"], Codes(definition, ValidationStage.Version, Declaring(BotDeclaration.PersonaRequired)));
         Assert.Empty(Codes(definition, ValidationStage.Save, Declaring(BotDeclaration.PersonaRequired)));
     }
 
@@ -138,7 +138,7 @@ public sealed class PersonaRulesTests
     {
         var mistake = Assert.Single(DeclarationValidator.CheckAnswer(Declaring("requried"), "rzeczoznawca"));
 
-        Assert.Equal(MistakeCodes.DeclarationPersonaUnknown, mistake.Code);
+        Assert.Equal(MistakeCode.DeclarationPersonaUnknown, mistake.Code);
         Assert.Contains("persona: required", mistake.Fix, StringComparison.Ordinal);
     }
 }

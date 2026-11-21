@@ -57,7 +57,7 @@ public sealed class StartBlockRulesTests
             )
         );
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal(new ResourceRef(ResourceKind.Procedure, "orderValuation"), mistake.Resource);
         Assert.Equal("steps.get.start", mistake.Path);
         Assert.Equal(
@@ -73,7 +73,7 @@ public sealed class StartBlockRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, Starting("orderValuation", Procedure.ConversationId)));
 
-        Assert.Equal(MistakeCodes.StartTargetConversation, mistake.Code);
+        Assert.Equal(MistakeCode.StartTargetConversation, mistake.Code);
         Assert.Equal("steps.get.start", mistake.Path);
         Assert.Contains("base of every conversation", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("leaving out 'next'", mistake.Fix, StringComparison.Ordinal);
@@ -85,7 +85,7 @@ public sealed class StartBlockRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, Starting(Procedure.ConversationId, Procedure.ConversationId)));
 
-        Assert.Equal(MistakeCodes.StartTargetConversation, mistake.Code);
+        Assert.Equal(MistakeCode.StartTargetConversation, mistake.Code);
     }
 
     [Theory]
@@ -96,7 +96,7 @@ public sealed class StartBlockRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, Conversation, Starting("orderValuation", target)));
 
-        Assert.Equal(MistakeCodes.ReferenceMalformed, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMalformed, mistake.Code);
         Assert.Equal("steps.get.start", mistake.Path);
         Assert.Contains($"'{suggested}'", mistake.Fix, StringComparison.Ordinal);
     }
@@ -111,7 +111,7 @@ public sealed class StartBlockRulesTests
 
         var mistake = Assert.Single(Check(ValidationStage.Version, Conversation, Starting("orderValuation", target, "confirm")));
 
-        Assert.Equal(MistakeCodes.StepBlockEmpty, mistake.Code);
+        Assert.Equal(MistakeCode.StepBlockEmpty, mistake.Code);
         Assert.Equal(ValidationStage.Version, mistake.Stage);
         Assert.Equal("steps.get.start", mistake.Path);
     }
@@ -124,7 +124,7 @@ public sealed class StartBlockRulesTests
 
         var multiple = Assert.Single(Check(ValidationStage.Save, Conversation, Samples.Procedure("documentsList"), two));
 
-        Assert.Equal(MistakeCodes.StepBlockMultiple, multiple.Code);
+        Assert.Equal(MistakeCode.StepBlockMultiple, multiple.Code);
         Assert.Contains("say, start", multiple.Message, StringComparison.Ordinal);
         Assert.Contains("start", multiple.Fix, StringComparison.Ordinal);
         Assert.Contains("start", Block.Names);
@@ -166,14 +166,14 @@ public sealed class StartBlockRulesTests
 
         Assert.Equal(
             [
-                (MistakeCodes.ReferenceMissing, "steps.a.start"),
-                (MistakeCodes.ReferenceMalformed, "steps.c.start"),
-                (MistakeCodes.StepBlockMultiple, "steps.d"),
-                (MistakeCodes.StartTargetConversation, "steps.b.start"),
+                ("reference.missing", "steps.a.start"),
+                ("reference.malformed", "steps.c.start"),
+                ("step.block.multiple", "steps.d"),
+                ("start.target.conversation", "steps.b.start"),
             ],
-            save.Select(mistake => (mistake.Code, mistake.Path))
+            save.Select(mistake => (mistake.Code.Text(), mistake.Path))
         );
-        Assert.Contains(version, mistake => (mistake.Code, mistake.Path) == (MistakeCodes.StepBlockEmpty, "steps.e.start"));
+        Assert.Contains(version, mistake => (mistake.Code.Text(), mistake.Path) == ("step.block.empty", "steps.e.start"));
     }
 
     [Fact]

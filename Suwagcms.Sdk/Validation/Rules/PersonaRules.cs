@@ -9,13 +9,13 @@ internal static class PersonaRules
 {
     private const int LongestText = 20_000;
 
-    public static IReadOnlyList<Rule> All { get; } = [new(MistakeCodes.PersonaTextTooLong, ValidationStage.Save, TooLong)];
+    public static IReadOnlyList<Rule> All { get; } = [new(MistakeCode.PersonaTextTooLong, ValidationStage.Save, TooLong)];
 
     private static IEnumerable<Mistake> TooLong(BotDefinition definition) =>
         (definition.Persona?.Texts() ?? [])
             .Where(text => text.Text?.Length > LongestText)
             .Select(text => new Mistake(
-                MistakeCodes.PersonaTextTooLong,
+                MistakeCode.PersonaTextTooLong,
                 ValidationStage.Save,
                 new ResourceRef(ResourceKind.Persona, Persona.PublicId),
                 text.Path,

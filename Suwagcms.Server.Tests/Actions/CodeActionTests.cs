@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Http;
 using Suwagcms.Sdk.Format.Declaration;
 using Suwagcms.Sdk.Format.Facts;
 using Suwagcms.Sdk.Format.Procedures.Blocks;
-using Suwagcms.Sdk.Validation;
 using Suwagcms.Server.Tests.Facts;
 using Suwagcms.Server.Tests.Versions;
 
@@ -295,7 +294,7 @@ public sealed class CodeActionTests(TestDatabase database, ClassServer server) :
         var refused = await scene.Client.PostAsync($"/api/bots/{scene.Api.Bot}/versions", null, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        Assert.Contains(MistakeCodes.ActionCodeConflict, await FactApi.CodesOf(refused));
+        Assert.Contains("action.code.conflict", await FactApi.CodesOf(refused));
 
         await scene.Api.Delete("lookupPolicy");
         await scene.AskAsync();

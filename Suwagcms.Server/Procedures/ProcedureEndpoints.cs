@@ -10,7 +10,6 @@ namespace Suwagcms.Server.Procedures;
 
 internal static class ProcedureEndpoints
 {
-    public const string ConversationRequired = "procedure.conversation.required";
     private const string Title = "The procedure was not saved.";
 
     public static void MapProcedures(this IEndpointRouteBuilder routes)
@@ -99,7 +98,7 @@ internal static class ProcedureEndpoints
 
     public static Mistake IdRequired(ResourceRef target) =>
         new(
-            ConversationRequired,
+            MistakeCode.ProcedureConversationRequired,
             ValidationStage.Save,
             target,
             "id",
@@ -110,7 +109,7 @@ internal static class ProcedureEndpoints
 
     public static Mistake Required(ResourceRef target) =>
         new(
-            ConversationRequired,
+            MistakeCode.ProcedureConversationRequired,
             ValidationStage.Save,
             target,
             "id",

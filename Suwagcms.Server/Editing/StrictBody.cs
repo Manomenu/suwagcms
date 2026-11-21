@@ -8,9 +8,6 @@ namespace Suwagcms.Server.Editing;
 
 internal static class StrictBody
 {
-    public const string UnknownField = "save.unknownField";
-    public const string Invalid = "save.invalid";
-
     private static readonly JsonSerializerOptions Strict = new(JsonSerializerDefaults.Web)
     {
         TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
@@ -42,7 +39,10 @@ internal static class StrictBody
         }
         catch (JsonException exception)
         {
-            return (null, [Make(Invalid, target, "$", $"The body is not valid JSON: {exception.Message}", "Send one JSON object.")]);
+            return (
+                null,
+                [Make(MistakeCode.SaveInvalid, target, "$", $"The body is not valid JSON: {exception.Message}", "Send one JSON object.")]
+            );
         }
 
         using (document)
@@ -56,7 +56,7 @@ internal static class StrictBody
     {
         if (root.ValueKind != JsonValueKind.Object)
         {
-            return (null, [Make(Invalid, target, "$", "The body is not a JSON object.", "Send one JSON object.")]);
+            return (null, [Make(MistakeCode.SaveInvalid, target, "$", "The body is not a JSON object.", "Send one JSON object.")]);
         }
         var known = Strict.GetTypeInfo(typeof(T)).Properties.Select(property => property.Name).ToList();
         var unknown = root.EnumerateObject()
@@ -77,7 +77,7 @@ internal static class StrictBody
                 null,
                 [
                     Make(
-                        Invalid,
+                        MistakeCode.SaveInvalid,
                         target,
                         (exception.Path ?? "$").Replace("$.", "", StringComparison.Ordinal),
                         $"The body does not fit: {exception.Message}",
@@ -90,7 +90,7 @@ internal static class StrictBody
 
     public static Mistake Unknown(ResourceRef target, string field, string known) =>
         Make(
-            UnknownField,
+            MistakeCode.SaveUnknownField,
             target,
             field,
             $"'{field}' is not a field of this {ResourceKinds.Noun(target.Kind)}.",
@@ -99,6 +99,6 @@ internal static class StrictBody
                 : $"Remove '{field}', or fix its spelling: the fields are {known}."
         );
 
-    private static Mistake Make(string code, ResourceRef target, string path, string message, string fix) =>
+    private static Mistake Make(MistakeCode code, ResourceRef target, string path, string message, string fix) =>
         new(code, ValidationStage.Save, target, path, message, fix, []);
 }

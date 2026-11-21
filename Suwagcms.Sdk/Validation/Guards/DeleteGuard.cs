@@ -14,7 +14,7 @@ public static class DeleteGuard
         ArgumentNullException.ThrowIfNull(after);
         ArgumentNullException.ThrowIfNull(removed);
         ArgumentNullException.ThrowIfNull(mistakes);
-        var missing = mistakes.Where(mistake => mistake.Code == MistakeCodes.ReferenceMissing).ToList();
+        var missing = mistakes.Where(mistake => mistake.Code == MistakeCode.ReferenceMissing).ToList();
         var blocking = ReferenceWalker
             .From(after)
             .Where(reference => removed.Contains(reference.To))
@@ -27,7 +27,7 @@ public static class DeleteGuard
         }
         var explained = mistakes.Where(mistake =>
             !(
-                mistake.Code == MistakeCodes.ReferenceMissing
+                mistake.Code == MistakeCode.ReferenceMissing
                 && blocking.Any(reference => reference.From == mistake.Resource && reference.Path == mistake.Path)
             )
         );
@@ -48,7 +48,7 @@ public static class DeleteGuard
             referrers.Select(reference => $"{reference.Path} of {Noun(reference.From.Kind)} '{reference.From.Id}'")
         );
         return new Mistake(
-            MistakeCodes.ReferenceMissing,
+            MistakeCode.ReferenceMissing,
             ValidationStage.Save,
             target,
             target.IdField(),

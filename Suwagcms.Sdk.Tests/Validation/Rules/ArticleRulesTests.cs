@@ -28,7 +28,7 @@ public sealed class ArticleRulesTests
             ValidationStage.Save
         );
 
-    private static string[] Codes(params Article[] articles) => [.. Check(articles).Select(mistake => mistake.Code)];
+    private static string[] Codes(params Article[] articles) => [.. Check(articles).Select(mistake => mistake.Code.Text())];
 
     [Fact]
     [Trait("criterion", "AC-articles-1")]
@@ -37,10 +37,10 @@ public sealed class ArticleRulesTests
 
     [Theory]
     [Trait("criterion", "AC-articles-2")]
-    [InlineData("title", MistakeCodes.ArticleTitleMissing)]
-    [InlineData("content", MistakeCodes.ArticleContentMissing)]
-    [InlineData("llmGuide", MistakeCodes.ArticleLlmGuideMissing)]
-    [InlineData("description", MistakeCodes.ArticleDescriptionMissing)]
+    [InlineData("title", "article.title.missing")]
+    [InlineData("content", "article.content.missing")]
+    [InlineData("llmGuide", "article.llmGuide.missing")]
+    [InlineData("description", "article.description.missing")]
     public void A_blank_title_content_guide_or_description_is_refused_for_that_field_with_a_fix(string field, string code)
     {
         foreach (var blank in new[] { "", "  \n " })
@@ -55,7 +55,7 @@ public sealed class ArticleRulesTests
 
             var mistake = Assert.Single(Check(article));
 
-            Assert.Equal(code, mistake.Code);
+            Assert.Equal(code, mistake.Code.Text());
             Assert.Equal(field, mistake.Path);
             Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
         }
@@ -68,13 +68,8 @@ public sealed class ArticleRulesTests
         var mistakes = Check(new Article { Id = "pricing", KnowledgeBase = "faq" });
 
         Assert.Equal(
-            [
-                MistakeCodes.ArticleContentMissing,
-                MistakeCodes.ArticleDescriptionMissing,
-                MistakeCodes.ArticleLlmGuideMissing,
-                MistakeCodes.ArticleTitleMissing,
-            ],
-            mistakes.Select(mistake => mistake.Code).Order(StringComparer.Ordinal)
+            ["article.content.missing", "article.description.missing", "article.llmGuide.missing", "article.title.missing"],
+            mistakes.Select(mistake => mistake.Code.Text()).Order(StringComparer.Ordinal)
         );
     }
 
@@ -87,7 +82,7 @@ public sealed class ArticleRulesTests
     {
         var mistake = Assert.Single(Check(Samples.Pricing with { Id = id }));
 
-        Assert.Equal(MistakeCodes.ArticleIdInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.ArticleIdInvalid, mistake.Code);
         Assert.Contains("Rename the article to '", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -97,7 +92,7 @@ public sealed class ArticleRulesTests
     {
         var mistake = Assert.Single(Check(Samples.Pricing with { KnowledgeBase = "nowhere" }));
 
-        Assert.Equal(MistakeCodes.ArticleKnowledgeBaseUnknown, mistake.Code);
+        Assert.Equal(MistakeCode.ArticleKnowledgeBaseUnknown, mistake.Code);
         Assert.Equal("knowledgeBase", mistake.Path);
         Assert.Contains("'nowhere'", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("faq, offer", mistake.Fix, StringComparison.Ordinal);
@@ -107,7 +102,7 @@ public sealed class ArticleRulesTests
     [Trait("criterion", "AC-articles-3")]
     public void An_article_in_no_base_is_refused_and_a_bot_with_no_bases_is_told_to_create_one()
     {
-        Assert.Equal([MistakeCodes.ArticleKnowledgeBaseUnknown], Codes(Samples.Pricing with { KnowledgeBase = "" }));
+        Assert.Equal(["article.knowledgeBase.unknown"], Codes(Samples.Pricing with { KnowledgeBase = "" }));
         var mistake = Assert.Single(
             DefinitionValidator.Validate(new BotDefinition { FormatVersion = 5, Articles = [Samples.Pricing] }, ValidationStage.Save)
         );
@@ -137,8 +132,8 @@ public sealed class ArticleRulesTests
         );
 
         Assert.Equal(
-            [MistakeCodes.ArticleContentTooLong, MistakeCodes.ArticleLlmGuideTooLong],
-            mistakes.Select(mistake => mistake.Code).Order(StringComparer.Ordinal)
+            ["article.content.tooLong", "article.llmGuide.tooLong"],
+            mistakes.Select(mistake => mistake.Code.Text()).Order(StringComparer.Ordinal)
         );
         var content = Assert.Single(mistakes, mistake => mistake.Path == "content");
         Assert.Contains("has 200001 characters; the limit is 200000", content.Message, StringComparison.Ordinal);

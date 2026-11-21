@@ -123,7 +123,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
         var codes = await VersionApi.CodesOf(refused);
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        Assert.Equal([MistakeCodes.BotConversationMissing, MistakeCodes.StepUnreachable, MistakeCodes.StepUnreachable], codes);
+        Assert.Equal(["bot.conversation.missing", "step.unreachable", "step.unreachable"], codes);
         Assert.Empty(await api.List());
 
         await api.Procedures.Put("orderValuation", ProcedureApi.Valuation);
@@ -292,7 +292,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
         var refused = await api.Create();
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        Assert.Equal([VersionCreator.Unchanged], await VersionApi.CodesOf(refused));
+        Assert.Equal(["version.unchanged"], await VersionApi.CodesOf(refused));
         Assert.Single(await api.List());
     }
 
@@ -307,7 +307,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        Assert.Equal(VersionCreator.Unchanged, mistake.GetProperty("code").GetString());
+        Assert.Equal("version.unchanged", mistake.GetProperty("code").GetString());
         Assert.Contains("version 1", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Single(await api.List());
         await api.Procedures.Facts.Add("customer.extra", FactApi.Text("Extra"));
@@ -326,7 +326,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
         Assert.Equal(5, responses.Count(response => response.StatusCode == HttpStatusCode.UnprocessableEntity));
         foreach (var refused in responses.Where(response => response.StatusCode == HttpStatusCode.UnprocessableEntity))
         {
-            Assert.Equal([VersionCreator.Unchanged], await VersionApi.CodesOf(refused));
+            Assert.Equal(["version.unchanged"], await VersionApi.CodesOf(refused));
         }
         Assert.Equal([1], (await api.List()).Select(version => version.Number));
     }
@@ -418,7 +418,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
         Assert.Equal(answer?.Version.Number, created.Version.Number);
         Assert.Equal(answer?.Version.Sha256, created.Version.Sha256);
         var again = await api.Create(dryRun: true);
-        Assert.Equal([VersionCreator.Unchanged], await VersionApi.CodesOf(again));
+        Assert.Equal(["version.unchanged"], await VersionApi.CodesOf(again));
     }
 
     [Fact]
@@ -440,7 +440,7 @@ public sealed class VersionEndpointsTests(TestDatabase database, ClassServer ser
         Assert.Equal(createdAt, listed.CreatedAt);
         Assert.Equal(listed, detail.Version);
         Assert.Equal(HttpStatusCode.NotFound, (await api.Get(7)).StatusCode);
-        Assert.Equal([VersionEndpoints.Missing], await VersionApi.CodesOf(await api.Get(7)));
+        Assert.Equal(["version.missing"], await VersionApi.CodesOf(await api.Get(7)));
     }
 
     [Fact]

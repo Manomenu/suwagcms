@@ -374,7 +374,7 @@ internal sealed partial class VersionRuntime(
             "The body does not name a version.",
             [
                 new Mistake(
-                    MistakeCodes.FormatInvalid,
+                    MistakeCode.FormatInvalid,
                     ValidationStage.Version,
                     new ResourceRef(ResourceKind.Definition, string.Empty),
                     "",
@@ -392,7 +392,7 @@ internal sealed partial class VersionRuntime(
             $"Version {number} is not held.",
             [
                 new Mistake(
-                    MistakeCodes.VersionNotHeld,
+                    MistakeCode.VersionNotHeld,
                     ValidationStage.Version,
                     new ResourceRef(ResourceKind.Definition, string.Empty),
                     "number",
@@ -410,7 +410,7 @@ internal sealed partial class VersionRuntime(
             $"Version {number} exists with another document, and a version never changes.",
             [
                 new Mistake(
-                    MistakeCodes.VersionConflict,
+                    MistakeCode.VersionConflict,
                     ValidationStage.Version,
                     new ResourceRef(ResourceKind.Definition, string.Empty),
                     "number",

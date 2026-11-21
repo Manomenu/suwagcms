@@ -1,6 +1,5 @@
 using System.Net;
 using Suwagcms.Sdk.BotRuntime.Versions;
-using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime.Versions;
 
@@ -47,9 +46,9 @@ public sealed class MakeCurrentTests
         var (other, otherBody) = await bot.MakeCurrentAsync(12, Digest(12, "another"));
 
         Assert.Equal(HttpStatusCode.Conflict, missing);
-        Assert.Equal(MistakeCodes.VersionNotHeld, missingBody.Member("mistakes").Item(0).Member("code").Text());
+        Assert.Equal("version.notHeld", missingBody.Member("mistakes").Item(0).Member("code").Text());
         Assert.Equal(HttpStatusCode.Conflict, other);
-        Assert.Equal(MistakeCodes.VersionConflict, otherBody.Member("mistakes").Item(0).Member("code").Text());
+        Assert.Equal("version.conflict", otherBody.Member("mistakes").Item(0).Member("code").Text());
         Assert.Equal(before, BotHost.Describe(await bot.StateAsync()));
     }
 
@@ -95,7 +94,7 @@ public sealed class MakeCurrentTests
         var (status, body) = await bot.MakeCurrentAsync(12, stale.Member("digest").Text());
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, status);
-        Assert.Equal(2, body.Member("mistakes").Items().Count(mistake => mistake.Member("code").Text() == MistakeCodes.DuplicateId));
+        Assert.Equal(2, body.Member("mistakes").Items().Count(mistake => mistake.Member("code").Text() == "resource.duplicateId"));
         Assert.Equal(before, BotHost.Describe(await bot.StateAsync()));
         Assert.Equal(14, bot.Definitions.CurrentNumber);
     }

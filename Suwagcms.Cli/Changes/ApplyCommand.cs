@@ -7,6 +7,7 @@ using Suwagcms.Cli.Connection;
 using Suwagcms.Cli.Editing;
 using Suwagcms.Cli.Output;
 using Suwagcms.Contracts.Changes;
+using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Cli.Changes;
 
@@ -105,7 +106,7 @@ internal static class ApplyCommand
             text.Append(Environment.NewLine).Append("What still stops a version:");
             foreach (var mistake in applied.NotReady)
             {
-                text.Append(Environment.NewLine).Append($"  {mistake.Code}  {mistake.Message}");
+                text.Append(Environment.NewLine).Append($"  {mistake.Code.Text()}  {mistake.Message}");
             }
         }
         return text.ToString();

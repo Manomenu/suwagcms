@@ -114,7 +114,7 @@ public static class EditGuard
                 var change = left is null ? "removed" : $"changed from {field.Type} to {left.Type}";
                 causes.Add(
                     new Mistake(
-                        MistakeCodes.ActionFieldInUse,
+                        MistakeCode.ActionFieldInUse,
                         ValidationStage.Save,
                         new ResourceRef(ResourceKind.Action, action.Id),
                         $"{section}.{name}",
@@ -131,7 +131,7 @@ public static class EditGuard
 
     private sealed record FactEdit(GlobalFact Was, GlobalFact Now, ResourceRef Owner, string Prefix, IReadOnlyList<FactUseIn> Uses);
 
-    private sealed record Given(Procedure Procedure, Reference Use, string Path, string Code, string Value);
+    private sealed record Given(Procedure Procedure, Reference Use, string Path, MistakeCode? Code, string Value);
 
     private static bool Differs(GlobalFact was, GlobalFact now) =>
         was.Type != now.Type
@@ -163,7 +163,7 @@ public static class EditGuard
                     .GroupBy(given => given.Value, StringComparer.Ordinal)
                     .Select(group =>
                         Cause(
-                            MistakeCodes.FactEnumValueInUse,
+                            MistakeCode.FactEnumValueInUse,
                             edit,
                             "values",
                             $"Value '{group.Key}' of '{edit.Now.Name}' is used, so it cannot be removed.",
@@ -184,7 +184,7 @@ public static class EditGuard
         if (tooLong.Count > 0)
         {
             yield return Cause(
-                MistakeCodes.FactRangeInUse,
+                MistakeCode.FactRangeInUse,
                 edit,
                 "maxLength",
                 string.Create(
@@ -200,7 +200,7 @@ public static class EditGuard
         {
             var values = string.Join(", ", unmatched.Select(given => $"'{given.Value}'").Distinct(StringComparer.Ordinal));
             yield return Cause(
-                MistakeCodes.FactPatternInUse,
+                MistakeCode.FactPatternInUse,
                 edit,
                 "pattern.regex",
                 $"'{edit.Now.Name}' cannot have the regex {edit.Now.Pattern?.Regex}: {values} is used and does not match it.",
@@ -224,7 +224,7 @@ public static class EditGuard
             {
                 var values = string.Join(", ", outside.Select(given => given.Value).Distinct(StringComparer.Ordinal));
                 yield return Cause(
-                    MistakeCodes.FactRangeInUse,
+                    MistakeCode.FactRangeInUse,
                     edit,
                     bound,
                     string.Create(CultureInfo.InvariantCulture, $"'{edit.Now.Name}' cannot have {bound} {limit}: {values} is used."),
@@ -249,12 +249,12 @@ public static class EditGuard
         );
         causes.Add(
             Cause(
-                MistakeCodes.FactTypeInUse,
+                MistakeCode.FactTypeInUse,
                 edit,
                 "type",
                 $"'{edit.Now.Name}' is used, so its type cannot change from {edit.Was.Type} to {edit.Now.Type}.",
                 "Change these steps first, or add a new fact with the new type.",
-                edit.Uses.Select(use => new Given(use.Procedure, use.Use, use.Use.Path, "", ""))
+                edit.Uses.Select(use => new Given(use.Procedure, use.Use, use.Use.Path, null, ""))
             )
         );
     }
@@ -267,7 +267,7 @@ public static class EditGuard
         }
         var collects = edit
             .Uses.Where(use => use.Use.Use == FactUse.Collect)
-            .Select(use => new Given(use.Procedure, use.Use, use.Use.Path, MistakeCodes.FactCollectNotWritable, ""))
+            .Select(use => new Given(use.Procedure, use.Use, use.Use.Path, MistakeCode.FactCollectNotWritable, ""))
             .Where(given => kept.Any(mistake => IsAt(mistake, given.Code, Resource(given.Procedure), given.Path)))
             .ToList();
         if (collects.Count == 0)
@@ -281,7 +281,7 @@ public static class EditGuard
         );
         causes.Add(
             Cause(
-                MistakeCodes.FactWritableByInUse,
+                MistakeCode.FactWritableByInUse,
                 edit,
                 "writableBy",
                 $"{where} names fact '{edit.Now.Name}', which only an assign step may write.",
@@ -298,7 +298,7 @@ public static class EditGuard
         var name = reference.To.Id;
         if (reference.Use == FactUse.Assign && procedure.Steps[Step(reference)].Assign is { } assign)
         {
-            yield return new Given(procedure, reference, reference.Path, MistakeCodes.AssignValueInvalid, assign[name]);
+            yield return new Given(procedure, reference, reference.Path, MistakeCode.AssignValueInvalid, assign[name]);
         }
         foreach (var condition in ProcedureFactRules.Conditions(procedure).Where(condition => condition.Path == reference.Path))
         {
@@ -308,7 +308,7 @@ public static class EditGuard
                     procedure,
                     reference,
                     string.Create(CultureInfo.InvariantCulture, $"{reference.Path}.oneOf[{index}]"),
-                    MistakeCodes.ConditionValueInvalid,
+                    MistakeCode.ConditionValueInvalid,
                     value
                 );
             }
@@ -318,7 +318,7 @@ public static class EditGuard
                     procedure,
                     reference,
                     $"{reference.Path}.range",
-                    MistakeCodes.ConditionValueInvalid,
+                    MistakeCode.ConditionValueInvalid,
                     bound.ToString(CultureInfo.InvariantCulture)
                 );
             }
@@ -326,7 +326,7 @@ public static class EditGuard
     }
 
     private static Mistake Cause(
-        string code,
+        MistakeCode code,
         FactEdit edit,
         string field,
         string message,
@@ -363,17 +363,17 @@ public static class EditGuard
             .Uses(procedure)
             .Where(use =>
                 use.To == new ResourceRef(ResourceKind.GlobalFact, name)
-                && kept.Any(mistake => IsAt(mistake, MistakeCodes.ReferenceMissing, resource, use.Path))
+                && kept.Any(mistake => IsAt(mistake, MistakeCode.ReferenceMissing, resource, use.Path))
             )
             .ToList();
         if (uses.Count == 0)
         {
             return;
         }
-        kept.RemoveAll(mistake => uses.Any(use => IsAt(mistake, MistakeCodes.ReferenceMissing, resource, use.Path)));
+        kept.RemoveAll(mistake => uses.Any(use => IsAt(mistake, MistakeCode.ReferenceMissing, resource, use.Path)));
         causes.Add(
             new Mistake(
-                MistakeCodes.ReferenceMissing,
+                MistakeCode.ReferenceMissing,
                 ValidationStage.Save,
                 resource,
                 $"localFacts.{name}",
@@ -384,7 +384,7 @@ public static class EditGuard
         );
     }
 
-    private static bool IsAt(Mistake mistake, string code, ResourceRef resource, string path) =>
+    private static bool IsAt(Mistake mistake, MistakeCode? code, ResourceRef resource, string path) =>
         mistake.Code == code && mistake.Resource == resource && mistake.Path == path;
 
     private static string Referrer(Reference use) =>

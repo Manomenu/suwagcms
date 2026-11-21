@@ -95,7 +95,7 @@ public sealed class KnowledgeEntryRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, InformingWith(Entry(articles: ["officeContacts"])), Office()));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[0].articles[0]", mistake.Path);
         Assert.Equal("'knowledge' of step 'only' in 'p' names article 'officeContacts', which this bot does not have.", mistake.Message);
         Assert.Contains("'suwagcms articles list' shows them", mistake.Fix, StringComparison.Ordinal);
@@ -107,7 +107,7 @@ public sealed class KnowledgeEntryRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, InformingWith(Entry("reports", queries: ["hours"]))));
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[0].knowledgeBase", mistake.Path);
         Assert.Contains("'reports'", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("faq, offer", mistake.Fix, StringComparison.Ordinal);
@@ -119,7 +119,7 @@ public sealed class KnowledgeEntryRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, InformingWith(Entry(articles: ["Office Contact"]))));
 
-        Assert.Equal(MistakeCodes.ReferenceMalformed, mistake.Code);
+        Assert.Equal(MistakeCode.ReferenceMalformed, mistake.Code);
         Assert.Contains("'officeContact'", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -129,7 +129,7 @@ public sealed class KnowledgeEntryRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, InformingWith(Entry("", queries: ["hours"]))));
 
-        Assert.Equal(MistakeCodes.KnowledgeBaseMissing, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeBaseMissing, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[0].knowledgeBase", mistake.Path);
         Assert.Contains("knowledgeBase", mistake.Fix, StringComparison.Ordinal);
     }
@@ -145,7 +145,7 @@ public sealed class KnowledgeEntryRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
 
-        Assert.Equal(MistakeCodes.StepBlockUnknown, mistake.Code);
+        Assert.Equal(MistakeCode.StepBlockUnknown, mistake.Code);
         Assert.Equal("steps.a.knowledge", mistake.Path);
         Assert.Contains("inform", mistake.Fix, StringComparison.Ordinal);
     }
@@ -161,7 +161,7 @@ public sealed class KnowledgeEntryRulesTests
         Assert.Empty(Check(ValidationStage.Save, procedure, Office()));
 
         var mistake = Assert.Single(Check(ValidationStage.Version, procedure, Office()));
-        Assert.Equal(MistakeCodes.KnowledgeQueryBlank, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeQueryBlank, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[0].searchQueries[1]", mistake.Path);
         Assert.Equal("'knowledge' of step 'only' in 'p' has a blank search query.", mistake.Message);
         Assert.Equal("Write the query, or remove it.", mistake.Fix);
@@ -176,7 +176,7 @@ public sealed class KnowledgeEntryRulesTests
         Assert.Empty(Check(ValidationStage.Save, procedure, Office()));
 
         var mistake = Assert.Single(Check(ValidationStage.Version, procedure, Office()));
-        Assert.Equal(MistakeCodes.KnowledgeEntryEmpty, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeEntryEmpty, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[0]", mistake.Path);
         Assert.Contains("remove the entry", mistake.Fix, StringComparison.Ordinal);
     }
@@ -188,8 +188,8 @@ public sealed class KnowledgeEntryRulesTests
         var procedure = InformingWith(Entry(queries: ["opening hours"]));
 
         Assert.Empty(Check(ValidationStage.Save, procedure));
-        Assert.Equal(MistakeCodes.KnowledgeQueryNoArticles, Assert.Single(Check(ValidationStage.Version, procedure)).Code);
-        Assert.Equal(MistakeCodes.KnowledgeQueryNoArticles, Assert.Single(Check(ValidationStage.Version, procedure, Office("offer"))).Code);
+        Assert.Equal(MistakeCode.KnowledgeQueryNoArticles, Assert.Single(Check(ValidationStage.Version, procedure)).Code);
+        Assert.Equal(MistakeCode.KnowledgeQueryNoArticles, Assert.Single(Check(ValidationStage.Version, procedure, Office("offer"))).Code);
         Assert.Empty(Check(ValidationStage.Version, procedure, Office()));
     }
 
@@ -206,10 +206,10 @@ public sealed class KnowledgeEntryRulesTests
               "a":{"inform":{"instruction":"Say it.","points":{"office":"Where it is."},"knowledge":[{"knowledgeBase":"faq","searchQueries":["hours"," "]}]}}}}]}
             """;
 
-        Assert.Equal(MistakeCodes.ReferenceMissing, Assert.Single(DefinitionValidator.ValidateJson(missing, ValidationStage.Save)).Code);
+        Assert.Equal(MistakeCode.ReferenceMissing, Assert.Single(DefinitionValidator.ValidateJson(missing, ValidationStage.Save)).Code);
         Assert.Equal(
-            [MistakeCodes.KnowledgeQueryBlank, MistakeCodes.KnowledgeQueryNoArticles],
-            DefinitionValidator.ValidateJson(unfinished, ValidationStage.Version).Select(mistake => mistake.Code)
+            ["knowledge.query.blank", "knowledge.query.noArticles"],
+            DefinitionValidator.ValidateJson(unfinished, ValidationStage.Version).Select(mistake => mistake.Code.Text())
         );
     }
 
@@ -219,7 +219,7 @@ public sealed class KnowledgeEntryRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, InformingWith(Entry(articles: ["officeContact"])), Office("offer")));
 
-        Assert.Equal(MistakeCodes.KnowledgeArticleOtherBase, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeArticleOtherBase, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[0].articles[0]", mistake.Path);
         Assert.Contains("'offer'", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("Move it to an entry for 'offer'", mistake.Fix, StringComparison.Ordinal);
@@ -231,7 +231,7 @@ public sealed class KnowledgeEntryRulesTests
     {
         var mistake = Assert.Single(Check(ValidationStage.Save, InformingWith(Entry(queries: ["a"]), Entry(queries: ["b"]))));
 
-        Assert.Equal(MistakeCodes.KnowledgeBaseRepeated, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeBaseRepeated, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge[1]", mistake.Path);
         Assert.Contains("Merge", mistake.Fix, StringComparison.Ordinal);
 
@@ -263,7 +263,7 @@ public sealed class KnowledgeEntryRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.Validate(definition, ValidationStage.Version, declaration));
 
-        Assert.Equal(MistakeCodes.DeclarationKnowledge, mistake.Code);
+        Assert.Equal(MistakeCode.DeclarationKnowledge, mistake.Code);
         Assert.Equal("steps.only.inform.knowledge", mistake.Path);
         Assert.Contains("Knowledge = true", mistake.Fix, StringComparison.Ordinal);
         Assert.Empty(DefinitionValidator.Validate(definition, ValidationStage.Save, declaration));

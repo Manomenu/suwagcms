@@ -130,8 +130,8 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
         var saved = await ActionApi.Json(await scene.PutProcedure("orderService", Unfinished));
 
         var codes = saved.GetProperty("notReady").EnumerateArray().Select(mistake => mistake.GetProperty("code").GetString()).ToList();
-        Assert.Contains(MistakeCodes.StepActionNoOnFailure, codes);
-        Assert.Contains(MistakeCodes.StepActionUnmappedParameter, codes);
+        Assert.Contains("step.action.noOnFailure", codes);
+        Assert.Contains("step.action.unmappedParameter", codes);
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
 
         Assert.NotEmpty(offline);
         Assert.Equal(
-            offline.Select(mistake => (mistake.Code, mistake.Path, mistake.Message, mistake.Fix)).Order(),
+            offline.Select(mistake => (mistake.Code.Text(), mistake.Path, mistake.Message, mistake.Fix)).Order(),
             refused
                 .Select(mistake =>
                     (
@@ -230,7 +230,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal(MistakeCodes.ReferenceMissing, mistake.GetProperty("code").GetString());
+        Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
         Assert.Contains(
             "steps.checkAddress.action of procedure 'orderService'",
             mistake.GetProperty("message").GetString(),
@@ -274,7 +274,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
         var mistake = Assert.Single(await FactApi.MistakesOf(refused));
-        Assert.Equal(MistakeCodes.ActionFieldInUse, mistake.GetProperty("code").GetString());
+        Assert.Equal("action.field.inUse", mistake.GetProperty("code").GetString());
         Assert.Equal(path, mistake.GetProperty("at").GetString());
         Assert.Contains(says, mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
         Assert.Contains("procedure orderService, step checkAddress", mistake.GetProperty("message").GetString(), StringComparison.Ordinal);
@@ -307,13 +307,13 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
         var parameter = await scene.Facts.Put("customer.address", FactApi.Floors);
         var result = await scene.Facts.Put("isServiceable", FactApi.Text());
 
-        Assert.Equal(MistakeCodes.FactTypeInUse, Assert.Single(await FactApi.MistakesOf(parameter)).GetProperty("code").GetString());
+        Assert.Equal("fact.type.inUse", Assert.Single(await FactApi.MistakesOf(parameter)).GetProperty("code").GetString());
         Assert.Contains(
             "step checkAddress (with)",
             (await FactApi.MistakesOf(await scene.Facts.Put("customer.address", FactApi.Floors)))[0].GetProperty("message").GetString(),
             StringComparison.Ordinal
         );
-        Assert.Contains(MistakeCodes.FactTypeInUse, await FactApi.CodesOf(result));
+        Assert.Contains("fact.type.inUse", await FactApi.CodesOf(result));
     }
 
     [Fact]
@@ -433,7 +433,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
             TestContext.Current.CancellationToken
         );
         Assert.Equal(HttpStatusCode.UnprocessableEntity, refused.StatusCode);
-        Assert.Contains(MistakeCodes.ActionCodeMapping, await FactApi.CodesOf(refused));
+        Assert.Contains("action.code.mapping", await FactApi.CodesOf(refused));
     }
 
     [Fact]
@@ -465,7 +465,7 @@ public sealed class ActionStepTests(TestDatabase database, ClassServer server) :
             TestContext.Current.CancellationToken
         );
         var undeclared = (await FactApi.MistakesOf(refused))
-            .Where(mistake => mistake.GetProperty("code").GetString() == MistakeCodes.ActionCodeUndeclared)
+            .Where(mistake => mistake.GetProperty("code").GetString() == "action.code.undeclared")
             .Select(mistake => mistake.GetProperty("message").GetString() ?? "")
             .ToList();
         var named = Assert.Single(undeclared);

@@ -15,7 +15,6 @@ namespace Suwagcms.Server.Actions;
 
 internal sealed class ActionTester(NpgsqlDataSource dataSource, BotClient client, IOptions<PushOptions> options)
 {
-    public const string ValueUnfit = "action.test.value";
     public const string Unreachable = "unreachable";
     public const string NotOffered = "notOffered";
     public const string OffNote = "This action is turned off: procedures will not run it until it is turned on.";
@@ -45,7 +44,7 @@ internal sealed class ActionTester(NpgsqlDataSource dataSource, BotClient client
                 null,
                 new EditResult.Refused([
                     .. unfit.Select(item => new Mistake(
-                        ValueUnfit,
+                        MistakeCode.ActionTestValueUnfit,
                         ValidationStage.Save,
                         target,
                         $"values.{item.Parameter}",

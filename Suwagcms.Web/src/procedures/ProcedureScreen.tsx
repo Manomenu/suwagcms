@@ -1,6 +1,7 @@
 import { Alert, ApiError, Button, MistakeList, Spinner } from "@maniumek/suwfrontkit";
-import { mistakesOf } from "@/api/client";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { messageOf, mistakesOf } from "@/api/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useReducer, useState } from "react";
 import { useLocation, useSearch, useSearchParams } from "wouter";
 
 import { useAvailability } from "@/api/availability";
@@ -21,6 +22,8 @@ import {
     fetchKnowledgeBases,
     fetchProcedure,
     fetchProcedures,
+    procedureKey,
+    proceduresKey,
     saveProcedure,
     type ActionView,
     type Fact,
@@ -44,8 +47,21 @@ interface Loaded {
 
 const BASE_PROCEDURE = "conversation";
 
-function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial: Loaded; backHref: string }) {
+function Body({
+    bot,
+    id,
+    initial,
+    backHref,
+    reloaded,
+}: {
+    bot: string;
+    id: string;
+    initial: Loaded;
+    backHref: string;
+    reloaded: () => Promise<ProcedureDetail | undefined>;
+}) {
     const [state, dispatch] = useReducer(reduce, initial.detail, stateOf);
+    const queries = useQueryClient();
     const [params, setParams] = useSearchParams();
     const selected = params.get("step");
     const setSelected = (step: string | null) => {
@@ -73,7 +89,6 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
         );
     };
     const [deleteFailure, setDeleteFailure] = useState<string | null>(null);
-    const [saving, setSaving] = useState(false);
     const [changingId, setChangingId] = useState(false);
     const [, navigate] = useLocation();
     const { draft } = state;
@@ -87,17 +102,15 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
 
     useLeaveGuard(dirty, "You have unsaved changes. Leave and discard them?");
 
+    const saving = useMutation({
+        mutationFn: (body: ReturnType<typeof toSave>) => outcomeOf(saveProcedure(bot, id, body, state.revision, false)),
+        onSuccess: (outcome, body) => {
+            dispatch({ type: "saved", outcome, sent: JSON.stringify(body) });
+            if (outcome.kind === "saved") void queries.invalidateQueries({ queryKey: proceduresKey(bot, "list") });
+        },
+    });
     const save = () => {
-        setSaving(true);
-        const body = toSave(draft);
-        const sent = JSON.stringify(body);
-        void outcomeOf(saveProcedure(bot, id, body, state.revision, false))
-            .then((outcome) => {
-                dispatch({ type: "saved", outcome, sent });
-            })
-            .finally(() => {
-                setSaving(false);
-            });
+        saving.mutate(toSave(draft));
     };
 
     const remove = () => {
@@ -105,6 +118,7 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
         return deleteProcedure(bot, id, state.revision)
             .then(() => {
                 navigate(withListSearch(listHref(bot, "procedures"), params.toString()), { replace: true });
+                void queries.invalidateQueries({ queryKey: proceduresKey(bot, "list") });
             })
             .catch((error: unknown) => {
                 setDeleteFailure(
@@ -116,7 +130,8 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
     };
 
     const reload = () => {
-        void fetchProcedure(bot, id, new AbortController().signal).then((detail) => {
+        void reloaded().then((detail) => {
+            if (detail === undefined) return;
             dispatch({ type: "loaded", detail });
             setSelected(null);
         });
@@ -150,6 +165,8 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
             onChanged={(newId) => {
                 setChangingId(false);
                 navigate(withListSearch(editHref(bot, "procedures", newId), params.toString()), { replace: true });
+                void queries.invalidateQueries({ queryKey: proceduresKey(bot, "list") });
+                void queries.invalidateQueries({ queryKey: ["resources", bot] });
             }}
             usage={{
                 usage: usage.usage,
@@ -204,7 +221,7 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
                 selected={selected}
                 check={check}
                 dirty={dirty}
-                saving={saving}
+                saving={saving.isPending}
                 canBeInterrupted={!isBase}
                 edit={(change) => {
                     dispatch({ type: "edited", draft: change(draft) });
@@ -218,47 +235,61 @@ function Body({ bot, id, initial, backHref }: { bot: string; id: string; initial
     );
 }
 
+function useLoaded(bot: string, id: string) {
+    const detail = useQuery({ queryKey: procedureKey(bot, id), queryFn: ({ signal }) => fetchProcedure(bot, id, signal), gcTime: 0 });
+    const list = useQuery({ queryKey: proceduresKey(bot, "list"), queryFn: ({ signal }) => fetchProcedures(bot, signal) });
+    const facts = useQuery({ queryKey: ["resources", bot, "facts", "list", null], queryFn: ({ signal }) => fetchFacts(bot, signal) });
+    const articles = useQuery({
+        queryKey: ["resources", bot, "articles", "list", null],
+        queryFn: ({ signal }) => fetchArticles(bot, signal),
+    });
+    const bases = useQuery({
+        queryKey: ["resources", bot, "knowledge-bases", "list", null],
+        queryFn: ({ signal }) => fetchKnowledgeBases(bot, signal),
+    });
+    const declaration = useQuery({
+        queryKey: ["declaration", bot, "stored"],
+        queryFn: ({ signal }) => fetchDeclaration(bot, signal, false),
+    });
+    const actions = useQuery({ queryKey: ["resources", bot, "actions", "list", null], queryFn: ({ signal }) => fetchActions(bot, signal) });
+    const error =
+        [detail, list, facts, articles, bases, declaration, actions].find((query) => query.data === undefined && query.error !== null)
+            ?.error ?? null;
+    const loaded: Loaded | null =
+        detail.data === undefined ||
+        list.data === undefined ||
+        facts.data === undefined ||
+        articles.data === undefined ||
+        bases.data === undefined ||
+        declaration.data === undefined ||
+        actions.data === undefined
+            ? null
+            : {
+                  detail: detail.data,
+                  facts: facts.data,
+                  procedures: list.data.procedures.map((procedure) => procedure.id),
+                  articles: articles.data.map((article) => ({
+                      id: article.id,
+                      title: article.title,
+                      knowledgeBase: article.knowledgeBase,
+                  })),
+                  bases: bases.data.map((base) => ({ id: base.id, title: base.title })),
+                  actions: actions.data,
+                  offered: offeredBlocks(declaration.data),
+              };
+    return {
+        loaded,
+        error,
+        reloaded: () => detail.refetch().then((again) => (again.error === null ? again.data : undefined)),
+    };
+}
+
 export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
-    const [loaded, setLoaded] = useState<Loaded | null>(null);
-    const [failure, setFailure] = useState<string | null>(null);
-    const [missing, setMissing] = useState(false);
+    const { loaded, error, reloaded } = useLoaded(bot, id);
     const search = useSearch();
 
-    useEffect(() => {
-        const controller = new AbortController();
-        Promise.all([
-            fetchProcedure(bot, id, controller.signal),
-            fetchFacts(bot, controller.signal),
-            fetchProcedures(bot, controller.signal),
-            fetchArticles(bot, controller.signal),
-            fetchKnowledgeBases(bot, controller.signal),
-            fetchDeclaration(bot, controller.signal, false),
-            fetchActions(bot, controller.signal),
-        ])
-            .then(([detail, facts, list, articles, bases, declaration, actions]) => {
-                setLoaded({
-                    detail,
-                    facts,
-                    procedures: list.procedures.map((procedure) => procedure.id),
-                    articles: articles.map((article) => ({ id: article.id, title: article.title, knowledgeBase: article.knowledgeBase })),
-                    bases: bases.map((base) => ({ id: base.id, title: base.title })),
-                    actions,
-                    offered: offeredBlocks(declaration),
-                });
-            })
-            .catch((error: unknown) => {
-                if (controller.signal.aborted) return;
-                if (error instanceof ApiError && error.status === 404) setMissing(true);
-                else setFailure(error instanceof Error ? error.message : String(error));
-            });
-        return () => {
-            controller.abort();
-        };
-    }, [bot, id]);
-
     const backHref = withListSearch(listHref(bot, "procedures"), search);
-    if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
-    if (missing) {
+    if (error instanceof ApiError && error.status === 404) {
         return (
             <div className="flex flex-col gap-4">
                 <BackToList plural="procedures" backHref={backHref} />
@@ -266,6 +297,7 @@ export function ProcedureScreen({ bot, id }: { bot: string; id: string }) {
             </div>
         );
     }
+    if (error !== null) return <Alert variant="destructive">{messageOf(error)}</Alert>;
     if (loaded === null) return <Spinner label={`Loading ${id}…`} size="sm" />;
-    return <Body bot={bot} id={id} initial={loaded} backHref={backHref} />;
+    return <Body key={id} bot={bot} id={id} initial={loaded} backHref={backHref} reloaded={reloaded} />;
 }

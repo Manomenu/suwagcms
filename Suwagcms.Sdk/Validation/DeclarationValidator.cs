@@ -19,7 +19,7 @@ public static class DeclarationValidator
             var declaration = JsonSerializer.Deserialize<BotDeclaration>(json ?? string.Empty, DefinitionFormat.Options);
             if (declaration is null)
             {
-                return (null, [Whole(MistakeCodes.DeclarationInvalid, "$", "The declaration is empty.", "Send one JSON object.")]);
+                return (null, [Whole(MistakeCode.DeclarationInvalid, "$", "The declaration is empty.", "Send one JSON object.")]);
             }
 
             return HasNullItem(declaration)
@@ -27,7 +27,7 @@ public static class DeclarationValidator
                     null,
                     [
                         Whole(
-                            MistakeCodes.DeclarationInvalid,
+                            MistakeCode.DeclarationInvalid,
                             "codeActions",
                             "A list of code actions, parameters or results holds null.",
                             "Remove the null or replace it with an object."
@@ -42,7 +42,7 @@ public static class DeclarationValidator
                 null,
                 [
                     Whole(
-                        MistakeCodes.DeclarationInvalid,
+                        MistakeCode.DeclarationInvalid,
                         exception.Path ?? "$",
                         $"The declaration does not fit its contract: {exception.Message}",
                         "Answer with the shape in bot-runtime.schema.json: bot, formatVersion, blocks and codeActions."
@@ -65,7 +65,7 @@ public static class DeclarationValidator
         {
             mistakes.Add(
                 Whole(
-                    MistakeCodes.DeclarationBot,
+                    MistakeCode.DeclarationBot,
                     "bot",
                     $"The address answers as bot '{declaration.Bot}', not '{bot}'.",
                     $"Register the right address for bot '{bot}', or set the bot's own id to '{bot}'."
@@ -91,7 +91,7 @@ public static class DeclarationValidator
             return
             [
                 new(
-                    MistakeCodes.DeclarationFormatVersion,
+                    MistakeCode.DeclarationFormatVersion,
                     ValidationStage.Version,
                     new ResourceRef(ResourceKind.Definition, string.Empty),
                     "formatVersion",
@@ -126,7 +126,7 @@ public static class DeclarationValidator
                                 .Select(block =>
                                     ProcedureMistake.Make(
                                         procedure,
-                                        MistakeCodes.DeclarationBlock,
+                                        MistakeCode.DeclarationBlock,
                                         ValidationStage.Version,
                                         $"steps.{step.Key}.{block.Name}",
                                         $"Step '{step.Key}' of procedure '{procedure.Id}' uses block '{block.Name}', which this bot does not declare. It declares: {declared}.",
@@ -143,7 +143,7 @@ public static class DeclarationValidator
         if (declaration.Persona == BotDeclaration.PersonaRequired && definition.Persona?.HasText() != true)
         {
             yield return new(
-                MistakeCodes.PersonaRequired,
+                MistakeCode.PersonaRequired,
                 ValidationStage.Version,
                 new ResourceRef(ResourceKind.Persona, Persona.PublicId),
                 "persona",
@@ -157,7 +157,7 @@ public static class DeclarationValidator
             foreach (var (path, _) in (definition.Persona ?? new Persona()).Texts().Where(text => string.IsNullOrWhiteSpace(text.Text)))
             {
                 yield return new(
-                    MistakeCodes.PersonaIncomplete,
+                    MistakeCode.PersonaIncomplete,
                     ValidationStage.Version,
                     new ResourceRef(ResourceKind.Persona, Persona.PublicId),
                     path,
@@ -174,7 +174,7 @@ public static class DeclarationValidator
         if (declaration.Persona is { } persona && persona is not (BotDeclaration.PersonaRequired or BotDeclaration.PersonaComplete))
         {
             yield return Whole(
-                MistakeCodes.DeclarationPersonaUnknown,
+                MistakeCode.DeclarationPersonaUnknown,
                 "persona",
                 $"'{persona}' is not something a bot can say about a persona.",
                 $"Say 'persona: {BotDeclaration.PersonaRequired}' or 'persona: {BotDeclaration.PersonaComplete}', or leave it out if the bot works without one."
@@ -184,7 +184,7 @@ public static class DeclarationValidator
         if (declaration.FormatVersion is null)
         {
             yield return Whole(
-                MistakeCodes.DeclarationFormatMissing,
+                MistakeCode.DeclarationFormatMissing,
                 "formatVersion",
                 "The bot does not say which format it wants.",
                 "State formatVersion in the bot's setup."
@@ -194,7 +194,7 @@ public static class DeclarationValidator
         if (declaration.Blocks.Count == 0)
         {
             yield return Whole(
-                MistakeCodes.DeclarationBlocksMissing,
+                MistakeCode.DeclarationBlocksMissing,
                 "blocks",
                 "The bot declares no blocks.",
                 "State the blocks its engine can run in the bot's setup, or leave the whole declaration out."
@@ -206,7 +206,7 @@ public static class DeclarationValidator
             foreach (var block in declaration.Blocks.Where(block => !Block.Names.Contains(block, StringComparer.Ordinal)))
             {
                 yield return Whole(
-                    MistakeCodes.DeclarationBlockUnknown,
+                    MistakeCode.DeclarationBlockUnknown,
                     "blocks",
                     string.Create(CultureInfo.InvariantCulture, $"Format {DefinitionFormat.Version} has no block '{block}'."),
                     $"Declare only blocks of this format: {string.Join(", ", Block.Names)}."
@@ -220,7 +220,7 @@ public static class DeclarationValidator
         if (string.IsNullOrWhiteSpace(action.Id))
         {
             yield return OfAction(
-                MistakeCodes.CodeActionIdMissing,
+                MistakeCode.CodeActionIdMissing,
                 action,
                 "id",
                 "A code action has no id.",
@@ -230,7 +230,7 @@ public static class DeclarationValidator
         else if (!ResourceIds.IsCamelCase(action.Id))
         {
             yield return OfAction(
-                MistakeCodes.CodeActionIdInvalid,
+                MistakeCode.CodeActionIdInvalid,
                 action,
                 "id",
                 $"'{action.Id}' is not an action id: it is one camelCase word.",
@@ -241,7 +241,7 @@ public static class DeclarationValidator
         if (string.IsNullOrWhiteSpace(action.Description))
         {
             yield return OfAction(
-                MistakeCodes.CodeActionDescriptionMissing,
+                MistakeCode.CodeActionDescriptionMissing,
                 action,
                 "description",
                 $"Code action '{action.Id}' has no description.",
@@ -267,7 +267,7 @@ public static class DeclarationValidator
         )
         {
             yield return OfAction(
-                MistakeCodes.CodeActionFieldInvalid,
+                MistakeCode.CodeActionFieldInvalid,
                 action,
                 $"{list}.{name}",
                 $"'{name}' in {list} of code action '{action.Id}' is not one camelCase word.",
@@ -278,7 +278,7 @@ public static class DeclarationValidator
         foreach (var group in fields.GroupBy(field => field.Name, StringComparer.Ordinal).Where(group => group.Count() > 1))
         {
             yield return OfAction(
-                MistakeCodes.CodeActionFieldRepeated,
+                MistakeCode.CodeActionFieldRepeated,
                 action,
                 $"{list}.{group.Key}",
                 $"'{group.Key}' is listed {string.Create(CultureInfo.InvariantCulture, $"{group.Count()}")} times in {list} of code action '{action.Id}'.",
@@ -324,7 +324,7 @@ public static class DeclarationValidator
             .Where(group => group.Key.Length > 0 && group.Count() > 1)
             .Select(group =>
                 OfAction(
-                    MistakeCodes.CodeActionRepeated,
+                    MistakeCode.CodeActionRepeated,
                     group.First(),
                     "id",
                     string.Create(CultureInfo.InvariantCulture, $"Code action '{group.Key}' is declared {group.Count()} times."),
@@ -332,9 +332,9 @@ public static class DeclarationValidator
                 )
             );
 
-    private static Mistake Whole(string code, string path, string message, string fix) =>
+    private static Mistake Whole(MistakeCode code, string path, string message, string fix) =>
         new(code, ValidationStage.Version, new ResourceRef(ResourceKind.Definition, string.Empty), path, message, fix, []);
 
-    private static Mistake OfAction(string code, CodeAction action, string path, string message, string fix) =>
+    private static Mistake OfAction(MistakeCode code, CodeAction action, string path, string message, string fix) =>
         new(code, ValidationStage.Version, new ResourceRef(ResourceKind.Action, action.Id), path, message, fix, []);
 }

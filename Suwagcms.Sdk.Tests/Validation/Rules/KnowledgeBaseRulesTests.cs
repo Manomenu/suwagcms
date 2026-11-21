@@ -44,7 +44,7 @@ public sealed class KnowledgeBaseRulesTests
     {
         var mistake = Assert.Single(Check(Offer with { Id = id }));
 
-        Assert.Equal(MistakeCodes.KnowledgeBaseIdInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeBaseIdInvalid, mistake.Code);
         Assert.Equal("id", mistake.Path);
         Assert.Contains("Rename the knowledge base to '", mistake.Fix, StringComparison.Ordinal);
     }
@@ -57,7 +57,7 @@ public sealed class KnowledgeBaseRulesTests
     {
         var mistake = Assert.Single(Check(Offer with { Title = title }));
 
-        Assert.Equal(MistakeCodes.KnowledgeBaseTitleMissing, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeBaseTitleMissing, mistake.Code);
         Assert.Equal("title", mistake.Path);
     }
 
@@ -78,10 +78,7 @@ public sealed class KnowledgeBaseRulesTests
             }
         );
 
-        Assert.Equal(
-            [MistakeCodes.KnowledgeBaseTitleRepeated, MistakeCodes.KnowledgeBaseTitleRepeated],
-            mistakes.Select(mistake => mistake.Code)
-        );
+        Assert.Equal(["knowledgeBase.title.repeated", "knowledgeBase.title.repeated"], mistakes.Select(mistake => mistake.Code.Text()));
         Assert.Equal(["offer", "second"], mistakes.Select(mistake => mistake.Resource.Id));
         Assert.Contains("used by knowledge base 'offer'", mistakes[1].Message, StringComparison.Ordinal);
         Assert.Equal(["offer"], mistakes[1].Related.Select(related => related.Resource.Id));
@@ -92,7 +89,7 @@ public sealed class KnowledgeBaseRulesTests
     [Trait("criterion", "AC-knowledge-bases-4")]
     public void Two_blank_titles_are_reported_as_missing_and_not_as_repeated() =>
         Assert.Equal(
-            [MistakeCodes.KnowledgeBaseTitleMissing, MistakeCodes.KnowledgeBaseTitleMissing],
+            ["knowledgeBase.title.missing", "knowledgeBase.title.missing"],
             Check(
                     Offer with
                     {
@@ -106,7 +103,7 @@ public sealed class KnowledgeBaseRulesTests
                         Results = 5,
                     }
                 )
-                .Select(mistake => mistake.Code)
+                .Select(mistake => mistake.Code.Text())
         );
 
     [Fact]
@@ -146,7 +143,7 @@ public sealed class KnowledgeBaseRulesTests
     {
         var mistake = Assert.Single(Check(Offer with { Language = language }));
 
-        Assert.Equal("knowledgeBase.language.unknown", mistake.Code);
+        Assert.Equal("knowledgeBase.language.unknown", mistake.Code.Text());
         Assert.Equal(ValidationStage.Save, mistake.Stage);
         Assert.Equal("language", mistake.Path);
         Assert.Equal("Use one of: pl, en.", mistake.Fix);
@@ -162,7 +159,7 @@ public sealed class KnowledgeBaseRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save));
 
-        Assert.Equal(MistakeCodes.KnowledgeBaseLanguageUnknown, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeBaseLanguageUnknown, mistake.Code);
         Assert.Equal("Knowledge base 'oferta' has language 'de'.", mistake.Message);
     }
 
@@ -174,7 +171,7 @@ public sealed class KnowledgeBaseRulesTests
     {
         var mistake = Assert.Single(Check(Offer with { Embedding = embedding }));
 
-        Assert.Equal(MistakeCodes.KnowledgeBaseEmbeddingMissing, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeBaseEmbeddingMissing, mistake.Code);
         Assert.Equal(ValidationStage.Save, mistake.Stage);
         Assert.Equal("embedding", mistake.Path);
         Assert.Equal("Type the profile the bot embeds its articles with, such as default.", mistake.Fix);
@@ -189,7 +186,7 @@ public sealed class KnowledgeBaseRulesTests
     {
         var mistake = Assert.Single(Check(Offer with { Results = results }));
 
-        Assert.Equal(MistakeCodes.KnowledgeBaseResultsOutOfRange, mistake.Code);
+        Assert.Equal(MistakeCode.KnowledgeBaseResultsOutOfRange, mistake.Code);
         Assert.Equal("results", mistake.Path);
         Assert.Equal("Set a whole number from 1 to 20, such as 5.", mistake.Fix);
     }
@@ -209,7 +206,7 @@ public sealed class KnowledgeBaseRulesTests
     {
         var json = $$"""{"formatVersion":5,"knowledgeBases":[{{knowledgeBase}}]}""";
 
-        Assert.Equal(MistakeCodes.FormatInvalid, Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save)).Code);
+        Assert.Equal(MistakeCode.FormatInvalid, Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Save)).Code);
     }
 
     [Fact]
@@ -220,7 +217,7 @@ public sealed class KnowledgeBaseRulesTests
 
         var mistake = Assert.Single(DefinitionValidator.ValidateJson(json, ValidationStage.Version));
 
-        Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
+        Assert.Equal(MistakeCode.FormatVersion, mistake.Code);
         Assert.Equal(5, BotDefinition.CurrentFormatVersion);
         Assert.Contains("Bring the document to format 5", mistake.Fix, StringComparison.Ordinal);
         Assert.Contains("create a new version from the working state", mistake.Fix, StringComparison.Ordinal);

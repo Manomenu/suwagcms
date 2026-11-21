@@ -9,8 +9,8 @@ internal static class FactNameRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        new(MistakeCodes.FactLocalNameClash, ValidationStage.Save, LocalNameClashes),
-        new(MistakeCodes.FactNameProcedurePrefix, ValidationStage.Save, ProcedurePrefixes),
+        new(MistakeCode.FactLocalNameClash, ValidationStage.Save, LocalNameClashes),
+        new(MistakeCode.FactNameProcedurePrefix, ValidationStage.Save, ProcedurePrefixes),
     ];
 
     private static IEnumerable<Mistake> ProcedurePrefixes(BotDefinition definition) =>
@@ -18,7 +18,7 @@ internal static class FactNameRules
             definition
                 .Procedures.Where(procedure => fact.Name.StartsWith($"{procedure.Id}.", StringComparison.Ordinal))
                 .Select(procedure => new Mistake(
-                    MistakeCodes.FactNameProcedurePrefix,
+                    MistakeCode.FactNameProcedurePrefix,
                     ValidationStage.Save,
                     new ResourceRef(ResourceKind.GlobalFact, fact.Name),
                     "name",
@@ -39,7 +39,7 @@ internal static class FactNameRules
     {
         var names = string.Join(", ", holders.Select(holder => $"'{holder.Id}'").Order(StringComparer.Ordinal));
         return new Mistake(
-            MistakeCodes.FactLocalNameClash,
+            MistakeCode.FactLocalNameClash,
             ValidationStage.Save,
             new ResourceRef(ResourceKind.GlobalFact, fact.Name),
             "name",

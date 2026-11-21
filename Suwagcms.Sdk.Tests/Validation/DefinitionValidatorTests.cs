@@ -10,11 +10,11 @@ namespace Suwagcms.Sdk.Tests.Validation;
 public sealed class DefinitionValidatorTests
 {
     private static readonly Rule VersionRule = new(
-        "test.versionOnly",
+        MistakeCode.StepUnreachable,
         ValidationStage.Version,
         definition =>
             definition.Articles.Select(article => new Mistake(
-                "test.versionOnly",
+                MistakeCode.StepUnreachable,
                 ValidationStage.Save,
                 new ResourceRef(ResourceKind.Article, article.Id),
                 "id",
@@ -86,10 +86,10 @@ public sealed class DefinitionValidatorTests
         var atSave = DefinitionValidator.Validate(definition, ValidationStage.Save, rules);
         var atVersion = DefinitionValidator.Validate(definition, ValidationStage.Version, rules);
 
-        Assert.Equal([("resource.duplicateId", ValidationStage.Save)], atSave.Select(mistake => (mistake.Code, mistake.Stage)));
+        Assert.Equal([("resource.duplicateId", ValidationStage.Save)], atSave.Select(mistake => (mistake.Code.Text(), mistake.Stage)));
         Assert.Equal(
-            [("resource.duplicateId", ValidationStage.Save), ("test.versionOnly", ValidationStage.Version)],
-            atVersion.Select(mistake => (mistake.Code, mistake.Stage))
+            [("resource.duplicateId", ValidationStage.Save), ("step.unreachable", ValidationStage.Version)],
+            atVersion.Select(mistake => (mistake.Code.Text(), mistake.Stage))
         );
     }
 
@@ -101,7 +101,7 @@ public sealed class DefinitionValidatorTests
 
         var mistake = Assert.Single(DefinitionValidator.Validate(definition, ValidationStage.Version));
 
-        Assert.Equal(MistakeCodes.FormatVersion, mistake.Code);
+        Assert.Equal(MistakeCode.FormatVersion, mistake.Code);
         Assert.Contains("reads 5", mistake.Message, StringComparison.Ordinal);
     }
 
@@ -121,13 +121,13 @@ public sealed class DefinitionValidatorTests
             )
         );
 
-        Assert.Equal(MistakeCodes.DuplicateId, mistake.Code);
+        Assert.Equal(MistakeCode.DuplicateId, mistake.Code);
         Assert.Equal(new ResourceRef(ResourceKind.Article, "pricing"), mistake.Resource);
         Assert.Contains("'pricing'", mistake.Message, StringComparison.Ordinal);
         Assert.Equal(["articles[0]", "articles[2]"], mistake.Related.Select(related => related.Location));
     }
 
-    private static Rule DuplicateIdRuleFor() => Assert.Single(DefinitionValidator.Rules, rule => rule.Code == MistakeCodes.DuplicateId);
+    private static Rule DuplicateIdRuleFor() => Assert.Single(DefinitionValidator.Rules, rule => rule.Code == MistakeCode.DuplicateId);
 
     private static string Describe(Mistake mistake) =>
         $"{mistake.Code}|{mistake.Stage}|{mistake.Resource}|{mistake.Path}|{string.Join(',', mistake.Related.Select(related => related.Location))}";

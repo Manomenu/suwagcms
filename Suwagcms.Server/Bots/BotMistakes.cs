@@ -6,11 +6,6 @@ namespace Suwagcms.Server.Bots;
 
 internal static class BotMistakes
 {
-    public const string IdInvalid = "bot.idInvalid";
-    public const string IdTaken = "bot.idTaken";
-    public const string NameMissing = "bot.nameMissing";
-    public const string AddressInvalid = "bot.addressInvalid";
-
     public static List<Mistake> In(RegisterBot request)
     {
         var mistakes = new List<Mistake>();
@@ -19,7 +14,7 @@ internal static class BotMistakes
         {
             mistakes.Add(
                 Make(
-                    IdInvalid,
+                    MistakeCode.BotIdInvalid,
                     id,
                     "id",
                     "The id is missing or not valid: it starts with a lowercase letter and holds only lowercase letters, digits and hyphens.",
@@ -29,13 +24,15 @@ internal static class BotMistakes
         }
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            mistakes.Add(Make(NameMissing, id, "name", "The name is blank.", "Send the name people should see, like 'Rzeczoznawca'."));
+            mistakes.Add(
+                Make(MistakeCode.BotNameMissing, id, "name", "The name is blank.", "Send the name people should see, like 'Rzeczoznawca'.")
+            );
         }
         if (!IsAbsoluteWebAddress(request.Address))
         {
             mistakes.Add(
                 Make(
-                    AddressInvalid,
+                    MistakeCode.BotAddressInvalid,
                     id,
                     "address",
                     "The address is not an absolute http or https address.",
@@ -48,7 +45,7 @@ internal static class BotMistakes
 
     public static Mistake Taken(string id) =>
         Make(
-            IdTaken,
+            MistakeCode.BotIdTaken,
             id,
             "id",
             $"A bot with the id '{id}' already exists.",
@@ -61,6 +58,6 @@ internal static class BotMistakes
     private static bool IsAbsoluteWebAddress(string? address) =>
         Uri.TryCreate(address?.Trim(), UriKind.Absolute, out var parsed) && parsed.Scheme is "http" or "https" && parsed.Host.Length > 0;
 
-    private static Mistake Make(string code, string id, string path, string message, string fix) =>
+    private static Mistake Make(MistakeCode code, string id, string path, string message, string fix) =>
         new(code, ValidationStage.Save, new ResourceRef(ResourceKind.Definition, id), path, message, fix, []);
 }

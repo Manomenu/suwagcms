@@ -49,7 +49,7 @@ public static class DefinitionValidator
         var mistakes = ValidateJson(json, stage);
         if (
             stage != ValidationStage.Version
-            || mistakes.Any(mistake => mistake.Code is MistakeCodes.FormatInvalid or MistakeCodes.FormatVersion)
+            || mistakes.Any(mistake => mistake.Code is MistakeCode.FormatInvalid or MistakeCode.FormatVersion)
         )
         {
             return mistakes;
@@ -70,7 +70,7 @@ public static class DefinitionValidator
             return
             [
                 Envelope(
-                    MistakeCodes.FormatInvalid,
+                    MistakeCode.FormatInvalid,
                     "$",
                     $"The document is not valid JSON: {exception.Message}",
                     "Send one valid JSON object."
@@ -86,7 +86,7 @@ public static class DefinitionValidator
                 return
                 [
                     Envelope(
-                        MistakeCodes.FormatInvalid,
+                        MistakeCode.FormatInvalid,
                         "$",
                         "The document is not a JSON object.",
                         "Send one JSON object with formatVersion and the lists of resources."
@@ -114,7 +114,7 @@ public static class DefinitionValidator
                 return
                 [
                     Envelope(
-                        MistakeCodes.FormatInvalid,
+                        MistakeCode.FormatInvalid,
                         nullItem,
                         "A list holds null instead of a resource.",
                         "Remove the null or replace it with an object."
@@ -126,7 +126,7 @@ public static class DefinitionValidator
             {
                 var definition = root.Deserialize<BotDefinition>(DefinitionFormat.Options);
                 return definition is null
-                    ? [Envelope(MistakeCodes.FormatInvalid, "$", "The document is empty.", "Send one JSON object.")]
+                    ? [Envelope(MistakeCode.FormatInvalid, "$", "The document is empty.", "Send one JSON object.")]
                     : Validate(definition, stage, rules);
             }
             catch (JsonException exception)
@@ -134,7 +134,7 @@ public static class DefinitionValidator
                 return
                 [
                     Envelope(
-                        MistakeCodes.FormatInvalid,
+                        MistakeCode.FormatInvalid,
                         exception.Path ?? "$",
                         $"The document does not fit the format: {exception.Message}",
                         "Fix the value at the path: lists hold objects, ids are strings."
@@ -191,7 +191,7 @@ public static class DefinitionValidator
         found > DefinitionFormat.Version
             ? UnknownVersion(found.ToString(CultureInfo.InvariantCulture))
             : Envelope(
-                MistakeCodes.FormatVersion,
+                MistakeCode.FormatVersion,
                 "formatVersion",
                 $"formatVersion {found.ToString(CultureInfo.InvariantCulture)}; this SDK reads {DefinitionFormat.Version}.",
                 $"Bring the document to format {DefinitionFormat.Version} and set formatVersion to {DefinitionFormat.Version}; a version the CMS keeps cannot change, so create a new version from the working state."
@@ -199,12 +199,12 @@ public static class DefinitionValidator
 
     private static Mistake UnknownVersion(string found) =>
         Envelope(
-            MistakeCodes.FormatVersion,
+            MistakeCode.FormatVersion,
             "formatVersion",
             $"formatVersion {found}; this SDK reads {DefinitionFormat.Version}.",
             $"Set formatVersion to {DefinitionFormat.Version}, or update Suwagcms.Sdk if the document is from a newer format."
         );
 
-    private static Mistake Envelope(string code, string path, string message, string fix) =>
+    private static Mistake Envelope(MistakeCode code, string path, string message, string fix) =>
         new(code, ValidationStage.Save, new ResourceRef(ResourceKind.Definition, string.Empty), path, message, fix, []);
 }

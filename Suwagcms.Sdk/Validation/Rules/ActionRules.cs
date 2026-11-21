@@ -16,27 +16,27 @@ internal static partial class ActionRules
 
     public static IReadOnlyList<Rule> All { get; } =
     [
-        For(MistakeCodes.ActionIdInvalid, Id),
-        For(MistakeCodes.ActionDescriptionMissing, Description),
-        For(MistakeCodes.ActionImplementationMissing, Implementation),
-        ForHttp(MistakeCodes.ActionMethodInvalid, Method),
-        ForHttp(MistakeCodes.ActionUrlInvalid, Url),
-        ForHttp(MistakeCodes.ActionUrlCredentials, Credentials),
-        ForHttp(MistakeCodes.ActionUrlParameter, UrlParameters),
-        ForHttp(MistakeCodes.ActionTimeoutInvalid, Timeout),
-        ForHttp(MistakeCodes.ActionHeaderInvalid, HeaderShape),
-        ForHttp(MistakeCodes.ActionSecretName, SecretNames),
-        ForHttp(MistakeCodes.ActionSecretInUrl, SecretsInUrl),
-        ForHttp(MistakeCodes.ActionSecretLiteral, Literals),
+        For(MistakeCode.ActionIdInvalid, Id),
+        For(MistakeCode.ActionDescriptionMissing, Description),
+        For(MistakeCode.ActionImplementationMissing, Implementation),
+        ForHttp(MistakeCode.ActionMethodInvalid, Method),
+        ForHttp(MistakeCode.ActionUrlInvalid, Url),
+        ForHttp(MistakeCode.ActionUrlCredentials, Credentials),
+        ForHttp(MistakeCode.ActionUrlParameter, UrlParameters),
+        ForHttp(MistakeCode.ActionTimeoutInvalid, Timeout),
+        ForHttp(MistakeCode.ActionHeaderInvalid, HeaderShape),
+        ForHttp(MistakeCode.ActionSecretName, SecretNames),
+        ForHttp(MistakeCode.ActionSecretInUrl, SecretsInUrl),
+        ForHttp(MistakeCode.ActionSecretLiteral, Literals),
     ];
 
     [GeneratedRegex("^[!#$%&'*+.^_`|~0-9A-Za-z-]+$", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex HeaderName();
 
-    private static Rule For(string code, Func<BotAction, IEnumerable<Mistake>> check) =>
+    private static Rule For(MistakeCode code, Func<BotAction, IEnumerable<Mistake>> check) =>
         new(code, ValidationStage.Save, definition => definition.Actions.Where(action => !action.IsCode).SelectMany(check));
 
-    private static Rule ForHttp(string code, Func<BotAction, HttpCall, IEnumerable<Mistake>> check) =>
+    private static Rule ForHttp(MistakeCode code, Func<BotAction, HttpCall, IEnumerable<Mistake>> check) =>
         For(code, action => action.Implementation?.Http is { } http ? check(action, http) : []);
 
     private static IEnumerable<Mistake> Id(BotAction action)
@@ -44,7 +44,7 @@ internal static partial class ActionRules
         if (!ResourceIds.IsCamelCase(action.Id))
         {
             yield return Make(
-                MistakeCodes.ActionIdInvalid,
+                MistakeCode.ActionIdInvalid,
                 action,
                 "id",
                 $"'{action.Id}' is not an action id: it is one camelCase word.",
@@ -58,7 +58,7 @@ internal static partial class ActionRules
         if (string.IsNullOrWhiteSpace(action.Description))
         {
             yield return Make(
-                MistakeCodes.ActionDescriptionMissing,
+                MistakeCode.ActionDescriptionMissing,
                 action,
                 "description",
                 $"Action '{action.Id}' has no description.",
@@ -72,7 +72,7 @@ internal static partial class ActionRules
         if (action.Implementation?.Http is null)
         {
             yield return Make(
-                MistakeCodes.ActionImplementationMissing,
+                MistakeCode.ActionImplementationMissing,
                 action,
                 "implementation",
                 $"Action '{action.Id}' has no implementation.",
@@ -86,7 +86,7 @@ internal static partial class ActionRules
         if (!Methods.Contains(http.Method, StringComparer.Ordinal))
         {
             yield return Make(
-                MistakeCodes.ActionMethodInvalid,
+                MistakeCode.ActionMethodInvalid,
                 action,
                 Http("method"),
                 string.IsNullOrWhiteSpace(http.Method)
@@ -109,7 +109,7 @@ internal static partial class ActionRules
         if (Parsed(http) is null)
         {
             yield return Make(
-                MistakeCodes.ActionUrlInvalid,
+                MistakeCode.ActionUrlInvalid,
                 action,
                 Http("url"),
                 $"The URL of action '{action.Id}' is not an absolute http or https address.",
@@ -123,7 +123,7 @@ internal static partial class ActionRules
         if (Parsed(http) is { UserInfo.Length: > 0 })
         {
             yield return Make(
-                MistakeCodes.ActionUrlCredentials,
+                MistakeCode.ActionUrlCredentials,
                 action,
                 Http("url"),
                 $"The URL of action '{action.Id}' holds a user or a password, and URLs end up in logs.",
@@ -140,7 +140,7 @@ internal static partial class ActionRules
             .Distinct(StringComparer.Ordinal)
             .Select(name =>
                 Make(
-                    MistakeCodes.ActionUrlParameter,
+                    MistakeCode.ActionUrlParameter,
                     action,
                     Http("url"),
                     $"The URL of action '{action.Id}' names {{{name}}}, which is not one of its parameters.",
@@ -155,7 +155,7 @@ internal static partial class ActionRules
         if (http.TimeoutSeconds is < 1 or > 60)
         {
             yield return Make(
-                MistakeCodes.ActionTimeoutInvalid,
+                MistakeCode.ActionTimeoutInvalid,
                 action,
                 Http("timeoutSeconds"),
                 $"The timeout of action '{action.Id}' is outside 1 to 60 seconds.",
@@ -171,7 +171,7 @@ internal static partial class ActionRules
             .Where(header => !HeaderName().IsMatch(header.Key) || header.Value.AsSpan().IndexOfAny('\r', '\n') >= 0)
             .Select(header =>
                 Make(
-                    MistakeCodes.ActionHeaderInvalid,
+                    MistakeCode.ActionHeaderInvalid,
                     action,
                     Http($"headers.{header.Key}"),
                     $"The header '{header.Key}' of action '{action.Id}' cannot be sent: its name holds a character no header name can, or its value breaks a line.",
@@ -187,7 +187,7 @@ internal static partial class ActionRules
                     .Where(name => !ActionTemplates.SecretName().IsMatch(name))
                     .Select(name =>
                         Make(
-                            MistakeCodes.ActionSecretName,
+                            MistakeCode.ActionSecretName,
                             action,
                             Http($"headers.{header.Key}"),
                             $"'{name}' in header '{header.Key}' is not a secret's name: it is capital letters, digits and underscores, starting with a letter.",
@@ -201,7 +201,7 @@ internal static partial class ActionRules
         if (ActionTemplates.SecretsIn(http.Address).Any())
         {
             yield return Make(
-                MistakeCodes.ActionSecretInUrl,
+                MistakeCode.ActionSecretInUrl,
                 action,
                 Http("url"),
                 $"The URL of action '{action.Id}' holds a secret reference, and URLs end up in logs.",
@@ -215,7 +215,7 @@ internal static partial class ActionRules
             .Where(header => IsSensitive(header.Key) && !ActionTemplates.SecretsIn(header.Value).Any())
             .Select(header =>
                 Make(
-                    MistakeCodes.ActionSecretLiteral,
+                    MistakeCode.ActionSecretLiteral,
                     action,
                     Http($"headers.{header.Key}"),
                     $"Header '{header.Key}' holds a literal value, and the CMS never stores secrets.",
@@ -228,7 +228,7 @@ internal static partial class ActionRules
                 LiteralQueryNames(http)
                     .Select(name =>
                         Make(
-                            MistakeCodes.ActionSecretLiteral,
+                            MistakeCode.ActionSecretLiteral,
                             action,
                             Http("url"),
                             $"The URL's query parameter '{name}' holds a literal value, and the CMS never stores secrets.",
@@ -260,6 +260,6 @@ internal static partial class ActionRules
 
     private static string Http(string field) => $"implementation.http.{field}";
 
-    private static Mistake Make(string code, BotAction action, string path, string message, string fix) =>
+    private static Mistake Make(MistakeCode code, BotAction action, string path, string message, string fix) =>
         new(code, ValidationStage.Save, new ResourceRef(ResourceKind.Action, action.Id), path, message, fix, []);
 }

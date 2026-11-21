@@ -1,63 +1,55 @@
 import { Alert, ApiError, Spinner } from "@maniumek/suwfrontkit";
-import { mistakesOf } from "@/api/client";
-import { useEffect, useState } from "react";
+import { messageOf, mistakesOf } from "@/api/client";
+import { skipToken, useQuery } from "@tanstack/react-query";
 import { useSearch, useSearchParams } from "wouter";
 
 import { useVersionWindow } from "@/api/history";
 import { versionsHref, withListSearch } from "@/api/resourceAddress";
 
-import { fetchComparison, fetchVersion, fetchVersions, versionNumberOf, type VersionDetail, type VersionSummary } from "./api";
+import { fetchComparison, fetchVersion, fetchVersions, versionNumberOf, versionsKey } from "./api";
 import { NoSuchVersion, VersionView, type ComparisonState } from "./VersionView";
 
 const COMPARE = "compare";
 
-function messageOf(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
+function refusalOf(error: unknown): string {
+    return error instanceof ApiError ? (mistakesOf(error)[0]?.message ?? error.message) : messageOf(error);
+}
+
+function isMissing(error: unknown): boolean {
+    return error instanceof ApiError && error.status === 404;
 }
 
 export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
     const number = versionNumberOf(asked);
-    const [detail, setDetail] = useState<VersionDetail | null>(null);
-    const [versions, setVersions] = useState<VersionSummary[]>([]);
-    const [missing, setMissing] = useState(number === null);
-    const [failure, setFailure] = useState<string | null>(null);
-    const [comparison, setComparison] = useState<ComparisonState | null>(null);
     const history = useVersionWindow(bot, number);
     const search = useSearch();
     const [params, setParams] = useSearchParams();
     const compared = versionNumberOf(params.get(COMPARE));
-
-    useEffect(() => {
-        if (number === null) return undefined;
-        const controller = new AbortController();
-        const fail = (error: unknown) => {
-            if (controller.signal.aborted) return;
-            if (error instanceof ApiError && error.status === 404) setMissing(true);
-            else setFailure(messageOf(error));
-        };
-        fetchVersion(bot, number, controller.signal).then(setDetail).catch(fail);
-        fetchVersions(bot, controller.signal).then(setVersions).catch(fail);
-        return () => {
-            controller.abort();
-        };
-    }, [bot, number]);
-
-    useEffect(() => {
-        if (number === null || compared === null) return undefined;
-        const controller = new AbortController();
-        fetchComparison(bot, compared, number, controller.signal)
-            .then((answer) => {
-                setComparison({ with: compared, answer, refusal: null });
-            })
-            .catch((error: unknown) => {
-                if (controller.signal.aborted) return;
-                const refusal = error instanceof ApiError ? (mistakesOf(error)[0]?.message ?? error.message) : messageOf(error);
-                setComparison({ with: compared, answer: null, refusal });
-            });
-        return () => {
-            controller.abort();
-        };
-    }, [bot, number, compared]);
+    const detail = useQuery({
+        queryKey: versionsKey(bot, "item", number),
+        queryFn: number === null ? skipToken : ({ signal }) => fetchVersion(bot, number, signal),
+    });
+    const versions = useQuery({
+        queryKey: versionsKey(bot, "list"),
+        queryFn: number === null ? skipToken : ({ signal }) => fetchVersions(bot, signal),
+    });
+    const comparison = useQuery({
+        queryKey: versionsKey(bot, "diff", compared, number),
+        queryFn:
+            number === null || compared === null || detail.data === undefined
+                ? skipToken
+                : ({ signal }) => fetchComparison(bot, compared, number, signal),
+    });
+    const missing = number === null || isMissing(detail.error) || isMissing(versions.error);
+    const failed = detail.error ?? versions.error;
+    const compareState: ComparisonState | null =
+        compared === null
+            ? null
+            : {
+                  with: compared,
+                  answer: comparison.data ?? null,
+                  refusal: comparison.error === null ? null : refusalOf(comparison.error),
+              };
 
     const listAddress = withListSearch(versionsHref(bot), search);
     const writeCompared = (other: number | null) => {
@@ -73,16 +65,14 @@ export function VersionScreen({ bot, asked }: { bot: string; asked: string }) {
     };
 
     if (missing) return <NoSuchVersion asked={asked} backHref={listAddress} />;
-    if (failure !== null) return <Alert variant="destructive">{failure}</Alert>;
-    if (detail === null) return <Spinner label="Loading the version…" size="sm" />;
+    if (failed !== null) return <Alert variant="destructive">{messageOf(failed)}</Alert>;
+    if (detail.data === undefined) return <Spinner label="Loading the version…" size="sm" />;
     return (
         <VersionView
             bot={bot}
-            detail={detail}
-            versions={versions}
-            comparison={
-                compared === null ? null : comparison?.with === compared ? comparison : { with: compared, answer: null, refusal: null }
-            }
+            detail={detail.data}
+            versions={versions.data ?? []}
+            comparison={compareState}
             history={history}
             onCompare={writeCompared}
             onCloseComparison={() => {

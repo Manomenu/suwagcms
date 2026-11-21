@@ -10,21 +10,21 @@ internal static class ProcedureVersionRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        For(MistakeCodes.ProcedureFirstStepMissing, FirstStep),
-        For(MistakeCodes.StepBlockMissing, NoBlock),
-        For(MistakeCodes.StepBlockEmpty, EmptyBlocks),
-        For(MistakeCodes.StepInformEmpty, InformsNothing),
-        For(MistakeCodes.StepInformPointBlank, BlankPoints),
-        For(MistakeCodes.InstructionBlank, InformBlank),
-        For(MistakeCodes.StepUnreachable, Unreachable),
-        For(MistakeCodes.NextDefaultMissing, NoDefault),
-        For(MistakeCodes.NextDefaultNotLast, DefaultNotLast),
-        For(MistakeCodes.ProcedureNoWhenStalled, NoWhenStalled),
-        For(MistakeCodes.ProcedureInstructionBlank, BlankInstruction),
-        new Rule(MistakeCodes.BotConversationMissing, ValidationStage.Version, NoConversation),
+        For(MistakeCode.ProcedureFirstStepMissing, FirstStep),
+        For(MistakeCode.StepBlockMissing, NoBlock),
+        For(MistakeCode.StepBlockEmpty, EmptyBlocks),
+        For(MistakeCode.StepInformEmpty, InformsNothing),
+        For(MistakeCode.StepInformPointBlank, BlankPoints),
+        For(MistakeCode.InstructionBlank, InformBlank),
+        For(MistakeCode.StepUnreachable, Unreachable),
+        For(MistakeCode.NextDefaultMissing, NoDefault),
+        For(MistakeCode.NextDefaultNotLast, DefaultNotLast),
+        For(MistakeCode.ProcedureNoWhenStalled, NoWhenStalled),
+        For(MistakeCode.ProcedureInstructionBlank, BlankInstruction),
+        new Rule(MistakeCode.BotConversationMissing, ValidationStage.Version, NoConversation),
     ];
 
-    private static Rule For(string code, Func<Procedure, IEnumerable<Mistake>> check) =>
+    private static Rule For(MistakeCode code, Func<Procedure, IEnumerable<Mistake>> check) =>
         ProcedureMistake.For(code, ValidationStage.Version, (_, procedure) => check(procedure));
 
     private static IEnumerable<Mistake> FirstStep(Procedure procedure)
@@ -33,7 +33,7 @@ internal static class ProcedureVersionRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ProcedureFirstStepMissing,
+                MistakeCode.ProcedureFirstStepMissing,
                 "firstStep",
                 $"'{procedure.Id}' has no firstStep.",
                 $"Add 'firstStep: <step>'. {ProcedureMistake.StepList(procedure)}"
@@ -47,7 +47,7 @@ internal static class ProcedureVersionRules
             .Select(step =>
                 Make(
                     procedure,
-                    MistakeCodes.StepBlockMissing,
+                    MistakeCode.StepBlockMissing,
                     $"steps.{step.Key}",
                     $"Step '{step.Key}' has no block.",
                     $"Give it exactly one block: {string.Join(", ", Block.Names)}."
@@ -60,7 +60,7 @@ internal static class ProcedureVersionRules
                     block.Gap is { } gap
                         ? Make(
                             procedure,
-                            MistakeCodes.StepBlockEmpty,
+                            MistakeCode.StepBlockEmpty,
                             $"steps.{step.Key}.{block.Name}",
                             $"In step '{step.Key}', {gap.Message}",
                             gap.Fix
@@ -76,7 +76,7 @@ internal static class ProcedureVersionRules
             .Select(step =>
                 Make(
                     procedure,
-                    MistakeCodes.StepInformEmpty,
+                    MistakeCode.StepInformEmpty,
                     $"steps.{step.Key}.inform",
                     $"'inform' of step '{step.Key}' has no points.",
                     "List what the customer must hear: points: { name: what must be said }."
@@ -90,7 +90,7 @@ internal static class ProcedureVersionRules
                 .Select(point =>
                     Make(
                         procedure,
-                        MistakeCodes.StepInformPointBlank,
+                        MistakeCode.StepInformPointBlank,
                         $"steps.{step.Key}.inform.points.{point.Key}",
                         $"Point '{point.Key}' of 'inform' of step '{step.Key}' has no text.",
                         "Write what the customer must hear after the point's name."
@@ -104,7 +104,7 @@ internal static class ProcedureVersionRules
             .Select(step =>
                 Make(
                     procedure,
-                    MistakeCodes.InstructionBlank,
+                    MistakeCode.InstructionBlank,
                     $"steps.{step.Key}.inform.instruction",
                     $"'inform' of step '{step.Key}' has no instruction.",
                     "Say what the agent should do with these points."
@@ -136,7 +136,7 @@ internal static class ProcedureVersionRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.StepUnreachable,
+                MistakeCode.StepUnreachable,
                 $"steps.{name}",
                 $"No path from firstStep reaches step '{name}'.",
                 "Connect it from the next of a step that is reached, or delete it."
@@ -150,7 +150,7 @@ internal static class ProcedureVersionRules
             .Select(step =>
                 Make(
                     procedure,
-                    MistakeCodes.NextDefaultMissing,
+                    MistakeCode.NextDefaultMissing,
                     $"steps.{step.Key}.next",
                     $"The If of step '{step.Key}' has no Else.",
                     "Add an Else: a last branch with only 'to: <step>', taken when no condition holds."
@@ -166,7 +166,7 @@ internal static class ProcedureVersionRules
                 .Select(item =>
                     Make(
                         procedure,
-                        MistakeCodes.NextDefaultNotLast,
+                        MistakeCode.NextDefaultNotLast,
                         string.Create(CultureInfo.InvariantCulture, $"steps.{step.Key}.next[{item.index}]"),
                         string.Create(
                             CultureInfo.InvariantCulture,
@@ -183,7 +183,7 @@ internal static class ProcedureVersionRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ProcedureNoWhenStalled,
+                MistakeCode.ProcedureNoWhenStalled,
                 "whenStalled",
                 $"'{procedure.Id}' has a collect step and no whenStalled.",
                 "Add whenStalled with an instruction saying what the agent does when the customer gets stuck."
@@ -197,7 +197,7 @@ internal static class ProcedureVersionRules
         {
             yield return Make(
                 procedure,
-                MistakeCodes.ProcedureInstructionBlank,
+                MistakeCode.ProcedureInstructionBlank,
                 "whenStalled.instruction",
                 $"The whenStalled of '{procedure.Id}' has a blank instruction.",
                 "Write what the agent does when the customer gets stuck."
@@ -210,7 +210,7 @@ internal static class ProcedureVersionRules
         if (!definition.Procedures.Any(procedure => procedure.Id == Procedure.ConversationId))
         {
             yield return new Mistake(
-                MistakeCodes.BotConversationMissing,
+                MistakeCode.BotConversationMissing,
                 ValidationStage.Version,
                 new ResourceRef(ResourceKind.Definition, string.Empty),
                 "procedures",
@@ -221,6 +221,6 @@ internal static class ProcedureVersionRules
         }
     }
 
-    private static Mistake Make(Procedure procedure, string code, string path, string message, string fix) =>
+    private static Mistake Make(Procedure procedure, MistakeCode code, string path, string message, string fix) =>
         ProcedureMistake.Make(procedure, code, ValidationStage.Version, path, message, fix);
 }

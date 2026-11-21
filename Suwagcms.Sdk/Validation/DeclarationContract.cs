@@ -29,7 +29,7 @@ internal static class DeclarationContract
                 if (differences.Count > 0)
                 {
                     yield return Make(
-                        MistakeCodes.ActionCodeContract,
+                        MistakeCode.ActionCodeContract,
                         action,
                         $"Code action '{action.Id}' differs from what the bot declares: {string.Join("; ", differences)}.",
                         "Ask the bot again so the CMS brings its copy in line, or change the bot and deploy."
@@ -39,7 +39,7 @@ internal static class DeclarationContract
             else if (said is not null)
             {
                 yield return Make(
-                    MistakeCodes.ActionCodeConflict,
+                    MistakeCode.ActionCodeConflict,
                     action,
                     $"Action '{action.Id}' is an HTTP action here, and the bot also declares a code action of that id: one id has two sources.",
                     $"Remove or rename the HTTP action '{action.Id}', or rename the code action in the bot."
@@ -54,7 +54,7 @@ internal static class DeclarationContract
         var steps = ReferenceWalker.From(definition).Where(reference => reference.To == target).ToList();
         var where = string.Join(", ", steps.Select(reference => $"{reference.Path} of procedure '{reference.From.Id}'"));
         return Make(
-            MistakeCodes.ActionCodeUndeclared,
+            MistakeCode.ActionCodeUndeclared,
             action,
             steps.Count == 0
                 ? $"The bot no longer has code action '{action.Id}'."
@@ -99,7 +99,7 @@ internal static class DeclarationContract
         };
 
     private static Mistake Make(
-        string code,
+        MistakeCode code,
         BotAction action,
         string message,
         string fix,

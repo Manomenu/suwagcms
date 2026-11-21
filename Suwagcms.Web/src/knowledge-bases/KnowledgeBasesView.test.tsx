@@ -32,7 +32,7 @@ function view(list: KnowledgeBase[]): string {
     );
 }
 
-function mistake(code: string, path: string, resource: string): Mistake {
+function mistake(code: Mistake["code"], path: string, resource: string): Mistake {
     return { code, path, message: "m", fix: "f", stage: "Save", resource: { kind: "KnowledgeBase", id: resource }, related: [] };
 }
 

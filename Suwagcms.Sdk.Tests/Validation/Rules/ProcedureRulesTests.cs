@@ -19,7 +19,7 @@ public sealed class ProcedureRulesTests
         DefinitionValidator.Validate(ProcedureSamples.Bot(procedure), stage);
 
     private static string[] Codes(Procedure procedure, ValidationStage stage = ValidationStage.Save) =>
-        [.. Check(procedure, stage).Select(mistake => mistake.Code)];
+        [.. Check(procedure, stage).Select(mistake => mistake.Code.Text())];
 
     private static Procedure Step(string name, ProcedureStep step) => ProcedureSamples.WithStep(name, step);
 
@@ -52,7 +52,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(Check(ProcedureSamples.All with { Description = description }));
 
-        Assert.Equal(MistakeCodes.ProcedureDescriptionMissing, mistake.Code);
+        Assert.Equal(MistakeCode.ProcedureDescriptionMissing, mistake.Code);
         Assert.Equal("description", mistake.Path);
         Assert.Contains("when the procedure is used", mistake.Fix, StringComparison.Ordinal);
     }
@@ -67,7 +67,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(Check(ProcedureSamples.All with { Id = id }));
 
-        Assert.Equal(MistakeCodes.ProcedureIdInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.ProcedureIdInvalid, mistake.Code);
         Assert.Contains($"'{suggested}'", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -77,7 +77,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(Check(Step("Say bye", new ProcedureStep { Say = "Bye" })));
 
-        Assert.Equal((MistakeCodes.StepNameInvalid, "steps.Say bye"), (mistake.Code, mistake.Path));
+        Assert.Equal(("step.name.invalid", "steps.Say bye"), (mistake.Code.Text(), mistake.Path));
         Assert.Contains("'sayBye'", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -89,7 +89,7 @@ public sealed class ProcedureRulesTests
             DefinitionValidator.Validate(ProcedureSamples.Bot(ProcedureSamples.All, ProcedureSamples.All), ValidationStage.Save)
         );
 
-        Assert.Equal(MistakeCodes.DuplicateId, mistake.Code);
+        Assert.Equal(MistakeCode.DuplicateId, mistake.Code);
         Assert.Equal(["procedures[0]", "procedures[1]"], mistake.Related.Select(related => related.Location));
     }
 
@@ -100,7 +100,7 @@ public sealed class ProcedureRulesTests
         var extra = new Dictionary<string, JsonElement> { ["speak"] = JsonDocument.Parse("\"hi\"").RootElement };
         var mistake = Assert.Single(Check(Step("talk", new ProcedureStep { UnknownBlocks = extra })));
 
-        Assert.Equal((MistakeCodes.StepBlockUnknown, "steps.talk.speak"), (mistake.Code, mistake.Path));
+        Assert.Equal(("step.block.unknown", "steps.talk.speak"), (mistake.Code.Text(), mistake.Path));
         Assert.Contains("listen, collect, say, assign", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -110,7 +110,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(Check(Step("both", new ProcedureStep { Listen = new ListenArguments(), Say = "Hi" })));
 
-        Assert.Equal(MistakeCodes.StepBlockMultiple, mistake.Code);
+        Assert.Equal(MistakeCode.StepBlockMultiple, mistake.Code);
         Assert.Contains("listen, say", mistake.Message, StringComparison.Ordinal);
         Assert.Contains("listen, collect, say, assign", mistake.Fix, StringComparison.Ordinal);
     }
@@ -139,7 +139,7 @@ public sealed class ProcedureRulesTests
 
         var found = new[] { byNext, byTo, byFirst }.Select(procedure => Assert.Single(Check(procedure))).ToList();
 
-        Assert.All(found, mistake => Assert.Equal(MistakeCodes.StepMissing, mistake.Code));
+        Assert.All(found, mistake => Assert.Equal(MistakeCode.StepMissing, mistake.Code));
         Assert.All(found, mistake => Assert.Matches("^Steps of 'orderValuation': .*ask, .*goodbye", mistake.Fix));
         Assert.Equal(["steps.bad.next", "steps.bad.next[0].to", "firstStep"], found.Select(mistake => mistake.Path));
     }
@@ -162,7 +162,7 @@ public sealed class ProcedureRulesTests
             )
         );
 
-        Assert.Equal(MistakeCodes.StepMissing, mistake.Code);
+        Assert.Equal(MistakeCode.StepMissing, mistake.Code);
         Assert.Equal("Add a step to this branch, or a Next: row.", mistake.Fix);
     }
 
@@ -196,7 +196,7 @@ public sealed class ProcedureRulesTests
             },
         };
 
-        var found = Check(procedure).Where(mistake => mistake.Code == MistakeCodes.ReferenceMissing).ToList();
+        var found = Check(procedure).Where(mistake => mistake.Code == MistakeCode.ReferenceMissing).ToList();
 
         Assert.Equal(["steps.a.collect[0]", "steps.b.assign.nowhere", "steps.c.next[0].when.gone"], found.Select(mistake => mistake.Path));
         Assert.Contains(
@@ -233,7 +233,7 @@ public sealed class ProcedureRulesTests
 
         var back = JsonSerializer.Deserialize<Procedure>(JsonSerializer.Serialize(procedure, Wire), Wire);
 
-        Assert.DoesNotContain(Check(procedure, ValidationStage.Version), mistake => mistake.Code == MistakeCodes.ReferenceMissing);
+        Assert.DoesNotContain(Check(procedure, ValidationStage.Version), mistake => mistake.Code == MistakeCode.ReferenceMissing);
         Assert.Empty(Check(procedure));
         Assert.Equal(Text, back?.Steps["only"].Say);
     }
@@ -246,7 +246,7 @@ public sealed class ProcedureRulesTests
 
         var mistakes = Check(procedure);
 
-        Assert.All(mistakes, mistake => Assert.Equal((MistakeCodes.ReferenceMissing, "steps.only.say"), (mistake.Code, mistake.Path)));
+        Assert.All(mistakes, mistake => Assert.Equal(("reference.missing", "steps.only.say"), (mistake.Code.Text(), mistake.Path)));
         Assert.Equal(
             [
                 "A placeholder in 'say' of step 'only' in 'p' names fact 'customer.cty', which this procedure does not see.",
@@ -269,7 +269,7 @@ public sealed class ProcedureRulesTests
         );
 
         Assert.All(
-            mistakes.Where(mistake => mistake.Code == MistakeCodes.ReferenceMissing),
+            mistakes.Where(mistake => mistake.Code == MistakeCode.ReferenceMissing),
             mistake => Assert.Contains("no facts yet", mistake.Fix, StringComparison.Ordinal)
         );
         Assert.NotEmpty(mistakes);
@@ -281,7 +281,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(
             Check(Step("ask", new ProcedureStep { Collect = ["system.flag"] })),
-            found => found.Code == MistakeCodes.FactCollectNotWritable
+            found => found.Code == MistakeCode.FactCollectNotWritable
         );
 
         Assert.Equal("steps.ask.collect[0]", mistake.Path);
@@ -293,7 +293,7 @@ public sealed class ProcedureRulesTests
     [Fact]
     [Trait("criterion", "AC-procedure-model-7")]
     public void An_assign_may_write_a_fact_with_writableBy_assign() =>
-        Assert.DoesNotContain(MistakeCodes.FactCollectNotWritable, Codes(ProcedureSamples.All));
+        Assert.DoesNotContain("fact.collect.notWritable", Codes(ProcedureSamples.All));
 
     private static ProcedureStep When(string fact, Condition condition) =>
         new()
@@ -319,7 +319,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(Check(Step("pick", When("order.kind", new Condition { Range = new NumberRange { Min = 1 } }))));
 
-        Assert.Equal((MistakeCodes.ConditionTypeMisfit, "steps.pick.next[0].when.order.kind.range"), (mistake.Code, mistake.Path));
+        Assert.Equal(("condition.type.misfit", "steps.pick.next[0].when.order.kind.range"), (mistake.Code.Text(), mistake.Path));
         Assert.Contains("an enum fact: oneOf, known", mistake.Fix, StringComparison.Ordinal);
     }
 
@@ -333,7 +333,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(Check(Step("pick", When(fact, new Condition { OneOf = [value] }))));
 
-        Assert.Equal((MistakeCodes.ConditionValueInvalid, $"steps.pick.next[0].when.{fact}.oneOf[0]"), (mistake.Code, mistake.Path));
+        Assert.Equal(("condition.value.invalid", $"steps.pick.next[0].when.{fact}.oneOf[0]"), (mistake.Code.Text(), mistake.Path));
         Assert.Equal(fix, mistake.Fix);
     }
 
@@ -362,7 +362,7 @@ public sealed class ProcedureRulesTests
             )
         );
 
-        Assert.Equal(MistakeCodes.ConditionValueInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.ConditionValueInvalid, mistake.Code);
         Assert.Equal("Use a whole number from 1 to 40.", mistake.Fix);
     }
 
@@ -373,7 +373,7 @@ public sealed class ProcedureRulesTests
         var none = Assert.Single(Check(Step("pick", When("order.kind", new Condition()))));
         var two = Assert.Single(Check(Step("pick", When("order.kind", new Condition { Known = true, OneOf = ["house"] }))));
 
-        Assert.All([none, two], mistake => Assert.Equal(MistakeCodes.ConditionKindInvalid, mistake.Code));
+        Assert.All([none, two], mistake => Assert.Equal(MistakeCode.ConditionKindInvalid, mistake.Code));
         Assert.Empty(Check(Step("pick", When("order.kind", new Condition { Known = false }))));
     }
 
@@ -385,7 +385,7 @@ public sealed class ProcedureRulesTests
     {
         var mistake = Assert.Single(Check(Step("set", new ProcedureStep { Assign = new Dictionary<string, string> { [fact] = value } })));
 
-        Assert.Equal((MistakeCodes.AssignValueInvalid, $"steps.set.assign.{fact}"), (mistake.Code, mistake.Path));
+        Assert.Equal(("assign.value.invalid", $"steps.set.assign.{fact}"), (mistake.Code.Text(), mistake.Path));
         Assert.Equal(fix, mistake.Fix);
     }
 
@@ -426,29 +426,29 @@ public sealed class ProcedureRulesTests
         Assert.Empty(Check(unfinished));
         Assert.Equal(
             [
-                MistakeCodes.BotConversationMissing,
-                MistakeCodes.NextDefaultMissing,
-                MistakeCodes.ProcedureFirstStepMissing,
-                MistakeCodes.ProcedureInstructionBlank,
-                MistakeCodes.StepBlockEmpty,
-                MistakeCodes.StepBlockEmpty,
-                MistakeCodes.StepBlockEmpty,
-                MistakeCodes.StepBlockMissing,
+                "bot.conversation.missing",
+                "next.default.missing",
+                "procedure.firstStep.missing",
+                "procedure.whenStalled.blank",
+                "step.block.empty",
+                "step.block.empty",
+                "step.block.empty",
+                "step.block.missing",
             ],
             Codes(unfinished, ValidationStage.Version).Order(StringComparer.Ordinal)
         );
         Assert.Equal(
             [
-                MistakeCodes.BotConversationMissing,
-                MistakeCodes.NextDefaultMissing,
-                MistakeCodes.ProcedureNoWhenStalled,
-                MistakeCodes.StepBlockEmpty,
-                MistakeCodes.StepBlockEmpty,
-                MistakeCodes.StepBlockEmpty,
-                MistakeCodes.StepBlockMissing,
-                MistakeCodes.StepUnreachable,
-                MistakeCodes.StepUnreachable,
-                MistakeCodes.StepUnreachable,
+                "bot.conversation.missing",
+                "next.default.missing",
+                "procedure.collect.noWhenStalled",
+                "step.block.empty",
+                "step.block.empty",
+                "step.block.empty",
+                "step.block.missing",
+                "step.unreachable",
+                "step.unreachable",
+                "step.unreachable",
             ],
             Codes(withFirst, ValidationStage.Version).Order(StringComparer.Ordinal)
         );
@@ -465,7 +465,7 @@ public sealed class ProcedureRulesTests
         );
 
         var mistake = Assert.Single(without);
-        Assert.Equal((MistakeCodes.BotConversationMissing, ValidationStage.Version), (mistake.Code, mistake.Stage));
+        Assert.Equal(("bot.conversation.missing", ValidationStage.Version), (mistake.Code.Text(), mistake.Stage));
         Assert.Contains("'conversation'", mistake.Fix, StringComparison.Ordinal);
         Assert.Contains("one listen step whose next returns to itself", mistake.Fix, StringComparison.Ordinal);
         Assert.Empty(with);
@@ -499,7 +499,7 @@ public sealed class ProcedureRulesTests
     {
         var procedure = ProcedureSamples.WithStep("lonely", new ProcedureStep { Say = "Nobody comes here" });
 
-        var mistake = Assert.Single(Check(procedure, ValidationStage.Version), found => found.Code == MistakeCodes.StepUnreachable);
+        var mistake = Assert.Single(Check(procedure, ValidationStage.Version), found => found.Code == MistakeCode.StepUnreachable);
 
         Assert.Equal("steps.lonely", mistake.Path);
         Assert.Contains("No path from firstStep reaches step 'lonely'", mistake.Message, StringComparison.Ordinal);
@@ -517,11 +517,8 @@ public sealed class ProcedureRulesTests
 
         Assert.Empty(atSave);
         Assert.Equal(
-            [
-                (MistakeCodes.BotConversationMissing, ValidationStage.Version),
-                (MistakeCodes.ProcedureFirstStepMissing, ValidationStage.Version),
-            ],
-            atVersion.Select(mistake => (mistake.Code, mistake.Stage)).Order()
+            [("bot.conversation.missing", ValidationStage.Version), ("procedure.firstStep.missing", ValidationStage.Version)],
+            atVersion.Select(mistake => (mistake.Code.Text(), mistake.Stage)).Order()
         );
     }
 
@@ -541,7 +538,7 @@ public sealed class ProcedureRulesTests
 
         Assert.Equal("wait", conversation.Steps["confirm"].Next?.Step);
         Assert.Empty(DefinitionValidator.Validate(ProcedureSamples.Bot(conversation), ValidationStage.Version));
-        Assert.DoesNotContain(MistakeCodes.StepMissing, Codes(selfLoop, ValidationStage.Version));
+        Assert.DoesNotContain("step.missing", Codes(selfLoop, ValidationStage.Version));
     }
 
     [Fact]
@@ -608,7 +605,7 @@ public sealed class ProcedureRulesTests
                 ProcedureSamples.Bot(ProcedureSamples.WithStep("hello", step, "hello"), Samples.Procedure(Procedure.ConversationId)),
                 ValidationStage.Version
             ),
-            found => found.Code == MistakeCodes.NextDefaultNotLast
+            found => found.Code == MistakeCode.NextDefaultNotLast
         );
 
         Assert.Equal("steps.hello.next[0]", mistake.Path);

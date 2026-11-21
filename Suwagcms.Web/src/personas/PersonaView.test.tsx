@@ -8,7 +8,7 @@ import { PersonaView } from "./PersonaView";
 
 const form: PersonaForm = { personality: "One\nTwo", inScope: "In", outOfScope: "Out", whenOutOfScope: "Decline" };
 
-function mistake(path: string, code: string, message: string): Mistake {
+function mistake(path: string, code: Mistake["code"], message: string): Mistake {
     return { code, stage: "Save", resource: { kind: "Persona", id: "persona" }, path, message, fix: "The fix.", related: [] };
 }
 

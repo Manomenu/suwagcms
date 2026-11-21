@@ -42,7 +42,7 @@ public sealed class DeclarationValidatorTests
     private static string Json(BotDefinition definition) => System.Text.Json.JsonSerializer.Serialize(definition, Web);
 
     private static string[] Codes(IEnumerable<Mistake> mistakes) =>
-        [.. mistakes.Select(mistake => mistake.Code).Order(StringComparer.Ordinal)];
+        [.. mistakes.Select(mistake => mistake.Code.Text()).Order(StringComparer.Ordinal)];
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-7")]
@@ -79,13 +79,7 @@ public sealed class DeclarationValidatorTests
         var mistakes = DeclarationValidator.CheckAnswer(answer, "rzeczoznawca");
 
         Assert.Equal(
-            [
-                MistakeCodes.CodeActionDescriptionMissing,
-                MistakeCodes.CodeActionRepeated,
-                MistakeCodes.DeclarationBlockUnknown,
-                MistakeCodes.DeclarationBot,
-                MistakeCodes.FactTypeInvalid,
-            ],
+            ["codeAction.description.missing", "codeAction.repeated", "declaration.block.unknown", "declaration.bot", "fact.type.invalid"],
             Codes(mistakes)
         );
         Assert.All(
@@ -108,7 +102,7 @@ public sealed class DeclarationValidatorTests
         var answer = new BotDeclaration { Bot = "rzeczoznawca", CodeActions = [new() { Description = "Nameless" }] };
 
         Assert.Equal(
-            [MistakeCodes.CodeActionIdMissing, MistakeCodes.DeclarationBlocksMissing, MistakeCodes.DeclarationFormatMissing],
+            ["codeAction.id.missing", "declaration.blocks.missing", "declaration.formatVersion.missing"],
             Codes(DeclarationValidator.CheckAnswer(answer, "rzeczoznawca"))
         );
     }
@@ -125,7 +119,7 @@ public sealed class DeclarationValidatorTests
 
         Assert.Null(declaration);
         var mistake = Assert.Single(mistakes);
-        Assert.Equal(MistakeCodes.DeclarationInvalid, mistake.Code);
+        Assert.Equal(MistakeCode.DeclarationInvalid, mistake.Code);
         Assert.Equal(path, mistake.Path);
     }
 
@@ -151,7 +145,7 @@ public sealed class DeclarationValidatorTests
 
         Assert.True(answer.DeclaresNothing);
         Assert.Empty(DeclarationValidator.CheckAnswer(answer, "rzeczoznawca"));
-        Assert.Equal([MistakeCodes.DeclarationBot], Codes(DeclarationValidator.CheckAnswer(answer, "another")));
+        Assert.Equal(["declaration.bot"], Codes(DeclarationValidator.CheckAnswer(answer, "another")));
     }
 
     [Theory]
@@ -164,7 +158,7 @@ public sealed class DeclarationValidatorTests
 
         var mistake = Assert.Single(DefinitionValidator.Validate(Definition, ValidationStage.Version, declaration));
 
-        Assert.Equal(MistakeCodes.DeclarationFormatVersion, mistake.Code);
+        Assert.Equal(MistakeCode.DeclarationFormatVersion, mistake.Code);
         Assert.Equal(ValidationStage.Version, mistake.Stage);
         Assert.Equal($"This definition is format 5 and the bot wants format {wanted}.", mistake.Message);
         Assert.Contains("declare format 5 in the bot", mistake.Fix, StringComparison.Ordinal);
@@ -180,7 +174,7 @@ public sealed class DeclarationValidatorTests
         var mistakes = DefinitionValidator.Validate(Definition, ValidationStage.Version, declaration);
 
         var collect = Assert.Single(mistakes);
-        Assert.Equal(MistakeCodes.DeclarationBlock, collect.Code);
+        Assert.Equal(MistakeCode.DeclarationBlock, collect.Code);
         Assert.Equal(new ResourceRef(ResourceKind.Procedure, "orderValuation"), collect.Resource);
         Assert.EndsWith(".collect", collect.Path, StringComparison.Ordinal);
         Assert.Contains("procedure 'orderValuation'", collect.Message, StringComparison.Ordinal);
@@ -215,10 +209,7 @@ public sealed class DeclarationValidatorTests
             Codes(DefinitionValidator.Validate(Definition, ValidationStage.Version, declaration)),
             Codes(DefinitionValidator.ValidateJson(Json(Definition), ValidationStage.Version, declaration))
         );
-        Assert.Equal(
-            [MistakeCodes.FormatInvalid],
-            Codes(DefinitionValidator.ValidateJson("{ not json", ValidationStage.Version, declaration))
-        );
+        Assert.Equal(["format.invalid"], Codes(DefinitionValidator.ValidateJson("{ not json", ValidationStage.Version, declaration)));
     }
 
     private static BotDefinition WithBases(params (string Id, string Embedding)[] bases) =>
@@ -257,7 +248,7 @@ public sealed class DeclarationValidatorTests
 
         var mistakes = DefinitionValidator
             .Validate(definition, ValidationStage.Version, declaration)
-            .Where(found => found.Code == MistakeCodes.DeclarationEmbeddingProfile)
+            .Where(found => found.Code == MistakeCode.DeclarationEmbeddingProfile)
             .ToList();
 
         Assert.Equal(["legal", "rules"], mistakes.Select(found => found.Resource.Id));
@@ -274,7 +265,7 @@ public sealed class DeclarationValidatorTests
         );
         Assert.DoesNotContain(
             DefinitionValidator.Validate(definition, ValidationStage.Save, declaration),
-            found => found.Code == MistakeCodes.DeclarationEmbeddingProfile
+            found => found.Code == MistakeCode.DeclarationEmbeddingProfile
         );
     }
 
@@ -287,7 +278,7 @@ public sealed class DeclarationValidatorTests
         {
             return DefinitionValidator
                 .Validate(definition, ValidationStage.Version, declaration)
-                .Where(found => found.Code == MistakeCodes.DeclarationEmbeddingProfile);
+                .Where(found => found.Code == MistakeCode.DeclarationEmbeddingProfile);
         }
 
         Assert.Empty(Profiles(definition, Good() with { EmbeddingProfiles = ["LEGALTEXT"] }));
@@ -351,7 +342,7 @@ public sealed class DeclarationValidatorTests
     private static IEnumerable<Mistake> TooLong(BotDefinition definition, int? limit) =>
         DefinitionValidator
             .Validate(definition, ValidationStage.Version, Good() with { Knowledge = true, NamedArticlesLimit = limit })
-            .Where(found => found.Code == MistakeCodes.DeclarationNamedArticlesTooLong);
+            .Where(found => found.Code == MistakeCode.DeclarationNamedArticlesTooLong);
 
     [Fact]
     [Trait("criterion", "AC-bot-declaration-21")]

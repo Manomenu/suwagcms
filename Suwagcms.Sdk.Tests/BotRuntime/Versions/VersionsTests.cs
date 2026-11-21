@@ -1,7 +1,6 @@
 using System.Net;
 using Suwagcms.Sdk.BotRuntime;
 using Suwagcms.Sdk.BotRuntime.Versions;
-using Suwagcms.Sdk.Validation;
 
 namespace Suwagcms.Sdk.Tests.BotRuntime.Versions;
 
@@ -46,7 +45,7 @@ public sealed class VersionsTests
         Assert.Equal(HttpStatusCode.OK, again);
         Assert.Equal(before, BotHost.Describe(await bot.StateAsync()));
         Assert.Equal(HttpStatusCode.Conflict, conflict);
-        Assert.Equal(MistakeCodes.VersionConflict, body.Member("mistakes").Item(0).Member("code").Text());
+        Assert.Equal("version.conflict", body.Member("mistakes").Item(0).Member("code").Text());
         Assert.Equal("a", (await bot.Definitions.GetAsync(2, TestContext.Current.CancellationToken)).Facts.Single().Name);
         Assert.Equal(before, BotHost.Describe(await bot.StateAsync()));
     }
