@@ -15,10 +15,9 @@ public sealed class VersionComparerTests
         int number = 1,
         int format = 1,
         string digest = "aaa"
-    ) =>
-        $$"""
-            {"formatVersion":{{format}},"bot":"rzeczoznawca","number":{{number}},"digest":"{{digest}}","facts":[{{facts}}],"knowledgeBases":[{{knowledgeBases}}],"articles":[{{articles}}],"actions":[],"procedures":[{{procedures}}]}
-            """;
+    ) => $$"""
+        {"formatVersion":{{format}},"bot":"rzeczoznawca","number":{{number}},"digest":"{{digest}}","facts":[{{facts}}],"knowledgeBases":[{{knowledgeBases}}],"articles":[{{articles}}],"actions":[],"procedures":[{{procedures}}]}
+        """;
 
     private static VersionComparison Compare(string before, string after) => VersionComparer.Compare("rzeczoznawca", 12, 14, before, after);
 

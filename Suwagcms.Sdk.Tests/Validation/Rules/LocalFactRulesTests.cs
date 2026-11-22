@@ -104,9 +104,8 @@ public sealed class LocalFactRulesTests
     {
         var bad = Note with { Description = description, Type = type };
 
-        var mistake = Assert.Single(
-            Check(Procedure("mine", new Dictionary<string, LocalFact> { ["note"] = bad })),
-            found => found.Code.Text() == code
+        var mistake = Assert.Single(Check(Procedure("mine", new Dictionary<string, LocalFact> { ["note"] = bad })), found =>
+            found.Code.Text() == code
         );
 
         Assert.Equal(new ResourceRef(ResourceKind.Procedure, "mine"), mistake.Resource);

@@ -300,9 +300,8 @@ public sealed class ActionsTests : IDisposable
             .Split('\n')
             .Where(line => line.StartsWith("- `suwagcms actions ", StringComparison.Ordinal));
 
-        Assert.Contains(
-            lines,
-            line => line.Contains("A code action is read-only: change it in the bot's code and deploy", StringComparison.Ordinal)
+        Assert.Contains(lines, line =>
+            line.Contains("A code action is read-only: change it in the bot's code and deploy", StringComparison.Ordinal)
         );
     }
 

@@ -35,8 +35,8 @@ internal sealed partial class VersionRuntime(
             return known;
         }
 
-        var json =
-            await store.ReadVersionAsync(number, cancellationToken) ?? throw new KeyNotFoundException($"Version {number} is not held.");
+        var json = await store.ReadVersionAsync(number, cancellationToken)
+            ?? throw new KeyNotFoundException($"Version {number} is not held.");
         return loaded.GetOrAdd(number, BotDefinition.Read(json));
     }
 

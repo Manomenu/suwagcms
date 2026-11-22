@@ -364,9 +364,8 @@ public sealed class ActionEndpointsTests(TestDatabase database, ClassServer serv
             await client.GetAsync($"/api/bots/{api.Bot}/versions/{number}/export", TestContext.Current.CancellationToken)
         );
 
-        var file = Assert.Single(
-            export.GetProperty("files").EnumerateArray(),
-            file => file.GetProperty("path").GetString() == "actions/check.yaml"
+        var file = Assert.Single(export.GetProperty("files").EnumerateArray(), file =>
+            file.GetProperty("path").GetString() == "actions/check.yaml"
         );
         Assert.Contains("{secret:CRM_TOKEN}", file.GetProperty("data").GetRawText(), StringComparison.Ordinal);
     }

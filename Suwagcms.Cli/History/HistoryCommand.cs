@@ -72,47 +72,41 @@ internal static class HistoryCommand
                 result.AddError("--kind narrows the whole bot's history: leave out `<kind> <id>`, or leave out --kind for one resource.");
             }
         });
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var word = parsed.GetValue(kind);
+            var narrowed = parsed.GetValue(only);
+            var resource = word == PersonaWord ? PersonaWord : parsed.GetValue(id);
+            if (parsed.GetValue(options.Open))
             {
-                var word = parsed.GetValue(kind);
-                var narrowed = parsed.GetValue(only);
-                var resource = word == PersonaWord ? PersonaWord : parsed.GetValue(id);
-                if (parsed.GetValue(options.Open))
-                {
-                    await WebPage.ShowAsync(
-                        narrowed is null ? PageOf(target, word, resource, parsed.GetValue(page)) : target.PageOf(Collections[narrowed]),
-                        parsed.InvocationConfiguration.Output,
-                        parsed.InvocationConfiguration.Error,
-                        target.Machine.OpenBrowser
-                    );
-                    return ExitCodes.Done;
-                }
-                var path = word is null
-                    ? target.CollectionPath("history")
-                    : target.ItemPath(Collections[word], resource ?? "") + "/history";
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    path
-                        + Query(
-                            parsed.GetValue(limit),
-                            parsed.GetValue(before),
-                            parsed.GetValue(page),
-                            narrowed is null ? null : Collections[narrowed]
-                        ),
-                    cancellationToken
+                await WebPage.ShowAsync(
+                    narrowed is null ? PageOf(target, word, resource, parsed.GetValue(page)) : target.PageOf(Collections[narrowed]),
+                    parsed.InvocationConfiguration.Output,
+                    parsed.InvocationConfiguration.Error,
+                    target.Machine.OpenBrowser
                 );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var shown = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no history");
-                return await target.Run.Report.DoneAsync(shown, HistoryText.Page(shown, word is null, parsed.GetValue(page)));
+                return ExitCodes.Done;
             }
-        );
+            var path = word is null ? target.CollectionPath("history") : target.ItemPath(Collections[word], resource ?? "") + "/history";
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                path
+                    + Query(
+                        parsed.GetValue(limit),
+                        parsed.GetValue(before),
+                        parsed.GetValue(page),
+                        narrowed is null ? null : Collections[narrowed]
+                    ),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var shown = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no history");
+            return await target.Run.Report.DoneAsync(shown, HistoryText.Page(shown, word is null, parsed.GetValue(page)));
+        });
         return command;
     }
 

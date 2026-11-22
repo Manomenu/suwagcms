@@ -41,42 +41,38 @@ internal static class ExportCommand
                 result.AddError("--out is required: name a new or empty folder, like `suwagcms export 14 --out ./v14`.");
             }
         });
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var folder = parsed.GetValue(output);
+            if (folder is not null && FolderProblem(folder) is { } busy)
             {
-                var folder = parsed.GetValue(output);
-                if (folder is not null && FolderProblem(folder) is { } busy)
-                {
-                    return await RefusedAsync(target, busy);
-                }
-                var (version, failed) = await VersionAsync(target, parsed.GetValue(number), cancellationToken);
-                if (version is not { } chosen)
-                {
-                    return failed;
-                }
-                var exported = 0;
-                if (folder is not null)
-                {
-                    exported = await WriteAsync(target, chosen, folder, cancellationToken);
-                    if (exported != ExitCodes.Done)
-                    {
-                        return exported;
-                    }
-                }
-                if (parsed.GetValue(options.Open))
-                {
-                    await WebPage.ShowAsync(
-                        new Uri(target.PageOf(VersionsCommand.Collection), string.Create(CultureInfo.InvariantCulture, $"?open={chosen}")),
-                        parsed.InvocationConfiguration.Output,
-                        parsed.InvocationConfiguration.Error,
-                        target.Machine.OpenBrowser
-                    );
-                }
-                return exported;
+                return await RefusedAsync(target, busy);
             }
-        );
+            var (version, failed) = await VersionAsync(target, parsed.GetValue(number), cancellationToken);
+            if (version is not { } chosen)
+            {
+                return failed;
+            }
+            var exported = 0;
+            if (folder is not null)
+            {
+                exported = await WriteAsync(target, chosen, folder, cancellationToken);
+                if (exported != ExitCodes.Done)
+                {
+                    return exported;
+                }
+            }
+            if (parsed.GetValue(options.Open))
+            {
+                await WebPage.ShowAsync(
+                    new Uri(target.PageOf(VersionsCommand.Collection), string.Create(CultureInfo.InvariantCulture, $"?open={chosen}")),
+                    parsed.InvocationConfiguration.Output,
+                    parsed.InvocationConfiguration.Error,
+                    target.Machine.OpenBrowser
+                );
+            }
+            return exported;
+        });
         return command;
     }
 

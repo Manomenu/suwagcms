@@ -13,8 +13,8 @@ internal sealed class ActionTestRoute(
 {
     public async Task<ActionOutcome> RunAsync(string body, CancellationToken cancellationToken)
     {
-        var request =
-            JsonSerializer.Deserialize<ActionTestRequest>(body, BotRuntimeJson.Options) ?? throw new JsonException("The body is empty.");
+        var request = JsonSerializer.Deserialize<ActionTestRequest>(body, BotRuntimeJson.Options)
+            ?? throw new JsonException("The body is empty.");
         return request.Action.IsCode
             ? await RunCodeAsync(request.Action, request.Values, cancellationToken)
             : await runner.RunAsync(request.Action, request.Values, cancellationToken);

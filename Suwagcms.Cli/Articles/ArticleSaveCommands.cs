@@ -98,42 +98,38 @@ internal static class ArticleSaveCommands
         command.Options.Add(dryRun);
         EditOptions.OpenWhatItSaves(command, options, dryRun);
         RefuseBadTexts(command, fields);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
+            var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
+            var problem = contentProblem ?? guideProblem;
+            if (problem is not null)
             {
-                var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
-                var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
-                var problem = contentProblem ?? guideProblem;
-                if (problem is not null)
-                {
-                    return await target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
-                }
-                var body = new SaveArticle(
-                    parsed.GetValue(fields.KnowledgeBase),
-                    parsed.GetValue(fields.Title),
-                    content,
-                    guide,
-                    parsed.GetValue(fields.Description)
-                );
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(ArticlesCommand.Collection, parsed.GetRequiredValue(id)) + EditOptions.Query(dry, 0),
-                    body,
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
-                    parsed,
-                    options,
-                    "Article",
-                    parsed.GetRequiredValue(id)
-                );
+                return await target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
             }
-        );
+            var body = new SaveArticle(
+                parsed.GetValue(fields.KnowledgeBase),
+                parsed.GetValue(fields.Title),
+                content,
+                guide,
+                parsed.GetValue(fields.Description)
+            );
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                target.ItemPath(ArticlesCommand.Collection, parsed.GetRequiredValue(id)) + EditOptions.Query(dry, 0),
+                body,
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
+                parsed,
+                options,
+                "Article",
+                parsed.GetRequiredValue(id)
+            );
+        });
         return command;
     }
 
@@ -170,52 +166,48 @@ internal static class ArticleSaveCommands
                 );
             }
         });
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
+            var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
+            var problem = contentProblem ?? guideProblem;
+            if (problem is not null)
             {
-                var (content, contentProblem) = await fields.Content.ReadAsync(parsed, environment, cancellationToken);
-                var (guide, guideProblem) = await fields.Guide.ReadAsync(parsed, environment, cancellationToken);
-                var problem = contentProblem ?? guideProblem;
-                if (problem is not null)
-                {
-                    return await target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
-                }
-                var path = target.ItemPath(ArticlesCommand.Collection, parsed.GetRequiredValue(id));
-                var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
-                if (read.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(read, cancellationToken);
-                }
-                var current = read.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
-                var body = EditOverlay.Over(
-                    current,
-                    new SaveArticle(
-                        parsed.GetValue(fields.KnowledgeBase),
-                        parsed.GetValue(fields.Title),
-                        content,
-                        guide,
-                        parsed.GetValue(fields.Description)
-                    )
-                );
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    path + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
-                    body,
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
-                    parsed,
-                    options,
-                    "Article",
-                    parsed.GetRequiredValue(id)
-                );
+                return await target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
             }
-        );
+            var path = target.ItemPath(ArticlesCommand.Collection, parsed.GetRequiredValue(id));
+            var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
+            if (read.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(read, cancellationToken);
+            }
+            var current = read.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
+            var body = EditOverlay.Over(
+                current,
+                new SaveArticle(
+                    parsed.GetValue(fields.KnowledgeBase),
+                    parsed.GetValue(fields.Title),
+                    content,
+                    guide,
+                    parsed.GetValue(fields.Description)
+                )
+            );
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                path + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
+                body,
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
+                parsed,
+                options,
+                "Article",
+                parsed.GetRequiredValue(id)
+            );
+        });
         return command;
     }
 

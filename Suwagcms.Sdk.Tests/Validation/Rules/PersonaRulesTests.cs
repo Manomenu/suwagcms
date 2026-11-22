@@ -98,13 +98,11 @@ public sealed class PersonaRulesTests
 
         Assert.Empty(Codes(part, ValidationStage.Version, Declaring(BotDeclaration.PersonaRequired)));
         Assert.Equal(3, Codes(part, ValidationStage.Version, Declaring(BotDeclaration.PersonaComplete)).Count);
-        Assert.Contains(
-            DeclarationValidator.CheckAnswer(Declaring("full"), "rzeczoznawca"),
-            mistake => mistake.Code == MistakeCode.DeclarationPersonaUnknown
+        Assert.Contains(DeclarationValidator.CheckAnswer(Declaring("full"), "rzeczoznawca"), mistake =>
+            mistake.Code == MistakeCode.DeclarationPersonaUnknown
         );
-        Assert.DoesNotContain(
-            DeclarationValidator.CheckAnswer(Declaring(BotDeclaration.PersonaComplete), "rzeczoznawca"),
-            mistake => mistake.Code == MistakeCode.DeclarationPersonaUnknown
+        Assert.DoesNotContain(DeclarationValidator.CheckAnswer(Declaring(BotDeclaration.PersonaComplete), "rzeczoznawca"), mistake =>
+            mistake.Code == MistakeCode.DeclarationPersonaUnknown
         );
     }
 

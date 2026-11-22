@@ -126,17 +126,11 @@ public sealed class ActionBlockRulesTests
 
         var mistakes = Save(Bot(Action(Text, Text), Fact(Text), step));
 
-        Assert.Contains(
-            mistakes,
-            mistake =>
-                mistake.Path == "steps.run.with.nope" && mistake.Fix == "Parameters: input." && mistake.Code == MistakeCode.ReferenceMissing
+        Assert.Contains(mistakes, mistake =>
+            mistake.Path == "steps.run.with.nope" && mistake.Fix == "Parameters: input." && mistake.Code == MistakeCode.ReferenceMissing
         );
-        Assert.Contains(
-            mistakes,
-            mistake =>
-                mistake.Path == "steps.run.results.outptu"
-                && mistake.Fix == "Results: output."
-                && mistake.Code == MistakeCode.ReferenceMissing
+        Assert.Contains(mistakes, mistake =>
+            mistake.Path == "steps.run.results.outptu" && mistake.Fix == "Results: output." && mistake.Code == MistakeCode.ReferenceMissing
         );
     }
 
@@ -240,9 +234,8 @@ public sealed class ActionBlockRulesTests
         var definition = Bot(Action(Text, Text), Fact(Text), Step());
 
         Assert.Empty(OfProcedures(definition, ValidationStage.Save));
-        Assert.DoesNotContain(
-            OfProcedures(definition, ValidationStage.Version),
-            mistake => mistake.Path.Contains("results", StringComparison.Ordinal)
+        Assert.DoesNotContain(OfProcedures(definition, ValidationStage.Version), mistake =>
+            mistake.Path.Contains("results", StringComparison.Ordinal)
         );
     }
 
@@ -304,9 +297,8 @@ public sealed class ActionBlockRulesTests
         var blank = Bot(Action(Text, Text), Fact(Text), new ProcedureStep { Action = " ", OnFailure = "failed" });
         var unfinished = Bot(Action(Text, Text), Fact(Text), Step(null, onFailure: null));
 
-        Assert.Contains(
-            OfProcedures(blank, ValidationStage.Version),
-            mistake => mistake.Code == MistakeCode.StepBlockEmpty && mistake.Path == "steps.run.action"
+        Assert.Contains(OfProcedures(blank, ValidationStage.Version), mistake =>
+            mistake.Code == MistakeCode.StepBlockEmpty && mistake.Path == "steps.run.action"
         );
         var codes = OfProcedures(unfinished, ValidationStage.Version).Select(mistake => mistake.Code.Text()).ToList();
         Assert.Contains("step.action.noOnFailure", codes);
@@ -389,9 +381,8 @@ public sealed class ActionBlockRulesTests
         var fits = Bot(Action(Text, Text, code: true), Fact(Text), Step());
         var unfit = Bot(Action(Text with { MaxLength = 5 }, Text, code: true), Fact(Text), Step());
 
-        Assert.DoesNotContain(
-            OfProcedures(fits, ValidationStage.Version),
-            mistake => mistake.Path.StartsWith("steps.run", StringComparison.Ordinal)
+        Assert.DoesNotContain(OfProcedures(fits, ValidationStage.Version), mistake =>
+            mistake.Path.StartsWith("steps.run", StringComparison.Ordinal)
         );
         Assert.Contains(
             "parameter 'input' (text up to 5)",
@@ -419,9 +410,8 @@ public sealed class ActionBlockRulesTests
         Assert.Empty(Save(misfits));
         Assert.Empty(Save(unknown));
         Assert.Equal(2, OfProcedures(misfits, ValidationStage.Version).Count(mistake => mistake.Code == MistakeCode.ActionCodeMapping));
-        Assert.Contains(
-            OfProcedures(unknown, ValidationStage.Version),
-            mistake => mistake.Code == MistakeCode.ActionCodeMapping && mistake.Path == "steps.run.with.gone"
+        Assert.Contains(OfProcedures(unknown, ValidationStage.Version), mistake =>
+            mistake.Code == MistakeCode.ActionCodeMapping && mistake.Path == "steps.run.with.gone"
         );
     }
 }

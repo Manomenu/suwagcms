@@ -43,30 +43,26 @@ internal static class ArticlesCommand
             text,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var filter = Query(parsed.GetValue(knowledgeBase), parsed.GetValue(language), parsed.GetValue(text));
+            if (parsed.GetValue(options.Open))
             {
-                var filter = Query(parsed.GetValue(knowledgeBase), parsed.GetValue(language), parsed.GetValue(text));
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(new Uri(target.PageOf(Collection), filter), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath(Collection) + filter,
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var articles = answer.Body?.Deserialize<List<ArticleView>>(Web) ?? [];
-                return await target.Run.Report.DoneAsync(new ArticleListDocument(target.Bot, articles), ArticleOutput.Table(articles));
+                return await target.OpenAsync(new Uri(target.PageOf(Collection), filter), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.CollectionPath(Collection) + filter,
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var articles = answer.Body?.Deserialize<List<ArticleView>>(Web) ?? [];
+            return await target.Run.Report.DoneAsync(new ArticleListDocument(target.Bot, articles), ArticleOutput.Table(articles));
+        });
         return command;
     }
 
@@ -96,30 +92,25 @@ internal static class ArticlesCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageAt("Article", parsed.GetRequiredValue(id)), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, parsed.GetRequiredValue(id)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var article =
-                    answer.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
-                return await target.Run.Report.DoneAsync(article, ArticleOutput.Detail(article));
+                return await target.OpenAsync(target.PageAt("Article", parsed.GetRequiredValue(id)), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, parsed.GetRequiredValue(id)),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var article = answer.Body?.Deserialize<ArticleView>(Web) ?? throw new InvalidOperationException("the server sent no article");
+            return await target.Run.Report.DoneAsync(article, ArticleOutput.Detail(article));
+        });
         return command;
     }
 

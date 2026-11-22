@@ -82,15 +82,13 @@ public sealed class HistoryTests(TestDatabase database, ClassServer server) : IC
         Assert.Equal(["edited", "added"], entries.Select(entry => entry.Action));
         Assert.Equal(0, run.ExitCode);
         var lines = run.Output.ReplaceLineEndings("\n").Split('\n');
-        Assert.Contains(
-            lines,
-            line => line.Contains("edited", StringComparison.Ordinal) && line.Contains("revision 2", StringComparison.Ordinal)
+        Assert.Contains(lines, line =>
+            line.Contains("edited", StringComparison.Ordinal) && line.Contains("revision 2", StringComparison.Ordinal)
         );
         Assert.Contains("    - Oferta", lines);
         Assert.Contains("    + Nowa oferta", lines);
-        Assert.Contains(
-            lines,
-            line => line.Contains("added", StringComparison.Ordinal) && line.Contains("revision 1", StringComparison.Ordinal)
+        Assert.Contains(lines, line =>
+            line.Contains("added", StringComparison.Ordinal) && line.Contains("revision 1", StringComparison.Ordinal)
         );
     }
 

@@ -103,25 +103,23 @@ public sealed class PackedBotTests
 
     private static async Task CheckPackedBotAsync(string published, string[] arguments)
     {
-        using var process =
-            Process.Start(
-                new ProcessStartInfo("dotnet", [Path.Combine(published, "Bot.dll"), .. arguments])
-                {
-                    WorkingDirectory = published,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    Environment = { ["ASPNETCORE_URLS"] = "http://127.0.0.1:0" },
-                }
-            ) ?? throw new InvalidOperationException("dotnet did not start.");
+        using var process = Process.Start(
+            new ProcessStartInfo("dotnet", [Path.Combine(published, "Bot.dll"), .. arguments])
+            {
+                WorkingDirectory = published,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                Environment = { ["ASPNETCORE_URLS"] = "http://127.0.0.1:0" },
+            }
+        ) ?? throw new InvalidOperationException("dotnet did not start.");
         try
         {
             var address = await ListeningAddressAsync(process);
             using var client = new HttpClient { BaseAddress = new Uri(address) };
             Assert.Null((await StateAsync(client))["current"]);
-            var declared =
-                JsonNode.Parse(
-                    await client.GetStringAsync(new Uri("/suwagcms/declaration", UriKind.Relative), TestContext.Current.CancellationToken)
-                ) ?? throw new InvalidOperationException("empty declaration");
+            var declared = JsonNode.Parse(
+                await client.GetStringAsync(new Uri("/suwagcms/declaration", UriKind.Relative), TestContext.Current.CancellationToken)
+            ) ?? throw new InvalidOperationException("empty declaration");
             Assert.Equal("packed-bot", declared.Member("bot").Text());
             Assert.Equal(5, declared.Member("formatVersion").GetValue<int>());
             Assert.Equal("""["listen","say"]""", declared.Member("blocks").ToJsonString());

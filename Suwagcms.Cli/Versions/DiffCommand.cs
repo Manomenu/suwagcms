@@ -25,39 +25,34 @@ internal static class DiffCommand
             to,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var first = parsed.GetRequiredValue(from).ToString(CultureInfo.InvariantCulture);
+            var second = parsed.GetRequiredValue(to).ToString(CultureInfo.InvariantCulture);
+            if (parsed.GetValue(options.Open))
             {
-                var first = parsed.GetRequiredValue(from).ToString(CultureInfo.InvariantCulture);
-                var second = parsed.GetRequiredValue(to).ToString(CultureInfo.InvariantCulture);
-                if (parsed.GetValue(options.Open))
-                {
-                    await WebPage.ShowAsync(
-                        new Uri(target.PageOf(VersionsCommand.Collection), $"?from={first}&to={second}"),
-                        parsed.InvocationConfiguration.Output,
-                        parsed.InvocationConfiguration.Error,
-                        target.Machine.OpenBrowser
-                    );
-                    return ExitCodes.Done;
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    $"{target.ItemPath(VersionsCommand.Collection, first)}/diff/{second}",
-                    cancellationToken
+                await WebPage.ShowAsync(
+                    new Uri(target.PageOf(VersionsCommand.Collection), $"?from={first}&to={second}"),
+                    parsed.InvocationConfiguration.Output,
+                    parsed.InvocationConfiguration.Error,
+                    target.Machine.OpenBrowser
                 );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var comparison =
-                    answer.Body?.Deserialize<VersionComparison>(Web)
-                    ?? throw new InvalidOperationException("the server sent no comparison");
-                return await target.Run.Report.DoneAsync(comparison, DiffText.Of(comparison));
+                return ExitCodes.Done;
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                $"{target.ItemPath(VersionsCommand.Collection, first)}/diff/{second}",
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var comparison = answer.Body?.Deserialize<VersionComparison>(Web)
+                ?? throw new InvalidOperationException("the server sent no comparison");
+            return await target.Run.Report.DoneAsync(comparison, DiffText.Of(comparison));
+        });
         return command;
     }
 }

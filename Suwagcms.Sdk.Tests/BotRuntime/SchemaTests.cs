@@ -113,8 +113,7 @@ public sealed class SchemaTests
 
     private static JsonNode Schema(Type type)
     {
-        var schema =
-            JsonNode.Parse(JsonSchemaExporter.GetJsonSchemaAsNode(BotRuntimeJson.Options, type).ToJsonString())
+        var schema = JsonNode.Parse(JsonSchemaExporter.GetJsonSchemaAsNode(BotRuntimeJson.Options, type).ToJsonString())
             ?? throw new InvalidOperationException("The exporter returned no schema.");
         if (schema["type"] is JsonArray types && types.Any(entry => entry?.GetValue<string>() == "object"))
         {

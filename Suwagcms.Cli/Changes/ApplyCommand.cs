@@ -50,45 +50,40 @@ internal static class ApplyCommand
                 result.AddError("--compare changes nothing already: drop --dry-run.");
             }
         });
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var (document, problem) = await ChangeFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken);
+            if (document is null)
             {
-                var (document, problem) = await ChangeFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken);
-                if (document is null)
-                {
-                    return await target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
-                }
-                var comparing = parsed.GetValue(compare);
-                var dry = comparing || parsed.GetValue(dryRun);
-                var replacing = comparing || parsed.GetValue(replace);
-                var query = EditOptions.Query(dry, null);
-                if (replacing)
-                {
-                    query += (query.Length == 0 ? "?" : "&") + "replace=true";
-                }
-                var answer = await ServerCall.PostAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath("changes") + query,
-                    document,
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(WithHeading(answer, dry), cancellationToken);
-                }
-                var applied =
-                    answer.Body?.Deserialize<ChangesApplied>(Web) ?? throw new InvalidOperationException("the server sent no result");
-                if (!comparing)
-                {
-                    return await target.Run.Report.DoneAsync(applied, Summary(applied, replacing));
-                }
-                await target.Run.Report.DoneAsync(applied, CompareText.Of(applied));
-                return CompareText.Differs(applied) ? ExitCodes.Differs : ExitCodes.Done;
+                return await target.Run.Report.FailedAsync(ExitCodes.Misused, new FailureDocument(problem), problem);
             }
-        );
+            var comparing = parsed.GetValue(compare);
+            var dry = comparing || parsed.GetValue(dryRun);
+            var replacing = comparing || parsed.GetValue(replace);
+            var query = EditOptions.Query(dry, null);
+            if (replacing)
+            {
+                query += (query.Length == 0 ? "?" : "&") + "replace=true";
+            }
+            var answer = await ServerCall.PostAsync(
+                environment,
+                target.Address,
+                target.CollectionPath("changes") + query,
+                document,
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(WithHeading(answer, dry), cancellationToken);
+            }
+            var applied = answer.Body?.Deserialize<ChangesApplied>(Web) ?? throw new InvalidOperationException("the server sent no result");
+            if (!comparing)
+            {
+                return await target.Run.Report.DoneAsync(applied, Summary(applied, replacing));
+            }
+            await target.Run.Report.DoneAsync(applied, CompareText.Of(applied));
+            return CompareText.Differs(applied) ? ExitCodes.Differs : ExitCodes.Done;
+        });
         return command;
     }
 

@@ -28,14 +28,11 @@ public sealed class KnowledgeBaseWithArticlesTests(TestDatabase database, ClassS
             ["discounts", "priceList"],
             mistakes.Select(mistake => mistake.GetProperty("resource").GetProperty("id").GetString()).Order(StringComparer.Ordinal)
         );
-        Assert.All(
-            mistakes,
-            mistake =>
-            {
-                Assert.Equal("article.knowledgeBase.unknown", mistake.GetProperty("code").GetString());
-                Assert.Contains("first move or delete its articles", mistake.GetProperty("fix").GetString(), StringComparison.Ordinal);
-            }
-        );
+        Assert.All(mistakes, mistake =>
+        {
+            Assert.Equal("article.knowledgeBase.unknown", mistake.GetProperty("code").GetString());
+            Assert.Contains("first move or delete its articles", mistake.GetProperty("fix").GetString(), StringComparison.Ordinal);
+        });
         Assert.Equal(["forValuers", "offer"], (await api.KnowledgeBases.List()).Select(item => item.Id));
 
         await api.Put("priceList", ArticleApi.Body("forValuers"));

@@ -121,11 +121,10 @@ public sealed class AvailabilityTests(TestDatabase database, ClassServer server)
 
         var answer = await scene.Turn("off", query: "?dryRun=true");
 
-        var panel =
-            await scene.Push.Client.GetFromJsonAsync<UsageView>(
-                $"/api/bots/{scene.Id}/articles/{AvailabilityScene.Used}/usage",
-                TestContext.Current.CancellationToken
-            ) ?? throw new InvalidOperationException("no usage");
+        var panel = await scene.Push.Client.GetFromJsonAsync<UsageView>(
+            $"/api/bots/{scene.Id}/articles/{AvailabilityScene.Used}/usage",
+            TestContext.Current.CancellationToken
+        ) ?? throw new InvalidOperationException("no usage");
         Assert.NotEmpty(panel.UsedBy);
         Assert.Equal(panel.UsedBy, answer.UsedBy);
     }
@@ -481,19 +480,17 @@ public sealed class AvailabilityTests(TestDatabase database, ClassServer server)
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.Logging.ClearProviders();
         await using var older = builder.Build();
-        older.MapGet(
-            "/suwagcms/state",
-            () =>
-                Results.Json(
-                    new
-                    {
-                        bot = id,
-                        current = (int?)null,
-                        held = Array.Empty<int>(),
-                        inUse = Array.Empty<int>(),
-                        storeError = (string?)null,
-                    }
-                )
+        older.MapGet("/suwagcms/state", () =>
+            Results.Json(
+                new
+                {
+                    bot = id,
+                    current = (int?)null,
+                    held = Array.Empty<int>(),
+                    inUse = Array.Empty<int>(),
+                    storeError = (string?)null,
+                }
+            )
         );
         await older.StartAsync(TestContext.Current.CancellationToken);
         var client = Client();

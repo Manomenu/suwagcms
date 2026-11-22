@@ -126,12 +126,10 @@ public sealed class HttpActionRunner(Func<string, string?>? findSecret = null, T
         {
             var value = ActionTemplates
                 .Placeholder()
-                .Replace(
-                    template,
-                    match =>
-                        match.Groups[1].Value.StartsWith(ActionTemplates.SecretPrefix, StringComparison.Ordinal)
-                            ? secrets.GetValueOrDefault(match.Groups[1].Value[ActionTemplates.SecretPrefix.Length..]) ?? ""
-                            : match.Value
+                .Replace(template, match =>
+                    match.Groups[1].Value.StartsWith(ActionTemplates.SecretPrefix, StringComparison.Ordinal)
+                        ? secrets.GetValueOrDefault(match.Groups[1].Value[ActionTemplates.SecretPrefix.Length..]) ?? ""
+                        : match.Value
                 );
             if (!request.Headers.TryAddWithoutValidation(name, value))
             {

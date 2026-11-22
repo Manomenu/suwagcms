@@ -105,9 +105,10 @@ public sealed partial class VersionPushTests(TestDatabase database, ClassServer 
         await scene.PushAsync((await scene.CreateAsync()).Number);
         await scene.ChangeAsync();
         var second = await scene.CreateAsync();
-        var document =
-            await scene.Client.GetFromJsonAsync<VersionDetail>($"/api/bots/{scene.Bot}/versions/2", TestContext.Current.CancellationToken)
-            ?? throw new InvalidOperationException("no version in the answer");
+        var document = await scene.Client.GetFromJsonAsync<VersionDetail>(
+            $"/api/bots/{scene.Bot}/versions/2",
+            TestContext.Current.CancellationToken
+        ) ?? throw new InvalidOperationException("no version in the answer");
 
         Assert.Equal(HttpStatusCode.OK, await TestBot.PutDirectAsync(bot.Address, second.Number, document.Document));
 

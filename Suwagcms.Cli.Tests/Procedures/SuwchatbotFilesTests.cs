@@ -288,8 +288,7 @@ public sealed class SuwchatbotFilesTests
     [Trait("criterion", "AC-inform-block-12")]
     public void The_format_holds_what_the_file_says_in_the_order_it_says_it()
     {
-        var definition =
-            System.Text.Json.JsonSerializer.Deserialize<BotDefinition>(Definition(Conversation, ValuationReport), Wire)
+        var definition = System.Text.Json.JsonSerializer.Deserialize<BotDefinition>(Definition(Conversation, ValuationReport), Wire)
             ?? throw new InvalidOperationException("no definition");
 
         var inform = definition.Procedures.Single(procedure => procedure.Id == "valuationReport").Steps["tellEmailDelivery"].Inform;

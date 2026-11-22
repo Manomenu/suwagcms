@@ -24,15 +24,12 @@ public sealed class MistakeCodeTests
     {
         foreach (var options in Readers)
         {
-            Assert.All(
-                Enum.GetValues<MistakeCode>(),
-                code =>
-                {
-                    var sent = JsonSerializer.Serialize(code, options);
-                    Assert.Equal($"\"{code.Text()}\"", sent);
-                    Assert.Equal(code, JsonSerializer.Deserialize<MistakeCode>(sent, options));
-                }
-            );
+            Assert.All(Enum.GetValues<MistakeCode>(), code =>
+            {
+                var sent = JsonSerializer.Serialize(code, options);
+                Assert.Equal($"\"{code.Text()}\"", sent);
+                Assert.Equal(code, JsonSerializer.Deserialize<MistakeCode>(sent, options));
+            });
         }
     }
 }

@@ -43,24 +43,20 @@ internal static class KnowledgeBasesCommand
     {
         var command = new Command("list", "List the knowledge bases of the bot (or --open the Knowledge bases screen in the web app).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
-                }
-                var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var bases = answer.Body?.Deserialize<List<KnowledgeBaseView>>(Web) ?? [];
-                return await target.Run.Report.DoneAsync(new KnowledgeBaseListDocument(target.Bot, bases), KnowledgeBaseText.Table(bases));
+                return await target.OpenAsync(target.PageOf(Collection), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var bases = answer.Body?.Deserialize<List<KnowledgeBaseView>>(Web) ?? [];
+            return await target.Run.Report.DoneAsync(new KnowledgeBaseListDocument(target.Bot, bases), KnowledgeBaseText.Table(bases));
+        });
         return command;
     }
 
@@ -75,31 +71,26 @@ internal static class KnowledgeBasesCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageAt("KnowledgeBase", parsed.GetRequiredValue(id)), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, parsed.GetRequiredValue(id)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var shown =
-                    answer.Body?.Deserialize<KnowledgeBaseView>(Web)
-                    ?? throw new InvalidOperationException("the server sent no knowledge base");
-                return await target.Run.Report.DoneAsync(shown, KnowledgeBaseText.Detail(shown));
+                return await target.OpenAsync(target.PageAt("KnowledgeBase", parsed.GetRequiredValue(id)), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, parsed.GetRequiredValue(id)),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var shown = answer.Body?.Deserialize<KnowledgeBaseView>(Web)
+                ?? throw new InvalidOperationException("the server sent no knowledge base");
+            return await target.Run.Report.DoneAsync(shown, KnowledgeBaseText.Detail(shown));
+        });
         return command;
     }
 
@@ -120,33 +111,29 @@ internal static class KnowledgeBasesCommand
         var dryRun = EditOptions.DryRun();
         var command = new Command("add", "Add a knowledge base to the bot.") { id, title, language, embedding, results, dryRun };
         EditOptions.OpenWhatItSaves(command, options, dryRun);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
-            {
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, parsed.GetRequiredValue(id)) + EditOptions.Query(dry, 0),
-                    new SaveKnowledgeBase(
-                        parsed.GetValue(title),
-                        parsed.GetValue(language),
-                        parsed.GetValue(embedding) ?? KnowledgeBase.DefaultEmbedding,
-                        parsed.GetValue(results) ?? KnowledgeBase.DefaultResults
-                    ),
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
-                    parsed,
-                    options,
-                    "KnowledgeBase",
-                    parsed.GetRequiredValue(id)
-                );
-            }
-        );
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, parsed.GetRequiredValue(id)) + EditOptions.Query(dry, 0),
+                new SaveKnowledgeBase(
+                    parsed.GetValue(title),
+                    parsed.GetValue(language),
+                    parsed.GetValue(embedding) ?? KnowledgeBase.DefaultEmbedding,
+                    parsed.GetValue(results) ?? KnowledgeBase.DefaultResults
+                ),
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
+                parsed,
+                options,
+                "KnowledgeBase",
+                parsed.GetRequiredValue(id)
+            );
+        });
         return command;
     }
 
@@ -190,57 +177,46 @@ internal static class KnowledgeBasesCommand
                 result.AddError("Nothing to change: give at least one of --title, --language, --embedding, --results.");
             }
         });
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var path = target.ItemPath(Collection, parsed.GetRequiredValue(id));
+            var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
+            if (read.ExitCode != ExitCodes.Done)
             {
-                var path = target.ItemPath(Collection, parsed.GetRequiredValue(id));
-                var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
-                if (read.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(read, cancellationToken);
-                }
-                var current =
-                    read.Body?.Deserialize<KnowledgeBaseView>(Web)
-                    ?? throw new InvalidOperationException("the server sent no knowledge base");
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    path + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
-                    EditOverlay.Over(
-                        current,
-                        new SaveKnowledgeBase(
-                            parsed.GetValue(title),
-                            parsed.GetValue(language),
-                            parsed.GetValue(embedding),
-                            parsed.GetValue(results)
-                        )
-                    ),
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
-                    parsed,
-                    options,
-                    "KnowledgeBase",
-                    parsed.GetRequiredValue(id)
-                );
+                return await target.FailedAsync(read, cancellationToken);
             }
-        );
+            var current = read.Body?.Deserialize<KnowledgeBaseView>(Web)
+                ?? throw new InvalidOperationException("the server sent no knowledge base");
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                path + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
+                EditOverlay.Over(
+                    current,
+                    new SaveKnowledgeBase(
+                        parsed.GetValue(title),
+                        parsed.GetValue(language),
+                        parsed.GetValue(embedding),
+                        parsed.GetValue(results)
+                    )
+                ),
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
+                parsed,
+                options,
+                "KnowledgeBase",
+                parsed.GetRequiredValue(id)
+            );
+        });
         return command;
     }
 
     private static Command CreateDelete(GlobalOptions options, CliEnvironment environment) =>
-        ResourceCommand.Delete(
-            options,
-            environment,
-            "kb delete",
-            Collection,
-            IdArgument(),
-            "Delete a knowledge base.",
-            (bot, name, dry) => new KnowledgeBaseDeletedDocument(bot, name, dry)
+        ResourceCommand.Delete(options, environment, "kb delete", Collection, IdArgument(), "Delete a knowledge base.", (bot, name, dry) =>
+            new KnowledgeBaseDeletedDocument(bot, name, dry)
         );
 
     private static async Task<int> ReportSavedAsync(
@@ -255,8 +231,8 @@ internal static class KnowledgeBasesCommand
         {
             return await target.FailedAsync(answer, cancellationToken);
         }
-        var saved =
-            answer.Body?.Deserialize<KnowledgeBaseView>(Web) ?? throw new InvalidOperationException("the server sent no knowledge base");
+        var saved = answer.Body?.Deserialize<KnowledgeBaseView>(Web)
+            ?? throw new InvalidOperationException("the server sent no knowledge base");
         var past = word == "add" ? "Added" : "Saved";
         var text = dry
             ? $"Would {word} '{saved.Id}' ({KnowledgeBaseText.Summary(saved)}). Nothing was changed."

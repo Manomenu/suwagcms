@@ -27,24 +27,20 @@ internal static class FactsCommand
     {
         var command = new Command("list", "List the global facts of the bot (or --open the Facts screen in the web app).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
-                }
-                var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var facts = answer.Body?.Deserialize<List<Fact>>(Web) ?? [];
-                return await target.Run.Report.DoneAsync(new FactListDocument(target.Bot, facts), FactText.Table(facts));
+                return await target.OpenAsync(target.PageOf(Collection), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var facts = answer.Body?.Deserialize<List<Fact>>(Web) ?? [];
+            return await target.Run.Report.DoneAsync(new FactListDocument(target.Bot, facts), FactText.Table(facts));
+        });
         return command;
     }
 
@@ -53,29 +49,25 @@ internal static class FactsCommand
         var name = new Argument<string>("name") { Description = "The fact's name, like customer.city." };
         var command = new Command("show", "Show one global fact with its revision (or --open the Facts screen in the web app).") { name };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageAt("GlobalFact", parsed.GetRequiredValue(name)), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, parsed.GetRequiredValue(name)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var fact = answer.Body?.Deserialize<Fact>(Web) ?? throw new InvalidOperationException("the server sent no fact");
-                return await target.Run.Report.DoneAsync(fact, FactText.Detail(fact));
+                return await target.OpenAsync(target.PageAt("GlobalFact", parsed.GetRequiredValue(name)), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, parsed.GetRequiredValue(name)),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var fact = answer.Body?.Deserialize<Fact>(Web) ?? throw new InvalidOperationException("the server sent no fact");
+            return await target.Run.Report.DoneAsync(fact, FactText.Detail(fact));
+        });
         return command;
     }
 

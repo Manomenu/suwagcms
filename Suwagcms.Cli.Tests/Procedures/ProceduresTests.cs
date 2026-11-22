@@ -266,13 +266,11 @@ public sealed class ProceduresTests : IDisposable
         Assert.Equal((0, 0, 0), (added.ExitCode, shown.ExitCode, edited.ExitCode));
         var writes = recorder.Calls.Where(call => call.Method == "PUT").Select(call => JsonNode.Parse(call.Body)).ToList();
         Assert.Equal(2, writes.Count);
-        Assert.All(
-            writes,
-            body =>
-                Assert.Equal(
-                    ("Booked for {customer.city}, reference {bookingReference}.", "{bookingReference} is your reference."),
-                    (At(body, "steps", "confirm", "say").GetValue<string>(), At(body, "steps", "repeat", "say").GetValue<string>())
-                )
+        Assert.All(writes, body =>
+            Assert.Equal(
+                ("Booked for {customer.city}, reference {bookingReference}.", "{bookingReference} is your reference."),
+                (At(body, "steps", "confirm", "say").GetValue<string>(), At(body, "steps", "repeat", "say").GetValue<string>())
+            )
         );
     }
 

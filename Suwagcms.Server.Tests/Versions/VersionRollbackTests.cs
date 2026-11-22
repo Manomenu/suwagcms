@@ -221,9 +221,10 @@ public sealed class VersionRollbackTests(TestDatabase database, ClassServer serv
             sent = await reader.ReadToEndAsync();
             context.Request.Body.Position = 0;
         };
-        var version =
-            await scene.Client.GetFromJsonAsync<VersionDetail>($"/api/bots/{scene.Bot}/versions/1", TestContext.Current.CancellationToken)
-            ?? throw new InvalidOperationException("no version in the answer");
+        var version = await scene.Client.GetFromJsonAsync<VersionDetail>(
+            $"/api/bots/{scene.Bot}/versions/1",
+            TestContext.Current.CancellationToken
+        ) ?? throw new InvalidOperationException("no version in the answer");
 
         Assert.Equal(PushOutcome.Succeeded, (await scene.PushAsync(1)).Outcome);
 

@@ -35,24 +35,20 @@ internal static class ActionsCommand
     {
         var command = new Command("list", "List the actions of the bot, each with its implementation (or --open the Actions screen).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
-                }
-                var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var actions = answer.Body?.Deserialize<List<ActionView>>(Web) ?? [];
-                return await target.Run.Report.DoneAsync(new ActionListDocument(target.Bot, actions), ActionText.Table(actions));
+                return await target.OpenAsync(target.PageOf(Collection), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var actions = answer.Body?.Deserialize<List<ActionView>>(Web) ?? [];
+            return await target.Run.Report.DoneAsync(new ActionListDocument(target.Bot, actions), ActionText.Table(actions));
+        });
         return command;
     }
 
@@ -67,25 +63,21 @@ internal static class ActionsCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var name = parsed.GetRequiredValue(id);
+            if (parsed.GetValue(options.Open))
             {
-                var name = parsed.GetRequiredValue(id);
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageAt("Action", parsed.GetRequiredValue(id)), parsed);
-                }
-                var answer = await ServerCall.GetAsync(environment, target.Address, target.ItemPath(Collection, name), cancellationToken);
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var body = answer.Body ?? throw new InvalidOperationException("the server sent no action");
-                return await target.Run.Report.DoneAsync(Action(body), ProcedureYaml.From(body));
+                return await target.OpenAsync(target.PageAt("Action", parsed.GetRequiredValue(id)), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(environment, target.Address, target.ItemPath(Collection, name), cancellationToken);
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var body = answer.Body ?? throw new InvalidOperationException("the server sent no action");
+            return await target.Run.Report.DoneAsync(Action(body), ProcedureYaml.From(body));
+        });
         return command;
     }
 
@@ -95,40 +87,36 @@ internal static class ActionsCommand
         var dryRun = EditOptions.DryRun();
         var command = new Command("add", "Add an action to the bot from a YAML or JSON file that holds the whole of it.") { file, dryRun };
         EditOptions.OpenWhatItSaves(command, options, dryRun);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var path = parsed.GetRequiredValue(file);
+            var (document, problem) = await ProcedureFile.ReadAsync(path, cancellationToken, OneAction);
+            if (document is null)
             {
-                var path = parsed.GetRequiredValue(file);
-                var (document, problem) = await ProcedureFile.ReadAsync(path, cancellationToken, OneAction);
-                if (document is null)
-                {
-                    return await target.MisusedAsync(problem);
-                }
-                if (Id(document) is not { Length: > 0 } id)
-                {
-                    return await target.MisusedAsync(
-                        $"'{path}' has no id. Add 'id: <name>' to the file: the name is camelCase, like checkServiceability."
-                    );
-                }
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, id) + EditOptions.Query(dry, 0),
-                    Body(document),
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "add", "Added", cancellationToken),
-                    parsed,
-                    options,
-                    "Action",
-                    id
+                return await target.MisusedAsync(problem);
+            }
+            if (Id(document) is not { Length: > 0 } id)
+            {
+                return await target.MisusedAsync(
+                    $"'{path}' has no id. Add 'id: <name>' to the file: the name is camelCase, like checkServiceability."
                 );
             }
-        );
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, id) + EditOptions.Query(dry, 0),
+                Body(document),
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "add", "Added", cancellationToken),
+                parsed,
+                options,
+                "Action",
+                id
+            );
+        });
         return command;
     }
 
@@ -152,46 +140,42 @@ internal static class ActionsCommand
             dryRun,
         };
         EditOptions.OpenWhatItSaves(command, options, dryRun);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var name = parsed.GetRequiredValue(id);
+            var (document, problem) = await ProcedureFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken, OneAction);
+            if (document is null)
             {
-                var name = parsed.GetRequiredValue(id);
-                var (document, problem) = await ProcedureFile.ReadAsync(parsed.GetRequiredValue(file), cancellationToken, OneAction);
-                if (document is null)
-                {
-                    return await target.MisusedAsync(problem);
-                }
-                if (Id(document) is { Length: > 0 } inFile && inFile != name)
-                {
-                    return await target.MisusedAsync(
-                        $"The command edits '{name}' but the file holds '{inFile}'. Use the same id in both: change the id in the file, or the one on the command line."
-                    );
-                }
-                var read = await ServerCall.GetAsync(environment, target.Address, target.ItemPath(Collection, name), cancellationToken);
-                if (read.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(read, cancellationToken);
-                }
-                var expected = parsed.GetValue(ifRevision) ?? Revision(document) ?? Action(read.Body ?? default).Revision;
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, name) + EditOptions.Query(dry, expected),
-                    Body(document),
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "edit", "Saved", cancellationToken),
-                    parsed,
-                    options,
-                    "Action",
-                    name
+                return await target.MisusedAsync(problem);
+            }
+            if (Id(document) is { Length: > 0 } inFile && inFile != name)
+            {
+                return await target.MisusedAsync(
+                    $"The command edits '{name}' but the file holds '{inFile}'. Use the same id in both: change the id in the file, or the one on the command line."
                 );
             }
-        );
+            var read = await ServerCall.GetAsync(environment, target.Address, target.ItemPath(Collection, name), cancellationToken);
+            if (read.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(read, cancellationToken);
+            }
+            var expected = parsed.GetValue(ifRevision) ?? Revision(document) ?? Action(read.Body ?? default).Revision;
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, name) + EditOptions.Query(dry, expected),
+                Body(document),
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "edit", "Saved", cancellationToken),
+                parsed,
+                options,
+                "Action",
+                name
+            );
+        });
         return command;
     }
 

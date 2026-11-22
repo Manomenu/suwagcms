@@ -116,9 +116,11 @@ public static class ReferenceWalker
         }
         if (target.Kind == ResourceKind.Article)
         {
-            return RewriteKnowledge(
-                procedure,
-                entry => entry with { Articles = entry.Articles?.Select(id => id == target.Id ? newId : id).ToList() }
+            return RewriteKnowledge(procedure, entry =>
+                entry with
+                {
+                    Articles = entry.Articles?.Select(id => id == target.Id ? newId : id).ToList(),
+                }
             );
         }
         if (target.Kind == ResourceKind.KnowledgeBase)
