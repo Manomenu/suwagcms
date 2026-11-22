@@ -1,6 +1,6 @@
 {
     "extends": "@maniumek/suwgate/tsconfig/browser",
-    "compilerOptions": { "baseUrl": ".", "paths": { "@/*": ["./src/*"] } },
+    "compilerOptions": { "paths": { "@/*": ["./src/*"] } },
     "include": ["src"],
     "exclude": ["src/**/*.e2e.ts"]
 }
