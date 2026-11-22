@@ -67,8 +67,8 @@ internal static class ValidateCommand
                 {
                     return await run.Report.ReportAsync(answer, address);
                 }
-                var result =
-                    answer.Body?.Deserialize<ValidationAnswer>(Web) ?? throw new InvalidOperationException("the server sent no answer");
+                var result = answer.Body?.Deserialize<ValidationAnswer>(Web)
+                    ?? throw new InvalidOperationException("the server sent no answer");
                 return result.Mistakes.Count == 0
                     ? await run.Report.DoneAsync(result, $"No mistakes at the {chosen} stage.")
                     : await run.Report.FailedWithAsync(ExitCodes.Refused, result, Text(result));

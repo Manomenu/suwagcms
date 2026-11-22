@@ -13,14 +13,11 @@ internal static class FactRules
 
     public static IReadOnlyList<Rule> All { get; } =
     [
-        new(
-            MistakeCode.FactNameInvalid,
-            ValidationStage.Save,
-            definition =>
-                definition
-                    .Facts.SelectMany(Name)
-                    .Concat(definition.Procedures.SelectMany(LocalNames))
-                    .Concat(definition.Actions.Where(action => !action.IsCode).SelectMany(FieldNames))
+        new(MistakeCode.FactNameInvalid, ValidationStage.Save, definition =>
+            definition
+                .Facts.SelectMany(Name)
+                .Concat(definition.Procedures.SelectMany(LocalNames))
+                .Concat(definition.Actions.Where(action => !action.IsCode).SelectMany(FieldNames))
         ),
         For(MistakeCode.FactTypeInvalid, Type),
         For(MistakeCode.FactDescriptionMissing, Description),
@@ -45,10 +42,8 @@ internal static class FactRules
     ];
 
     private static Rule For(MistakeCode code, Func<GlobalFact, IEnumerable<Mistake>> check) =>
-        new(
-            code,
-            ValidationStage.Save,
-            definition => definition.Facts.SelectMany(check).Concat(Locals(definition, check)).Concat(ActionFields(definition, check))
+        new(code, ValidationStage.Save, definition =>
+            definition.Facts.SelectMany(check).Concat(Locals(definition, check)).Concat(ActionFields(definition, check))
         );
 
     private static IEnumerable<Mistake> ActionFields(BotDefinition definition, Func<GlobalFact, IEnumerable<Mistake>> check) =>

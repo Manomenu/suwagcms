@@ -61,39 +61,35 @@ internal static class FactSaveCommands
         AddFields(command, fields);
         command.Options.Add(dryRun);
         EditOptions.OpenWhatItSaves(command, options, dryRun);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
-            {
-                var factName = parsed.GetRequiredValue(name);
-                var body = new SaveFact(
-                    parsed.GetValue(fields.Type),
-                    parsed.GetValue(fields.Description),
-                    parsed.GetValue(fields.WritableBy),
-                    Given(parsed, fields.Values),
-                    parsed.GetValue(fields.Min),
-                    parsed.GetValue(fields.Max),
-                    parsed.GetValue(fields.MaxLength),
-                    PatternGiven(parsed, fields, null)
-                );
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(FactsCommand.Collection, factName) + EditOptions.Query(dry, 0),
-                    body,
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
-                    parsed,
-                    options,
-                    "GlobalFact",
-                    factName
-                );
-            }
-        );
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var factName = parsed.GetRequiredValue(name);
+            var body = new SaveFact(
+                parsed.GetValue(fields.Type),
+                parsed.GetValue(fields.Description),
+                parsed.GetValue(fields.WritableBy),
+                Given(parsed, fields.Values),
+                parsed.GetValue(fields.Min),
+                parsed.GetValue(fields.Max),
+                parsed.GetValue(fields.MaxLength),
+                PatternGiven(parsed, fields, null)
+            );
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                target.ItemPath(FactsCommand.Collection, factName) + EditOptions.Query(dry, 0),
+                body,
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "add", cancellationToken),
+                parsed,
+                options,
+                "GlobalFact",
+                factName
+            );
+        });
         return command;
     }
 
@@ -127,57 +123,53 @@ internal static class FactSaveCommands
                 );
             }
         });
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var factName = parsed.GetRequiredValue(name);
+            var read = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(FactsCommand.Collection, factName),
+                cancellationToken
+            );
+            if (read.ExitCode != ExitCodes.Done)
             {
-                var factName = parsed.GetRequiredValue(name);
-                var read = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(FactsCommand.Collection, factName),
-                    cancellationToken
-                );
-                if (read.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(read, cancellationToken);
-                }
-                var current = read.Body?.Deserialize<Fact>(Web) ?? throw new InvalidOperationException("the server sent no fact");
-                var type = parsed.GetValue(fields.Type);
-                var keptPattern = type is null || type == current.Type ? current.Pattern : null;
-                var body = EditOverlay.OverFact(
-                    current,
-                    new SaveFact(
-                        type,
-                        parsed.GetValue(fields.Description),
-                        parsed.GetValue(fields.WritableBy),
-                        Given(parsed, fields.Values),
-                        parsed.GetValue(fields.Min),
-                        parsed.GetValue(fields.Max),
-                        parsed.GetValue(fields.MaxLength),
-                        PatternGiven(parsed, fields, keptPattern)
-                    ),
-                    parsed.GetValue(fields.NoPattern)
-                );
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PutAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(FactsCommand.Collection, factName)
-                        + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
-                    body,
-                    cancellationToken
-                );
-                return await target.OpenSavedAsync(
-                    await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
-                    parsed,
-                    options,
-                    "GlobalFact",
-                    factName
-                );
+                return await target.FailedAsync(read, cancellationToken);
             }
-        );
+            var current = read.Body?.Deserialize<Fact>(Web) ?? throw new InvalidOperationException("the server sent no fact");
+            var type = parsed.GetValue(fields.Type);
+            var keptPattern = type is null || type == current.Type ? current.Pattern : null;
+            var body = EditOverlay.OverFact(
+                current,
+                new SaveFact(
+                    type,
+                    parsed.GetValue(fields.Description),
+                    parsed.GetValue(fields.WritableBy),
+                    Given(parsed, fields.Values),
+                    parsed.GetValue(fields.Min),
+                    parsed.GetValue(fields.Max),
+                    parsed.GetValue(fields.MaxLength),
+                    PatternGiven(parsed, fields, keptPattern)
+                ),
+                parsed.GetValue(fields.NoPattern)
+            );
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PutAsync(
+                environment,
+                target.Address,
+                target.ItemPath(FactsCommand.Collection, factName)
+                    + EditOptions.Query(dry, parsed.GetValue(ifRevision) ?? current.Revision),
+                body,
+                cancellationToken
+            );
+            return await target.OpenSavedAsync(
+                await ReportSavedAsync(target, answer, dry, "edit", cancellationToken),
+                parsed,
+                options,
+                "GlobalFact",
+                factName
+            );
+        });
         return command;
     }
 

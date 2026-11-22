@@ -161,9 +161,8 @@ public sealed partial class SdkReleaseTests
         Assert.Contains(Property("Copyright"), license, StringComparison.Ordinal);
 
         Assert.Equal("README.md", Property("PackageReadmeFile"));
-        Assert.Contains(
-            project.Descendants("None"),
-            item => item.Attribute("Include")?.Value == "README.md" && item.Attribute("Pack")?.Value == "true"
+        Assert.Contains(project.Descendants("None"), item =>
+            item.Attribute("Include")?.Value == "README.md" && item.Attribute("Pack")?.Value == "true"
         );
         var readme = File.ReadAllText(RepositoryFiles.Path("Suwagcms.Sdk/README.md"));
         Assert.Contains("dotnet add package Suwagcms.Sdk", readme, StringComparison.Ordinal);

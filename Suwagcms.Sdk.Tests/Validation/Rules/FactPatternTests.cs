@@ -297,9 +297,8 @@ public sealed class FactPatternTests
             ],
         };
 
-        Assert.Contains(
-            Check(definition),
-            mistake => mistake is { Code: MistakeCode.FactPatternExampleTooLong, Path: "localFacts.code.pattern.example" }
+        Assert.Contains(Check(definition), mistake =>
+            mistake is { Code: MistakeCode.FactPatternExampleTooLong, Path: "localFacts.code.pattern.example" }
         );
     }
 
@@ -413,9 +412,8 @@ public sealed class FactPatternTests
 
         var mistakes = Check(definition);
 
-        Assert.Contains(
-            mistakes,
-            mistake => mistake is { Code: MistakeCode.FactPatternExampleMismatch, Path: "localFacts.code.pattern.example" }
+        Assert.Contains(mistakes, mistake =>
+            mistake is { Code: MistakeCode.FactPatternExampleMismatch, Path: "localFacts.code.pattern.example" }
         );
         Assert.Contains(mistakes, mistake => mistake.Code == MistakeCode.AssignValueInvalid);
     }

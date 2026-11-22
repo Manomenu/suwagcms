@@ -10,47 +10,39 @@ internal static class ArticleRules
     public static IReadOnlyList<Rule> All { get; } =
     [
         For(MistakeCode.ArticleIdInvalid, Id),
-        For(
-            MistakeCode.ArticleTitleMissing,
-            article => Blank(article, MistakeCode.ArticleTitleMissing, "title", article.Title, "Say what the article is about.")
+        For(MistakeCode.ArticleTitleMissing, article =>
+            Blank(article, MistakeCode.ArticleTitleMissing, "title", article.Title, "Say what the article is about.")
         ),
-        For(
-            MistakeCode.ArticleContentMissing,
-            article =>
-                Blank(
-                    article,
-                    MistakeCode.ArticleContentMissing,
-                    "content",
-                    article.Content,
-                    "Write what is true: the customer reads it, through the model."
-                )
+        For(MistakeCode.ArticleContentMissing, article =>
+            Blank(
+                article,
+                MistakeCode.ArticleContentMissing,
+                "content",
+                article.Content,
+                "Write what is true: the customer reads it, through the model."
+            )
         ),
-        For(
-            MistakeCode.ArticleLlmGuideMissing,
-            article =>
-                Blank(
-                    article,
-                    MistakeCode.ArticleLlmGuideMissing,
-                    "llmGuide",
-                    article.LlmGuide,
-                    "Say how the model should talk about it: tone, what to ask first, what not to say."
-                )
+        For(MistakeCode.ArticleLlmGuideMissing, article =>
+            Blank(
+                article,
+                MistakeCode.ArticleLlmGuideMissing,
+                "llmGuide",
+                article.LlmGuide,
+                "Say how the model should talk about it: tone, what to ask first, what not to say."
+            )
         ),
-        For(
-            MistakeCode.ArticleDescriptionMissing,
-            article =>
-                Blank(
-                    article,
-                    MistakeCode.ArticleDescriptionMissing,
-                    "description",
-                    article.Description,
-                    "Say what the article answers: the bot's search reads it."
-                )
+        For(MistakeCode.ArticleDescriptionMissing, article =>
+            Blank(
+                article,
+                MistakeCode.ArticleDescriptionMissing,
+                "description",
+                article.Description,
+                "Say what the article answers: the bot's search reads it."
+            )
         ),
         For(MistakeCode.ArticleContentTooLong, article => TooLong(article, MistakeCode.ArticleContentTooLong, "content", article.Content)),
-        For(
-            MistakeCode.ArticleLlmGuideTooLong,
-            article => TooLong(article, MistakeCode.ArticleLlmGuideTooLong, "llmGuide", article.LlmGuide)
+        For(MistakeCode.ArticleLlmGuideTooLong, article =>
+            TooLong(article, MistakeCode.ArticleLlmGuideTooLong, "llmGuide", article.LlmGuide)
         ),
         new(MistakeCode.ArticleKnowledgeBaseUnknown, ValidationStage.Save, UnknownKnowledgeBase),
     ];

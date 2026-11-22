@@ -235,15 +235,12 @@ public sealed class FactRulesTests
         );
 
         Assert.NotEmpty(mistakes);
-        Assert.All(
-            mistakes,
-            mistake =>
-            {
-                Assert.Equal(new ResourceRef(ResourceKind.GlobalFact, "x y"), mistake.Resource);
-                Assert.False(string.IsNullOrWhiteSpace(mistake.Path));
-                Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
-                Assert.Equal(ValidationStage.Save, mistake.Stage);
-            }
-        );
+        Assert.All(mistakes, mistake =>
+        {
+            Assert.Equal(new ResourceRef(ResourceKind.GlobalFact, "x y"), mistake.Resource);
+            Assert.False(string.IsNullOrWhiteSpace(mistake.Path));
+            Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
+            Assert.Equal(ValidationStage.Save, mistake.Stage);
+        });
     }
 }

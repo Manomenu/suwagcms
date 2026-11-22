@@ -82,16 +82,13 @@ public sealed class DeclarationValidatorTests
             ["codeAction.description.missing", "codeAction.repeated", "declaration.block.unknown", "declaration.bot", "fact.type.invalid"],
             Codes(mistakes)
         );
-        Assert.All(
-            mistakes,
-            mistake =>
-            {
-                Assert.Equal(ValidationStage.Version, mistake.Stage);
-                Assert.False(string.IsNullOrWhiteSpace(mistake.Message));
-                Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
-                Assert.False(string.IsNullOrWhiteSpace(mistake.Path));
-            }
-        );
+        Assert.All(mistakes, mistake =>
+        {
+            Assert.Equal(ValidationStage.Version, mistake.Stage);
+            Assert.False(string.IsNullOrWhiteSpace(mistake.Message));
+            Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
+            Assert.False(string.IsNullOrWhiteSpace(mistake.Path));
+        });
         Assert.Contains(mistakes, mistake => mistake.Path == "results.kind.type" && mistake.Resource.Id == "typed");
     }
 
@@ -263,9 +260,8 @@ public sealed class DeclarationValidatorTests
             "Type one of the profiles the bot serves on the knowledge base, or set the variables of 'legalText' on the bot and deploy.",
             mistake.Fix
         );
-        Assert.DoesNotContain(
-            DefinitionValidator.Validate(definition, ValidationStage.Save, declaration),
-            found => found.Code == MistakeCode.DeclarationEmbeddingProfile
+        Assert.DoesNotContain(DefinitionValidator.Validate(definition, ValidationStage.Save, declaration), found =>
+            found.Code == MistakeCode.DeclarationEmbeddingProfile
         );
     }
 

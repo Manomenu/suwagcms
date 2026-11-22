@@ -392,16 +392,14 @@ public sealed class ActionTestRunTests(TestDatabase database, ClassServer server
     [Trait("criterion", "AC-action-test-run-16")]
     public async Task A_run_of_a_code_action_goes_through_the_bot_and_runs_its_code_with_the_values()
     {
-        await using var scene = await SceneAsync(
-            declares: Declaring(),
-            runCode: (id, values, _) =>
-                Task.FromResult(
-                    new ActionOutcome
-                    {
-                        Outcome = ActionOutcome.Success,
-                        Results = new Dictionary<string, string> { ["policy"] = $"{id[..2]}{values["pesel"]}" },
-                    }
-                )
+        await using var scene = await SceneAsync(declares: Declaring(), runCode: (id, values, _) =>
+            Task.FromResult(
+                new ActionOutcome
+                {
+                    Outcome = ActionOutcome.Success,
+                    Results = new Dictionary<string, string> { ["policy"] = $"{id[..2]}{values["pesel"]}" },
+                }
+            )
         );
         await scene.Client.GetAsync($"/api/bots/{scene.Api.Bot}/declaration", TestContext.Current.CancellationToken);
 

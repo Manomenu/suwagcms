@@ -24,10 +24,9 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
 
     private static string Procedure(string steps) => """{"description":"D","firstStep":"ask","steps":{""" + steps + "}}";
 
-    private static string When(string fact, string condition) =>
-        $$"""
-            "ask":{"say":"Hi","next":[{"when":{"{{fact}}":{{condition}}},"to":"end"},{"to":"end"}]},"end":{"say":"Bye"}
-            """;
+    private static string When(string fact, string condition) => $$"""
+        "ask":{"say":"Hi","next":[{"when":{"{{fact}}":{{condition}}},"to":"end"},{"to":"end"}]},"end":{"say":"Bye"}
+        """;
 
     private static string Declaring(string steps, string fact) =>
         """{"description":"D","firstStep":"ask","steps":{""" + steps + """},"localFacts":{"mine":""" + fact + "}}";
@@ -270,13 +269,11 @@ public sealed class EditGuardEndpointsTests(TestDatabase database, ClassServer s
 
         var mistakes = await FactApi.MistakesOf(refused);
         Assert.Equal(["fact.enum.valueInUse", "fact.enum.valueInUse"], mistakes.Select(Code));
-        Assert.Contains(
-            mistakes,
-            mistake => mistake.GetProperty("message").GetString()?.Contains("'flat'", StringComparison.Ordinal) == true
+        Assert.Contains(mistakes, mistake =>
+            mistake.GetProperty("message").GetString()?.Contains("'flat'", StringComparison.Ordinal) == true
         );
-        Assert.Contains(
-            mistakes,
-            mistake => mistake.GetProperty("message").GetString()?.Contains("'land'", StringComparison.Ordinal) == true
+        Assert.Contains(mistakes, mistake =>
+            mistake.GetProperty("message").GetString()?.Contains("'land'", StringComparison.Ordinal) == true
         );
     }
 

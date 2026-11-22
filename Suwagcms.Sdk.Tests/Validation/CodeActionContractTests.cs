@@ -74,9 +74,8 @@ public sealed class CodeActionContractTests
         var definition = Holding(Lookup.ToAction());
         var declaration = Declaring(Lookup with { Parameters = [Pesel with { MaxLength = length }] });
 
-        var mistake = Assert.Single(
-            DefinitionValidator.Validate(definition, ValidationStage.Version, declaration),
-            found => found.Code == MistakeCode.ActionCodeContract
+        var mistake = Assert.Single(DefinitionValidator.Validate(definition, ValidationStage.Version, declaration), found =>
+            found.Code == MistakeCode.ActionCodeContract
         );
 
         Assert.Contains("parameter 'pesel' is text up to 11 here", mistake.Message, StringComparison.Ordinal);
@@ -89,9 +88,8 @@ public sealed class CodeActionContractTests
     {
         var declaration = Declaring(Lookup with { Results = [Pesel with { Name = "policy" }] });
 
-        var mistake = Assert.Single(
-            DefinitionValidator.Validate(Holding(Lookup.ToAction()), ValidationStage.Version, declaration),
-            found => found.Code == MistakeCode.ActionCodeContract
+        var mistake = Assert.Single(DefinitionValidator.Validate(Holding(Lookup.ToAction()), ValidationStage.Version, declaration), found =>
+            found.Code == MistakeCode.ActionCodeContract
         );
 
         Assert.Contains("result 'policy' is declared and not here", mistake.Message, StringComparison.Ordinal);
@@ -126,9 +124,8 @@ public sealed class CodeActionContractTests
             """{"formatVersion":5,"actions":[{"id":"lookupPolicy","description":"Finds","parameters":{"pesel":{"type":"text","maxLength":11,"description":"d"}},"implementation":"code"}]}""";
 
         Assert.Empty(DefinitionValidator.ValidateJson(Json, ValidationStage.Save));
-        Assert.DoesNotContain(
-            DefinitionValidator.ValidateJson(Json, ValidationStage.Version),
-            mistake => mistake.Resource.Kind == ResourceKind.Action
+        Assert.DoesNotContain(DefinitionValidator.ValidateJson(Json, ValidationStage.Version), mistake =>
+            mistake.Resource.Kind == ResourceKind.Action
         );
     }
 

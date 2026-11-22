@@ -204,9 +204,8 @@ public sealed class ProcedureRulesTests
             found[0].Message,
             StringComparison.Ordinal
         );
-        Assert.All(
-            found,
-            mistake => Assert.Contains("customer.city, order.floors, order.kind, system.flag", mistake.Fix, StringComparison.Ordinal)
+        Assert.All(found, mistake =>
+            Assert.Contains("customer.city, order.floors, order.kind, system.flag", mistake.Fix, StringComparison.Ordinal)
         );
     }
 
@@ -268,9 +267,8 @@ public sealed class ProcedureRulesTests
             ValidationStage.Save
         );
 
-        Assert.All(
-            mistakes.Where(mistake => mistake.Code == MistakeCode.ReferenceMissing),
-            mistake => Assert.Contains("no facts yet", mistake.Fix, StringComparison.Ordinal)
+        Assert.All(mistakes.Where(mistake => mistake.Code == MistakeCode.ReferenceMissing), mistake =>
+            Assert.Contains("no facts yet", mistake.Fix, StringComparison.Ordinal)
         );
         Assert.NotEmpty(mistakes);
     }
@@ -279,9 +277,8 @@ public sealed class ProcedureRulesTests
     [Trait("criterion", "AC-procedure-model-7")]
     public void A_collect_naming_a_fact_with_writableBy_assign_is_refused_with_the_fix_of_the_readme()
     {
-        var mistake = Assert.Single(
-            Check(Step("ask", new ProcedureStep { Collect = ["system.flag"] })),
-            found => found.Code == MistakeCode.FactCollectNotWritable
+        var mistake = Assert.Single(Check(Step("ask", new ProcedureStep { Collect = ["system.flag"] })), found =>
+            found.Code == MistakeCode.FactCollectNotWritable
         );
 
         Assert.Equal("steps.ask.collect[0]", mistake.Path);
@@ -547,14 +544,11 @@ public sealed class ProcedureRulesTests
     {
         var mistakes = DefinitionValidator.ValidateJson(ProcedureSamples.EveryMistake, ValidationStage.Version);
 
-        Assert.All(
-            mistakes.Where(mistake => mistake.Resource.Kind == ResourceKind.Procedure),
-            mistake =>
-            {
-                Assert.False(string.IsNullOrWhiteSpace(mistake.Path));
-                Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
-            }
-        );
+        Assert.All(mistakes.Where(mistake => mistake.Resource.Kind == ResourceKind.Procedure), mistake =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(mistake.Path));
+            Assert.False(string.IsNullOrWhiteSpace(mistake.Fix));
+        });
     }
 
     [Fact]

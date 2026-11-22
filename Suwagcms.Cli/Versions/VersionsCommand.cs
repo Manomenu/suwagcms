@@ -31,24 +31,20 @@ internal static class VersionsCommand
     {
         var command = new Command("list", "List the versions of the bot, newest first (or --open the Versions screen in the web app).");
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
-                }
-                var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var versions = answer.Body?.Deserialize<List<VersionSummary>>(Web) ?? [];
-                return await target.Run.Report.DoneAsync(new VersionListDocument(target.Bot, versions), VersionText.Table(versions));
+                return await target.OpenAsync(target.PageOf(Collection), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(environment, target.Address, target.CollectionPath(Collection), cancellationToken);
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var versions = answer.Body?.Deserialize<List<VersionSummary>>(Web) ?? [];
+            return await target.Run.Report.DoneAsync(new VersionListDocument(target.Bot, versions), VersionText.Table(versions));
+        });
         return command;
     }
 
@@ -63,38 +59,34 @@ internal static class VersionsCommand
             dryRun,
         };
         EditOptions.RefuseOpen(command, options, "versions create");
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var answer = await ServerCall.PostAsync(
+                environment,
+                target.Address,
+                target.CollectionPath(Collection) + EditOptions.Query(parsed.GetValue(dryRun), null),
+                new { },
+                cancellationToken
+            );
+            if (answer.ExitCode == ExitCodes.Refused)
             {
-                var answer = await ServerCall.PostAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath(Collection) + EditOptions.Query(parsed.GetValue(dryRun), null),
-                    new { },
+                var heading = string.Create(CultureInfo.InvariantCulture, $"Not created, {answer.Mistakes.Count} mistake(s):");
+                return await target.FailedAsync(
+                    answer with
+                    {
+                        Message = $"{heading}{Environment.NewLine}{answer.Message}",
+                    },
                     cancellationToken
                 );
-                if (answer.ExitCode == ExitCodes.Refused)
-                {
-                    var heading = string.Create(CultureInfo.InvariantCulture, $"Not created, {answer.Mistakes.Count} mistake(s):");
-                    return await target.FailedAsync(
-                        answer with
-                        {
-                            Message = $"{heading}{Environment.NewLine}{answer.Message}",
-                        },
-                        cancellationToken
-                    );
-                }
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var created =
-                    answer.Body?.Deserialize<VersionCreated>(Web) ?? throw new InvalidOperationException("the server sent no version");
-                return await target.Run.Report.DoneAsync(created, VersionText.Created(created));
             }
-        );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var created = answer.Body?.Deserialize<VersionCreated>(Web)
+                ?? throw new InvalidOperationException("the server sent no version");
+            return await target.Run.Report.DoneAsync(created, VersionText.Created(created));
+        });
         return command;
     }
 
@@ -105,29 +97,25 @@ internal static class VersionsCommand
             "Ask the bot which version it has (never what the CMS last sent), with the latest version, the versions still in use and the recent pushes (or --open the Versions screen in the web app)."
         );
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageOf(Collection), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath($"{Collection}/status"),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var status = answer.Body?.Deserialize<BotStatus>(Web) ?? throw new InvalidOperationException("the server sent no status");
-                return await target.Run.Report.DoneAsync(status, VersionText.Status(status));
+                return await target.OpenAsync(target.PageOf(Collection), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.CollectionPath($"{Collection}/status"),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var status = answer.Body?.Deserialize<BotStatus>(Web) ?? throw new InvalidOperationException("the server sent no status");
+            return await target.Run.Report.DoneAsync(status, VersionText.Status(status));
+        });
         return command;
     }
 
@@ -149,35 +137,31 @@ internal static class VersionsCommand
         };
         EditOptions.RefuseOpenWithJson(command, options);
         HistoryCommand.RefuseWrongPaging(command, limit, before, page);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var version = parsed.GetValue(number).ToString(CultureInfo.InvariantCulture);
+            if (parsed.GetValue(options.Open))
             {
-                var version = parsed.GetValue(number).ToString(CultureInfo.InvariantCulture);
-                if (parsed.GetValue(options.Open))
-                {
-                    var asked = parsed.GetValue(page) is { } wanted
-                        ? string.Create(CultureInfo.InvariantCulture, $"?historyPage={wanted}")
-                        : "";
-                    return await target.OpenAsync(new Uri(target.PageOf($"{Collection}/{version}"), asked), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, version)
-                        + "/window"
-                        + HistoryCommand.Query(parsed.GetValue(limit), parsed.GetValue(before), parsed.GetValue(page)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var shown = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no window");
-                return await target.Run.Report.DoneAsync(shown, HistoryText.Window(shown, parsed.GetValue(page)));
+                var asked = parsed.GetValue(page) is { } wanted
+                    ? string.Create(CultureInfo.InvariantCulture, $"?historyPage={wanted}")
+                    : "";
+                return await target.OpenAsync(new Uri(target.PageOf($"{Collection}/{version}"), asked), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, version)
+                    + "/window"
+                    + HistoryCommand.Query(parsed.GetValue(limit), parsed.GetValue(before), parsed.GetValue(page)),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var shown = answer.Body?.Deserialize<HistoryPage>(Web) ?? throw new InvalidOperationException("the server sent no window");
+            return await target.Run.Report.DoneAsync(shown, HistoryText.Window(shown, parsed.GetValue(page)));
+        });
         return command;
     }
 
@@ -192,31 +176,26 @@ internal static class VersionsCommand
             number,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var shownNumber = parsed.GetRequiredValue(number).ToString(CultureInfo.InvariantCulture);
+            if (parsed.GetValue(options.Open))
             {
-                var shownNumber = parsed.GetRequiredValue(number).ToString(CultureInfo.InvariantCulture);
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageOf($"{Collection}/{shownNumber}"), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(Collection, shownNumber),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var detail =
-                    answer.Body?.Deserialize<VersionDetail>(Web) ?? throw new InvalidOperationException("the server sent no version");
-                return await target.Run.Report.DoneAsync(detail, VersionText.Detail(detail));
+                return await target.OpenAsync(target.PageOf($"{Collection}/{shownNumber}"), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(Collection, shownNumber),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var detail = answer.Body?.Deserialize<VersionDetail>(Web) ?? throw new InvalidOperationException("the server sent no version");
+            return await target.Run.Report.DoneAsync(detail, VersionText.Detail(detail));
+        });
         return command;
     }
 }

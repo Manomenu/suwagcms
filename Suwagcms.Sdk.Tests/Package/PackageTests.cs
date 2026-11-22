@@ -19,9 +19,8 @@ public sealed class PackageTests
     [Trait("criterion", "AC-sdk-validator-11")]
     public void The_package_carries_the_schema()
     {
-        Assert.Contains(
-            Project.Descendants("None"),
-            item => item.Attribute("Include")?.Value == "definition-format.schema.json" && item.Attribute("Pack")?.Value == "true"
+        Assert.Contains(Project.Descendants("None"), item =>
+            item.Attribute("Include")?.Value == "definition-format.schema.json" && item.Attribute("Pack")?.Value == "true"
         );
     }
 

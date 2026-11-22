@@ -9,19 +9,16 @@ namespace Suwagcms.Sdk.Tests.Validation;
 
 public sealed class DefinitionValidatorTests
 {
-    private static readonly Rule VersionRule = new(
-        MistakeCode.StepUnreachable,
-        ValidationStage.Version,
-        definition =>
-            definition.Articles.Select(article => new Mistake(
-                MistakeCode.StepUnreachable,
-                ValidationStage.Save,
-                new ResourceRef(ResourceKind.Article, article.Id),
-                "id",
-                "m",
-                "f",
-                []
-            ))
+    private static readonly Rule VersionRule = new(MistakeCode.StepUnreachable, ValidationStage.Version, definition =>
+        definition.Articles.Select(article => new Mistake(
+            MistakeCode.StepUnreachable,
+            ValidationStage.Save,
+            new ResourceRef(ResourceKind.Article, article.Id),
+            "id",
+            "m",
+            "f",
+            []
+        ))
     );
 
     [Fact]

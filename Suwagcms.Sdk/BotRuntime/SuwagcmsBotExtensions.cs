@@ -55,10 +55,8 @@ public static class SuwagcmsBotExtensions
     {
         ArgumentNullException.ThrowIfNull(endpoints);
         var group = endpoints.MapGroup("/suwagcms");
-        group.MapGet(
-            "/state",
-            async (VersionRuntime runtime, CancellationToken cancellationToken) =>
-                Results.Json(await runtime.ReadStateAsync(cancellationToken), BotRuntimeJson.Options)
+        group.MapGet("/state", async (VersionRuntime runtime, CancellationToken cancellationToken) =>
+            Results.Json(await runtime.ReadStateAsync(cancellationToken), BotRuntimeJson.Options)
         );
         group.MapGet("/declaration", (BotDeclaration declaration) => Results.Json(declaration, BotRuntimeJson.Options));
         group.MapPut(
@@ -74,58 +72,49 @@ public static class SuwagcmsBotExtensions
                 return Answer(accepted, refused);
             }
         );
-        group.MapPut(
-            "/current",
-            async (HttpRequest request, VersionRuntime runtime, CancellationToken cancellationToken) =>
+        group.MapPut("/current", async (HttpRequest request, VersionRuntime runtime, CancellationToken cancellationToken) =>
+        {
+            using var reader = new StreamReader(request.Body, Encoding.UTF8);
+            var (accepted, refused) = await runtime.MakeCurrentAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken);
+            return Answer(accepted, refused);
+        });
+        group.MapPut("/availability", async (HttpRequest request, VersionRuntime runtime, CancellationToken cancellationToken) =>
+        {
+            using var reader = new StreamReader(request.Body, Encoding.UTF8);
+            var (accepted, refused) = await runtime.TakeAvailabilityAsync(
+                await reader.ReadToEndAsync(cancellationToken),
+                cancellationToken
+            );
+            return refused is null
+                ? Results.Json(accepted, BotRuntimeJson.Options)
+                : Results.Json(refused, BotRuntimeJson.Options, ProblemJson, refused.Status);
+        });
+        group.MapPost("/actions/test", async (HttpRequest request, ActionTestRoute route, CancellationToken cancellationToken) =>
+        {
+            using var reader = new StreamReader(request.Body, Encoding.UTF8);
+            try
             {
-                using var reader = new StreamReader(request.Body, Encoding.UTF8);
-                var (accepted, refused) = await runtime.MakeCurrentAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken);
-                return Answer(accepted, refused);
-            }
-        );
-        group.MapPut(
-            "/availability",
-            async (HttpRequest request, VersionRuntime runtime, CancellationToken cancellationToken) =>
-            {
-                using var reader = new StreamReader(request.Body, Encoding.UTF8);
-                var (accepted, refused) = await runtime.TakeAvailabilityAsync(
-                    await reader.ReadToEndAsync(cancellationToken),
-                    cancellationToken
+                return Results.Json(
+                    await route.RunAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken),
+                    BotRuntimeJson.Options
                 );
-                return refused is null
-                    ? Results.Json(accepted, BotRuntimeJson.Options)
-                    : Results.Json(refused, BotRuntimeJson.Options, ProblemJson, refused.Status);
             }
-        );
-        group.MapPost(
-            "/actions/test",
-            async (HttpRequest request, ActionTestRoute route, CancellationToken cancellationToken) =>
+            catch (JsonException exception)
             {
-                using var reader = new StreamReader(request.Body, Encoding.UTF8);
-                try
-                {
-                    return Results.Json(
-                        await route.RunAsync(await reader.ReadToEndAsync(cancellationToken), cancellationToken),
-                        BotRuntimeJson.Options
-                    );
-                }
-                catch (JsonException exception)
-                {
-                    return Results.Json(
-                        new BotRefusal
-                        {
-                            Title = "The test run was refused.",
-                            Status = StatusCodes.Status400BadRequest,
-                            Detail = $"The body does not fit the route: {exception.Message}",
-                            Mistakes = [],
-                        },
-                        BotRuntimeJson.Options,
-                        ProblemJson,
-                        StatusCodes.Status400BadRequest
-                    );
-                }
+                return Results.Json(
+                    new BotRefusal
+                    {
+                        Title = "The test run was refused.",
+                        Status = StatusCodes.Status400BadRequest,
+                        Detail = $"The body does not fit the route: {exception.Message}",
+                        Mistakes = [],
+                    },
+                    BotRuntimeJson.Options,
+                    ProblemJson,
+                    StatusCodes.Status400BadRequest
+                );
             }
-        );
+        });
         return group;
     }
 

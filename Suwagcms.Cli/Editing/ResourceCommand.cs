@@ -20,29 +20,25 @@ internal static class ResourceCommand
         var dryRun = EditOptions.DryRun();
         var command = new Command("delete", description) { id, ifRevision, dryRun };
         EditOptions.RefuseOpen(command, options, words, ": what it deletes is gone");
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var name = parsed.GetRequiredValue(id);
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.DeleteAsync(
+                environment,
+                target.Address,
+                target.ItemPath(collection, name) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
             {
-                var name = parsed.GetRequiredValue(id);
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.DeleteAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(collection, name) + EditOptions.Query(dry, parsed.GetValue(ifRevision)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                return await target.Run.Report.DoneAsync(
-                    document(target.Bot, name, dry),
-                    dry ? $"Would delete '{name}'. Nothing was changed." : $"Deleted '{name}'."
-                );
+                return await target.FailedAsync(answer, cancellationToken);
             }
-        );
+            return await target.Run.Report.DoneAsync(
+                document(target.Bot, name, dry),
+                dry ? $"Would delete '{name}'. Nothing was changed." : $"Deleted '{name}'."
+            );
+        });
         return command;
     }
 }

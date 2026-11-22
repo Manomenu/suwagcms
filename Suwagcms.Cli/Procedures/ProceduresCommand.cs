@@ -30,29 +30,25 @@ internal static class ProceduresCommand
             "List the procedures of the bot, and what stops each from becoming a version (or --open the Procedures screen in the web app)."
         );
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageOf(ProceduresCommand.Collection), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath(ProceduresCommand.Collection),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var list = answer.Body?.Deserialize<ProcedureList>(Web) ?? new ProcedureList([], []);
-                return await target.Run.Report.DoneAsync(new ProcedureListDocument(target.Bot, list), ProcedureText.Table(list));
+                return await target.OpenAsync(target.PageOf(ProceduresCommand.Collection), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.CollectionPath(ProceduresCommand.Collection),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var list = answer.Body?.Deserialize<ProcedureList>(Web) ?? new ProcedureList([], []);
+            return await target.Run.Report.DoneAsync(new ProcedureListDocument(target.Bot, list), ProcedureText.Table(list));
+        });
         return command;
     }
 
@@ -67,31 +63,26 @@ internal static class ProceduresCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageAt("Procedure", parsed.GetRequiredValue(id)), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(ProceduresCommand.Collection, parsed.GetRequiredValue(id)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var body = answer.Body ?? throw new InvalidOperationException("the server sent no procedure");
-                var procedure =
-                    body.Deserialize<ProcedureDetail>(Web) ?? throw new InvalidOperationException("the server sent no procedure");
-                return await target.Run.Report.DoneAsync(procedure, Yaml(body, procedure));
+                return await target.OpenAsync(target.PageAt("Procedure", parsed.GetRequiredValue(id)), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(ProceduresCommand.Collection, parsed.GetRequiredValue(id)),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var body = answer.Body ?? throw new InvalidOperationException("the server sent no procedure");
+            var procedure = body.Deserialize<ProcedureDetail>(Web) ?? throw new InvalidOperationException("the server sent no procedure");
+            return await target.Run.Report.DoneAsync(procedure, Yaml(body, procedure));
+        });
         return command;
     }
 

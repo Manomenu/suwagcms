@@ -50,48 +50,43 @@ internal static class ActionTestCommand
                 }
             }
         });
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageAt("Action", parsed.GetRequiredValue(id)), parsed);
-                }
-                var path = target.ItemPath(ActionsCommand.Collection, parsed.GetRequiredValue(id));
-                var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
-                if (read.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(read, cancellationToken);
-                }
-                var action = read.Body?.Deserialize<ActionView>(Web) ?? throw new InvalidOperationException("the server sent no action");
-                if (Asks(read.Body.Value) is { } question && !parsed.GetValue(yes))
-                {
-                    return await target.Run.Report.FailedAsync(ExitCodes.Refused, new FailureDocument(question), question);
-                }
-                var values = (parsed.GetValue(parameters) ?? [])
-                    .Select(given => given.Split('=', 2))
-                    .ToDictionary(pair => pair[0], pair => pair[1], StringComparer.Ordinal);
-                var answer = await ServerCall.PostAsync(
-                    environment,
-                    target.Address,
-                    path + "/test",
-                    new RunAction(values),
-                    cancellationToken,
-                    Wait
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var run =
-                    answer.Body?.Deserialize<ActionTestAnswer>(Web) ?? throw new InvalidOperationException("the server sent no answer");
-                return run.Outcome == Success
-                    ? await target.Run.Report.DoneAsync(run, Text(run, target.Bot))
-                    : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, run, Text(run, target.Bot));
+                return await target.OpenAsync(target.PageAt("Action", parsed.GetRequiredValue(id)), parsed);
             }
-        );
+            var path = target.ItemPath(ActionsCommand.Collection, parsed.GetRequiredValue(id));
+            var read = await ServerCall.GetAsync(environment, target.Address, path, cancellationToken);
+            if (read.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(read, cancellationToken);
+            }
+            var action = read.Body?.Deserialize<ActionView>(Web) ?? throw new InvalidOperationException("the server sent no action");
+            if (Asks(read.Body.Value) is { } question && !parsed.GetValue(yes))
+            {
+                return await target.Run.Report.FailedAsync(ExitCodes.Refused, new FailureDocument(question), question);
+            }
+            var values = (parsed.GetValue(parameters) ?? [])
+                .Select(given => given.Split('=', 2))
+                .ToDictionary(pair => pair[0], pair => pair[1], StringComparer.Ordinal);
+            var answer = await ServerCall.PostAsync(
+                environment,
+                target.Address,
+                path + "/test",
+                new RunAction(values),
+                cancellationToken,
+                Wait
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var run = answer.Body?.Deserialize<ActionTestAnswer>(Web) ?? throw new InvalidOperationException("the server sent no answer");
+            return run.Outcome == Success
+                ? await target.Run.Report.DoneAsync(run, Text(run, target.Bot))
+                : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, run, Text(run, target.Bot));
+        });
         return command;
     }
 

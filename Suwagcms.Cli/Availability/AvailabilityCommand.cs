@@ -41,30 +41,25 @@ internal static class AvailabilityCommand
             stored,
         };
         EditOptions.RefuseOpen(command, options, "availability list");
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.CollectionPath("availability") + (parsed.GetValue(stored) ? "?ask=false" : ""),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
             {
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath("availability") + (parsed.GetValue(stored) ? "?ask=false" : ""),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var view =
-                    answer.Body?.Deserialize<AvailabilityView>(Web)
-                    ?? throw new InvalidOperationException("the server sent no availability");
-                return await target.Run.Report.DoneAsync(
-                    new AvailabilityListDocument(target.Bot, view.Resources, view.Delivery),
-                    AvailabilityText.List(target.Bot, view, parsed.GetValue(stored))
-                );
+                return await target.FailedAsync(answer, cancellationToken);
             }
-        );
+            var view = answer.Body?.Deserialize<AvailabilityView>(Web)
+                ?? throw new InvalidOperationException("the server sent no availability");
+            return await target.Run.Report.DoneAsync(
+                new AvailabilityListDocument(target.Bot, view.Resources, view.Delivery),
+                AvailabilityText.List(target.Bot, view, parsed.GetValue(stored))
+            );
+        });
         return command;
     }
 
@@ -72,32 +67,27 @@ internal static class AvailabilityCommand
     {
         var command = new Command("send", "Send everything that is off to the bot again, and exit 1 unless the bot confirms it.");
         EditOptions.RefuseOpen(command, options, "availability send");
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var answer = await ServerCall.PostAsync(
+                environment,
+                target.Address,
+                target.CollectionPath("availability/send"),
+                new { },
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
             {
-                var answer = await ServerCall.PostAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath("availability/send"),
-                    new { },
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var delivery =
-                    answer.Body?.Deserialize<AvailabilityDelivery>(Web)
-                    ?? throw new InvalidOperationException("the server sent no delivery");
-                var document = new AvailabilitySendDocument(target.Bot, delivery);
-                var text = AvailabilityText.Delivery(target.Bot, delivery);
-                return delivery.State == AvailabilityDeliveryState.Confirmed
-                    ? await target.Run.Report.DoneAsync(document, text)
-                    : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, document, text);
+                return await target.FailedAsync(answer, cancellationToken);
             }
-        );
+            var delivery = answer.Body?.Deserialize<AvailabilityDelivery>(Web)
+                ?? throw new InvalidOperationException("the server sent no delivery");
+            var document = new AvailabilitySendDocument(target.Bot, delivery);
+            var text = AvailabilityText.Delivery(target.Bot, delivery);
+            return delivery.State == AvailabilityDeliveryState.Confirmed
+                ? await target.Run.Report.DoneAsync(document, text)
+                : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, document, text);
+        });
         return command;
     }
 
@@ -127,55 +117,51 @@ internal static class AvailabilityCommand
             command.Add(yes);
         }
         EditOptions.OpenWhatItSaves(command, options, dryRun);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var path = target.CollectionPath(
+                $"availability/{Uri.EscapeDataString(parsed.GetRequiredValue(kind))}/{Uri.EscapeDataString(parsed.GetRequiredValue(id))}/{word}"
+            );
+            var dry = parsed.GetValue(dryRun);
+            var confirmed = yes is not null && parsed.GetValue(yes);
+            if (dry || (yes is not null && !confirmed))
             {
-                var path = target.CollectionPath(
-                    $"availability/{Uri.EscapeDataString(parsed.GetRequiredValue(kind))}/{Uri.EscapeDataString(parsed.GetRequiredValue(id))}/{word}"
-                );
-                var dry = parsed.GetValue(dryRun);
-                var confirmed = yes is not null && parsed.GetValue(yes);
-                if (dry || (yes is not null && !confirmed))
+                var (preview, previewFailure) = await CallAsync(target, path + "?dryRun=true", environment, cancellationToken);
+                if (preview is null)
                 {
-                    var (preview, previewFailure) = await CallAsync(target, path + "?dryRun=true", environment, cancellationToken);
-                    if (preview is null)
-                    {
-                        return previewFailure;
-                    }
-                    if (dry)
-                    {
-                        return await target.Run.Report.DoneAsync(Document(target.Bot, preview, true), AvailabilityText.DryRun(preview));
-                    }
-                    if (preview.Changed && preview.UsedBy.Count > 0)
-                    {
-                        return await target.Run.Report.FailedWithAsync(
-                            ExitCodes.Refused,
-                            Document(target.Bot, preview, true),
-                            AvailabilityText.NeedsYes(preview)
-                        );
-                    }
+                    return previewFailure;
                 }
-                var (done, failure) = await CallAsync(target, path, environment, cancellationToken);
-                if (done is null)
+                if (dry)
                 {
-                    return failure;
+                    return await target.Run.Report.DoneAsync(Document(target.Bot, preview, true), AvailabilityText.DryRun(preview));
                 }
-                var text = AvailabilityText.Done(target.Bot, done);
-                var reported =
-                    done.Delivery.State == AvailabilityDeliveryState.Confirmed
-                        ? await target.Run.Report.DoneAsync(Document(target.Bot, done, false), text)
-                        : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, Document(target.Bot, done, false), text);
-                return await target.OpenSavedAsync(
-                    reported,
-                    parsed,
-                    options,
-                    Pages[parsed.GetRequiredValue(kind)],
-                    parsed.GetRequiredValue(id)
-                );
+                if (preview.Changed && preview.UsedBy.Count > 0)
+                {
+                    return await target.Run.Report.FailedWithAsync(
+                        ExitCodes.Refused,
+                        Document(target.Bot, preview, true),
+                        AvailabilityText.NeedsYes(preview)
+                    );
+                }
             }
-        );
+            var (done, failure) = await CallAsync(target, path, environment, cancellationToken);
+            if (done is null)
+            {
+                return failure;
+            }
+            var text = AvailabilityText.Done(target.Bot, done);
+            var reported =
+                done.Delivery.State == AvailabilityDeliveryState.Confirmed
+                    ? await target.Run.Report.DoneAsync(Document(target.Bot, done, false), text)
+                    : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, Document(target.Bot, done, false), text);
+            return await target.OpenSavedAsync(
+                reported,
+                parsed,
+                options,
+                Pages[parsed.GetRequiredValue(kind)],
+                parsed.GetRequiredValue(id)
+            );
+        });
         return command;
     }
 

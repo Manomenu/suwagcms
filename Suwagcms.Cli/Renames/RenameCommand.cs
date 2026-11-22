@@ -40,33 +40,28 @@ internal static class RenameCommand
             dryRun,
         };
         EditOptions.OpenWhatItSaves(command, options, dryRun);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var (collection, pageKind) = Kinds[parsed.GetRequiredValue(kind)];
+            var dry = parsed.GetValue(dryRun);
+            var answer = await ServerCall.PostAsync(
+                environment,
+                target.Address,
+                $"{target.ItemPath(collection, parsed.GetRequiredValue(id))}/rename{EditOptions.Query(dry, parsed.GetValue(ifRevision))}",
+                new RenameResource(parsed.GetRequiredValue(newId)),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
             {
-                var (collection, pageKind) = Kinds[parsed.GetRequiredValue(kind)];
-                var dry = parsed.GetValue(dryRun);
-                var answer = await ServerCall.PostAsync(
-                    environment,
-                    target.Address,
-                    $"{target.ItemPath(collection, parsed.GetRequiredValue(id))}/rename{EditOptions.Query(dry, parsed.GetValue(ifRevision))}",
-                    new RenameResource(parsed.GetRequiredValue(newId)),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var renamed =
-                    answer.Body?.Deserialize<RenameAnswer>(Web) ?? throw new InvalidOperationException("the server sent no answer");
-                var reported = await target.Run.Report.DoneAsync(
-                    new RenameDocument(target.Bot, renamed.Kind, renamed.OldId, renamed.Id, renamed.Revision, renamed.Referrers, dry),
-                    RenameText.Of(renamed, dry)
-                );
-                return await target.OpenSavedAsync(reported, parsed, options, pageKind, renamed.Id);
+                return await target.FailedAsync(answer, cancellationToken);
             }
-        );
+            var renamed = answer.Body?.Deserialize<RenameAnswer>(Web) ?? throw new InvalidOperationException("the server sent no answer");
+            var reported = await target.Run.Report.DoneAsync(
+                new RenameDocument(target.Bot, renamed.Kind, renamed.OldId, renamed.Id, renamed.Revision, renamed.Referrers, dry),
+                RenameText.Of(renamed, dry)
+            );
+            return await target.OpenSavedAsync(reported, parsed, options, pageKind, renamed.Id);
+        });
         return command;
     }
 }

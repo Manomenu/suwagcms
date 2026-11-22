@@ -90,9 +90,8 @@ public sealed class InformBlockTests(TestDatabase database, ClassServer server) 
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
         Assert.Equal(["reference.missing", "step.inform.pointName"], mistakes.Select(mistake => mistake.GetProperty("code").GetString()));
-        Assert.All(
-            mistakes,
-            mistake => Assert.Contains("step 'tell'", mistake.GetProperty("message").GetString(), StringComparison.Ordinal)
+        Assert.All(mistakes, mistake =>
+            Assert.Contains("step 'tell'", mistake.GetProperty("message").GetString(), StringComparison.Ordinal)
         );
         Assert.Equal(HttpStatusCode.NotFound, (await scene.Procedures.Get("orderValuation")).StatusCode);
     }

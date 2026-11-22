@@ -7,10 +7,8 @@ namespace Suwagcms.Sdk.Validation.Rules;
 internal static class ProcedureMistake
 {
     public static Rule For(MistakeCode code, ValidationStage stage, Func<BotDefinition, Procedure, IEnumerable<Mistake>> check) =>
-        new(
-            code,
-            stage,
-            definition => definition.Procedures.SelectMany(procedure => check(definition, procedure).Where(mistake => mistake.Code == code))
+        new(code, stage, definition =>
+            definition.Procedures.SelectMany(procedure => check(definition, procedure).Where(mistake => mistake.Code == code))
         );
 
     public static Mistake Make(

@@ -10,21 +10,17 @@ internal static class ActionBlockRules
 {
     public static IReadOnlyList<Rule> All { get; } =
     [
-        Save(
-            MistakeCode.ActionMappingTypeMismatch,
-            (definition, procedure) => Mappings(definition, procedure, code: false, TypeMismatches)
+        Save(MistakeCode.ActionMappingTypeMismatch, (definition, procedure) =>
+            Mappings(definition, procedure, code: false, TypeMismatches)
         ),
         Save(MistakeCode.ActionMappingTooWide, (definition, procedure) => Mappings(definition, procedure, code: false, TooWide)),
         Save(MistakeCode.ActionMappingResultTwice, (_, procedure) => ResultsTwice(procedure)),
         Save(MistakeCode.StepActionFieldForeign, (_, procedure) => ForeignFields(procedure)),
-        ProcedureMistake.For(
-            MistakeCode.ActionCodeMapping,
-            ValidationStage.Version,
-            (definition, procedure) =>
-                Mappings(definition, procedure, code: true, MissingFields)
-                    .Concat(Mappings(definition, procedure, code: true, TypeMismatches))
-                    .Concat(Mappings(definition, procedure, code: true, TooWide))
-                    .Select(mistake => mistake with { Code = MistakeCode.ActionCodeMapping })
+        ProcedureMistake.For(MistakeCode.ActionCodeMapping, ValidationStage.Version, (definition, procedure) =>
+            Mappings(definition, procedure, code: true, MissingFields)
+                .Concat(Mappings(definition, procedure, code: true, TypeMismatches))
+                .Concat(Mappings(definition, procedure, code: true, TooWide))
+                .Select(mistake => mistake with { Code = MistakeCode.ActionCodeMapping })
         ),
         ProcedureMistake.For(MistakeCode.StepActionNoOnFailure, ValidationStage.Version, (_, procedure) => NoOnFailure(procedure)),
         ProcedureMistake.For(MistakeCode.StepActionUnmappedParameter, ValidationStage.Version, Unmapped),

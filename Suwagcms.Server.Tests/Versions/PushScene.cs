@@ -90,8 +90,10 @@ internal sealed class PushScene(HttpClient client, string bot)
         {
             parts.Add(await Client.GetStringAsync($"/api/bots/{Bot}/{path}", TestContext.Current.CancellationToken));
         }
-        var versions =
-            await Client.GetFromJsonAsync<List<VersionSummary>>($"/api/bots/{Bot}/versions", TestContext.Current.CancellationToken) ?? [];
+        var versions = await Client.GetFromJsonAsync<List<VersionSummary>>(
+            $"/api/bots/{Bot}/versions",
+            TestContext.Current.CancellationToken
+        ) ?? [];
         foreach (var version in versions)
         {
             parts.Add(await Client.GetStringAsync($"/api/bots/{Bot}/versions/{version.Number}", TestContext.Current.CancellationToken));

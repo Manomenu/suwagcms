@@ -21,39 +21,34 @@ internal static class DeclarationCommand
             stored,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            if (parsed.GetValue(options.Open))
             {
-                if (parsed.GetValue(options.Open))
-                {
-                    await WebPage.ShowAsync(
-                        new Uri(target.Address, $"bots/{Uri.EscapeDataString(target.Bot)}"),
-                        parsed.InvocationConfiguration.Output,
-                        parsed.InvocationConfiguration.Error,
-                        environment.OpenBrowser
-                    );
-                    return ExitCodes.Done;
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath("declaration") + (parsed.GetValue(stored) ? "?ask=false" : ""),
-                    cancellationToken
+                await WebPage.ShowAsync(
+                    new Uri(target.Address, $"bots/{Uri.EscapeDataString(target.Bot)}"),
+                    parsed.InvocationConfiguration.Output,
+                    parsed.InvocationConfiguration.Error,
+                    environment.OpenBrowser
                 );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var status =
-                    answer.Body?.Deserialize<DeclarationStatus>(Web)
-                    ?? throw new InvalidOperationException("the server sent no declaration");
-                return status.Ask is DeclarationAsk.Answered or DeclarationAsk.NotAsked
-                    ? await target.Run.Report.DoneAsync(status, DeclarationText.Of(status))
-                    : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, status, DeclarationText.Of(status));
+                return ExitCodes.Done;
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.CollectionPath("declaration") + (parsed.GetValue(stored) ? "?ask=false" : ""),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var status = answer.Body?.Deserialize<DeclarationStatus>(Web)
+                ?? throw new InvalidOperationException("the server sent no declaration");
+            return status.Ask is DeclarationAsk.Answered or DeclarationAsk.NotAsked
+                ? await target.Run.Report.DoneAsync(status, DeclarationText.Of(status))
+                : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, status, DeclarationText.Of(status));
+        });
         return command;
     }
 }

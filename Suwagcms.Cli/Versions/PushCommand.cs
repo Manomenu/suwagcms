@@ -33,57 +33,52 @@ internal static class PushCommand
             dryRun,
         };
         EditOptions.RefuseOpen(command, options, "push");
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.CollectionPath("versions/status"),
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
             {
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.CollectionPath("versions/status"),
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var status = answer.Body?.Deserialize<BotStatus>(Web) ?? throw new InvalidOperationException("the server sent no status");
-                if (status.Latest is not { } latest)
-                {
-                    const string none = "No version to push. Create one: suwagcms versions create";
-                    return await target.Run.Report.FailedWithAsync(
-                        ExitCodes.Refused,
-                        new PushDocument(target.Bot, PushDocument.Failed, 0, status.Has, none, []),
-                        none
-                    );
-                }
-                var number = parsed.GetValue(version) ?? latest;
-                var path = target.ItemPath("versions", number.ToString(CultureInfo.InvariantCulture));
-                if (parsed.GetValue(dryRun))
-                {
-                    return await PlanAsync(target, environment, path, cancellationToken);
-                }
-                if (status.Reach == BotReach.Answered && status.Has == number && !status.HasUnknownVersion)
-                {
-                    return await target.Run.Report.DoneAsync(
-                        new PushDocument(target.Bot, PushDocument.Unchanged, number, number, null, []),
-                        VersionText.AlreadyPushed(target.Bot, number)
-                    );
-                }
-                var pushed = await ServerCall.PostAsync(environment, target.Address, $"{path}/push", new { }, cancellationToken);
-                if (pushed.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(pushed, cancellationToken);
-                }
-                var result =
-                    pushed.Body?.Deserialize<PushResult>(Web) ?? throw new InvalidOperationException("the server sent no push result");
-                var document = PushDocument.Of(target.Bot, result);
-                return result.Outcome == PushOutcome.Succeeded
-                    ? await target.Run.Report.DoneAsync(document, VersionText.Pushed(target.Bot, result, latest))
-                    : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, document, VersionText.PushFailed(result));
+                return await target.FailedAsync(answer, cancellationToken);
             }
-        );
+            var status = answer.Body?.Deserialize<BotStatus>(Web) ?? throw new InvalidOperationException("the server sent no status");
+            if (status.Latest is not { } latest)
+            {
+                const string none = "No version to push. Create one: suwagcms versions create";
+                return await target.Run.Report.FailedWithAsync(
+                    ExitCodes.Refused,
+                    new PushDocument(target.Bot, PushDocument.Failed, 0, status.Has, none, []),
+                    none
+                );
+            }
+            var number = parsed.GetValue(version) ?? latest;
+            var path = target.ItemPath("versions", number.ToString(CultureInfo.InvariantCulture));
+            if (parsed.GetValue(dryRun))
+            {
+                return await PlanAsync(target, environment, path, cancellationToken);
+            }
+            if (status.Reach == BotReach.Answered && status.Has == number && !status.HasUnknownVersion)
+            {
+                return await target.Run.Report.DoneAsync(
+                    new PushDocument(target.Bot, PushDocument.Unchanged, number, number, null, []),
+                    VersionText.AlreadyPushed(target.Bot, number)
+                );
+            }
+            var pushed = await ServerCall.PostAsync(environment, target.Address, $"{path}/push", new { }, cancellationToken);
+            if (pushed.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(pushed, cancellationToken);
+            }
+            var result = pushed.Body?.Deserialize<PushResult>(Web) ?? throw new InvalidOperationException("the server sent no push result");
+            var document = PushDocument.Of(target.Bot, result);
+            return result.Outcome == PushOutcome.Succeeded
+                ? await target.Run.Report.DoneAsync(document, VersionText.Pushed(target.Bot, result, latest))
+                : await target.Run.Report.FailedWithAsync(ExitCodes.Refused, document, VersionText.PushFailed(result));
+        });
         return command;
     }
 

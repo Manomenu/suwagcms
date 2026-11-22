@@ -33,35 +33,31 @@ internal static class UsageCommand
             id,
         };
         EditOptions.RefuseOpenWithJson(command, options);
-        command.SetBotAction(
-            options,
-            environment,
-            async (target, parsed, cancellationToken) =>
+        command.SetBotAction(options, environment, async (target, parsed, cancellationToken) =>
+        {
+            var kindWord = parsed.GetRequiredValue(kind);
+            var resourceId = parsed.GetRequiredValue(id);
+            var (collection, page) = Kinds[kindWord];
+            if (parsed.GetValue(options.Open))
             {
-                var kindWord = parsed.GetRequiredValue(kind);
-                var resourceId = parsed.GetRequiredValue(id);
-                var (collection, page) = Kinds[kindWord];
-                if (parsed.GetValue(options.Open))
-                {
-                    return await target.OpenAsync(target.PageAt(page, resourceId), parsed);
-                }
-                var answer = await ServerCall.GetAsync(
-                    environment,
-                    target.Address,
-                    target.ItemPath(collection, resourceId) + "/usage",
-                    cancellationToken
-                );
-                if (answer.ExitCode != ExitCodes.Done)
-                {
-                    return await target.FailedAsync(answer, cancellationToken);
-                }
-                var usage = answer.Body?.Deserialize<UsageView>(Web) ?? throw new InvalidOperationException("the server sent no usage");
-                return await target.Run.Report.DoneAsync(
-                    new UsageDocument(target.Bot, kindWord, resourceId, usage.UsedBy, usage.Uses),
-                    UsageText.Lists(usage)
-                );
+                return await target.OpenAsync(target.PageAt(page, resourceId), parsed);
             }
-        );
+            var answer = await ServerCall.GetAsync(
+                environment,
+                target.Address,
+                target.ItemPath(collection, resourceId) + "/usage",
+                cancellationToken
+            );
+            if (answer.ExitCode != ExitCodes.Done)
+            {
+                return await target.FailedAsync(answer, cancellationToken);
+            }
+            var usage = answer.Body?.Deserialize<UsageView>(Web) ?? throw new InvalidOperationException("the server sent no usage");
+            return await target.Run.Report.DoneAsync(
+                new UsageDocument(target.Bot, kindWord, resourceId, usage.UsedBy, usage.Uses),
+                UsageText.Lists(usage)
+            );
+        });
         return command;
     }
 }

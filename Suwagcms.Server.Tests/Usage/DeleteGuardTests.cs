@@ -163,14 +163,12 @@ public sealed class DeleteGuardTests(TestDatabase database, ClassServer server) 
         Assert.Equal("reference.missing", mistake.GetProperty("code").GetString());
         Assert.Equal("order.kind", mistake.GetProperty("resource").GetProperty("id").GetString());
         var referrers = Referrers(mistake);
-        Assert.All(
-            referrers,
-            referrer =>
-                Assert.True(
-                    referrer.StartsWith("orderValuation:steps.ask.", StringComparison.Ordinal)
-                        || referrer == "secondOrder:steps.ask.collect[0]",
-                    referrer
-                )
+        Assert.All(referrers, referrer =>
+            Assert.True(
+                referrer.StartsWith("orderValuation:steps.ask.", StringComparison.Ordinal)
+                    || referrer == "secondOrder:steps.ask.collect[0]",
+                referrer
+            )
         );
         Assert.Contains("secondOrder:steps.ask.collect[0]", referrers);
         Assert.Contains(referrers, referrer => referrer.StartsWith("orderValuation:", StringComparison.Ordinal));

@@ -140,9 +140,8 @@ public sealed class ProcedureEndpointsTests(TestDatabase database, ClassServer s
 
         Assert.Equal(["step.block.unknown"], await ProcedureApi.CodesOf(unknown));
         Assert.Equal(["step.block.multiple"], await ProcedureApi.CodesOf(two));
-        Assert.All(
-            (await FactApi.MistakesOf(unknown)).Concat(await FactApi.MistakesOf(two)),
-            mistake => Assert.Contains("listen, collect, say, assign", mistake.GetProperty("fix").GetString(), StringComparison.Ordinal)
+        Assert.All((await FactApi.MistakesOf(unknown)).Concat(await FactApi.MistakesOf(two)), mistake =>
+            Assert.Contains("listen, collect, say, assign", mistake.GetProperty("fix").GetString(), StringComparison.Ordinal)
         );
     }
 
@@ -212,9 +211,8 @@ public sealed class ProcedureEndpointsTests(TestDatabase database, ClassServer s
         );
 
         Assert.Equal(["assign.value.invalid", "condition.type.misfit", "condition.value.invalid"], await ProcedureApi.CodesOf(response));
-        Assert.All(
-            await FactApi.MistakesOf(response),
-            mistake => Assert.False(string.IsNullOrWhiteSpace(mistake.GetProperty("fix").GetString()))
+        Assert.All(await FactApi.MistakesOf(response), mistake =>
+            Assert.False(string.IsNullOrWhiteSpace(mistake.GetProperty("fix").GetString()))
         );
     }
 
