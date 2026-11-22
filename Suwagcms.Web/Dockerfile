@@ -1,4 +1,4 @@
-FROM docker.io/library/node:24.16-alpine3.22 AS builder
+FROM docker.io/library/node:26.3-alpine3.22 AS builder
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 WORKDIR /app
 COPY Suwagcms.Web/package.json Suwagcms.Web/pnpm-lock.yaml Suwagcms.Web/pnpm-workspace.yaml ./
