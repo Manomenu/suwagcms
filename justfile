@@ -44,7 +44,7 @@ down:
 # Regenerate the API contract (contract/openapi.json) and the web app's types from it, after changing a record the API sends or receives; then raise the contract's version in contract/package.json
 [group('dev')]
 api-types:
-    @./scripts/.internal/api-types.sh
+    @{{ suwgate }} dev api-types
 
 # The whole gate: build with analyzers, csharpier, every test, the web checks, the API contract and its version, acceptance criteria, shellcheck, gitleaks, the browser tests (the same CI runs); a linked worktree gets its own test databases and ports
 [group('maintenance')]
@@ -65,7 +65,7 @@ check-quick:
 [group('maintenance')]
 [positional-arguments]
 slow-tests *args:
-    @./scripts/.internal/slow-tests.sh "$@"
+    @{{ suwgate }} dev slow-tests "$@"
 
 # Format the code: CSharpier for C#, Prettier for the web app
 [group('maintenance')]
