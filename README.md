@@ -75,14 +75,15 @@ docker compose --profile db up -d --build --wait   # web app and API on http://1
 
 ### 2. Install the CLI
 
-Needs the .NET 10 SDK. The CLI is not on nuget.org yet, so pack it from the checkout and install it as a global tool:
+Needs the .NET 10 SDK. The CLI is the [`Suwagcms.Cli`](https://www.nuget.org/packages/Suwagcms.Cli) .NET tool on nuget.org:
 
 ```sh
-dotnet pack Suwagcms.Cli -c Release -o .artifacts/nupkg
-dotnet tool install --global --add-source .artifacts/nupkg Suwagcms.Cli
+dotnet tool install --global Suwagcms.Cli
+dotnet tool update --global Suwagcms.Cli    # later, for a new version
 ```
 
-With [`just`](https://github.com/casey/just), `just cli-install` does the same and also replaces an installed version.
+The CLI and the SDK are released together under one version, so pick the same number for both. To run the CLI of your checkout instead,
+`just cli-install` (with [`just`](https://github.com/casey/just)) packs it and replaces the installed tool.
 
 ### 3. Register a bot and work on it
 

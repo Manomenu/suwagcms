@@ -2,7 +2,7 @@
 set -euo pipefail
 if [ "${1:-}" = "--help" ]; then
     cat <<'HELP'
-Says whether <version> is a release version of Suwagcms.Sdk: the one rule, for both ways of publishing and the workflow.
+Says whether <version> is a release version of Suwagcms.Sdk and Suwagcms.Cli: the one rule, for both ways of publishing and the workflow.
 Leading zeros are refused because nuget.org normalizes them away, so the package file would not carry the version asked for.
 HELP
     exit 0

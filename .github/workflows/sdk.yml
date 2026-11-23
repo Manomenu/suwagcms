@@ -59,7 +59,9 @@ jobs:
           global-json-file: global.json
 
       - name: Pack
-        run: dotnet pack Suwagcms.Sdk -c Release -o nupkg -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true
+        run: |
+          dotnet pack Suwagcms.Sdk -c Release -o nupkg -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true
+          dotnet pack Suwagcms.Cli -c Release -o nupkg -p:Version="$VERSION" -p:ContinuousIntegrationBuild=true
 
       - name: actions/upload-artifact v7.0.2
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
@@ -96,4 +98,7 @@ jobs:
       - name: Push
         env:
           NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
-        run: dotnet nuget push "nupkg/Suwagcms.Sdk.$VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"
+        run: |
+          for package in Suwagcms.Sdk Suwagcms.Cli; do
+            dotnet nuget push "nupkg/$package.$VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+          done

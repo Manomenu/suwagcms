@@ -2,7 +2,7 @@
 set -euo pipefail
 if [ "${1:-}" = "--help" ]; then
     cat <<'HELP'
-Starts the release of Suwagcms.Sdk: runs the sdk workflow on master, which tests, packs and pushes to nuget.org.
+Starts the release of Suwagcms.Sdk and Suwagcms.Cli under one version: runs the sdk workflow on master, which tests, packs and pushes to nuget.org.
 Nothing is packed here and no key is used.
 A version on nuget.org cannot be deleted, only unlisted: check the number first.
 HELP
@@ -39,6 +39,6 @@ if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/master)" ]]; then
 fi
 
 gh workflow run sdk.yml --ref master -f version="$version"
-echo "Started the release of Suwagcms.Sdk $version from $(git rev-parse --short HEAD). Follow it:"
+echo "Started the release of Suwagcms.Sdk and Suwagcms.Cli $version from $(git rev-parse --short HEAD). Follow it:"
 echo "  gh run list --workflow sdk.yml --limit 1"
 echo "  gh run watch"

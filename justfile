@@ -85,7 +85,7 @@ mutate:
 sdk-schema:
     @./scripts/.internal/sdk-schema.sh
 
-# Release Suwagcms.Sdk as <version>: runs the sdk workflow on master, which pushes to nuget.org (docs/release.md)
+# Release Suwagcms.Sdk and Suwagcms.Cli as <version>: runs the sdk workflow on master, which pushes to nuget.org (docs/release.md)
 [group('dev')]
 sdk-publish version:
     @./scripts/.internal/sdk-publish.sh {{ version }}

@@ -6,9 +6,22 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>suwagcms</ToolCommandName>
     <PackageId>Suwagcms.Cli</PackageId>
+    <Version>0.0.0-local</Version>
     <DisableTransitiveFrameworkReferences>true</DisableTransitiveFrameworkReferences>
-    <Description>The command line of Suwagcms.</Description>
+    <Authors>Piotr Gugnowski</Authors>
+    <Copyright>Copyright (c) 2026 Piotr Gugnowski</Copyright>
+    <Description>The suwagcms command: read and change what a bot knows and does in Suwagcms (facts, knowledge bases, articles, procedures, actions, persona), apply changes all or nothing, and create and push versions.</Description>
+    <PackageTags>suwagcms cms chatbot bot cli dotnet-tool</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/Manomenu/suwagcms</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Manomenu/suwagcms.git</RepositoryUrl>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Suwbackkit.Cli" />
