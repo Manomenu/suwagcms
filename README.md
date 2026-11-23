@@ -5,8 +5,12 @@
   <img alt="suwagcms, a CMS for agent systems. People and coding agents edit what a bot knows and does; any change that would leave the bot inconsistent is refused, with the fix. Web, CLI and Claude Code plugin, versions and rollback. 7 kinds of resource, 7 procedure blocks, 3 front doors with the same abilities, 1 validator in the SDK. A bot page shows: bot has v12, latest v14, Push v14, other version v13." src="docs/visual/board/img/readme/hero-light.png" width="100%">
 </picture>
 
-> **Status:** built. [`Suwagcms.Sdk`](https://www.nuget.org/packages/Suwagcms.Sdk) is on nuget.org. [Suwchatbot](https://github.com/Manomenu/suwchatbot), the first bot,
-> has not moved onto it yet. There is no login: run the CMS and the bots' routes only inside a trusted network.
+Suwagcms holds the definition of an LLM chatbot (its facts, knowledge bases and articles, procedures, actions and persona) and delivers it to
+the bot as versions. You edit in the web app, the `suwagcms` CLI or Claude Code; your bot takes versions through the
+[`Suwagcms.Sdk`](https://www.nuget.org/packages/Suwagcms.Sdk) package or the same HTTP routes in any language.
+
+> **Status:** built and in use: [Suwchatbot](https://github.com/Manomenu/suwchatbot) runs on `Suwagcms.Sdk` from nuget.org.
+> There is no login yet: run the CMS and the bots' routes only inside a trusted network.
 
 ## Why
 
@@ -28,12 +32,16 @@ The bot does not read the CMS live, so what is saved reaches customers only afte
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/visual/board/img/readme/features-dark.png">
-  <img alt="What the bot knows: knowledge bases and articles in Markdown, pl or en, with content for the customer, a guide for the model and a description for search; facts, global and local: text with a pattern, int with a range, enum, and writableBy says who may write; persona, one per bot, personality and scope delivered in the version. What the bot does: procedures in a visual creator from listen, collect, say, assign, start, inform and action; actions, http or code, a typed contract mapped to facts by each step, with a test run. What keeps it consistent: delete and edit guards, no loops, availability." src="docs/visual/board/img/readme/features-light.png" width="100%">
+  <img alt="What the bot knows: knowledge bases and articles in Markdown, pl or en, with content for the customer, a guide for the model and a description for search; facts, global and local: text with a pattern, int with a range, enum, and writableBy says who may write; persona, one per bot, personality and scope delivered in the version. What the bot does: procedures, a page read top to bottom, from listen, collect, say, assign, start, inform and action; actions, http or code, a typed contract mapped to facts by each step, with a test run. What keeps it consistent and traceable: delete and edit guards, what is used cannot be deleted or narrowed; no loops, a reference closing a loop is refused when added; availability, off changes what can be found, never what exists; rename, a new id rewrites every reference to it, all or nothing; history, every change and when, also after a delete; diff and export, what a push changes and a version as YAML to read." src="docs/visual/board/img/readme/features-light.png" width="100%">
 </picture>
 
-<img alt="The steps of the quoteRequest procedure on its page: a numbered list, an If with an indented branch ending in End, an Else if that goes on, and an Else holding a nested If with a Next: row." src="docs/visual/board/img/readme/screen-steps.png" width="100%">
+The procedure editor: a procedure is a numbered list of steps, with `If` / `Else` branches indented under the step they follow.
 
-<img alt="The facts screen: customer.city, customer.email with a pattern, order.area, order.kind and order.status, each with its type, description and what uses it." src="docs/visual/board/img/readme/screen-facts.png" width="100%">
+<img alt="The steps of the quoteRequest procedure in the web app: 1. Ask askType, property.type. If property.type is one of land: Say sayLand, We value land through a partner, who will call you today. Else: Ask askArea, property.area; If property.area is at least 500: Say sayVisit, A property of {property.area} m² needs a visit before the quote; Else: no steps, goes on to askContact. 2. Ask askContact, customer.email, customer.city. 3. Set markNew, order.status = new. 4. Tell thanks, Thank the customer and say what happens next (1 point). End: the procedure ends here." src="docs/visual/board/img/readme/screen-steps.png" width="100%">
+
+The facts of a bot, each with its type, who may write it and what uses it:
+
+<img alt="The Facts of appraiser screen, with the sidebar of the bot (Facts, Knowledge bases, Articles, Procedures, Actions, Persona, Versions, History) and a table: customer.city, text up to 60, set; customer.email, text up to 120 with a pattern, set; order.status, enum new, quoted, closed, assign; property.area, int 1 to 100000, set; property.type, enum flat, house, land, set. Each is used by quoteRequest and has an Edit button." src="docs/visual/board/img/readme/screen-facts.png" width="100%">
 
 ## Three front doors
 
@@ -53,65 +61,176 @@ The CMS must be able to reach the bot; the bot never calls the CMS. Routes sit u
 
 ## Quick start
 
-Needs .NET SDK 10, Node 24 with pnpm 11, [`just`](https://github.com/casey/just) and Docker: [docs/development.md](docs/development.md).
+### 1. Run the CMS
+
+Needs Docker. The images build from this repository:
 
 ```sh
-just up                  # the whole stack on http://127.0.0.1:8220, then a smoke test
-just cli-install         # the suwagcms command, packed from this repository
-suwagcms server http://127.0.0.1:8220
-suwagcms status
-suwagcms bots --help     # register a bot by its address
+git clone https://github.com/Manomenu/suwagcms.git && cd suwagcms
+docker compose --profile db up -d --build --wait   # web app and API on http://127.0.0.1:8220, with its own PostgreSQL
 ```
 
-Then, in Claude Code:
+`docker compose --profile db down` stops it; the database volume stays. Ports and an external PostgreSQL are set in `.env`
+([Configuration](#configuration)).
+
+### 2. Install the CLI
+
+Needs the .NET 10 SDK. The CLI is not on nuget.org yet, so pack it from the checkout and install it as a global tool:
+
+```sh
+dotnet pack Suwagcms.Cli -c Release -o .artifacts/nupkg
+dotnet tool install --global --add-source .artifacts/nupkg Suwagcms.Cli
+```
+
+With [`just`](https://github.com/casey/just), `just cli-install` does the same and also replaces an installed version.
+
+### 3. Register a bot and work on it
+
+```sh
+suwagcms server http://127.0.0.1:8220      # saved for later commands
+suwagcms status                            # is the server reachable?
+suwagcms bots add appraiser --name "Property appraiser" --address http://bot-host:5080
+suwagcms use appraiser                     # the bot later commands work on
+suwagcms bots declaration                  # ask the running bot what it supports
+```
+
+`--address` is where the CMS server reaches the bot, so with the CMS in Docker it is not `127.0.0.1`. The CMS never contacts a bot on
+`bots add`, so you can register one before it runs. Then edit in the web app, or write a file of
+changes and apply it all or nothing:
+
+```yaml
+# changes.yaml
+changes:
+  - add: fact
+    name: property.type
+    type: enum
+    values: [flat, house, land]
+    description: What kind of property is valued.
+  - add: procedure
+    id: conversation          # the base of every conversation: a version needs it
+    description: The base of every conversation.
+    whenStalled:
+      instruction: Ask once more in other words, then offer a phone call.
+    firstStep: wait
+    steps:
+      wait:
+        listen:
+        next: askType
+      askType:
+        collect: [property.type]
+        next: thanks
+      thanks:
+        say: "Thanks, a {property.type} it is."
+        next: wait
+```
+
+```sh
+suwagcms apply changes.yaml --dry-run      # every mistake at once, each with its fix; changes nothing
+suwagcms apply changes.yaml
+suwagcms versions create                   # validate the whole bot and freeze it
+suwagcms push                              # send the latest version to the bot
+suwagcms versions status                   # the version the bot reports it has
+```
+
+### 4. Claude Code
 
 ```text
 /plugin marketplace add Manomenu/suwagcms
 /plugin install suwagcms@suwagcms
 ```
 
-For a bot in .NET, add the package and map its routes:
+The plugin drives the CLI: the `suwagcms` skill knows every command and how to read a refusal, and `suwagcms-batch` writes files of
+changes for `suwagcms apply`. It needs the CLI from step 2.
+
+### 5. Connect your bot
+
+A bot in .NET (9 or later) adds the SDK and maps its routes:
 
 ```sh
 dotnet add package Suwagcms.Sdk
 ```
 
-The package's own readme shows the code: [Suwagcms.Sdk/README.md](Suwagcms.Sdk/README.md).
+```csharp
+builder.Services.AddSuwagcmsBot("appraiser");   // the bot's id; versions are kept in files under the content root
+var app = builder.Build();
+app.MapSuwagcmsBot();                           // the /suwagcms routes the CMS calls
+```
+
+What the bot declares (blocks it runs, actions in its code), and how its code reads the current version and its articles:
+[Suwagcms.Sdk/README.md](Suwagcms.Sdk/README.md).
+
+A bot outside .NET serves the same routes, whose shapes are in [`Suwagcms.Sdk/bot-runtime.schema.json`](Suwagcms.Sdk/bot-runtime.schema.json)
+(the definition format: [`definition-format.schema.json`](Suwagcms.Sdk/definition-format.schema.json)), and checks a definition with the
+CMS's validator: `suwagcms validate --file definition.yaml [--declaration declaration.yaml]`.
 
 ## The CLI
 
-A coding agent is a first-class editor, not an afterthought. The CMS ships with a CLI and a Claude Code plugin, built
-the way [Suwageval](https://github.com/Manomenu/suwalski-agent-eval) builds its own.
+**Anything the web can do, the CLI can do too.** The CMS is the single source of truth, so nobody edits a local copy:
+`apply` changes many resources at once, `export` and `diff` are for reading.
 
-**Anything the web can do, the CLI and the plugin can do too.** The CLI may do more than the web, never less.
+| Command | What it does |
+| :------ | :----------- |
+| `status`, `server <url>` | whether the server answers; save its address |
+| `bots`, `use <id>` | list and register bots, ask a bot what it supports (`bots declaration`); choose the bot to work on |
+| `facts`, `kb`, `articles`, `procedures`, `actions` | list, show, add, edit and delete each kind; `actions test <id>` tries an action through the bot |
+| `persona` | show the bot's persona, and replace the whole of it from a file |
+| `usage <kind> <id>` | what uses a resource and what it uses; changes nothing |
+| `rename <kind> <id> <newId>` | change an id and rewrite every reference, all or nothing; `--dry-run` lists them |
+| `apply <file>` | a file of changes, all or nothing, in any order; `--dry-run`; `--replace` applies a seed again over what the CMS holds, `--compare` says first what that would change |
+| `versions` | list, create, show; `versions status` asks the bot which version it has |
+| `push` | push the latest version, or `--version <n>`: that is the rollback, and it changes only the bot; `--dry-run` |
+| `availability` | turn articles, procedures and actions on and off, at once, outside versions |
+| `history [<kind> [<id>]]` | what changed and when, newest first, also after a delete |
+| `diff <from> <to>` | what going from one version to another changes |
+| `export [<number>] --out <dir>` | a version (the latest when left out) as YAML files, for reading and searching; changes to them do nothing |
+| `validate --file <file>` | check a definition with the CMS's validator, for a bot outside .NET; stores nothing |
 
-The CMS is the single source of truth, so nobody edits a local copy. For work that spans many resources the CLI has:
+`suwagcms <command> --help` lists every subcommand and option.
 
-| Command             | What it does                                                                                  |
-| :------------------ | :-------------------------------------------------------------------------------------------- |
-| `suwagcms apply`    | applies a file of changes all or nothing, so the order of changes inside it does not matter; a dry run only reports what would break; `--replace` applies a seed again over what the CMS holds, and `--compare` says first what that would change |
-| `suwagcms export`   | writes a version to files for reading and searching; changes to those files do nothing        |
-| `suwagcms diff`     | compares two versions                                                                         |
-| `suwagcms persona`  | shows the bot's persona, and replaces the whole of it from a file                             |
-
-| Part              | What it is                                                                                  |
-| :---------------- | :------------------------------------------------------------------------------------------ |
-| HTTP API          | the one interface of the server; the web and the CLI both use it, and there is no MCP endpoint |
-| `suwagcms` CLI    | a .NET tool with a command for every web action, including `suwagcms push` to a bot, `--json` for agents and `--open` to show the matching web page |
-| Claude Code plugin| installed from this repository's marketplace; drives the CLI, with a main skill listing every command and a separate skill for work that takes judgment or confirmation |
-
-A web action, its CLI command and its line in the plugin arrive in the same change. The gate fails for a server route
-that has no CLI command.
-
-Behaviour shared by all of them:
-
-- Every refusal says what is wrong and how to fix it: `'collect' of step 'ask' names fact 'x', which only an assign step
-  may write. Remove it from collect, or give the fact 'writableBy: set'.`
-- All mistakes are reported at once, so one pass fixes a whole batch.
-- "What uses this?" and "what would this change break?" can be asked without changing anything (dry run).
+- `--json` prints exactly one JSON document, also on failure, for scripts and agents. `--open` opens the matching page of the web app instead.
+- Every refusal says what is wrong and how to fix it, and all mistakes come back at once:
+  `'collect' of step 'ask' names fact 'x', which only an assign step may write. Remove it from collect, or give the fact 'writableBy: set'.`
+- Exit codes: `0` done, `1` refused, `2` misused, `3` server unreachable, `4` differences found (`apply --compare`).
 - An agent may push a version itself; validation, history and rollback are the safeguards.
-- Each resource has a full history of what changed and when; once identity arrives it also records who, a person or an
-  agent. Until then the CMS and the bots' routes for it run only inside a trusted network.
+
+## Configuration
+
+<details>
+<summary><b>The server: <code>.env</code> beside <code>compose.yaml</code></b></summary>
+
+Copy `.env.example` to `.env`. Every line is optional.
+
+| Key | Default | What it sets |
+| :-- | :------ | :----------- |
+| `WEB_PORT` | `8220` | the port of the web app and API on `127.0.0.1` |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | `suwagcms` | the bundled PostgreSQL |
+| `ConnectionStrings__Default` | the bundled database | an external PostgreSQL; start without the `db` profile: `docker compose up -d --build --wait` |
+| `PAGINATION_PAGE_SIZE` | `20` | rows on a page of every list in the web app, 1 to 500; anything else stops the server at start |
+| `IMAGE_TAG` | `local` | the tag of the built images |
+| `API_UPSTREAM` | `http://server:6330` | where the web container sends `/api` |
+
+</details>
+
+<details>
+<summary><b>The CLI: which server and which bot</b></summary>
+
+| Setting | Taken from, first found wins |
+| :------ | :--------------------------- |
+| server | `--server`, `$SUWAGCMS_URL`, `suwagcmsUrl` in the folder config, the address saved with `suwagcms server`, `http://localhost:3330` |
+| bot | `--bot`, `$SUWAGCMS_BOT`, `botId` in the folder config, the bot stored with `suwagcms use` |
+
+The folder config is a file named config.yaml in a folder named suwagcms under the current folder; `--dir <dir>` points at another
+folder that holds it. Kept in a bot's repository, it pins that repository to its CMS and bot.
+
+</details>
+
+<details>
+<summary><b>The bot: secrets of http actions</b></summary>
+
+An `http` action names a secret as `{secret:NAME}` in a header and never holds its value. The bot reads it from its environment
+variable `SUWAGCMS_SECRET_NAME`.
+
+</details>
 
 ## Reference
 
@@ -121,7 +240,7 @@ Behaviour shared by all of them:
 One CMS holds several registered bots, each with its own profile, and the user switches between them. All resources
 belong to one bot. References work across that bot's knowledge bases and never between bots.
 
-After registration the CMS asks the bot what it supports:
+Once the bot runs, the CMS asks it what it supports (`suwagcms bots declaration`, or the bot's profile page) and keeps a good answer:
 
 | Declared              | What the CMS does with it                                       |
 | :-------------------- | :-------------------------------------------------------------- |
@@ -288,7 +407,7 @@ other, so the check covers both together: `evacuation guide → evacuation proce
 
 ### Links inside text
 
-SmartRouter refers to articles by title in free text, so nothing notices when one is renamed. Here, a link to another
+Free text that names an article by its title breaks silently when the article is renamed. Here, a link to another
 article in `content` or `llmGuide`, or to a procedure in `llmGuide`, is inserted from a picker, shown as a chip, and
 stored by `id`. Plain text naming a resource is not a reference and is not protected.
 
@@ -351,6 +470,8 @@ Bot has: v12            Latest: v14
   someone builds it. A version cannot.
 - **The CMS builds no search index.** Through the SDK, the bot's code takes the articles of the version it loaded. It
   trains its own index from them, or passes them on to an external search system and uses that.
+- **Each resource has a full history** of what changed and when, also after it is deleted (`suwagcms history`, the History panel of
+  every screen). Who changed it arrives with login.
 - **A conversation finishes on the version it started on.** The bot keeps an old version until its last conversation
   ends, so a push never changes a procedure under a customer.
 
@@ -373,7 +494,7 @@ flowchart TD
 The validator takes a bot's whole definition and what the bot declared, and returns every mistake with its fix. It
 needs no database or network. The format of a version is the public contract between the CMS and any bot.
 
-The SDK is a public package on nuget.org, [`Suwagcms.Sdk`](https://www.nuget.org/packages/Suwagcms.Sdk), so any bot can use it; it is released with one command ([docs/release.md](docs/release.md)).
+The SDK is a public package on nuget.org, [`Suwagcms.Sdk`](https://www.nuget.org/packages/Suwagcms.Sdk), so any bot can use it.
 
 </details>
 
@@ -396,8 +517,6 @@ The SDK is a public package on nuget.org, [`Suwagcms.Sdk`](https://www.nuget.org
 <details>
 <summary><b>Integration with the bot: who does what</b></summary>
 
-Who owns what between the CMS and a bot, field by field, is settled in one place: the spec `chatbot-contract`.
-
 | The bot                                                     | The CMS                                              |
 | :---------------------------------------------------------- | :--------------------------------------------------- |
 | loads a pushed version without a restart and reports which it has | pushes versions and shows which one the bot has |
@@ -412,47 +531,20 @@ Who owns what between the CMS and a bot, field by field, is settled in one place
 </details>
 
 <details>
-<summary><b>Decisions</b></summary>
+<summary><b>The HTTP API</b></summary>
 
-| Question                                                          | Decision                                                                 |
-| :---------------------------------------------------------------- | :----------------------------------------------------------------------- |
-| What happens to a conversation when a push changes its procedure? | It finishes on the version it started on                                |
-| What is the CMS built with?                                       | The `solid-dotnet-app-tpl` template                                      |
-| Where does validation live?                                       | In one library in the SDK, used by the CMS, bots and agents              |
-| Where is the SDK published?                                       | On nuget.org, as a public package released with one command           |
-| Who builds the search index?                                      | The bot, from data the SDK gives it, or an external search system        |
-| Does the CMS know who is asking?                                  | Not at first: it stays in a trusted network until `cms-identity`         |
-| How are bots and knowledge bases organised?                       | One CMS with several bot profiles; references only within one bot        |
-| Do bots declare what they support?                                | Yes: format version, blocks and actions in code                          |
-| Can a bot add a block of its own?                                 | No: the SDK defines a fixed set, a bot declares which it runs, and custom logic is an action |
-| Can an article reference a procedure?                             | Yes, with a link from the picker in its guide                            |
-| What language is an article in?                                   | The language of its knowledge base: `pl` or `en`, `en` by default; no linked translations |
-| How do agents work with the CMS?                                  | Through a CLI and a Claude Code plugin with the same abilities as the web |
-| What format is article content in?                                | Markdown, with links written as cms:// addresses                         |
-| Can a bot run in several instances?                               | Yes, through a version store shared by its instances                     |
-| Are the bot's routes protected?                                   | Not at first: trusted network only; a key arrives with `cms-identity`    |
-| Who may push a version to a bot?                                  | People and agents                                                        |
-| How does a bot get its definition?                                | It runs a pushed version; pushing an older one is the rollback           |
-| How is a version made?                                            | With a separate "Create version" step before the push                    |
-| Can resources be edited as local files?                           | No: `apply` for batches, `export` and `diff` only for reading            |
-| Can a resource in use be turned off?                              | Yes, with the "used by" list shown first                                 |
-| When does turning off take effect?                                | At once, without a push                                                  |
-| Where do a bot's personality and scope live?                      | In one Persona per bot, in its definition: it reaches the bot with a version |
+The web app, the CLI and the plugin all use one HTTP API under `/api`; there is no MCP endpoint. Its contract is
+[`contract/openapi.json`](contract/openapi.json), with its version in [`contract/package.json`](contract/package.json): a change that
+breaks a consumer raises the major version.
 
 </details>
 
 <details>
-<summary><b>What it borrows from Rasa, ElevenAgents and SmartRouter</b></summary>
-
-| Source         | Taken                                                                                       | Left out, and why                                                                                     |
-| :------------- | :------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- |
-| **Rasa CALM**  | Required descriptions; deterministic steps; action step then branch on facts; slots an LLM cannot fill (`controlled`, here `assign`); `id` plus `description` as what the model reads | Actions reading and writing any slot directly: explicit mapping lets the CMS check references          |
-| **ElevenAgents** | Visual graph of nodes; a tool node with success and failure routes; tool results mapped to variables; secrets kept out of prompts; one document reused in many places | LLM-evaluated transitions: a procedure's rules are deterministic on purpose. Force delete that detaches a document from the agents using it: here a reference always blocks |
-| **SmartRouter** | `llmGuide`, an embedded description per article, availability toggle on tools, its TODO's reference checks and "who uses it" view | References by title; procedures disguised as articles                                                  |
+<summary><b>Coming from Rasa</b></summary>
 
 Rasa concepts in this project's terms:
 
-| Rasa                               | Suwchatbot                     |
+| Rasa                               | Suwagcms                       |
 | :--------------------------------- | :----------------------------- |
 | flow                               | procedure                      |
 | slot                               | fact                           |
@@ -466,105 +558,19 @@ Rasa concepts in this project's terms:
 
 </details>
 
-<details>
-<summary><b>Sources</b></summary>
-
-- Suwchatbot, branch master: Suwchatbot.Engine/Facts, Suwchatbot.Engine/Loading and the procedure building blocks spec;
-  branch feature/global-facts-collection
-- SmartRouter: TODO.md, SmartRouter.Core/Connectors/CmsConnector, SmartRouter.Core/Dialogue
-- Suwageval: AGENTS.md, docs/front-doors.md and its Claude Code plugin
-- Rasa: [flows](https://rasa.com/docs/reference/primitives/flows/), [flow steps](https://rasa.com/docs/reference/primitives/flow-steps/),
-  [actions](https://rasa.com/docs/reference/primitives/actions/), [custom actions](https://rasa.com/docs/reference/primitives/custom-actions/),
-  [slots](https://rasa.com/docs/reference/primitives/slots)
-- ElevenAgents: [workflows](https://elevenlabs.io/docs/agents-platform/customization/agent-workflows),
-  [knowledge base](https://elevenlabs.io/docs/eleven-agents/customization/knowledge-base),
-  [dynamic variables](https://elevenlabs.io/docs/eleven-agents/customization/personalization/dynamic-variables),
-  [deleting a document](https://elevenlabs.io/docs/api-reference/knowledge-base/delete)
-
-</details>
-
 ## Development
 
-Stack: built from the [`solid-dotnet-app-tpl`](https://github.com/Manomenu/solid-dotnet-app-tpl) template: .NET 10 with ASP.NET Core minimal APIs and PostgreSQL on the server, React 19 on the shared kit suwfrontkit (with TanStack Query) and Tailwind on the web, and one gate that decides when a change is done.
+Built from the [`solid-dotnet-app-tpl`](https://github.com/Manomenu/solid-dotnet-app-tpl) template: .NET 10 with ASP.NET Core minimal
+APIs and PostgreSQL on the server, React 19 on suwfrontkit with Tailwind on the web, and one gate,
+[suwgate](https://github.com/Manomenu/suwgate) (`just check`), that decides when a change is done.
 
-Requirements and commands: [docs/development.md](docs/development.md). Rules for contributors and agents: [AGENTS.md](AGENTS.md). Where code goes: [docs/architecture.md](docs/architecture.md).
+Requirements and commands: [docs/development.md](docs/development.md). Rules for contributors and agents: [AGENTS.md](AGENTS.md).
+Where code goes and what the gate forbids: [docs/architecture.md](docs/architecture.md). Releasing the SDK: [docs/release.md](docs/release.md).
 
-The pictures here are drawn on [docs/visual/board/readme.html](docs/visual/board/readme.html): edit it, then render it with `vdoc.py render docs/visual/board/readme.html` of the [suwagent plugin](https://github.com/Manomenu/suwalski-agent-plugin). The two screenshots are of the real app.
-
-<details>
-<summary><b>The application skeleton</b></summary>
-
-An ASP.NET Core minimal-API server on suwbackkit (Dapper, hand-written SQL, grate migrations), a React 19 + suwfrontkit + Tailwind
-web app calling the server through the kit's typed client, with types generated from the server's OpenAPI document.
-
-</details>
-
-<details>
-<summary><b>What the gate guarantees</b></summary>
-
-The gate is [suwgate](https://github.com/Manomenu/suwgate), configured in `suwgate.yml`: `just check` (`suwgate check`) before
-calling a change done, the same CI runs; `just check-quick` while working, within a 20-second budget: the repository guards, and
-build, csharpier, the .NET guards, eslint, tsc and shellcheck only for what changed since the branch left `master`. It fails on: any
-compiler or analyzer warning, banned APIs, a layer used against its order, a folder or project off the lists the guards read, dead
-types and packages, vague names, any comment but a tool directive, `dynamic`, a test that leans on the real clock, browser storage,
-unpinned images, a stale API contract or generated types, an acceptance criterion without a guardrail, an unresolvable compose file,
-and (in the full gate) a browser test that fails. The full list, each with its fix: [docs/architecture.md, "What the gate forbids"](docs/architecture.md#what-the-gate-forbids).
-`just up` starts the container stack and smoke-tests it.
-
-</details>
-
-<details>
-<summary><b>The API contract</b></summary>
-
-`contract/openapi.json` is generated from the endpoints and committed: the contract on the boundary, with its version
-in `contract/package.json`. `just api-types` regenerates it with the web types (`openapi.d.ts`, whose first line names
-the contract's sha256), and the full gate (its `api-version` step, oasdiff) compares it with `master`: a changed contract needs a
-higher version, a change that breaks a consumer a higher major. An app in another repository that adapts to a new version of this
-contract tags its tests with `contract <name>@<version>` instead of a criterion id; the `contract-pins` step lists them.
-
-</details>
-
-<details>
-<summary><b>Spec and guardrails sync</b></summary>
-
-Development is spec-driven, and the gate keeps the code and the specs from drifting apart. A spec in
-`docs/visual/spec/` (written with the suwagent `/suwagent:visual-spec` skill) says what to build and
-why; its acceptance criteria are the contract:
-
-1. **Every criterion has an id**, `AC-<feature>-<n>`, at the start of its item in the spec's
-   acceptance section. `vdoc.py ids` of the suwagent plugin assigns them and never reuses a number;
-   an id stays with its criterion for good.
-2. **Outside the spec, a criterion lives only as a guardrail** that names its id: a test, a lint rule,
-   a build rule. Not as a checklist or a QA note. A criterion that no automated check can prove is
-   reworded into plain description or dropped from the spec (the agent asks the owner which).
-3. **The full gate checks the link both ways** (`suwgate check`, not `--quick`, so an agent can stop and ask
-   about a criterion mid-work):
-
-| The gate fails when | What to do |
-| --- | --- |
-| a criterion has no guardrail | name its id in a test or rule that fails when the criterion breaks |
-| a guardrail names an id no spec defines | restore the criterion, or delete or rename the id |
-| an id stands where nothing is checked (production code, a config no tool reads) | move it to the guardrail that proves the criterion |
-| a spec has no acceptance section, a criterion without an id or with two, an id defined twice | fix the spec (`vdoc.py ids` numbers new criteria) |
-
-Where each kind of guardrail lives and how it names the id comes with the profiles of `suwgate.yml` (the table is in
-suwgate's README): `[Trait("criterion", "AC-notes-1")]` on an xUnit test of any test project (server, SDK, CLI, the gate), the id at
-the start of a Vitest or Playwright title (`it("AC-notes-1: a blank note is refused", …)`), `// AC-notes-1` above a rule of
-`eslint.config.js` or an option of a tsconfig, `# AC-notes-1` above a rule of `.editorconfig`, the id in the message of a banned-API
-line of the app's own, `<!-- AC-notes-1 -->` above a property of `Directory.Build.props`. A kind of its own goes into a criteria.json
-at the root, with its row in a table here.
-
-**How it runs.** The `criteria` step runs `vdoc.py criteria` of the
-[suwagent plugin](https://github.com/Manomenu/suwalski-agent-plugin), downloaded at the commit and SHA-256 suwgate pins (into
-`~/.cache/suwagent/`), the same on a laptop and in CI; without a network the step is a SKIP locally and a failure in CI. Agents
-cannot edit the gate, the hooks or the lint configs (a Claude Code hook refuses it); to change them with an agent, start it with
-`ALLOW_GATE_EDIT=1 claude`.
-
-What it cannot see: whether a guardrail would really fail when the behaviour breaks.
-`/suwagent:visual-guardrails` checks that before a merge.
-
-</details>
+The pictures here are drawn on [docs/visual/board/readme.html](docs/visual/board/readme.html): edit it, then render it with
+`vdoc.py render docs/visual/board/readme.html` of the [suwagent plugin](https://github.com/Manomenu/suwalski-agent-plugin). The two
+screenshots are of the real app.
 
 ## License
 
-[LICENSE](LICENSE)
+[MIT](LICENSE)
