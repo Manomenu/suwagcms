@@ -64,9 +64,11 @@ public sealed partial class SdkReleaseTests
         Assert.Contains("grep -qxF \"$tree\"", pack, StringComparison.Ordinal);
         Assert.DoesNotContain("dotnet test", pack, StringComparison.Ordinal);
         Assert.Contains("dotnet pack Suwagcms.Sdk ", pack, StringComparison.Ordinal);
+        Assert.Contains("dotnet pack Suwagcms.Cli ", pack, StringComparison.Ordinal);
         Assert.Contains("-p:Version=\"$VERSION\"", pack, StringComparison.Ordinal);
         Assert.Contains("-p:ContinuousIntegrationBuild=true", pack, StringComparison.Ordinal);
         Assert.Contains("dotnet nuget push \"nupkg/Suwagcms.Sdk.$VERSION.nupkg\"", publish, StringComparison.Ordinal);
+        Assert.Contains("dotnet nuget push \"nupkg/Suwagcms.Cli.$VERSION.nupkg\"", publish, StringComparison.Ordinal);
         Assert.Contains("https://api.nuget.org/v3/index.json", publish, StringComparison.Ordinal);
         Assert.DoesNotContain("--no-symbols", publish, StringComparison.Ordinal);
     }

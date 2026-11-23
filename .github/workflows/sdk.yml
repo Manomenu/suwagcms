@@ -99,6 +99,5 @@ jobs:
         env:
           NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: |
-          for package in Suwagcms.Sdk Suwagcms.Cli; do
-            dotnet nuget push "nupkg/$package.$VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
-          done
+          dotnet nuget push "nupkg/Suwagcms.Sdk.$VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+          dotnet nuget push "nupkg/Suwagcms.Cli.$VERSION.nupkg" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
